@@ -1,0 +1,1545 @@
+'\" $Id: pmake.man,v 1.7 91/10/06 20:53:56 kupfer Exp $ SPRITE (Berkeley)
+.de Pm
+.ie \\n(.$ .IR PMake \\$1
+.el .I PMake
+..
+.if n .nr #D 3n
+.if t .nr #D .5i
+.if n .ds -> \->
+.if t .ds -> \(->
+.de DS   \" Real Display-Start macro. It actually works!
+.sp .5v
+.nf
+.in +\\n(#Du
+..
+.de DE   \" Real Display-End macro.
+.in
+.fi
+.sp .5v
+..
+.so \*(]ltmac.sprite
+.HS PMAKE cmds "4 February 1991"
+.BS
+.SH NAME
+pmake \- create programs in parallel
+.SH SYNOPSIS
+.HP
+.fi
+.B pmake
+[\c
+.B \-b\c
+] [\c
+.B \-d
+.I what\c
+] [\c
+.B \-f
+.I makefile\c
+] [\c
+.B \-h\c
+] [\c
+.B \-i\c
+] [\c
+.B \-k\c
+] [\c
+.B \-l\c
+] [\c
+.B \-n\c
+] [\c
+.B \-p
+.I #\c
+] [\c
+.B \-q\c
+] [\c
+.B \-r\c
+] [\c
+.B \-s\c
+] [\c
+.B \-t\c
+] [\c
+.B \-v\c
+] [\c
+.B \-x\c
+] [\c
+.B \-B\c
+] [\c
+.B \-C\c
+] [\c
+.B \-D
+.I variable\c
+] [\c
+.B \-I
+.I directory\c
+] [\c
+.B \-J
+.I #\c
+] [\c
+.B \-L
+.I #\c
+] [\c
+.B \-M\c
+] [\c
+.B \-P\c
+] [\c
+.B \-R\c
+] [\c
+.B \-V\c
+] [\c
+.B \-W\c
+] [\c
+.B \-X\c
+] [\c
+.IB VAR1 = value1\c
+] [\c
+.IB VAR2 = value2 ...\c
+] [\c
+.I targ1\c
+] [\c
+.I targ2 ...\c
+]
+.BE
+.AR
+.AS \-I directory
+.AP \-b "\&"
+``Background'' -- run all remote processes at low priority.  See also 
+the .BACKGROUND attribute.
+.AP \-d what
+Specify what modules should print debugging information.
+.I what
+is a string of letters from the following set: 
+.B a 
+(archives), 
+.B c
+(conditionals), 
+.B d 
+(directory searching), 
+.B j 
+(jobs), 
+.B m
+(make), 
+.B p
+(parsing), 
+.B r
+(remote), 
+.B s
+(suffixes),
+.B t
+(targets), 
+.B v
+(variables).  Use
+.B -d jr
+to find out what host each job is run on.
+.AP \-f makefile
+Specify a different makefile to read than the standard
+``Makefile'' or ``makefile''.  If
+.I makefile
+is "-", reads from standard input.
+.AP \-h "\&"
+Prints out help information.
+.AP \-i "\&"
+``Ignore errors'' -- ignore non-zero exit statuses of commands.
+.AP \-k "\&"
+``Keepgoing'' -- if an error is encountered,
+keep working on those parts of the input graph that are not affected by the
+error.
+.AP \-l "\&"
+PMake has the ability to lock a directory against other
+people executing it in the same directory (by means of a file called
+``LOCK.make'' that it creates and checks for in the directory). This
+is a Good Thing because two people doing the same thing in the same place
+can be disastrous for the final product (too many cooks and all that).
+Whether this locking is the default is up to your system
+administrator. If locking is on,
+.B \-l
+will turn it off, and vice versa. Note that this locking will not
+prevent \fIyou\fP from invoking PMake twice in the same place -- if
+you own the lock file, PMake will warn you about it but continue to execute.
+.AP \-n "\&"
+``No execute'' -- do not execute commands.
+Just print the ones that would be executed.
+.AP \-p "#"
+Tell
+.Pm
+if and when to print the input graph.
+The number is the bitwise OR of the numbers 1 and 2 with 1 meaning to print the
+graph before making anything and 2 meaning to print the graph after making
+everything.
+If no number is given,
+it defaults to 3.
+.AP \-q "\&"
+``Query'' -- do not execute any commands.
+Just exit 0 if the given target(s) is (are) up to date and exit non-zero
+otherwise.
+.AP \-r "\&"
+``Remove built-in rules'' -- do not parse the built-in rules given in
+the system makefile.
+.AP \-s "\&"
+``Silence'' -- do not echo commands as they are executed.
+.AP \-t "\&"
+``Touch targets'' -- rather than executing the commands to create a target,
+just change its modification time so it appears up-to-date.
+This is dangerous.
+.AP \-v "\&"
+``System V'' -- invokes compatibility functions suitable for acting
+like the System V version of Make. This implies
+.AP \-x "\&"
+``Export judiciously -- run commands locally in preference to running them 
+remotely.  By default, PMake will only run locally
+if there are more commands to execute than idle hosts available; with
+this option,  
+PMake will run one command locally and export additional
+commands to available hosts.
+.B \-B ,
+and
+.B \-V 
+and turns off directory locking. Locking may be turned back on again
+by giving the
+.B \-l
+flag after
+.B \-v .
+.AP \-B "\&"
+``Backwards-compatible'' -- performs as much like Make as possible
+(including executing a single shell per command and expanding
+variables as Make did) while still performing in parallel.
+.AP \-C "\&"
+``Non-compatible'' -- turns off all compatibility specified up to the point at
+which
+.B \-C
+is encountered.
+.AP \-D variable
+Defines the given variable to be
+.B 1
+in the global context.
+.AP \-I directory
+Specify another directory in which to look for #include'd makefiles.
+This flag may be repeated as many times as necessary.
+.AP \-J #
+Specify the maximum number of jobs to run at once on all machines.
+.AP \-L #
+Specify the maximum number of jobs to run locally.
+.AP \-M "\&"
+Be as much like Make as possible. No parallel execution. Old-style
+variable expansion. One shell per command. Etc.
+.AP \-P "\&"
+``Don't use Pipes'' -- see the section on
+.AP \-R "\&"
+``Remigrate verbosely'' -- announce when processes are remigrated
+subsequent to eviction.
+.BR OUTPUT .
+.AP \-V "\&"
+``Do old-style variable expansion'' -- expands an unknown variable to
+the empty string.
+.AP \-W "\&"
+Don't print warning messages.
+.AP \-X "\&"
+``No Export'' -- prohibits exportation. 
+.AP VAR=value "\&"
+Set the value of the variable
+.B VAR
+to the given value.
+This supercedes any value assigned to the variable in the makefile.
+See
+.BR VARIABLES .
+.SH DESCRIPTION
+.PP
+.Pm
+is a program designed to make the maintenance of other programs much
+easier.  Its input is a ``makefile'' that specifies which files depend
+on which other files and what to do about files that are
+``out-of-date.''
+If you don't specify a makefile to read,
+.B Makefile
+and
+.BR makefile ,
+in that order,
+are looked for and read if they exist.
+.PP
+This manual page is meant to be a reference page only. For a more
+thorough description of
+.Pm ,
+please refer to
+.I PMake -- A Tutorial\c
+(available in this distribution).
+.PP
+There are four basic types of lines in a makefile:
+.RS
+.IP 1)
+File dependency specifications
+.IP 2)
+Creation commands
+.IP 3)
+Variable assignments
+.IP 4)
+Comments,
+include statements and conditional directives
+.RE
+.PP
+Any line may be continued over multiple lines by ending it with a backslash.
+The backslash,
+following newline and any initial whitespace on the following line are
+compressed into a single space.
+.SH DEPENDENCY LINES
+.PP
+On a dependency line, there are targets, sources and an operator.
+The targets ``depend'' on the sources and are usually created from them.
+Any number of targets and sources may be specified on a dependency
+line. All the targets in the line are made to depend on all the sources.
+If you run out of room, use a backslash at the end of the line to
+continue onto the next one.
+.PP
+Any file may be a target and any file may be a source, but the relationship
+between them is determined by the ``operator''
+that separates them. Three operators are defined:
+.RS
+.IP ":"
+A target on the line is considered ``out-of-date''
+if any of its sources has been modified
+more recently than the target. Sources for a target accumulate over
+lines when this operator is used.
+.IP "!"
+Targets will always be re-created, but this will not happen until all
+of its sources have been examined and re-created, if necessary.
+Sources accumulate over lines as for the colon.
+.IP "::"
+Much like the colon, but acts like the ! operator if no sources are
+specified. In addition sources do not accumulate over lines. Rather,
+the commands associated with the line (see below) are executed only if
+the target is out-of-date with respect to the sources on that line only.
+In addition, the target will not be removed if
+.Pm
+is interrupted, unlike for the other two operators.
+.RE
+.PP
+For example:
+.DS
+a	: a.o b.o c.o
+b	! d.o e.o
+c	:: f.o
+	command1
+a	: g.o
+b	! h.o
+c	::
+	command2
+.DE
+specifies that a depends on a.o, b.o, c.o and g.o and will be remade
+only if out-of-date with respect to these four files. b depends on
+d.o, e.o and h.o and will always be remade, but only after these three
+files have been remade. c will be remade with command1 if it is
+out-of-date with respect to f.o, as for the colon operator, while
+command2 will always be executed.
+.PP
+Targets and sources may also contain standard shell wildcard
+characters (?, *, [ and {}), but the ?, *, [ and ] characters may only
+be used in the final component of the target or source. If a target or
+source contains only curly braces and no other wildcard characters, it
+need not describe an existing file. Otherwise, only existing files
+will be used. E.g. the pattern
+.DS
+{a,b,c}.o
+.DE
+will expand to
+.DS
+a.o b.o c.o
+.DE
+regardless of whether these three files exist, while
+.DS
+[abc].o
+.DE
+will only expand to this if all three files exist. The resulting
+expansion is in directory order, not alphabetically sorted as in the shell.
+.SH COMMANDS
+.PP
+Each target has associated with it a sort of shell script made up of a
+series of shell commands. The creation script for a target should
+immediately follow the dependency line for that target.
+Each of the commands in this script
+.I must
+be preceded by a tab character. 
+.PP
+While any given target
+may appear on more than one dependency line, only one of these dependency lines
+may be followed by a creation script, unless the "::" operator is used.
+.PP
+One helpful feature of
+.Pm
+is the ability to squirrel away commands for a target to be executed when
+everything else has been done. To do this, make one of the commands
+for the target be just ``...'' (an ellipsis) on a line by itself. The
+ellipsis itself won't be executed, of course, but any commands in the
+target's script that follow the ellipsis will be saved until
+.Pm
+is done processing everything it needs to process.
+If you were to say,
+.DS
+a.o             : a.c
+        cc -c a.c
+        ...
+        @echo "All done"
+.DE
+Then the command ``echo "All done"'' would execute once everything
+else had finished. Note that this will only happen if ``a.o'' is found
+to be out-of-date.
+.PP
+There is another way in which makefile shell commands differ from
+regular shell commands, as illustrated in the above makefile scrap.
+The first two characters after the initial tab (and any other
+whitespace) are treated specially. If they are any combination of `@'
+and `\-', (``@'', ``@\-'', ``\-@'' or ``\-''), they cause
+.Pm
+to do different things.
+.PP
+In most cases, shell commands are printed to
+the screen before they're actually executed. This is to keep you
+informed of what's going on. If an `@' appears, however, this echoing
+is suppressed. In the case of the echo command, above, this makes
+sense. It would look silly to see
+.DS
+echo "All done"
+All done
+.DE
+so
+.Pm
+allows you to avoid that (this sort of echo control is
+only available if you use the Bourne or C shells to execute your
+commands, since the commands are echoed by the shell,
+not by
+.Pm ).
+.PP
+The other special character is the `\-'.  Shell commands exit with a
+certain ``exit status.''  Normally this status will be 0 if everything
+went ok and non-zero if something went wrong. For this reason,
+.Pm
+will consider an error to have occurred if one of the commands it
+invokes returns a non-zero status. When it detects an error, its usual
+action is to stop working, wait for everything in process to finish,
+and exit with a non-zero status itself.  This behavior can be altered,
+however, by means of
+.B \-i
+or
+.B \-k
+arguments, or by placing a `\-' at the
+front of the command.
+(Another quick note: the decision of whether to abort a target when
+one of its shell commands returns non-zero is left to the shell that
+is executing the commands. Some shells allow this ``error-checking''
+to be switched on and off at will while others do not.)
+.SH VARIABLES
+.PP
+.Pm
+has the ability to save text in variables to be recalled later at your
+convenience.  Variables in
+.Pm
+are used much like variables in
+.IR sh (1)
+and, by tradition, consist of all upper-case letters.
+They are assigned- and appended-to using lines of the form
+.DS
+\fIVARIABLE\fP \fB=\fP \fIvalue\fP
+\fIVARIABLE\fP \fB+=\fP \fIvalue\fP
+.DE
+respectively, while being conditionally assigned-to (if not already
+defined) and assigned-to with expansion by lines of the form
+.DS
+\fIVARIABLE\fP \fB?=\fP \fIvalue\fP
+\fIVARIABLE\fP \fB:=\fP \fIvalue\fP
+.DE
+Finally, 
+.DS
+\fIVARIABLE\fP \fB!=\fP \fIcommand\fP
+.DE
+will execute
+.I command
+using the Bourne shell and place the result in the given variable.
+Newlines are converted to spaces before the assignment is made. This
+is not intended to be used with commands that produce a large amount
+of output. If you use it this way, it will probably deadlock.
+.PP
+Variables are expanded by enclosing the variable name in either
+parentheses or curly braces and preceding the whole thing with a
+dollar sign.  E.g. to set the variable
+.B CFLAGS
+to the string ``\-I/sprite/src/lib/libc \-O'' you would place a line
+.DS
+CFLAGS = \-I/sprite/src/lib/libc \-O
+.DE
+in the makefile and use the word
+.B $(CFLAGS)
+wherever you would like the string ``\-I/sprite/src/lib/libc \-O'' to
+appear.  To pass a string of the form ``$(\fIname\fP)'' or
+``${\fIname\fP}'' through to the shell (e.g. to tell it to substitute
+one of its variables),
+you can use ``$$(\fIname\fP)'' and ``$${\fIname\fP}'',
+respectively, 
+or,
+as long as the \fIname\fP is not a
+.Pm
+variable,
+you can just place the string in directly, as
+.Pm
+will not expand a variable it doesn't know, unless it is given one of
+the three compatibility flags
+.BR \-V ,
+.BR \-B ,
+or
+.BR \-M .
+.PP
+There are two distinct times at which variable substitution occurs:
+When parsing a dependency line,
+such substitution occurs immediately upon reading the line.
+Thus all variables used in dependency lines must be defined before
+they appear on any dependency line.
+For variables that appear in shell commands,
+variable substitution occurs when the command is processed,
+i.e. when it is prepared to be passed to the shell or before being
+squirreled away for later execution (qv. \fBCOMMANDS\fP, above).
+.PP
+There are four different types of variables at which
+.Pm
+will look when trying to expand any given variable.
+They are (in order of decreasing precedence): (1) variables that are
+defined specific to a certain target. These are the so-called
+``local'' variables and will only be used when performing variable
+substitution on the target's shell script and in dynamic sources (see below
+for more details), (2) variables that were defined on the command line,
+(3) variables defined in the makefile and (4) those defined in
+.Pm 's
+environment, as passed by your login shell.
+An important side effect of this searching order is that once you
+define a variable on the command line, nothing in the makefile can
+change it. \fINothing.\fP
+.PP
+As mentioned above,
+each target has associated with it as many as seven ``local''
+variables. Four of these variables are always set for every target
+that must be re-created. Each local variable has a long, meaningful
+name and a short, one-character name that exists for backwards-compatibility.
+They are:
+.RS
+.IP ".TARGET (@)"
+The name of the target.
+.IP ".OODATE (?)"
+The list of sources for this target that were deemed out-of-date.
+.IP ".ALLSRC (>)"
+The list of all sources for this target.
+.IP ".PREFIX (*)"
+The file prefix of the file. This contains only the file portion -- no
+suffix or leading directory components.
+.RE
+.PP
+Three other ``local'' variables are set only for certain targets under
+special circumstances. These are the ``.IMPSRC'', ``.ARCHIVE''
+and ``.MEMBER'' variables. When
+they are set, how they are used, and what their short forms are are detailed
+in later sections.
+.PP
+In addition, for you System V fans, the six variables ``@F'', ``@D'',
+``<F'', ``<D'', ``*F'', and ``*D'' are defined to be the same as for the
+System V version of Make. If you don't know about these things, be glad.
+.PP
+Four of these local variables may be used in sources on dependency
+lines. The variables expand to the proper value for each target on the
+line. The variables are ``.TARGET'', ``.PREFIX'', ``.ARCHIVE'', and
+``.MEMBER''.
+.PP
+In addition, certain variables are set by or have special meaning to
+.Pm .
+The
+.B .PMAKE
+(and
+.BR MAKE )
+variable is set to the name by which
+.Pm
+was invoked, to allow recursive makes to use the same version,
+whatever it may be.
+All command-line flags given to
+.Pm
+are stored in the
+.B .MAKEFLAGS
+(and
+.BR MFLAGS )
+variable just as they were given. This variable is also exported to
+subshells as the
+.B PMAKE
+environment variable.
+.PP
+Variable expansion may be modified as for the C shell. A general
+expansion specification looks like:
+.DS
+\fB$(\fP\fIvariable\fP[\fB:\fP\fImodifier\fP[\fB:\fP...]]\fB)\fP
+.DE
+Each modifier begins with a single character, thus:
+.RS
+.IP "M\fIpattern\fP"
+This is used to select only those words (a word is a series of
+characters that are neither spaces nor tabs) that match the given
+.I pattern .
+The pattern is a wildcard pattern like that used by the shell, where "*"
+means 0 or more characters of any sort; "?" is any single character;
+"[abcd]" matches any single character that is either `a', `b', `c' or `d'
+(there may be any number of characters between the brackets);
+.B [0-9]
+matches any single character that is between `0' and `9' (i.e. any
+digit. This form may be freely mixed with the other bracket form), and
+\&\e is used to escape any of the characters "*", "?", "[" or ":",
+leaving them as regular characters to match themselves in a word.
+.IP "N\fIpattern\fP"
+This is identical to ":M" except it substitutes all words that don't
+match the given pattern.
+.IP "S/\fIsearch-string\fP/\fIreplacement-string\fP/[g]"
+Causes the first occurrence of
+.I search-string
+in the variable to be replaced by
+.I replacement-string ,
+unless the "g"
+flag is given at the end, in which case all occurrences of the string
+are replaced. The substitution is performed on each word in the
+variable in turn. If 
+.I search-string
+begins with a "^",
+the string must match starting at the beginning of the word. If
+.I search-string
+ends with a "$",
+the string must match to the end of the word (these two may be
+combined to force an exact match). If a backslash precedes these two
+characters, however, they lose their special meaning. Variable
+expansion also occurs in the normal fashion inside both the
+.I search-string
+and the
+.I replacement-string ,
+.B except
+that a backslash is used to prevent the expansion of a "$",
+not another dollar sign, as is usual.
+Note that
+.I search-string
+is just a string, not a pattern, so none of the usual
+regular-expression/wildcard characters has any special meaning save "^"
+and "$".
+In the replacement string,
+the "&"
+character is replaced by the
+.I search-string
+unless it is preceded by a backslash.
+You are allowed to use any character except
+colon or exclamation point to separate the two strings. This so-called
+delimiter character may be placed in either string by preceding it
+with a backslash.
+.IP T
+Replaces each word in the variable expansion by its last
+component (its ``tail''). 
+.IP H
+This is similar to ":T",
+except that every word is replaced by everything but the tail (the
+``head''). 
+.IP E
+":E" replaces each word by its suffix (``extension'').
+.IP R
+This replaces each word by everything but the suffix (the ``root'' of
+the word).
+.RE
+.PP
+In addition, PMake supports the System V form of substitution
+(\fIstring1\fP=\fIstring2\fP). 
+.SH COMMENTS, INCLUSION AND CONDITIONALS
+.PP
+Makefile inclusion and conditional structures reminiscent of
+the C compiler have also been included in
+.Pm .
+.PP
+Comments begin with a `#' anywhere but in a shell command and continue
+to the end of the line.
+If the `#' comes at the beginning of the line, however, the following
+keywords are recognized and acted on:
+.SS include ''\fImakefile\fP''
+.SS include <\fIsystem makefile\fP>
+.PP
+This is very similar to the C compiler's file-inclusion facility,
+right down to the syntax.  What follows the
+.B #include
+must be a filename enclosed either in double-quotes or angle brackets.
+Variables will be expanded between the double-quotes or
+angle-brackets.  If angle-brackets are used, the system makefile
+directory is searched.  If the name is enclosed in double-quotes, the
+including makefile's directory, followed by all directories given via
+.B \-I
+arguments, followed by the system directory, is searched for a
+file of the given name.
+.PP
+If the file is found,
+.Pm
+starts taking input from that file as if it were part of the original
+makefile.
+.PP
+When the end of the file is reached,
+.Pm
+goes back to the previous file and continues from where it left off.
+This facility is recursive up to a depth limited only by the number of open
+files allowed to any process at one time.
+.SS "if [!] \fIexpr\fP [ \fIop\fP \fIexpr\fP ... ]"
+.SS ifdef [!] \fIvariable\fP [\fIop\fP \fIvariable\fP...]
+.SS ifndef [!] \fIvariable\fP [\fIop\fP \fIvariable\fP...]
+.SS ifmake [!] \fItarget\fP [\fIop\fP \fItarget\fP...]
+.SS ifnmake [!] \fItarget\fP [\fIop\fP \fItarget\fP...]
+.PP
+These are all the beginnings of conditional constructs in the spirit of
+the C compiler.
+Conditionals may be nested to a depth of thirty.
+.PP
+In the expressions given above,
+.I op
+may be either \fB||\fP (logical \s-2OR\s0) or \fB&&\fP (logical
+\s-2AND\s0).
+.B &&
+has a higher precedence than
+.BR || .
+As in C,
+.Pm
+will evaluate an expression only as far as necessary to determine its
+value. I.e. if the left side of an
+.B &&
+is false, the expression is false and vice versa for
+.BR || .
+Parentheses may be used as usual to change the order of evaluation.
+.PP
+One other boolean operator is provided: \fB!\fP (logical negation). It
+is of a higher precedence than either the \s-2AND\s0 or \s-2OR\s0 operators,
+and may be applied in any of the ``if'' constructs,
+negating the given function for ``#if'' or the implicit function for
+the other four.
+.PP
+.I Expr
+can be one of several things. Four functions are provided, each of
+which takes a different sort of argument. 
+.PP
+The function
+.B defined
+is used to test for the existence of a variable.
+Its argument is, therefore, a variable name.
+Certain lower-case variable names (e.g. ``sun'', ``unix'' and
+``sprite'') are defined in the system makefile (qv. \fBFILES\fP) to
+specify the sort of system on which
+.Pm
+is being run. These are intended to make makefiles more portable.
+Any variable may be used as the argument of the
+.B defined
+function.
+.PP
+The
+.B make
+function is given the name of a target in the makefile and evaluates
+to true if the target was given on
+.Pm 's
+command-line or as a source for the
+.B .MAIN
+target before the line containing the conditional.
+.PP
+The
+.B exists
+function takes a file name, which file is searched for on the system
+search path (as defined by
+.B .PATH
+targets (see below)). It evaluates true if the file is found.
+.PP
+.B empty
+takes a variable expansion specification (minus the dollar sign) as
+its argument. If the resulting expansion is empty, this evaluates
+true.
+.PP
+.I Expr
+can also be an arithmetic or string comparison, with the lefthand side
+being a variable expansion. The standard C relational operators are
+allowed, and the usual number/base conversion is performed, with the
+exception that octal numbers are not supported. If the righthand side
+of a "==" or "!=" operator begins with a quotation mark, a string
+comparison is done between the expanded variable and the text between
+the quotation marks.  If no relational operator is given, it is
+assumed that the expanded variable is to be compared against 0, i.e.
+it is interpreted as a boolean, with a 0 value being false and a
+non-zero value being true.
+.PP
+When, in the course of evaluating one of these conditional
+expressions,
+.Pm
+encounters some word it does not recognize, it applies one of either
+.I make
+or
+.I defined
+to it, depending on the form of ``if'' used. E.g. ``#ifdef'' will
+apply the
+.I defined
+function, while ``#ifnmake'' will apply the negation of the
+.I make
+function.
+.PP
+If the expression following one of these forms evaluates true, the
+reading of the makefile continues as before. If it evaluates false,
+the following lines are skipped. In both cases, this continues until
+either an
+.B #else
+or an
+.B #endif
+line is encountered.
+.SS else
+.PP
+The #else,
+as in the C compiler,
+causes the sense of the last conditional to be inverted and the reading of
+the makefile to be based on this new value.
+I.e. if the previous expression evaluated true,
+the parsing of the makefile is suspended until an #endif line is read.
+If the previous expression evaluated false,
+the parsing of the makefile is resumed.
+.SS "elif [!] \fIexpr\fP [ \fIop\fP \fIexpr\fP ... ]"
+.SS elifdef [!] \fIvariable\fP [\fIop\fP \fIvariable\fP...]
+.SS elifndef [!] \fIvariable\fP [\fIop\fP \fIvariable\fP...]
+.SS elifmake [!] \fItarget\fP [\fIop\fP \fItarget\fP...]
+.SS elifnmake [!] \fItarget\fP [\fIop\fP \fItarget\fP...]
+.PP
+The ``elif'' constructs are a combination of ``else'' and ``if,'' as
+the name implies. If the preceding ``if'' evaluated false, the
+expression following the ``elif'' is evaluated and the lines following
+it are read or ignored the same as for a regular ``if.''
+If the preceding ``if'' evaluated true, however, the ``elif'' is
+ignored and all following lines until the ``endif'' (see below) are ignored.
+.SS endif
+.PP
+.B #endif
+is used to end a conditional section. If lines were being skipped, the
+reading of the makefile resumes. Otherwise, it has no effect (the
+makefile continues to be parsed as it was just before the
+.B #endif
+was encountered).
+.SS undef
+.PP
+Takes the next word on the line as a global variable to be undefined
+(only undefines global variables, not command-line variables). If the
+variable is already undefined, no message is generated.
+.SH TARGET ATTRIBUTES
+.PP
+In
+.Pm ,
+files can have certain ``attributes.''
+These attributes cause
+.Pm
+to treat the targets in special ways. An attribute is a special word
+given as a source to a target on a dependency line. 
+The words and their functions are given below:
+.nr pw \w'.EXPORTSAME  'u
+.IP .BACKGROUND \n(pwu
+Forces the target to be run at low priority, to keep it from
+preventing other higher-priority processes from using idle hosts.
+.IP .DONTCARE \n(pwu
+If a target is marked with this attribute and PMake can't figure out
+how to create it, it will ignore this fact and assume the file isn't
+really needed or actually exists and PMake just can't find it.
+.IP .EXEC \n(pwu
+This causes the marked target's shell script to always be executed
+(unless the
+.B \-n
+or
+.B \-t
+flag is given), but appear invisible to any targets that depend on it.
+.IP .EXPORT \n(pwu
+This is used to mark those targets whose creation should be sent to
+another machine if at all possible. This may be used by some
+exportation schemes if the exportation is expensive. You should ask
+your administrator if it is necessary.
+.IP .EXPORTSAME \n(pwu
+Tells the export system that the job should be exported to a machine
+of the same architecture as the current one. Certain operations (e.g.
+running text through
+"nroff")
+can be performed the same on any architecture (CPU and
+operating system type), while others (e.g. compiling a program with
+"cc")
+must be performed on a machine with the same architecture. Not all
+export systems will support this attribute.
+.IP .IGNORE \n(pwu
+Giving a target the
+.B .IGNORE
+attribute causes PMake to ignore errors from any of the target's commands, as
+if they all had `\-' before them.
+.IP .INVISIBLE \n(pwu
+This allows you to specify one target as a source for another without
+the one affecting the other's local variables.
+.IP .JOIN \n(pwu
+This forces the target's shell script to be executed only if one or more of the
+sources was out-of-date. In addition, the target's name,
+in both its
+.B .TARGET
+variable and all the local variables of any target that depends on it,
+is replaced by the value of its
+.B .ALLSRC
+variable.
+Another aspect of the .JOIN attribute is it keeps the target from
+being created if the
+.B \-t
+flag was given.
+.IP .MAKE \n(pwu
+The
+.B .MAKE
+attribute marks its target as being a recursive invocation of PMake.
+This forces PMake to execute the script associated with
+the target (if it's out-of-date) even if you gave the
+.B \-n
+or
+.B \-t
+flag.
+.IP .NOEXPORT \n(pwu
+Forces the target to be created locally, even if you've given
+.Pm
+the
+.B "\-L 0"
+flag.
+.IP .NOTMAIN \n(pwu
+Normally, if you do not specify a target to make in any other way,
+.Pm
+will take the first target on the first dependency line of a
+makefile as the target to create.
+Giving a target this attribute keeps it from this fate.
+.IP .PRECIOUS \n(pwu
+When PMake is interrupted, it
+will attempt to clean up after itself by removing any half-made
+targets. If a target has this attribute, however,
+.Pm
+will leave it alone
+.IP .SILENT \n(pwu
+Marking a target with this attribute keeps its commands from being
+printed when they're executed.
+.IP .USE \n(pwu
+By giving a target this attribute, you turn the target into 
+.Pm 's
+equivalent of a macro. When the target is used as a source for another target,
+the other target acquires the commands, sources and attributes (except
+.BR .USE )
+of the source.
+If the target already has commands, the
+.B .USE
+target's commands are added to the end. If more than one .USE-marked
+source is given to a target, the rules are applied sequentially.
+.SH SPECIAL TARGETS
+.PP
+As there were in Make, so there are certain targets that have special
+meaning to PMake. When you use one on a dependency line, it is the
+only target that may appear on the left-hand-side of the operator.
+The targets are as follows:
+.nr pw \w'.MAKEFLAGS  'u
+.IP .BACKGROUND \n(pwu
+applies the .BACKGROUND attribute to each of its 
+sources. If there are no sources on the
+dependency line, then it is as if you gave PMake the
+.B \-b
+flag.
+.IP .BEGIN \n(pwu
+.Ix 0 def .BEGIN
+Any commands attached to this target are executed before anything else
+is done. You can use it for any initialization that needs doing.
+.IP .DEFAULT \n(pwu
+This is sort of a .USE rule for any target (that was used only as a
+source) that
+.Pm
+can't figure out any other way to create. Only the shell script is used. The
+.B .IMPSRC
+variable of a target that inherits
+.B .DEFAULT 's
+commands is set to the target's own name.
+.IP .END \n(pwu
+This serves a function similar to
+.BR .BEGIN :
+commands attached to it are executed once everything has been
+re-created (so long as no errors occurred). It also serves the extra
+function of being a place on which PMake can hang commands you put off
+to the end. Thus the script for this target will be executed before
+any of the commands you save with the ``.\|.\|.''. 
+.IP .EXPORT \n(pwu
+The sources for this target are passed to the exportation system compiled
+into
+.Pm .
+Some systems will use these sources to configure
+themselves. You should ask your system administrator about this.
+.IP .IGNORE \n(pwu
+This target marks each of its sources with the
+.B .IGNORE
+attribute. If you don't give it any sources, then it is like
+giving the
+.B \-i
+flag.
+.IP .INCLUDES \n(pwu
+The sources for this target are taken to be suffixes that indicate a
+file that can be included in a program source file.
+The suffix must have already been declared with
+.B .SUFFIXES
+(see below).
+Any suffix so marked will have the directories on its search path
+(see
+.B .PATH ,
+below) placed in the
+.B .INCLUDES
+variable, each preceded by a
+.B \-I
+flag. 
+The
+.B .h
+suffix is already marked in this way in the system makefile.
+.IP .INTERRUPT \n(pwu
+When PMake is interrupted,
+it will execute the commands in the script for this target, if it
+exists. 
+.IP .LIBS \n(pwu
+This does for libraries what
+.B .INCLUDES
+does for include files, except the flag used is
+.BR \-L ,
+as required by those linkers that allow you to tell them where to find
+libraries. The variable used is
+.BR .LIBS .
+.IP .MAIN \n(pwu
+If you didn't give a target (or targets) to create when you invoked
+PMake, it will take the sources of this target as the targets to
+create.
+.IP .MAKEFLAGS \n(pwu
+This target provides a way for you to always specify flags for PMake
+when the makefile is used. The flags are just as they would be typed
+to the shell,
+though the
+.B \-f
+and
+.B \-r
+flags have no effect.
+.IP .NULL \n(pwu
+This allows you to specify what suffix
+.Pm
+should pretend a file has if, in fact, it has no known suffix. Only
+one suffix may be so designated. The last source on the dependency
+line is the suffix that is used (you should, however, only give one
+suffix.\|.\|.).
+.IP .PATH \n(pwu
+If you give sources for this target, PMake will take them as
+directories to search for files it cannot find in the current
+directory. If you give no sources, it will clear out any directories
+added to the search path before. 
+.IP .PATH\fIsuffix\fP \n(pwu
+This does a similar thing to
+.BR .PATH ,
+but it does it only for files with the given suffix. The suffix must
+have been defined already.
+.IP .PRECIOUS \n(pwu
+Gives the
+.B .PRECIOUS
+attribute to each source on the dependency line, unless there are no
+sources, in which case the
+.B .PRECIOUS
+attribute is given to every target in the file.
+.IP .RECURSIVE \n(pwu
+Applies the
+.B .MAKE
+attribute to all its sources. It does nothing if you don't give it any sources.
+.IP .SHELL \n(pwu
+Tells
+.Pm
+to use some other shell than the Bourne Shell.
+The sources for the target are organized as
+\fIkeyword\fP\fB=\fP\fIvalue\fP strings. If a \fIvalue\fP contains
+whitespace, it may be surrounded by double-quotes to make it a single
+word. The possible sources are:
+.RS
+.IP "\fBpath=\fP\fIpath\fP"
+Tells where the shell actually resides. If you specify this and nothing else, PMake will use the
+last component of the path to find the specification. Use this if you just
+want to use a different version of the Bourne or C Shell (PMake knows
+how to use the C Shell too).
+.IP "\fBname=\fP\fIname\fP"
+This is the name by which the shell is to be known. It is a single
+word and, if no other keywords are specified (other than
+.BR path ),
+it is the name by which PMake attempts to find a specification for the
+it. You can use this if you would just rather use
+the C Shell than the Bourne Shell (``\c
+.BR ".SHELL: name=csh" ''
+will do it).
+.IP "\fBquiet=\fP\fIecho-off command\fP"
+The command
+.Pm
+should send to stop the shell from printing its commands. Once echoing
+is off, it is expected to remain off until explicitly turned on.
+.IP "\fBecho=\fP\fIecho-on command\fP"
+The command PMake should give to turn echoing back on again.
+.IP "\fBfilter=\fP\fIprinted echo-off command\fP"
+Many shells will echo the echo-off command when it is given. This
+keyword tells PMake in what format the shell actually prints the
+echo-off command. Wherever PMake sees this string in the shell's
+output, it will delete it and any following whitespace, up to and
+including the next newline. 
+.IP "\fBechoFlag=\fP\fIflag to turn echoing on\fP"
+The flag to pass to the shell to turn echoing on at the start.  If
+either this or the next flag begins with a `\-', the flags will be
+passed to the shell as separate arguments. Otherwise, the two will be
+concatenated.
+.IP "\fBerrFlag=\fP\fIflag to turn error checking on\fP"
+Flag to give the shell to turn error checking on at the start.
+.IP "\fBcheck=\fP\fIcommand to turn error checking on\fP"
+The command to make the shell check for errors or to print the command
+that's about to be executed (%s indicates where the command to print
+should go), if hasErrCtl is "no".
+.IP "\fBignore=\fP\fIcommand to turn error checking off\fP"
+The command to turn error checking off or the command to execute a
+command ignoring any errors. "%s" takes the place of the command.
+.IP "\fBhasErrCtl=\fP\fIyes or no\fP"
+This takes a value that is either
+.B yes
+or
+.BR no ,
+telling how the "check" and "ignore" commands should be used.
+NOTE: If this is "no", both the check and ignore commands should
+contain a \en at their end if the shell requires a newline before
+executing a command.
+.RE
+.IP "\&" \n(pwu
+The strings that follow these keywords may be enclosed in single or
+double quotes (the quotes will be stripped off) and may contain the
+usual C backslash-characters.
+.IP .SILENT \n(pwu
+Applies the
+.B .SILENT
+attribute to each of its sources. If there are no sources on the
+dependency line, then it is as if you gave PMake the
+.B \-s
+flag.
+.IP .SUFFIXES \n(pwu
+This is used to give new file suffixes for PMake to handle. Each
+source is a suffix PMake should recognize. If you give a
+.B .SUFFIXES
+dependency line with no sources, PMake will forget about all the
+suffixes it knew (this also nukes the null suffix).
+For those targets that need to have suffixes defined, this is how you do it.
+.PP
+In addition to these targets, a line of the form
+.DS
+\fIattribute\fP : \fIsources\fP
+.DE
+applies the
+.I attribute
+to all the targets listed as
+.I sources
+except as noted above.
+.SH THE POWER OF SUFFIXES
+.PP
+One of the best aspects of both
+.I Make
+and
+.Pm
+comes from their understanding of how the suffix of a file pertains to
+its contents and their ability to do things with a file based solely on its
+suffix.
+.Pm
+also has the ability to find a file based on its suffix,
+supporting different types of files being in different directories.
+The former ability derives from the existence of so-called
+transformation rules while the latter comes from the specification of
+search paths using the
+.B .PATH
+target.
+.SS TRANSFORMATION RULES
+.PP
+A special type of dependency, called a transformation rule, consists
+of a target made of
+two known suffixes stuck together followed by a shell script to transform a
+file of one suffix into a file of the other.
+The first suffix is the suffix of the source file and the second is that of
+the target file.
+E.g. the target ``.c.o,'' followed by commands,
+would define a transformation from files with the
+``.c'' suffix to those with the ``.o'' suffix.
+A transformation rule has no source files associated with it, though
+attributes may be given to one in the usual way. These attributes are
+then applied to any target that is on the ``target end'' of a
+transformation rule.
+The suffixes that are concatenated must be already known to
+.Pm
+in order for their concatenation to be recognized as a transformation,
+i.e. the suffixes must have been the source for a .SUFFIXES target at some
+time before the transformation is defined.
+Many transformations are defined in the system makefile (qv.
+.BR FILES )
+and I refer you there for more examples as well as to find what is
+already available (you should especially note the various variables
+used to contain flags for the compilers, assemblers, etc., used to
+transform the files. These variables allow you to customize the
+transformations to your own needs without having to redefine them).
+A transformation rule may be defined more than once, but only the last
+such definition is remembered by
+.Pm .
+This allows you to redefine the transformations in the system makefile if
+you wish.
+.PP
+Transformation rules are used only when a target has no commands associated
+with it,
+both to find any additional files on which it depends and to attempt to
+figure out just how to make the target should it end up being out-of-date.
+When a transformation is found for a target, another of the seven ``local''
+variables mentioned earlier is defined:
+.RS
+.IP ".IMPSRC (<)"
+The name/path of the source from which the target is to be transformed (the
+``implied'' source).
+.RE
+.PP
+For example,
+given the following makefile:
+.DS
+a.out : a.o b.o
+	$(CC) $(.ALLSRC)
+.DE
+and a directory containing the files a.o, a.c and b.c,
+.Pm
+will look at the list of suffixes and transformations given in the
+built-in rules and find that the suffixes ``.c'' and ``.o'' are both
+known and there is a transformation rule defined from one to the other
+with the command ``$(CC) $(CFLAGS) -c $(.IMPSRC).''  Having found
+this, it can then check the modification times of both a.c and b.c and
+execute the command from the transformation rule as necessary in order
+to update the files a.o and b.o.
+.PP
+.Pm ,
+unlike
+.I Make
+before it,
+has the ability to apply several transformations to a file even if the
+intermediate files do not exist.
+Given a directory containing a .o file and a .q file, and transformations
+from .q to .l, .l to .c and .c to .o,
+.Pm
+will define a transformation from .q \*(-> .o using the three transformation
+rules you defined.
+In the event of two paths between the same suffixes, the shortest path will be
+chosen between the target and the first existing file on the path.
+So if there were also a transformation from .l files to .o files,
+.Pm
+would use the path .q \*(-> .l \*(-> .o instead
+of .q \*(-> .l \*(-> .c \*(-> .o.
+.PP
+Once an existing file is found,
+.Pm
+will continue to look at and record transformations until it comes to a
+file to which nothing it knows of can be transformed,
+at which point it will stop looking and use the path it has already found.
+.PP
+What happens if you have a .o file, a .q file and a .r file, all with
+the same prefix, and transformations from .q \*(-> .o and .r \*(-> .o?
+Which transformation will be used?
+.Pm
+uses the order in which the suffixes were given on the
+.B .SUFFIXES
+line to decide between transformations: whichever suffix came first,
+wins.
+So if the three suffixes were declared
+.DS
+\&.SUFFIXES : .o .q .r
+.DE
+the .q \*(-> .o transformation would be applied. Similarly, if they were
+declared as
+.DS
+\&.SUFFIXES : .o .r .q
+.DE
+the .r \*(-> .o transformation would be used.
+You should keep this in mind when writing such rules.
+Note also that because the placing of a suffix on a
+.B .SUFFIXES
+line doesn't alter the precedence of previously-defined
+transformations,
+it is sometimes necessary to clear the whole lot of them out and start
+from scratch. This is what the
+.BR .SUFFIXES -only
+line, mentioned earlier, will do.
+.SH SEARCH PATHS
+.PP
+.Pm
+also supports the notion of multiple directories in a more flexible,
+easily-used manner than has been available in the past.
+You can define a list of directories in which to search for any and
+all files that aren't in the current directory by giving the directories
+as sources to the
+.B .PATH
+target. The search will only be conducted for those files used only as
+sources, on the assumption that files used as targets will be created
+in the current directory.
+.PP
+The line
+.DS
+\&.PATH : RCS
+.DE
+would tell
+.Pm
+to look for any files it is seeking (including ones made up by means
+of transformation rules) in the RCS directory as well as the current
+one. Note, however, that this searching is only done if the file is
+used only as a source in the makefile. I.e. if the file cannot be
+created by commands in the makefile.
+.PP
+A search path specific to files with a given suffix can also be
+specified in much the same way.
+.DS
+\&.PATH.h : h /sprite/lib/include
+.DE
+causes the search for header files to be conducted in the h and
+/sprite/lib/include directory as well as the current one.
+.PP
+When expanding wildcards, these paths are also used. If the pattern
+has a recognizable suffix, the search path for that suffix is used.
+Otherwise, the path defined with the regular
+.B .PATH
+target is used.
+.PP
+When a file is found somewhere other than the current directory, its
+name is replaced by its full pathname in any ``local'' variables.
+.PP
+Two types of suffixes are given special attention when a search path is defined
+for them. On most systems, the C compiler lets you specify where to
+find header files (.h files) by means of
+.B \-I
+flags similar to those used by
+.Pm .
+If a search path is given for any suffix used as a source for the
+.B .INCLUDES
+target, the variable
+.B $(.INCLUDES)
+will be set to contain all the directories on the path, in the order
+given, in a format which can be passed directly to the C compiler.
+Similarly, on some systems, one may give directories to search for
+libraries to the compiler by means of
+.B \-L
+flags.
+Directories on the search path for a suffix which was the source of the
+.B .LIBS
+target will be placed
+in the
+.B $(.LIBS)
+variable ready to be passed to the compiler.
+.SH LIBRARIES AND ARCHIVES
+.PP
+Two other special forms of sources are recognized by
+.Pm .
+Any source that begins with the characters ``-l'' or ends in a suffix
+that is a source for the
+.B .LIBS
+target is assumed to be a library, and any source that contains a left
+parenthesis in it is considered to be a member (or members) of an archive.
+.PP
+Libraries are treated specially mostly in how they appear in the local
+variables of those targets that depend on them. If the system supports the
+.B \-L
+flag when linking, the name of the library (i.e. its ``-l'' form) is
+used in all local variables.
+.Pm
+assumes that you will use the $(.LIBS) variable in the appropriate place.
+If, however, the system does not have this feature, the name is
+expanded to its full pathname before it is placed in any local
+variable.
+.PP
+One problem with libraries is they have a table of contents in them
+and when the file is touched (so the file's modification time and the
+time listed in the table of contents don't match), the library is
+declared to be ``out-of-date'' by the linker and the final linking
+stage of creating your program fails miserably. To avoid this problem,
+when you use the
+.B \-t
+flag,
+.Pm
+updates the time of the table of contents for the library, as well as
+the library itself.
+.PP
+The process of creating a library or archive can be a painful one,
+what with all the members having to be kept outside the archive as
+well as inside it in order to keep them from being recreated.
+.Pm
+has been set up, however, to allow you to reference files that are in
+an archive in a relatively painless manner.
+The specification of an archive member is written as:
+.DS
+\fIarchive\fP(\fImember\fP [\fImember\fP...])
+.DE
+Both the open and close parenthesis are required and there may be any
+number of members between them (except 0, that is). Members may also
+include wildcards characters.  When such a source is examined, it is
+the modification time of the member, as recorded in the archive, that
+is used to determine its datedness.
+.PP
+If an archive member has no commands associated with it,
+.Pm
+goes through a special process to find commands for it.
+First, implicit sources are sought using the ``member'' portion of the
+specification. So if you have something like
+``libcompat.a(procFork.o)'' for a target,
+.Pm
+attempts to find sources for the file ``procFork.o,'' even if it
+doesn't exist. If such sources exist,
+.Pm
+then looks for a transformation rule from the member's suffix to the
+archive's (in this case from .o \*(-> .a) and tacks those commands on
+as well.
+.PP
+To make these transformations easier to write,
+three local variables are defined for the target:
+.IP ".ARCHIVE (%)
+The path to the archive file.
+.IP ".MEMBER (!)
+The actual member name (literally the part in parentheses).
+.IP ".TARGET (@)
+The path to the file which will be archived, if it is only a source,
+or the same as the 
+.B .MEMBER
+variable if it is also a target.
+.PP
+Using the transformations already in the system makefile, a makefile
+for a library might look something like this:
+.DS
+OBJS = procFork.o procExec.o procEnviron.o fsRead.o
+\&.o.a :
+	...
+	rm -f $(.MEMBER)
+
+lib.a : lib.a($(OBJS))
+	ar cru $(.TARGET) $(.OODATE)
+	ranlib $(.TARGET)
+.DE
+.PP
+You might be wondering,
+at this point,
+why I did not define the .o \*(-> .a transformation like this:
+.DS
+\&.o.a :
+	ar r $(.ARCHIVE) $(.TARGET)
+	...
+	rm -f $(.TARGET)
+.DE
+The reason is simple: you cannot execute ``ar'' on the same file
+several times at once. If you try, you end up with a corrupted
+archive.
+So rather than reduce
+.Pm
+to executing only one job at a time, I chose to archive all the
+out-of-date files at once (this turns out to be faster anyway).
+.SH OUTPUT
+.PP
+When creating targets in parallel,
+several shells are executing at once,
+each wanting to write its own two cent's worth onto the screen.
+This output must be captured by
+.Pm
+in some way in order to prevent the screen from being filled with
+garbage even more indecipherable than one can already get from these programs.
+.Pm
+has two ways of doing this,
+one of which provides for much cleaner output and a clear delineation between
+the output of different jobs,
+the other of which provides a more immediate response so one can tell what is
+really happening.
+The former is done by notifying the user when the creation of a given target
+starts, capturing the output, and transferring it
+to the screen when the job finishes,
+preceded by an indication as to which job produced the output.
+The latter is done by catching the output of the shell (and its children)
+and buffering it until an entire line is received, then printing
+that line preceded by the name of the job from which the line came.
+The name of the job is just the target which is being created by it.
+Since I prefer this second method,
+it is the one used by default.
+The first method will be used if the
+.B \-P
+flag is given to
+.Pm .
+.SH PARALLELISM
+.PP
+As mentioned before,
+.Pm
+attempts to create several targets at once.
+On some systems where load balancing or process migration is in
+effect, the amount of concurrency which can be used will be much
+greater than on others. During the development of
+.Pm ,
+I found that while one could create up to five targets at once on a
+Sun 3 without making the machine unusable, attempting the same feat
+on a Sun 2 would grind the machine into the dirt, most likely making
+the whole process run slower than it would have under
+.IR Make .
+In addition, the use of
+.Pm
+on a multi-user machine (in contrast to a workstation) calls for
+judicious use of concurrency to avoid annoying the other users. The
+ability to execute tasks in parallel, in combination with the
+execution of only one shell per target, brings about decreases in
+creation time on the order of 25%\-60%.
+.PP
+The
+.B \-J
+and
+.B \-L
+flags are used to control the number of shells executing at once and
+should be used to find the best level for your machine. Once this is
+found, the default level can be set at that point and
+.Pm
+recompiled.
+.SH BACKWARD-COMPATIBILITY
+.PP
+.Pm
+was designed to be as backwards-compatible with
+.I Make
+as possible.
+In spite of this, however, there are a few major differences which may
+cause problems when using old makefiles:
+.IP 1)
+The variable substitution, as mentioned earlier, is very different and
+will cause problems unless the makefile is converted or the
+.B \-V
+flag is given.
+.IP 2)
+Because targets are created in parallel, certain sequences which
+depend on the sources of a target being created sequentially will fail
+miserably. E.g.:
+.DS
+prod : $(PROGRAM) clean
+.DE
+This is liable to cause some of the object files to be removed after
+having been created during the current invocation (or, at the very
+least, the object files will not be removed when the program has been
+made), leading to errors in the final linking stage. This problem
+cannot even be gotten around by limiting the maximum concurrency to
+one, since the traversal of the dependency graph is done in a
+breadth-first, rather than a depth-first way. This can only be gotten
+around by rewriting the makefile, or by invoking
+.Pm
+with the
+.B \-M
+flag.
+.PP
+One other possible conflict arises because
+.Pm
+forks only one shell to execute the commands to re-create a target.
+This means that changes of directory, environment, etc., remain in
+effect throughout the creation process. It also allows for a more
+natural entry of shell constructs, such as the ``for'' and ``while''
+loops in the Bourne shell, without the need for backslashes and
+semi-colons required by the one-shell-per-command paradigm used by
+.IR Make .
+This shouldn't pose any serious difficulties (or even any trivial ones
+so far as I can see), but should,
+in fact,
+make life a little easier. It is, however, possible to have
+.Pm
+execute each command in a single shell by giving it the
+.B \-B
+flag.
+.SH FILES
+.ta \w'/sprite/lib/pmake/sys.mk  'u
+Makefile or makefile	default input file
+.br
+/sprite/lib/pmake/sys.mk	System makefile (the built-in rules)
+.SH ENVIRONMENT
+.ta \w'\fBPMAKE\fP    'u
+\fBPMAKE\fP	Flags PMake should always use when invoked.
+.SH SEE ALSO
+.IR make (1)
+for a more complete explanation of the lower-case flags to
+.Pm .
+.SH KEYWORDS
+make, transformation
+.SH AUTHOR
+Adam de Boor

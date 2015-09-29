@@ -1,0 +1,99 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/mklfs/RCS/mklfs.man,v 1.3 91/12/17 22:14:25 jhh Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS MKLFS cmds
+.BS
+.SH NAME
+mklfs \- Create an empty LFS file system on a disk partition.
+.SH SYNOPSIS
+.nf
+\fBmklfs [\fIoptions\fR] \fIdeviceName\fR [\fIprefix\fR]
+.SH OPTIONS
+.IP \fIdeviceName\fP 14
+The device on which the file system should be created. This device
+should be a disk partition complete with a disk label that specifies
+its size.  WARNING: THE CONTENTS OF THIS DEVICE ARE OVERWRITTEN BY MKLFS.
+.IP \fIprefix\fP 14
+Name of the file system (its prefix).
+You only need to specify this prefix if you wish to have the
+file system automatically mounted by \fBfsmount\fP 
+during the boot sequence.
+You can manually mount the file system under any name you want via the
+\fBprefix\fP command.
+.IP "\fB\-maxNumCacheBlocks\fI NumCacheBlocks\fR" 14
+\fINumCacheBlocks\fP is the maximum number of file cache blocks 
+available on the machine. This number defaults to the maximum number
+on the machine running the program.  
+.IP "\fB\-maxCacheBlocksCleaned\fI NumCacheBlocks\fR" 14
+\fINumCacheBlocks\fP is the maximum number of file cache files
+that will be reserved for cleaning. A negative value causes mklfs to 
+compute this number based on the segment and file cache size.
+.IP "\fB\-spriteID\fI id\fR" 14
+\fIid\fP is the Sprite hostname id specified in the superblock.  This
+id is used to inform a machine of its name at boot time.  It defaults
+to the Sprite ID of the machine running mklfs.
+.IP "\fB\-maxUtilization\fI Utilization\fR" 14
+\fIUtilization\fP is the maximum fraction of the disk space usable by
+the file system.  
+.IP "\fB\-maxDesc\fI NumDesc\fR" 14
+\fINumDesc\fP is the maximum number of descriptors available in the
+file system. A negative value causes mklfs to compute this number
+based on the disk size.
+.IP "\fB\-segAlignment\fI Alignment\fR" 14
+\fIAlignment\fP is the alignment in bytes where the first segment should start.
+.IP "\fB\-blockSize\fI size\fR" 14
+\fIsize\fP is block size of the file system in bytes. The block
+size is the minimum unit of allocation and should be a multiple of
+the device's sector size.
+.IP "\fB\-segmentSize\fI size\fR" 14
+\fIsize\fP is the segment size of the file system in bytes. The segment
+size should be a multiple of the block size.
+.IP "\fB\-numSegments\fI NumSegments\fR" 14
+\fINumSegments\fP is the number of segments to use on the file system. A
+negative value causes mklfs to compute the number of segments based on
+the size of the disk.
+.IP "\fB\-descBlockSize\fI size\fR" 14
+\fIsize\fP is the size in bytes of the blocks used to store
+file descriptors in the log. This number should be a multiple of the
+block size.
+.IP "\fB\-descMapBlockSize\fI size\fR" 14
+\fIsize\fP is the block size in byte used for the descriptor
+map data structure. This number should be a multiple of the
+block size.
+.IP "\fB\-usageArrayBlockSize\fI size\fR" 14
+\fIsize\fP is the block size in byte used for the segment
+usage array data structure. This number should be a multiple of the
+block size.
+.IP "\fB\-verbose\fR" 14
+Print the values used for the parameters.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBMklfs\fR will create an empty Sprite LFS filesystem on a disk partition. 
+The filesystem is created to use the
+entire disk partition and initialized to look like an Sprite LFS
+file system containing a root directory with a lost+found directory.
+Care should be taken because anything already present on the partition
+will be overwritten.
+.PP
+\fBMklfs\fR has a large number of options that control the maximum limits of
+various file system data structures, the characteristic of the machine
+that will the device for the file system, and the disk layout format
+the file system.
+All options except the deviceName specifier are optional and default
+to reasonable values if not specified.
+If the program is being run on a machine other than the one that 
+the machine to which the disk will be attached from, the options 
+that describe the machine characteristic will need to be specified.
+.SH KEYWORDS
+filesystem, LFS, sprite
+

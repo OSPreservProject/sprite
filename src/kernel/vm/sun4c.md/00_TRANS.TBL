@@ -1,0 +1,8 @@
+D CVS_ADM                           	CVS.adm
+D SCVS                              	SCVS
+L VMMACH.H;1                        	vmMach.h	../sun4.md/vmMach.h
+L VMMACHIN.H;1                      	vmMachInt.h	../sun4.md/vmMachInt.h
+L VMMACHST.H;1                      	vmMachStat.h	../sun4.md/vmMachStat.h
+L VMSUN.C;1                         	vmSun.c	../sun4.md/vmSun.c
+L VMSUNASM.S;1                      	vmSunAsm.s	../sun4.md/vmSunAsm.s
+L VMSUNCON.H;1                      	vmSunConst.h	../sun4.md/vmSunConst.h

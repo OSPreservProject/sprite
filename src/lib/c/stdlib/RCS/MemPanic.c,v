@@ -1,0 +1,112 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.06.17.18.07.00;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.05.20.15.49.18;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.02.20.36.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Use exit, not Proc_Exit.
+@
+text
+@/* 
+ * MemPanic.c --
+ *
+ *	Source code for the "MemPanic" procedure, which is used
+ *	internally by the memory allocator to die gracefully after
+ *	an unrecoverable error.  Different programs or uses of the
+ *	allocator may replace this procedure with something more
+ *	suitable for the particular program or use.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: MemPanic.c,v 1.1 88/05/20 15:49:18 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <sys.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MemPanic --
+ *
+ *	MemPanic is a procedure that's called by the memory allocator
+ *	when it has uncovered a fatal error.  MemPanic prints the 
+ *	message and aborts.  It does NOT return.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The program is exited.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MemPanic(message)
+    char *message;
+{
+    Sys_Panic(SYS_FATAL, "MemPanic: %s\n", message);
+    exit(1);
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/MemPanic.c,v 1.2 88/06/17 18:07:00 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+a25 1
+#include <proc.h>
+d50 1
+a50 1
+    Proc_Exit(1);
+@

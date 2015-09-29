@@ -1,0 +1,1 @@
+/sprite/src/attcmds/file//machTypeSparc.c

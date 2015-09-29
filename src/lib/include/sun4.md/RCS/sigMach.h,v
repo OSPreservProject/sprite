@@ -1,0 +1,71 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.07.14.09.29.17;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.25.13.36.48;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Sigmach.h for sun4.
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@/*
+ * sigMach.h --
+ *
+ *     Machine dependent data structures and procedure headers exported by the
+ *     the signal module.  These are are for the sparc hardware.
+ *
+ * Copyright (C) 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/sun4.md/RCS/sigMach.h,v 1.1 89/01/25 13:36:48 mendel Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _SIGMACH
+#define _SIGMACH
+
+/*
+ * The different machine dependent codes for an illegal instruction signal
+ */
+
+
+#endif /* _SIGMACH */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: sigMach.h,v 1.1 88/07/02 15:43:51 ouster Exp $ SPRITE (Berkeley)
+d27 1
+a27 1
+#endif _SIGMACH
+@

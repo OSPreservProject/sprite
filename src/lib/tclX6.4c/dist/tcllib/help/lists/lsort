@@ -1,0 +1,4 @@
+          lsort list
+               Sort  the  elements  of  list,  returning a new list in
+               sorted order.  ASCII sorting is used, with  the  result
+               in increasing order.

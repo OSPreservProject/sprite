@@ -1,0 +1,27 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.08.09.16.39.50;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@awk script to ease debugging of hard-params.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@{if ($1 != "#") {print} else {print "/*", $0, "*/"}}
+@

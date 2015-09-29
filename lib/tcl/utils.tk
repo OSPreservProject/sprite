@@ -1,0 +1,568 @@
+#
+# utils.tk
+#	These are convenience procedures that ease construction of
+#	buttons, listboxes, etc.  They define all the colors of the
+#	widgets based on a set of complementary colors that can
+#	be defined externally.  (See also colors.tk.)
+#
+#	Buttons
+#		buttonFrame
+#		simpleButton
+#		packedButton
+#		packedCheckButton
+#		packedRadioButton
+#	Menu
+#		basicMenu
+#		packedMenuButton
+#	Scrollbar
+#		basicScrollbar
+#	Listbox
+#		labeledListbox
+#		unixCommandListbox
+#	Entry
+#		labeledEntry
+#		commandEntry
+#		labeledEntryWithDefault
+#	Feedback
+#		feedbackSetup
+#		feedback
+#	Toplevel
+#		notifier
+#	Message
+#		unixCommandMessageButton
+#		unixCommandMessage
+#
+
+#
+# to_tx - insert characters into the tx command stream.  This is used to
+# feed commands to the csh running in the tx that started this program.
+#
+proc to_tx {str} {
+	puts stdout "\33insert \"$str\\n\"\n"
+}
+
+#
+# selfName - determine the name of a nested widget
+#	parent is either "." or ".foo.bar"
+#	name is ".zork"
+#
+proc selfName { parent name } {
+    if {[string compare $parent "."] == 0} {
+	set self $name
+    } else {
+	set self $parent$name
+    }
+    return $self
+}
+
+# Default font for buttons, labels, menus
+set buttonFont		fixed
+set labelFont		fixed
+set menuFont		fixed
+set entryFont		fixed
+
+#
+# Default colors.
+# See also colors.tk for a better setColorCube
+#
+set backgroundColor		#cb02dd
+set paleBackground		#ffceff
+set foregroundColor		black
+set passiveColor		#eeadf3
+set activeColor			#f154ff
+
+proc setColorCube { foo } { }
+proc getColorCube { } { }
+
+#
+# buttonFrame creates a frame that is designed to hold a row of buttons
+#
+proc buttonFrame { parent {name .buttons} {border 10} } {
+    global backgroundColor
+    set self [selfName $parent $name]
+    set color [format #%02x%02x%02x 240 128 0]
+    frame $self -borderwidth $border -background $backgroundColor
+    pack append $parent $self {top fillx}
+    return $self
+}
+#
+# packedButton adds a button to a row of buttons
+#
+proc packedButton { parent name label command {position left} {color default} } {
+    global foregroundColor activeColor passiveColor
+    global buttonFont
+
+    set savedColor [getColorCube]
+    if {[string compare $color "default"] != 0} {
+	setColorCube $color
+    }
+    set self [selfName $parent $name]
+    button $self -text $label -command $command \
+	-font $buttonFont \
+	-background $passiveColor \
+	-foreground $foregroundColor \
+	-activebackground $activeColor \
+	-activeforeground $passiveColor
+    pack append $parent $self $position
+    setColorCube $savedColor
+    return $self
+}
+#
+# simpleButton makes some simplifying assumptions - similar to packedButton
+#
+proc simpleButton { label command {position left} {color default} } {
+    global foregroundColor activeColor passiveColor
+
+    set savedColor [getColorCube]
+    if {[string compare $color "default"] != 0} {
+	setColorCube $color
+    }
+    set self [selfName $parent $name]
+    button $self -text $label -command $command \
+	-background $passiveColor \
+	-foreground $foregroundColor \
+	-activebackground $activeColor
+    pack append $parent $self $position
+    setColorCube $savedColor
+    return $self
+}
+#
+# packedCheckButton
+#
+proc packedCheckButton { parent name label command { variable selectedButton } {position left} } {
+    global passiveColor foregroundColor activeColor
+
+    set self [selfName $parent $name]
+    checkbutton $self -text $label -command $command \
+	-variable $variable \
+	-background $passiveColor \
+	-foreground $foregroundColor \
+	-activebackground $activeColor \
+	-selector $activeColor
+    pack append $parent $self $position
+    return $self
+
+}
+
+#
+# packedRadioButton
+#
+proc packedRadioButton { parent name label command { variable selectedButton } {position left} } {
+    global passiveColor foregroundColor activeColor
+
+    set self [selfName $parent $name]
+    radiobutton $self -text $label -command $command \
+	-variable $variable \
+	-background $passiveColor \
+	-foreground $foregroundColor \
+	-activebackground $activeColor \
+	-selector $activeColor
+    pack append $parent $self $position
+    return $self
+
+}
+
+#
+# Basic Menu
+#
+proc basicMenu { name } {
+    global foregroundColor
+    global activeColor
+    global backgroundColor
+    global paleBackground
+    global passiveColor
+
+    global menuFont
+
+    set self [menu $name -font $menuFont \
+	-selector $activeColor \
+	-background $passiveColor \
+	-foreground $foregroundColor \
+	-activeforeground $paleBackground \
+	-activebackground $activeColor]
+
+    return $self
+}
+#
+# packedMenuButton adds a menubutton to a row of buttons
+#
+proc packedMenuButton { parent name label menu {position left} {color default} } {
+    global foregroundColor activeColor passiveColor paleBackground
+    global menuFont
+
+    set savedColor [getColorCube]
+    if {[string compare $color "default"] != 0} {
+	setColorCube $color
+    }
+    set self [selfName $parent $name]
+    menubutton $self -text $label -menu $menu \
+	-relief raised \
+	-font $menuFont \
+	-background $passiveColor \
+	-foreground $foregroundColor \
+	-activebackground $activeColor \
+	-activeforeground $paleBackground
+    pack append $parent $self $position
+    setColorCube $savedColor
+    return $self
+}
+# menuAndButton
+
+proc menuAndButton { menubar name label {where {left}} } {
+    set menu [basicMenu $menubar${name}Menu]
+    packedMenuButton $menubar ${name}Buttton $label $menu $where
+    return $menu
+}
+#
+# basicScrollbar
+#
+proc basicScrollbar { parent command
+		      {where {left filly frame w}}
+		      {name .scroll} } {
+    global passiveColor activeColor paleBackground backgroundColor
+    set self [scrollbar $parent$name -command "$command" \
+	-background $backgroundColor \
+	-foreground $passiveColor \
+	-activeforeground $activeColor]
+    pack append $parent $self $where
+}
+#
+# labeledListbox creates a listbox that has a label above it
+#
+proc labeledListbox { parent name
+		    {text "Label"} {geometry 10x5} {position left} } {
+    global passiveColor activeColor paleBackground
+    set self [selfName $parent $name]
+    frame   $self  -background $passiveColor
+    label   $self.label -text $text -background $passiveColor
+    scrollbar $self.scroll -command "$self.list view" \
+	-background $paleBackground -foreground $passiveColor \
+	-activeforeground $activeColor
+    listbox $self.list -geometry $geometry -scroll "$self.scroll set" \
+	-background $paleBackground -selectbackground $activeColor
+    pack append $parent $self "$position"
+    pack append $self $self.label {top} $self.scroll {right filly} $self.list {left expand fill}
+    return $self
+}
+#
+# labeledEntry creates an entry that has a label to its left
+#
+proc labeledEntry { parent name {label "Entry:"} {width 20} {where {left} }} {
+    global foregroundColor backgroundColor paleBackground
+    global passiveColor activeColor
+    global labelFont entryFont
+
+    set self [selfName $parent $name]
+    # Geometry and Packing
+    frame $self -borderwidth 2 -background $backgroundColor -relief raised
+    label $self.label -text $label -background $paleBackground -font $labelFont
+    entry $self.entry -width $width  -font $entryFont \
+		-background $paleBackground \
+		-foreground $foregroundColor \
+		-selectforeground $passiveColor \
+		-selectbackground $activeColor
+    pack append $parent $self $where
+    pack append $self $self.label {left} \
+			$self.entry {right fillx expand}
+
+    $self.entry cursor 0
+
+    return $self
+}
+
+# commandEntry --
+# An entry widget for entering commands
+proc commandEntry { parent { width 20 } { where {bottom fillx expand} } } {
+    set self [labeledEntry $parent .command "Command:" $width $where]
+    bind $self.entry <Return> "eval \[$self.entry get\]"
+    return $self
+}
+
+#
+# Entry with default value remembered in /tmp/file
+#
+proc defaultGeneric { parent name default } {
+    if [file  exists /tmp/$parent/$name] {
+	return [exec cat /tmp/$parent/$name]
+    } else {
+	if {! [file isdirectory /tmp/$parent]} {
+	    exec mkdir /tmp/$parent
+	}
+    }
+    exec echo $default > /tmp/$parent/$name
+    return [exec cat /tmp/$parent/$name]
+
+}
+proc labeledEntryWithDefault { parent name label width default {where {bottom} } } {
+    set widget [labeledEntry $parent $name $label $width $where]
+    proc default$name { } "return \[defaultGeneric $parent $name $default\]"
+    proc get$name { } "return \[lindex \[$widget.entry get\] 0\]"
+    $widget.entry insert 0 [default$name]
+    bind $widget.entry <Return> "
+	set fileID \[open /tmp/$parent/$name w\]
+	puts \$fileID \[get$name\]
+	close \$fileID
+#	puts stdout \$parent: Remembering $name \[get$name\]\"	
+    "
+}
+
+
+#
+# feedback
+# Create a frame to hold messages, and define a procedure to display them.
+# The feedback procedure will be named
+# feedback$parent (e.g., feedback.foo)
+#
+
+proc feedbackSetup { parent name {width 58} {border 6} } {
+    global backgroundColor paleBackground
+    global _feedbackWidget
+    set self [selfName $parent $name]
+
+    frame $self -borderwidth 2 -background $backgroundColor -relief raised
+
+    entry $self.entry -width $width -background $paleBackground
+    pack append $self $self.entry {left fillx expand}
+    pack append $parent $self {left fillx expand}
+
+    # Define a per-call procedure to allow for multiple feedback widgets
+    proc feedback$parent { text } "
+	    $self.entry delete 0 end ;
+	    $self.entry insert 0 \$text ;
+	    "
+
+    # Save the name of the feedback entry for simple clients
+    set _feedbackWidget $self.entry
+
+    return $self
+}
+proc feedback { text } {
+    global _feedbackWidget
+    $_feedbackWidget delete 0 end
+    $_feedbackWidget insert 0 $text
+}
+
+#
+# notifier
+#
+proc notifier {name title text {font fixed} } {
+    global paleBackground $name
+
+    if {[info exists $name] && [expr {[string compare [set $name] 1] == 0}] } { 
+	destroy $name
+	set $name 0
+	return ""
+    } else {
+
+	toplevel $name
+	set $name 1
+
+	wm title $name $title
+    
+	buttonFrame $name
+    
+	packedButton $name.buttons .quit "Quit" "destroy $name" left
+    
+	message $name.msg -aspect 300 -font $font -text $text -background $paleBackground
+	pack append $name $name.msg {top expand}
+	return $name
+    }
+}
+
+#
+# unixCommandMessageButton -
+#   A button that runs a UNIX command and puts it output in a message widget
+#
+proc unixCommandMessageButton { parent name label title args} {
+    set self [selfName $parent $name]
+    set cmd "unixCommandMessage $name \"$title\" "
+    foreach a $args {
+	set cmd [concat $cmd $a]
+    }
+    packedButton $parent $name $label $cmd
+    return $self
+}
+#
+# unixCommandMessage -
+#  Exec a UNIX command and put the output in a message widget
+#
+proc unixCommandMessage {name title args} {
+    toplevel $name
+
+    wm title $name $title
+
+    frame $name.buttons -borderwidth 10 -background \
+	    [format "#%02x%02x%02x" 128 128 200]
+    pack append $name $name.buttons {top fillx}
+
+    packedButton $name.buttons .quit "Quit" "destroy $name" left
+
+    message $name.msg -aspect 300 -font fixed -text [eval exec $args]
+    pack append $name $name.msg {top expand}
+    return $name
+}
+#
+# unixCommandListbox -
+#  Exec a UNIX command and put the output in a labeledListbox
+#
+proc unixCommandListbox {name title label args} {
+    toplevel $name
+
+    wm title $name $title
+
+    buttonFrame $name
+
+    packedButton $name.buttons .quit "Quit" "destroy $name" left
+
+    labeledListbox $name .dir $label 20x15 left
+    foreach i [eval exec $args] {
+	$name.dir.list insert end $i
+    }
+    return $name
+}
+
+#####################################################################
+# These are additions to the entry widget bindings that rightfully
+# belong in tk.tcl, but I don't want folks to have to modify that.
+# These add mxedit-like bindings to entry widgets.
+
+# The procedure below is invoked to delete the character to the right
+# of the cursor in an entry widget.
+
+proc tk_entryDelRight w {
+    set x [$w index cursor]
+    if {$x != -1} {$w delete $x}
+}
+
+# proc to move the cursor in an entry back one character
+
+proc tk_entryBack1char w {
+    set x [$w index cursor]
+    $w cursor [incr x -1]
+}
+
+# proc to move the cursor in an entry forward one character
+
+proc tk_entryForw1char w {
+    set x [$w index cursor]
+    $w cursor [incr x +1]
+}
+
+# proc to move the cursor in an entry to the end of the line
+
+proc tk_entryEndOfLine w {
+    $w cursor end
+}
+
+# The procedure below is invoked to backspace over one character
+# in an entry widget.  The name of the widget is passed as argument.
+
+proc tk_entryBackspace w {
+    set x [expr {[$w index cursor] - 1}]
+    if {$x != -1} {$w delete $x}
+}
+
+# The procedure below is invoked to backspace over one word in an
+# entry widget.  The name of the widget is passed as argument.
+
+proc tk_entryBackword w {
+    set string [$w get]
+    set curs [expr [$w index cursor]-1]
+    if {$curs < 0} return
+    for {set x $curs} {$x > 0} {incr x -1} {
+	if {([string first [string index $string $x] " \t"] < 0)
+		&& ([string first [string index $string [expr $x-1]] " \t"]
+		>= 0)} {
+#	    puts stdout "x is $x, string is \"$string\""
+	    break
+	}
+    }
+    $w delete $x $curs
+}
+
+#
+# Binding stuff from /project/tk/demos/widget
+#
+#-------------------------------------------------------
+# The procedures below provide behavior for widgets like
+# entries and menus and menubuttons.  Eventually all of this
+# behavior should be built into the widgets, so that this
+# code becomes unnecessary.
+#-------------------------------------------------------
+
+proc bindEntry args {
+    foreach w $args {
+	bind $w <Any-KeyPress> {%W insert cursor "%A"}
+	bind $w <space> {%W insert cursor " "}
+	bind $w <ButtonPress-2> {puts stdout "character [%W index @%x]\n"}
+	bind $w <Delete> {entryBackspace %W}
+	bind $w <BackSpace> {entryBackspace %W}
+	bind $w <Control-h> {entryBackspace %W}
+	bind $w <Control-l> {entryDelRight %W}
+	bind $w <Control-w> {entryBackword %W}
+	bind $w <ButtonPress-1> {%W cursor @%x; focus %W; %W select from @%x}
+	bind $w <B1-Motion> {%W select to @%x}
+	bind $w <Shift-1> {%W select adjust @%x}
+	bind $w <Shift-B1-Motion> {%W select to @%x}
+	bind $w <ButtonPress-3> {%W scan mark %x}
+	bind $w <B3-Motion> {%W scan dragto %x}
+	bind $w <Control-d> {%W delete sel.first sel.last}
+	bind $w <Control-v> {%W insert cursor [selection get]}
+	bind $w <Control-u> {%W delete 0 end}
+    }
+}
+
+proc bindMenu args {
+    foreach w $args {
+	bind $w <Any-Enter> "$w activate @%y"
+	bind $w <Any-Leave> "$w activate none"
+	bind $w <Any-Motion> "$w activate @%y"
+	bind $w <ButtonRelease-1> "$w invoke active"
+    }
+}
+
+proc bindMenuButton args {
+    foreach w $args {
+	bind $w <Enter> "$w activate"
+	bind $w <B1-Enter> "$w activate; $w config -relief sunken; $w post"
+	bind $w <B1-Leave> "$w deactivate; $w config -relief raised"
+	bind $w <Shift-B1-Leave> "$w deactivate; $w config -relief raised"
+	bind $w <Leave> "$w deactivate"
+	bind $w <1> "$w config -relief sunken; $w post"
+	bind $w <Shift-1> "$w.m post %X %Y"
+	bind $w <ButtonRelease-1> "$w config -relief raised; $w unpost"
+	bind $w <Shift-B1-Motion> "$w.m post %X %Y"
+    }
+}
+
+proc entryBackspace win {
+    set x [expr {[$win index cursor] - 1}]
+    if {$x != -1} {$win delete $x}
+}
+
+proc entryDelRight win {
+    set x [$win index cursor]
+    if {$x != -1} {$win delete $x}
+}
+
+proc entryBackword win {
+    set contents [$win get]
+    set x [expr {[$win index cursor] - 1}]
+    for { } {$x>=0} {set x [expr $x-1]} {
+	set c [string index $contents $x]
+	if {$c != " "} {
+	    $win delete $x
+	} else {
+	    $win delete $x
+	    break
+	}
+    }
+}
+
+#
+# traceprint
+#
+proc traceprint { name op oldValue newValue } {
+    puts stdout [concat $name " " $op " " $oldValue " " $newValue "\n"]
+    return $newValue
+}

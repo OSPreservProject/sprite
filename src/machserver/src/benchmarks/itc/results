@@ -1,0 +1,253 @@
+This file contains the results of running a modified version of
+Satya's Andrew file system benchmark on a variety of machines and
+configurations.  The configurations are described at the end of
+the file.  All times are in seconds.  Unless otherwise specified,
+the measurements were taken in the Fall of 1988.
+
+Configuration		Dirs	Copy	Stat	Scan	Compile		Total
+-------------		----	----	----	----	-------		-----
+
+RISC/os M2000 Local	2	3	3	5	61		 74
+(October, 1989)		2	3	3	5	59		 72
+			2	2	3	6	59		 72
+
+AIX 3.1 RS/6000 Local	1	4	6	6	80		 97
+(May 9, 1990, run in	1	4	6	7	79		 97
+background!)		1	4	6	6	79		 96
+
+Sprite DS5000 Diskless	1	7	11	14	63		 96
+(1.112, May 10, 1992)	2	16	15	19	70		122
+			1	6	10	12	62		 91
+
+Sprite DS3100 Local	1	3	4	7	91		106
+(1.065, run at CMU,	0	3	5	6	92		106
+May 17, 1990)		1	3	4	7	92		107
+
+Mach DS5000 Local	3	11	11	18	75		118
+(3.0, MK73/UX34,	3	11	11	19	77		121
+May 10, 1992)		2	12	10	19	76		119
+
+Mach DS5000 w/ sprited	2	12	11	18	77		120
+(MK73/UX34,		3	11	12	17	78		121
+May 11, 1992)		2	11	11	18	77		119
+
+Ultrix DS5000 Local	2	8	18	22	69		119
+(4.2, July 23, 1991,	1	10	20	26	66		123
+Prestoserve)		1	10	20	21	66		118
+
+Sprite DS3100 Local	1	3	11	8	101		124
+(August 30, 1989)	1	3	11	7	98		120
+			1	3	11	7	101		123
+
+Ultrix DS5000 Local	3	11	18	16	78		126
+(3.1D, March 20, 1990)	2	13	16	17	76		124
+			3	12	15	17	77		124
+
+Ultrix DS5000 Local	4	16	15	22	76		133
+(4.2 July 23, 1991)	3	14	18	21	76		132
+			3	16	15	20	77		131
+
+Mach DS3100 Local	3	13	6	7	107		136
+(2.5, April 3, 1990)	3	10	6	9	107		135
+			3	13	6	7	107		136
+			2	11	5	10	110		138
+			2	11	6	7	105		131
+
+Sprite DS3100 Diskless	0	7	17	16	102		142
+(August 30, 1989)	1	6	15	15	93		130
+			0	6	15	16	94		131
+			1	13	18	26	145		203
+			1	10	16	14	102		143
+			0	6	14	14	94		128
+
+Ultrix DS5000, NFS	1	18	20	26	84		149
+(4.2, July 23, 1991,	2	17	19	24	79		141
+Presto on server)	1	15	19	25	81		141
+
+AIX 3.1 RS/6000 Local	1	6	9	11	130		157
+(May 9, 1990)		1	5	10	10	131		157
+			1	5	10	10	131		157
+
+Mach Sun-4 Local	2	11	11	13	122		159
+(2.5, April 4, 1990)	3	10	9	15	122		159
+			2	11	10	14	122		159
+
+Sprite Sun-4 Local	1	11	15	21	128		176
+(September 6, 1989)	1	11	15	19	128		174
+			1	9	15	19	128		172
+
+SunOS Sun-4 Local	4	15	13	20	133		185
+(4.0, 1988-1989?)	3	10	14	19	130		176
+			3	10	14	19	131		177
+
+Sprite Sun-4 Diskless	1	16	17	25	130		189
+(September 6, 1989)	1	13	17	25	128		184
+			2	12	17	25	129		185
+
+Ultrix DS5000 NFS	3	19	23	24	122		191
+(3.1D, Mar. 20, 1990)	3	19	22	22	123		189
+			3	20	23	22	118		186
+
+SunOS Sun-4 Local	4	15	15	22	134		190
+(4.0.3 Mar. 25, 1990)	3	18	14	22	133		190
+			5	16	16	21	133		191
+
+SunOS SS1 Local		3	14	16	21	139		193
+(4.0.3c Mar. 25, 1990)	4	15	15	23	140		197
+			3	14	16	23	142		198
+
+Tunix Titan Local	3	14	25	12	156		210
+			3	9	24	11	148		195
+			3	15	18	11	150		197
+
+DS3100 Mach NFS		3	21	15	19	147		205
+(2.5 April 4, 1990)	3	21	15	18	151		208
+
+Ultrix DS3100 Local	5	18	28	28	136		215
+(3.1, October 25, 1989)	6	19	30	30	133		218
+			4	21	26	29	133		213
+
+Ultrix 8800 Local	4	14	16	11	189		234
+			4	14	18	12	181		229
+			4	6	22	11	192		235
+
+Ultrix DS3100 Local	5	24	30	37	143		239
+(3.0, August 30, 1989)	4	23	30	38	138		233
+			6	20	30	36	143		235
+
+SunOS SS1 NFS		5	24	25	29	172		255
+(4.0.3c April 8, 1990)	4	20	24	28	170		246
+			4	21	24	28	168		245
+
+Ultrix DS3100 Diskless	5	33	38	35	168		279
+(3.1, Nov. 1, 1989)	5	32	41	39	154		271
+			5	34	38	38	158		273
+
+SunOS Sun-4 Diskless	5	26	31	47	171		280
+(4.0, ~1988-1989)	4	26	35	43	162		270
+			6	25	36	41	162		270
+
+SunOS Sun-4 NFS		5	30	26	31	217		309
+(4.0.3, Mar. 25, 1990)	5	28	27	35	215		310
+			4	27	30	31	213		305
+
+Ultrix DS3100 Diskless	4	41	45	50	207		347
+(3.0, Sept. 6, 1989)	5	40	48	60	191		344
+			6	42	42	54	205		349
+
+Tunix Titan Diskless	2	40	35	30	249		356
+			3	43	34	28	252		360
+			3	41	36	27	244		351
+
+Sprite Sun-3 Local	2	10	17	24	377		430
+(September 5, 1989)	1	10	17	24	375		427
+			1	10	16	25	379		431
+
+Mach RT-APC Local	5	25	22	40	347		439
+(5.1, Nov. 7, 1989)	4	24	23	40	342		433
+			5	24	21	39	344		433
+
+Sprite Sun-3 Diskless	2	16	25	33	370		446
+(September 4, 1989)	2	15	25	33	365		440
+			1	19	26	33	364		443
+
+SunOS 3.5 Sun-3 Local	4	20	28	26	419		497
+(February 4, 1990)	4	22	30	27	441		524
+			3	23	17	26	406		475
+
+Mach RT-APC Diskless	9	42	25	57	397		530
+(5.1, Nov. 26, 1989)	9	83	27	58	399		576
+(AFS RT-APC/Mach Server)7	40	24	57	404		532
+
+Mach RT-APC Diskless	4	34	30	64	476		608
+(5.1, Nov. 9, 1989)	3	36	35	65	454		593
+(AFS Sun-3/280 Server)  5	36	29	66	457		593
+
+SunOS 3.5 Sun-3 NFS	6	42	66	67	499		680
+(February 4, 1990)	5	39	56	74	493		662
+			5	37	52	63	478		635
+
+Ultrix 785 Local	6	27	80	42	813		968
+			5	23	65	39	739		871
+			6	20	67	39	878	       1010
+
+Ultrix 3.0 MVAX2 Local	7	35     100	72     1202	       1416
+(October 4, 1989)	8	34     101	72     1202	       1417
+		       11	32     100	76     1205	       1424
+
+Ultrix 3.0 MVAX2 NFS   10	59     131     105     1421	       1726
+(October 4, 1989)	9	58     127     104     1409	       1707
+			9	58     127     104     1422	       1720
+			
+
+Configuration Descriptions:
+------------- -------------
+
+Sprite Sun-3 Diskless:
+	Sun-3/75 client (16 Mbytes), Sun-3/140 server (16 Mbytes), Helios
+	SCSI 5 1/4" disk, all files, binaries, and temporaries accessed
+	remotely using Sprite operating system.
+
+Sprite Sun-3 Local:
+	Sun-3/140 (16 Mbytes), all files accessed on local Helios SCSI
+	5 1/4" disk, Sprite operating system.
+
+UNIX Sun-3 Local:
+	Sun-3/180 (16 mbytes), all files accessed on local Fujitsu Eagle
+	or Double-Eagle disk, SunOS 3.2.
+
+Sprite DS3100 Diskless:
+	DS3100 client (16 Mbytes), DS3100 server (16 Mbytes), all files,
+	binaries, and temporaries accessed remotely using Sprite operating
+	system.
+
+Sprite DS3100 Local:
+	DS3100 (16 Mbytes), everything accessed locally.
+
+Sprite DS5000 Diskless:
+	DS5000 client (32 MBytes), DS5000 server (112 Mbytes), Sun4 root
+	server (128 Mbytes); all files accessed remotely using Sprite
+
+UNIX Sun-3 Diskless:
+	Sun-3/75 client (?? Mbytes) Sun-3/180 server (16 Mbytes), Fujitsu
+	Eagle or Double-Eagle disk, all files accessed remotely using NFS
+	(except for temporaries, accessed using ND protocol), SunOS 3.2.
+
+UNIX Sun-4 Local:
+	Sun-4/280 (32 Mbytes), all files, binaries and temporaries accessed
+	locally, SunOS 4.0, double-Eagle disk drives.
+
+UNIX Sun-4 Diskless:
+	Sun-4/280 client (32 Mbytes),  Sun-4/280 server (32 Mbytes),
+	all files accessed remotely using NFS, SunOS 4.0
+
+Ultrix 785 Local:
+	VAX-11/785 (32 Mbytes), RA-81 disks, all files accessed locally
+	using Ultrix 3.0-13.
+
+Ultrix 8800 Local:
+	VAX 8800 (64 Mbytes), RA-81 disks, all files accessed locally
+	using Ultrix 3.0-13.
+
+Tunix Titan Local:
+	DEC Titan (128 Mbytes memory, 16 Mbytes file cache), RA-81 disks,
+	all files accessed locally using Tunix operating system.
+
+Tunix Titan Diskless:
+	DEC Titan client (128 Mbytes memory, 16 Mbytes file cache), DEC
+	Titan server (32 Mbytes memory, 3.8 Mbytes file cache), ordinary
+	files accessed remotely using NFS, binaries and temps accessed
+	locally, Tunix operating system.
+
+Ultrix DS3100 Local 3.0:
+	DS3100 (24 Mbytes memory, 12 Mbytes file cache), RZ55 disks (300 Mbytes,
+	5 1/4"), all files accessed locally using Ultrix 3.0-FT1.  For later
+	versions of Ultrix, the default cache size was used.
+
+Ultrix DS3100 Diskless:
+	DS3100 client (8 Mbytes memory, .8 Mbyte file cache), DS3100 server
+	(24 Mbytes memory, 12 Mbytes file cache), RZ55 disks (300 Mbytes,
+	5 1/4"), all files accessed remotely using NFS and Ultrix 3.0-FT1.
+
+Mach DS5000 Local:
+	DS5000 client (32 Mbytes memory), RZ55, RZ56 disks.

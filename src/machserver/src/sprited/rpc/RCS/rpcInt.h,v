@@ -1,0 +1,119 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.11.14.10.02.44;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.21.20.59.15;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@/*
+ * rpcInt.h --
+ *
+ *	Internal declarations for the RPC module.  This has data
+ *	structures that are common to both the client and server
+ *	parts of the RPC system.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /r3/kupfer/spriteserver/src/sprited/rpc/RCS/rpcInt.h,v 1.1 91/10/21 20:59:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _RPCINT
+#define _RPCINT
+
+#if defined(KERNEL) || defined(SPRITED)
+#include <rpc.h>
+#include <rpcPacket.h>
+#include <rpcTypes.h>
+#include <timer.h>
+#else
+#include <kernel/rpc.h>
+#include <kernel/rpcPacket.h>
+#include <kernel/rpcTypes.h>
+#include <kernel/timer.h>
+#endif /* KERNEL || SPRITED */
+
+/*
+ * A general On/Off switch set via the Sys_Stats SYS_RPC_ENABLE_SERVICE command.
+ */
+extern Boolean rpcServiceEnabled;
+
+/*
+ * A boot ID for this host.  This is initialized one time when we boot.
+ * It is included in the header of out-going messages, and
+ * other machines detect that we have re-booted when this changes.
+ */
+extern unsigned int rpcBootID;
+
+/*
+ * A set of masks used by the client and server dispatcher to see
+ * if a fragmented message is complete.
+ */
+extern unsigned int rpcCompleteMask[];
+
+extern void RpcScatter _ARGS_((register RpcHdr *rpcHdrPtr, RpcBufferSet *bufferPtr));
+
+
+/*
+ * Byte-swap routines and variables.
+ */
+extern	Boolean	rpcTestByteSwap;
+
+extern Boolean RpcByteSwapInComing _ARGS_((RpcHdr *rpcHdrPtr, 
+    int packetLength));
+extern int RpcSetTestByteSwap _ARGS_((void));
+extern int RpcUnsetTestByteSwap _ARGS_((void));
+extern void RpcPrintHdr _ARGS_((RpcHdr *rpcHdrPtr));
+extern void RpcByteSwapBuffer _ARGS_((register int *bufferPtr, register int numInts));
+extern void RpcCrashCallBack _ARGS_((int clientID, ClientData data));
+extern void RpcResetNoServers _ARGS_((int value)); 
+extern void RpcDaemonWait _ARGS_((Timer_QueueElement *queueEntryPtr)); 
+extern void RpcDaemonWakeup _ARGS_((Timer_Ticks time, ClientData data));
+extern void RpcBufferInit _ARGS_((RpcHdr *rpcHdrPtr, RpcBufferSet *bufferSetPtr, int channel, int serverHint));
+
+
+#endif /* _RPCINT */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 9.4 91/02/12 14:15:42 jhh Exp $ SPRITE (Berkeley)
+d18 1
+a18 1
+#ifdef KERNEL
+d22 1
+d27 2
+a28 1
+#endif /* KERNEL */
+a48 2
+extern ReturnStatus RpcSanityCheck _ARGS_((int length, 
+		    Net_ScatterGather *scatterPtr, int packetLength));
+@

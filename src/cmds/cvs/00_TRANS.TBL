@@ -1,0 +1,45 @@
+L ADD.C;1                           	add.c	sprite/add.c
+L BUILD_EN.C;1                      	build_entry.c	sprite/build_entry.c
+L CHECKIN.C;1                       	checkin.c	dist/src/checkin.c
+L CHECKOUT.C;1                      	checkout.c	dist/src/checkout.c
+L COLLECT_.C;1                      	collect_sets.c	sprite/collect_sets.c
+L COMMIT.C;1                        	commit.c	sprite/commit.c
+L CREATE_A.C;1                      	create_admin.c	dist/src/create_admin.c
+L CVS.H;1                           	cvs.h	sprite/cvs.h
+L CVS.MAN;1                         	cvs.man	sprite/cvs.man
+L DIFF.C;1                          	diff.c	dist/src/diff.c
+D DIST                              	dist
+L DOC.;1                            	doc	dist/doc
+D DS3100_M                          	ds3100.md
+L ENTRIES_.C;1                      	entries_file.c	dist/src/entries_file.c
+L EXAMPLES.;1                       	examples	dist/examples
+L FIND_NAM.C;1                      	find_names.c	dist/src/find_names.c
+L INFO.C;1                          	info.c	sprite/info.c
+L JOIN.C;1                          	join.c	dist/src/join.c
+L LOCATE_R.C;1                      	locate_rcs.c	dist/src/locate_rcs.c
+L LOG.C;1                           	log.c	dist/src/log.c
+L MAIN.C;1                          	main.c	sprite/main.c
+F MAKEFILE.;1                       	Makefile
+L MAKETIME.C;1                      	maketime.c	dist/src/maketime.c
+L MODULES.C;1                       	modules.c	dist/src/modules.c
+L NAME_REP.C;1                      	name_repository.c	dist/src/name_repository.c
+L NO_DIFFE.C;1                      	no_difference.c	dist/src/no_difference.c
+L OPTIONS.C;1                       	options.c	dist/src/options.c
+L PARTIME.C;1                       	partime.c	dist/src/partime.c
+L PATCH.C;1                         	patch.c	dist/src/patch.c
+L PATCHLEV.H;1                      	patchlevel.h	dist/src/patchlevel.h
+D RCS                               	RCS
+L REGISTER.C;1                      	register.c	dist/src/register.c
+L REMOVE.C;1                        	remove.c	dist/src/remove.c
+L SCRATCH_.C;1                      	scratch_entry.c	dist/src/scratch_entry.c
+L SET_LOCK.C;1                      	set_lock.c	dist/src/set_lock.c
+D SPRITE                            	sprite
+L STATUS.C;1                        	status.c	dist/src/status.c
+L SUBR.C;1                          	subr.c	dist/src/subr.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+L TAG.C;1                           	tag.c	dist/src/tag.c
+F TAGS.;1                           	tags
+L UPDATE.C;1                        	update.c	sprite/update.c
+L VERSION0.C;1                      	version_number.c	dist/src/version_number.c
+L VERSION1.C;1                      	version_ts.c	dist/src/version_ts.c

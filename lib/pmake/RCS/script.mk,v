@@ -1,0 +1,612 @@
+head     1.20;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.20
+date     91.09.24.19.03.42;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     90.11.20.23.11.07;  author kupfer;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.11.02.09.57.55;  author shirriff;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.04.26.10.43.27;  author mendel;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.02.20.11.50.08;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.11.30.13.56.38;  author rab;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.11.11.13.17.54;  author rab;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.10.19.15.01.46;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.10.09.16.59.16;  author tve;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.10.09.06.55.45;  author rab;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.10.02.10.05.13;  author rab;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.04.03.22.23.33;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.03.15.22.25.07;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.01.23.03.52;  author rab;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.12.29.08.37.28;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.12.28.17.07.57;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.28.14.47.45;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.23.09.54.30;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.23.09.52.08;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.31.14.31.08;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@library makefile for shell scripts.
+@
+
+
+1.20
+log
+@added cleanall
+@
+text
+@#
+# Included makefile for managing a directory containing only a shell script.
+#
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.19 90/11/20 23:11:07 kupfer Exp $ SPRITE (Berkeley)
+#
+# The makefile that includes this one should already have defined the
+# following variables:
+#	NAME		the shell script.
+#       MACHINES	list of all target machines currently available
+#			for this program.
+#	TYPE		a keyword identifying which sort of command this
+#			is;  used to determine where to install, etc.
+#
+# Optional variables that may be defined by the invoker:
+#	INSTALLFLAGS	additional flags to pass to install script.
+#
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# the including makefile
+#
+BINDIR		= /sprite/cmds.$(MACHINE)
+
+RM		?= $(BINDIR)/rm
+TEST            ?= $(BINDIR)/test
+UPDATE		?= $(BINDIR)/update
+
+#
+# Several variables (such as where to install) are set based on the
+# TYPE variable.  Of course, any of these variables can be overridden
+# by explicit assignments.
+#
+TYPE		?= unknown
+#if !empty(TYPE:Msprite)
+INSTALLDIR	?= /sprite/cmds
+INSTALLMAN	?= /sprite/man/cmds
+#elif !empty(TYPE:Mx)
+INSTALLDIR	?= /X/cmds
+INSTALLMAN	?= /X/man/cmds
+#elif !empty(TYPE:MX11R3)
+INSTALLDIR	?= /mic/X11R3/cmds
+INSTALLMAN	?= /mic/X11R3/man/cmds
+#elif !empty(TYPE:MX11R4)
+INSTALLDIR	?= /X11/R4/cmds
+INSTALLMAN	?= /X11/R4/man/cmds
+#elif !empty(TYPE:Mdaemon)
+INSTALLDIR	?= /sprite/daemons
+INSTALLMAN	?= /sprite/man/daemons
+#elif !empty(TYPE:Madmin)
+INSTALLDIR	?= /sprite/admin
+INSTALLMAN	?= /sprite/man/admin
+#elif !empty(TYPE:Mpersonal)
+INSTALLDIR	?= $(HOME)/cmds
+INSTALLMAN	?= $(HOME)/man/cmds
+#elif !empty(TYPE:Mlocal)
+INSTALLDIR	?= /local/cmds
+INSTALLMAN	?= /local/man/cmds
+#ifndef		USERBACKUP
+NOBACKUP	=
+#endif
+#endif
+#ifdef INSTALLDIR
+TMINSTALLDIR	?= $(INSTALLDIR).$(TM)
+#endif
+
+#
+# Figure out what stuff we'll pass to sub-makes.
+#
+PASSVARS	= 'INSTALLDIR=$(INSTALLDIR)' $(.MAKEFLAGS)
+
+#
+# Set up flags for various utility programs.
+#
+
+#include	<tm.mk>
+INSTALLFLAGS	?=
+INSTALLMANFLAGS	?=
+
+#
+# MAKEINSTALL usage:
+#	<target> : MAKEINSTALL
+# All of the shell scripts get updated to INSTALLDIR.
+#
+MAKEINSTALL	: .USE .SILENT
+#if !empty(NAME)
+	$(UPDATE) -l -m 555 $(INSTALLFLAGS) $(NAME) $(TMINSTALLDIR)/$(NAME)
+#endif
+
+#ifndef no_targets
+
+default			:: $(NAME)
+
+clean tidy cleanall	::
+	$(RM) -f *~
+
+#
+# For "install", a couple of tricks.  First, allow local.mk to disable
+# by setting no_install.  Second, use :: instead of : so that local.mk
+# can augment install with additional stuff.  Third, issue a warning
+# message if TMINSTALLDIR hasn't been defined.
+#
+#ifndef no_install
+#ifdef TMINSTALLDIR
+install 		:: installman MAKEINSTALL
+#else
+install			:: .SILENT
+	echo "Can't install $(NAME):  no install directory defined"
+#endif TMINSTALLDIR
+#endif no_install
+
+#if empty(MANPAGES)
+installman		:: .SILENT
+	echo "There's no man page for $(NAME).  Please write one."
+#elif !empty(MANPAGES:MNONE)
+installman		::
+#elif defined(INSTALLMAN)
+installman		:: .SILENT
+	$(UPDATE) -m 444 -l $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+#else
+installman		:: .SILENT
+	echo "Can't install man page(s): no install directory defined"
+#endif
+
+mkmf newtm		! .SILENT
+	mkmf
+
+#
+# Most targets get ignored completely for scripts, since there's
+# nothing to do.
+#
+
+depend lint tags	:: # says nothing, does nothing
+
+dist        !
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in Makefile local.mk $(TM).md/md.mk $(MANPAGES) $(NAME)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ; else true; fi
+	done
+#else
+	@@echo "Sorry, no distribution directory defined."
+#endif
+
+#include		<all.mk>
+
+#endif no_targets
+
+.MAKEFLAGS	: -C		# No compatibility needed
+
+#include		<rdist.mk>
+@
+
+
+1.19
+log
+@Include tm.mk.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.18 90/11/02 09:57:55 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+d93 1
+a93 1
+clean tidy		::
+@
+
+
+1.18
+log
+@Added /local/cmds info.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.17 90/04/26 10:43:27 mendel Exp Locker: shirriff $ SPRITE (Berkeley)
+d75 1
+@
+
+
+1.17
+log
+@added X11R4
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.16 90/02/20 11:50:08 douglis Exp $ SPRITE (Berkeley)
+d55 3
+@
+
+
+1.16
+log
+@tried to add some consistency to ::/: operators, and fixed tve's TYPE==personal complaint
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.15 89/11/30 13:56:38 rab Exp $ SPRITE (Berkeley)
+d43 3
+@
+
+
+1.15
+log
+@Changed dist: to dist!,
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.14 89/11/11 13:17:54 rab Exp Locker: rab $ SPRITE (Berkeley)
+d105 1
+a105 1
+installman		: .SILENT
+d110 1
+a110 1
+installman		: .SILENT
+d113 1
+a113 1
+installman		: .SILENT
+@
+
+
+1.14
+log
+@Fixed dist to update script.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.13 89/10/19 15:01:46 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d127 1
+a127 1
+dist:
+@
+
+
+1.13
+log
+@added support for personal sources
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.12 89/10/09 16:59:16 tve Exp Locker: jhh $ SPRITE (Berkeley)
+d129 1
+a129 1
+	for i in Makefile local.mk $(TM).md/md.mk $(MANPAGES)
+@
+
+
+1.12
+log
+@Added INSTALLMAN, INSTALLDIR for TYPE=X11R3
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.11 89/10/09 06:55:45 rab Exp Locker: tve $ SPRITE (Berkeley)
+d49 6
+@
+
+
+1.11
+log
+@Fixed distribution stuff.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.10 89/10/02 10:05:13 rab Exp Locker: rab $ SPRITE (Berkeley)
+d40 3
+@
+
+
+1.10
+log
+@Added Distribution stuff.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.9 89/04/03 22:23:33 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d25 1
+d120 1
+a120 1
+	for i in Makefile local.mk $(TM).md/md.mk $(MANPAGES) $(SRCS)
+d122 2
+a123 1
+	if test -e $${i}; then $(UPDATE)  $${i} $(DISTDIR)/$${i} ;fi
+@
+
+
+1.9
+log
+@added 'tidy' target.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.8 89/03/15 22:25:07 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d116 10
+@
+
+
+1.8
+log
+@added check for MANPAGES = NONE to override complaint about lack of man
+pages.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.7 89/01/01 23:03:52 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d76 1
+a76 1
+clean			::
+@
+
+
+1.7
+log
+@fixed /srpite/admin/man to read /sprite/admin/man
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.6 88/12/29 08:37:28 ouster Exp Locker: rab $ SPRITE (Berkeley)
+d97 2
+@
+
+
+1.6
+log
+@When installing man pages, copy files referenced by symbolic links,
+not the links themselves.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.5 88/12/28 17:07:57 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d44 1
+a44 1
+INSTALLMAN	?= /srpite/man/admin
+@
+
+
+1.5
+log
+@Documentation cleanup.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.4 88/12/28 14:47:45 ouster Exp $ SPRITE (Berkeley)
+d99 1
+a99 1
+	$(UPDATE) -m 444 $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+@
+
+
+1.4
+log
+@Switched to use TYPE.  Added "installman" target.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.3 88/11/23 09:54:30 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+a8 2
+#	INSTALLDIR	place to install program (without the
+#			machine-dependent suffix;  it will get added here).
+d91 1
+a91 1
+#endif
+@
+
+
+1.3
+log
+@Remove backward compatibility;  it shouldn't be needed anymore.
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.2 88/11/23 09:52:08 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d13 2
+d30 23
+d62 1
+d71 1
+a71 1
+	$(UPDATE) -l -m 555 $(INSTALLFLAGS) $(NAME) $(INSTALLDIR).$(TM)/$(NAME)
+d84 2
+a85 1
+# can augment install with additional stuff.
+d88 6
+a93 1
+install 		:: MAKEINSTALL
+d95 11
+@
+
+
+1.2
+log
+@Major changes to finalize the new C library (move include.new to
+include, etc.).
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/script.mk,v 1.1 88/10/31 14:31:08 douglis Exp Locker: ouster $ SPRITE (Berkeley)
+a16 8
+
+#
+# For backward compatibility with old Makefiles, assign NAME from
+# PROGRAM if PROGRAM exists.  This feature should go away soon.
+#
+#ifdef PROGRAM
+NAME		:= $(PROGRAM)
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+# $Header: /sprite/lib/pmake/RCS/hdrs.mk,v 1.7 88/10/26 16:29:39 ouster Exp $ SPRITE (Berkeley)
+d8 6
+a13 5
+#	PROGRAM		the shell script.
+#	INSTALLDIR	place to install program.  The ".scripts" suffix will
+#			be appended.
+#       MACHINES	machines specifying directories to contain links to
+#			the shell script.
+d19 8
+d28 1
+a28 1
+# including makefile
+a31 6
+CHGRP		?= $(BINDIR)/chgrp
+CHMOD		?= $(BINDIR)/chmod
+CHOWN		?= $(BINDIR)/chown
+CP		?= $(BINDIR)/cp
+ECHO		?= $(BINDIR)/echo
+MV		?= $(BINDIR)/mv
+d35 4
+a38 1
+INSTALLFLAGS	?=
+d40 3
+a42 1
+.MAKEFLAGS	: -C
+d44 1
+a44 2
+# suffix for machine-independent scripts
+SCRIPTS = .scripts
+d52 2
+a53 2
+#if !empty(PROGRAM)
+	$(UPDATE) -l -m 555 -t $(INSTALLFLAGS) $(PROGRAM) $(INSTALLDIR)$(SCRIPTS)
+d58 1
+a58 1
+default:		MAKEINSTALL
+d60 1
+a60 1
+clean			!
+d63 8
+a70 1
+mkmf			: .MAKE .SILENT
+d72 2
+a73 10
+install 	: default .MAKE .SILENT
+#if !empty(MACHINES)
+	for i in $(MACHINES);
+	do
+		echo %%% $${i} %%%
+		if [ ! -h $(INSTALLDIR).$${i}/$(PROGRAM) ]; then 
+			ln -s ../$(INSTALLDIR:T)$(SCRIPTS)/$(PROGRAM) $(INSTALLDIR).$${i};
+		fi
+	done
+#endif
+d75 4
+d80 4
+d86 2
+a88 3
+
+# This is put here because mkmf may do a "make dependall" for shell scripts.
+dependall :: .SILENT .NOTMAIN
+@

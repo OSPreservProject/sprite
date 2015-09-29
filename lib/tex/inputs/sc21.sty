@@ -1,0 +1,65 @@
+% ISO/TC97/SC21 DOCUMENT-STYPE OPTION -  Wed May 20 17:07:56 BST 1987
+%
+% derived from
+%
+% TITLEPAGE DOCUMENT-STYLE OPTION - released 27 January 1985
+%    for LaTeX version 2.09
+% Copyright (C) 1985 by Leslie Lamport
+%
+% This style option produces a cover page appropriate for
+% ISO/TC97/SC21 documents.
+%
+% In addition to the normal \title, \author (will give rise to the
+% source of the document) and \date commands, three further values
+% should be set. These are:
+%
+% \nnumber{NNN}
+% The N Number of the document. Put something like \nnumber{\sl XXXX},
+% if you are not sure of the number.
+%
+% \project{Project Reference}
+% The project reference for the document. For example,
+% \project{97.21.23} or \project{97.21.9 Q45}
+%
+% \status{Document Status}
+% For example \status{UK Position} or \status{UK Expert Contribution}
+
+\def\nnumber#1{\def\@nnumber{{#1}}} \nnumber{\em NNNN}
+\def\project#1{\def\@project{{#1}}} \project{\em 97.21.NN} 
+\def\status#1{\def\@status{{#1}}}   \status{\em status unset}
+
+\def\maketitle{\begin{titlepage}
+ \setcounter{page}{0}
+ \begin{flushright}
+     \shortstack[l]{ ISO/TC 97/SC 21 N {\bf \LARGE \@nnumber} \\
+		     {\sl Project: \@status} \\
+		     Date: \@date}
+ \end{flushright}
+ \vfil
+ \begin{center}
+   {\LARGE I S O } \\[3ex]
+   {\Large \sc International Organisation for Standardisation } \\[2ex]
+   {\Large \sc Organisation Internationale de Normalisation } \\[5ex]
+   \fbox{
+       \shortstack{
+           {\LARGE ISO/TC 97/SC 21} \\[2ex]
+           {\Large \sc Information Retrieval, Transfer } \\
+	   {\Large and Management for OSI } \\[2ex]
+           {\large Secretariat: USA (ANSI)}
+       }
+   }
+ \end{center}
+ \vskip 70pt                   % To adjust centering.
+ \begin{Large}
+   \begin{description}
+     \item[TITLE:] \@title
+     \item[SOURCE:] \@author
+     \item[DATE:] \@date
+     \item[PROJECT:] \@project
+     \item[STATUS:] \@status
+   \end{description}
+ \end{Large}
+ \vfil
+\null
+\end{titlepage}
+}

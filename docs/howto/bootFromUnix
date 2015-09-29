@@ -1,0 +1,18 @@
+To make it possible to boot a sprite host from a unix machine (in this
+case ginger), you must put two soft links for the host's internet address into
+the unix machine's /tftpboot directory.  These links will point to the boot
+program for the host.  For example, for allspice to boot from ginger, we take
+its internet address, 128.32.150.27, and create the following links:
+
+    8020961B.SUN4 -> sun4.md/netBoot
+    8020961B -> sun4.md/netBoot
+
+Each two digits of the link name correspond to the hex value of the digits
+between the decimal points in the internet address.  They must be all capitals.
+
+This means that tftpboot will download the sprite netBoot program to the host
+as its boot program.  The example above is for a sun4.  For a sun3, the links
+would be made to sun3.md/netBoot instead.  The kernel found by the boot
+program will be relative to the /tftpboot directory.  So to boot the kernel
+called "new" on a sun4 sprite host, you must find the files "netBoot" and
+"new" in /tftpboot/sun4.md in order to boot "sun4.md/new."

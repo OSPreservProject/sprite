@@ -1,0 +1,198 @@
+
+
+
+CPIO                      User Commands                      CPIO
+
+
+
+NNAAMMEE
+     cpio - copy file archives in and out
+
+SSYYNNOOPPSSIISS
+     ccppiioo --oo [ aaBBccvv ]
+     ccppiioo --ii [ bbBBccddffmmrrssSSttuuvv66 ] [ _p_a_t_t_e_r_n_s ]
+     ccppiioo --pp [ aaddllmmuuvv ] _d_i_r_e_c_t_o_r_y
+
+DDEESSCCRRIIPPTTIIOONN
+     ccppiioo copies files in to and out from a ccppiioo copy archive.
+     The archive (built by `ccppiioo --oo') contains pathname and
+     status information, along with the contents of one or more
+     archived files.
+
+OOPPTTIIOONNSS
+     --oo   Copy out an archive.  Read the standard input for a
+          list of pathnames, then copy the named files to the
+          standard output in archive form - including pathname
+          and status information.
+
+          aa    Reset the access times of input files after they
+               have been copied.
+
+          BB    Output is to be blocked at 5120 bytes to the
+               record.  This does not apply to the _p_a_s_s option.
+               This option is only meaningful with data directed
+               to raw magnetic devices, such as `//ddeevv//rrmmtt?'.
+
+          cc    Write _h_e_a_d_e_r information in ASCII character form
+               for portability.
+
+          vv    Verbose. A list of filenames is displayed.  When
+               used with the tt option, the table of contents
+               looks like the output of an `llss --ll' command (see
+               llss(1V)).
+
+     --ii   Copy in an archive.  Read in an archive from the stan-
+          dard input and extract files with names matching
+          filename substitution _p_a_t_t_e_r_n_s, supplied as arguments.
+
+          _p_a_t_t_e_r_n_s are similar to those in sshh(1) or ccsshh(1), save
+          that within ccppiioo, the metacharacters `??', `**' and `[[
+          ... ]]' also match the `//' (slash) character.  If no
+          _p_a_t_t_e_r_n_s are specified, the default is ** (select all
+          files).
+
+          bb    Swap both bytes and half-words after reading in
+               data.
+
+          BB    Input is to be blocked at 5120 bytes to the
+               record.  This does not apply to the _p_a_s_s option.
+               This option is only meaningful with data received
+
+
+
+Sprite v1.0             6 September 1988                        1
+
+
+
+
+
+
+CPIO                      User Commands                      CPIO
+
+
+
+               from raw magnetic devices, such as `//ddeevv//rrmmtt?'.
+
+          dd    Create directories as needed.
+
+          ff    Copy in all files except those matching _p_a_t_t_e_r_n_s.
+
+          mm    Retain previous file modification time.  This
+               option is ineffective on directories that are
+               being copied.
+
+          rr    Interactively rename files.  If the user types a
+               null line, the file is skipped.  May not be used
+               with the --pp option.
+
+          ss    Swap bytes after reading in data.
+
+          SS    Swap halfwords after reading in data.
+
+          tt    Print a table of contents of the input archive.
+               No files are created.
+
+          uu    Copy unconditionally.  Normally, an older file
+               will not replace a newer file with the same name.
+
+          66    Process UNIX Version-6 files.
+
+     --pp   One pass.  Copy in and out in a single operation.  Des-
+          tination pathnames are interpreted relative to the
+          named _d_i_r_e_c_t_o_r_y.
+
+          ll    Whenever possible, link files rather than copying
+               them.
+
+EEXXAAMMPPLLEESS
+     To copy the contents of a directory into an archive:
+
+          eexxaammppllee%% llss || ccppiioo --oo >> //ddeevv//mmtt00
+
+     To read a cpio archive from a tape drive:
+
+          eexxaammppllee%% ccppiioo --iiccddBB << //ddeevv//rrmmtt00
+
+     To duplicate the oollddddiirr directory hierarchy in the nneewwddiirr
+     directory:
+          eexxaammppllee%% ccdd oollddddiirr
+          eexxaammppllee%% ffiinndd .. --ddeepptthh --pprriinntt || ccppiioo --ppddll nneewwddiirr
+
+     The trivial case
+          eexxaammppllee%% ffiinndd .. --ddeepptthh --pprriinntt || ccppiioo --ooBB >>//ddeevv//rrmmtt00
+
+     can be handled more efficiently by:
+
+
+
+
+Sprite v1.0             6 September 1988                        2
+
+
+
+
+
+
+CPIO                      User Commands                      CPIO
+
+
+
+          eexxaammppllee%% ffiinndd .. --ccppiioo //ddeevv//rrmmtt//00mm
+
+     ccppiioo archive tapes from other sites may have bytes swapped
+     within the archive.  Although the --iiss option only swaps the
+     data bytes and not those in the header ccppiioo recognizes tapes
+     like this and swaps the bytes in the header automatically.
+
+SSEEEE AALLSSOO
+     aarr(1V), ccsshh(1), ffiinndd(1), llss(1V), sshh(1), ttaarr(1), ccppiioo(5)
+
+BBUUGGSS
+     ccppiioo does not support multiple volume tapes.
+
+     Pathnames are restricted to 128 characters.  If there are
+     too many unique linked files, ccppiioo runs out of memory and
+     linking information is lost thereafter.  Only the super-user
+     can copy special files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             6 September 1988                        3
+
+
+

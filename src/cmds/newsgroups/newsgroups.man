@@ -1,0 +1,1 @@
+../rn/dist/rrn/newsgroups.1

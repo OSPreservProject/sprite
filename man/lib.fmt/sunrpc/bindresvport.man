@@ -1,0 +1,66 @@
+
+
+
+BINDRESVPORT          C Library Procedures           BINDRESVPORT
+
+
+
+NNAAMMEE
+     bindresvport - bind a socket to a privileged IP port
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+
+     bbiinnddrreessvvppoorrtt((ssdd,, ssiinn))
+        iinntt ssdd;;
+        ssttrruucctt ssoocckkaaddddrr__iinn **ssiinn;;
+
+DDEESSCCRRIIPPTTIIOONN
+     bbiinnddrreessvvppoorrtt is used to bind a socket descriptor to a
+     privileged IP port, that is, a port number in the range 0-
+     1023.  The routine returns 0 if it is successful, otherwise
+     -1 is returned and _e_r_r_n_o set to reflect the cause of the
+     error.
+
+     Only root can bind to a privileged port; this call will fail
+     for any other users.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              6 October 1987                         1
+
+
+

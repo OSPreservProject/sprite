@@ -1,0 +1,68 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.03.27.12.26.10;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.03.17.23.35.46;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Updated for long passwords.
+@
+text
+@.\"	@@(#)getpass.3	6.1 (Berkeley) 5/15/85
+.\"
+.TH GETPASS 3  "May 15, 1985"
+.AT 3
+.SH NAME
+getpass \- read a password
+.SH SYNOPSIS
+.nf
+.B char *getpass(prompt)
+.B char *prompt;
+.fi
+.SH DESCRIPTION
+.I Getpass
+reads a password from the file
+.IR /dev/tty ,
+or if that cannot be opened, from the standard input,
+after prompting with the null-terminated string
+.I prompt
+and disabling echoing.
+A pointer is returned to a null-terminated string
+of at most _PASSWORD_LEN characters (currently 128).
+.SH FILES
+/dev/tty
+.SH "SEE ALSO"
+crypt(3)
+.SH BUGS
+The return value points to static data
+whose content is overwritten by each call.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+of at most 8 characters.
+@

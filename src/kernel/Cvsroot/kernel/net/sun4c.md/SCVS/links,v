@@ -1,0 +1,45 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.10.27.15.36.07;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.29.16.44.13;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a3 4
+netLE.c                  ../sun3.md/netLE.c
+netLEInt.h               ../sun3.md/netLEInt.h
+netLERecv.c              ../sun3.md/netLERecv.c
+netLEXmit.c              ../sun3.md/netLEXmit.c
+@

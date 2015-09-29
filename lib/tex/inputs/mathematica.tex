@@ -1,0 +1,159 @@
+% File mathematica.tex -- TeX/LaTeX mma common code
+% Macros for TeX/Mathematica documents
+% Written 2/26/1991 by Dan Dill dan@chem.bu.edu
+
+
+% Copyright (C) 1991 Dan Dill
+% This is part of TeX/Mathematica
+%
+% TeX/Mathematica is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility to
+% anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.
+%
+% Everyone is granted permission to copy, modify and redistribute this
+% file, provided:
+%  1.  All copies contain this copyright notice.
+%  2.  All modified copies shall carry a prominant notice stating who
+%      made the last modification and the date of such modification.
+%  3.  No charge is made for this software or works derived from it.  
+%      This clause shall not be construed as constraining other software
+%      distributed on the same medium as this software, nor is a
+%      distribution fee considered a charge.
+%
+% The right to distribute this file for profit or as part of any commercial
+% product is specifically reserved for the author.
+
+
+
+\everyjob{\typeout{TeX/Mathematica `mathematica.tex' Version 1.2 <Mon Feb 25 1991>}}
+\immediate\write10{TeX/Mathematica `mathematica.tex' Version 1.2 <Mon Feb 25 1991>}
+
+% Left indentation
+\def\mmaindent#1{\gdef\@mmaindent{#1}}
+%\gdef\@mmaindent{\z@}
+\gdef\@mmaindent{\parindent}
+
+
+% Verbatim setup
+% This handles leading spaces on a line, spaces after ., etc. TeXbook p. 352, 421
+{\obeyspaces\gdef {\ }} % \obeyspaces now give \ , not \space
+\def\uncatcodespecials{\def\do##1{\catcode`##1=12 }\dospecials}
+\def\setupverbatim{%
+	\v@rbsize
+	\def\par{\leavevmode\egroup\box0\endgraf}
+	\obeylines \uncatcodespecials
+	\obeyspaces
+	\catcode`\`=\active \catcode`\^^I=\active
+	\catcode`\`=12
+	\everypar{\startbox}}
+
+
+% Tab expansion
+\def\startbox{\setbox0=\hbox\bgroup}  % The box is width \the\w.
+{\catcode`\^^I=\active % Don't use <tab> for the rest of this text!
+ \gdef^^I{\leavevmode\egroup
+   \dimen0=\wd0 % width so far, or since previous tab
+   \divide\dimen0 by\w
+   \multiply\dimen0 by\w % compute previous multiple of \w
+   \advance\dimen0 by\w % advance to next multiple of \w
+   \wd0=\dimen0 \box0 \startbox}}
+
+
+% This hack discards CR after \begin{mma}... to prevent a blank line at the start
+% of cells.  It works (I think) because TeX reads past the CR in getting the
+% "next token" for \futurelet.
+\def\@mma{\futurelet\nextchar\@@@mma}
+
+\def\@@@mma{\mm@setdims
+	\let\mm@tail = \mm@end % May have more than one end in future
+	\ifx\nextchar [%
+		\let\next = \@mmainit
+	\else
+		\let\mm@head = \mm@start
+		\let\next = \@@mma
+	\fi \next}
+
+\def\@mmainit[#1]{% Just gobble up argument for now.  Examine when more options
+	\let\mm@head = \mm@startinit
+	\futurelet\nextchar% Gobble up CR if any
+	\@@mma}
+
+
+
+
+\def\@@mma{\bigbreak
+	\mm@head
+	\begingroup
+		\parindent=\@mmaindent % Indent listing
+		\setupverbatim
+		\doverbatim}
+
+
+% \end{mathematica}
+\begingroup
+% Redefine grouping characters, so {...} can delimit macro
+\catcode `\{=12 \catcode `\}=12 \catcode `[=1 \catcode `]=2
+% Redefine escape, so \end can be a macro delimiter
+\catcode`\|=0 \catcode`\\=12 % | is temporary escape character
+	|obeylines|gdef|doverbatim#1\end{mathematica}^^M%
+					    %Gobble CR at end of \end{mathematica}
+	[#1|endgroup|mm@tail|bigbreak|noindent]%
+|endgroup
+
+% Cell graphics
+\def\mm@box#1{\hbox{\vrule\vbox{\hrule
+	\hbox spread 1pt{\hfil\vbox to \mm@length{\vfil
+		\hbox{\b@xfont #1}%
+	\vfil}\hfil}
+\hrule}\vrule}}
+\def\mmabox#1{\mm@setdims\mm@box#1} % External version
+
+% Dimensions for construction of cell headers/footer
+\newdimen\texd@fht \texd@fht=.4pt % plain TeX default rule height
+\newdimen\mm@length % Length of vertical tics on cell header/footer
+\newdimen\mm@lengthhalf % One-half of vertical tic length
+\newdimen\mm@lengthplus % Vertical tic length plus horizonatal rule height
+
+% Execute for each cell in case font size has changed
+\def\mm@setdims{
+%\mm@length=\ht\strutbox \advance\mm@length by\dp\strutbox \divide\mm@length by 2
+\mm@length=\baselineskip \divide\mm@length by 2
+\mm@lengthhalf=\mm@length \divide\mm@lengthhalf by 2
+\mm@lengthplus=\mm@length \advance\mm@lengthplus by \texd@fht
+}
+
+\def\mm@startinit{%
+	\vskip -\mm@lengthhalf
+	\hbox to \hsize{%
+		\vrule height\texd@fht depth\mm@length
+		\hrulefill
+		\lower\mm@lengthplus\mm@box{I}}
+	\vskip \mm@lengthhalf}
+\def\mm@start{%
+	\vskip -\mm@lengthhalf
+	\hbox to \hsize{%
+		\vrule height\texd@fht depth\mm@length
+		\hrulefill
+		\vrule height\texd@fht depth\mm@length}
+	\vskip \mm@lengthhalf}
+\def\mm@end{%
+	\hbox to \hsize{%
+		\vrule height\mm@lengthplus depth0pt
+		\hrulefill
+		\vrule height\mm@lengthplus depth0pt}}
+
+
+% Setup psfig prolog --- for LaTeX/Mathematica graphics
+% Assumes psfig.sty or psfig.tex
+% This macro should be invoke after \begin{document} or \input psfig
+% Edit the locations /usr8/dan/tex/inputs/ to those for your site
+\def\psfiginit{%
+% ArborText dvips
+%\special{ps: plotfile /usr8/dan/tex/inputs/psfig.pro global}
+%\special{ps: plotfile /usr8/dan/tex/inputs/mma.pro.1.2 global}
+% Rokicki dvips
+\special{header=/usr/sww/lib/tex/inputs/psfig.pro}
+\special{header=/usr/local/math/Packages/TeX/mma.pro.1.2}
+%\special{header=/usr8/dan/tex/inputs/mma.pro.1.2}
+}

@@ -1,0 +1,1075 @@
+University of Vaasa, Finland, MIPS R2030 workstation garbo.uwasa.fi,
+node number 128.214.87.1, has a large collection of PD and shareware
+programs which are available by anonymous ftp (file transfer
+program).  This /pc/pd2/news91b.pd2 file contains selected news and
+reviews about the MsDos programs in the /pc directories.  (There are
+more news in /pc/ts/0news-ts and /pc/pd/post##.txt.)
+...................................................................
+Prof. Timo Salmi
+Moderating at garbo.uwasa.fi anonymous ftp archives 128.214.87.1
+School of Business Studies, University of Vaasa, SF-65101, Finland
+Internet: ts@chyde.uwasa.fi Funet: gado::salmi Bitnet: salmi@finfun
+...................................................................
+
+     N e w s   o f   1 9 9 1   f r o m   1-May to 31-Dec
+
+Tue 31-Dec-91: Made /pc/DIRNAMES using the information in /pc/INDEX. 
+It gives the list of the MsDos directory names at garbo.uwasa.fi
+with an explanation for each one. 
+
+Sun 29-Dec-91: Captured from alt.bbs.lists the BBS list of the
+Federation of Independent States (Russia, etc) and made it available
+as: 8516 Dec 29 10:06 garbo.uwasa.fi:/pc/bbs/fis9112.zip. 
+(Actually, I hear it should be called Commonwealth, not Federation
+as the list claims.  My thanks to Stan Brown for the tip). 
+
+Sat 28-Dec-91: June-Shyan Yih kindly uploaded us his
+/pc/envutil
+eed10.zip       Full screen easy to use Environment EDitor, J-S Yih.
+                I like this. It is a very handy utility. Among other
+                things you can conveniently edit your path with eed
+                in an editor-like environment.
+
+Sat 28-Dec-91: Acquired from SIMTEL20 to garbo.uwasa.fi archives:
+/pc/stock
+rsa301.zip      Relational Stock Analysis + graphics DLM Consulting.
+                Seems very professional. As with all similar
+                packages looks daunting at the first encounter.
+                Obviously there is no escaping the manual :-).
+
+Sat 28-Dec-91: We have recently created two new subdirectories at
+garbo.uwasa.fi
+   /pc/linguistics :   Files related to the science of linguistics
+   /pc/ham :           Ham and other radio related programs
+ I am pleased to announce that these two directories are now jointly
+moderated by a new co-moderator at garbo jari.perkiomaki@uwasa.fi.
+Jari works at our linguistics department at the University of Vaasa,
+and he is a keen ham himself.  Harri Valkama (hv@uwasa.fi) and yours
+truly continue as before as garbo moderators.  I specialize in the
+/pc (the MsDos) directories and our publicity, while Harri continues
+to moderate all our fields.  Harri is also the system manager of
+garbo, so all connectivity problems are best reported to him.
+
+Fri 27-Dec-91: Added garbo.uwasa.fi:/pc/pd2/hist91.zip.  It is my
+subjective look back at 1991 in comp.binaries.ibm.pc newsgroups and
+at the archives.
+
+Thu 26-Dec-91: I got an update of the Finnish BBS list and it is now
+available as garbo.uwasa.fi:/pub/pc/bbs/fi911221.zip.  I am sure
+that our foreign friends can't wait to get their hands on it :-).
+
+Mon 23-Dec-91: Acquired the following program from a Finnish BBS to
+garbo.uwasa.fi archives:
+/pc/fileutil
+sun-prot.zip    Protect executable with a password (unfinished).
+                Here is a very interesting concept from a young
+                Finnish programmer. The idea is to attach a password
+                to the executable which, when called, would refuse
+                to run if the password is not correct. The scheme
+                does not yet(?) work for .exe files, only .com
+                files. Furthermore, it meddles with the cursor in an
+                unacceptable way and leaves it in an unpredictable
+                state after running a protected .com. There is no
+                unprotect the once protected program. But no matter,
+                it is a good idea well worth further development. It
+                is a little reminescent of the McAfee system of
+                attaching a checksum at the end of a file, or of a
+                benevolent virus. I did not try out what what happen
+                if the program were applied on a compressed
+                executable.
+
+Sun 22-Dec-91: Acquired the following file from SIMTEL20
+/pc/education
+polyrt1.zip     Tutor for polynomials and finding real roots.
+                A model example of a useful educational program. It
+                is obvious that programming and testing these kinds
+                of interactive teaching programs must take a lot of
+                effort.
+
+Fri 20-Dec-91: Acquired the following files from SIMTEL20
+/pc/math
+amort11d.zip    AmortizeIt, The Complete Amortization Solution.
+                A loan amortization program with and extensive 50
+                page document and with a nice interface. Perhaps it
+                is just me, but somehow I find it a bit confusing
+                and slightly intimidating.  Take a look, and judge
+                for yourself.
+/pc/batchutil
+errlvl12.zip    Return error level for batches, TifaWare (w asm).
+                Useful, no doubt, but personally if feel a bit
+                uncomfortable with tricks of batch programming which
+                require external programs when one can achieve the
+                same functionality also without them.
+/pc/envutil
+push.zip        Push/pop the current environment variables (w asm).
+                This is a natural and interesting idea for a
+                specialized MsDos utility. This is one of those
+                cases where upon seeing the utility one kicks oneself
+                and thinks: "Hey, why didn't I come to think of that
+                idea to write a neat little utility".
+/pc/educgames
+pcftyp41.zip    PC-FASTYPE typing Instruction Program from
+                Trendtech. A nice complement to the collection of
+                programs like /pc/educgames/typrdr11.zip,
+                typefast.zip and /pc/ts/tsgmeb15.zip for developing
+                typing skills. Fastype presents an image of the
+                keyboard in front of you, and signals the keys
+                you'll have to type. One problem for Europeans is
+                that the keyboard has the US layout. CGA graphics is
+                sufficient for playing Fastype. It has menus that
+                make it look like a utility. The distinction is not
+                important, but like the rest, Fastype is in effect
+                an educational game. Incidentally, I might myself be
+                interested to write a typing program that uses the
+                official speed typing rules to measure the users
+                typing skills. (Any typists around with the official
+                information?)
+
+Fri 20-Dec-91: We have made a few arrangements at garbo.  We have
+added descriptions to the directory names in our annotated garbo
+main file list /pc/INDEX (alternatively /pc/filelist/garboidx.arc
+and /pc/filelist/garboidx.Z).  We have also created a few new
+directories like:
+ /pc/educgames   Educational games
+ /pc/exam        Old examinations with answers for our students
+ /pc/linguistics Files related to the science of linguistics
+ /pc/net         Network related files
+and deleted
+ /pc/games
+The former /pc/doc directory has been subdivided into
+ /pc/doc-hard    Hardware related documentation and information
+ /pc/doc-misc    Miscellaneous information and documentation
+ /pc/doc-net     Net service (news, ftp, etc) related information
+ /pc/doc-soft    Software related documentation and information
+Furthermore we have moved a few files from their old directories to
+directories where they better belong.
+   We have in our sights the replacement of garbo with a more
+powerful workstation. We shall, however, in all probability retain
+the name garbo for the new machine as an alias arrangement, because
+garbo has hopefully become a kind of an establishment.
+
+Fri 20-Dec-91: Acquired garbo.uwasa.fi:/pc/screen/scap250.zip screen
+capture utility from a Finnish BBS.  It is clumsy.  Takes up a lot
+of memory, and is difficult to use.  No match to /pc/screen/
+sniprr24.zip.
+
+Fri 6-Dec-91: Updated my list of MsDos FTP sites and moderators.  It
+is garbo.uwasa.fi:/pc/pd2/moder.lst.  (It is an ascii file).
+
+Sun 1-Dec-91: Acquired from a Finnish BBS
+/pc/filefind
+find221.zip     Fast file finder by Bruce Gavin
+/pc/sysutil
+syslog12.zip    A TSR logging of PC usage, Solid Oak Software.
+                It is a 8K TSR that makes a log showing every
+                program run, files handled etc. Seems very useful
+                for control purposes.
+
+Mon 25-Nov-91: As some users will recall we accidentally had
+CompuShow GIF viewer cshw833b.zip on our archives.  That version
+turned out not be shareware and we thus withdraw it from our
+archives.  The author Bob Berry has kindly made the shareware
+version available, and I just downloaded it from SIMTEL20 from
+Keith.  We have it as garbo.uwasa.fi:/pc/gifutil/cshw833a.zip.  If
+you got the commercial version because of this accident, please do
+not abuse this situation.  With the number of files and uploads we
+have, these things are bound to happen.  Warnings from alert users
+are always welcome.  This is how we found out about the current
+case.
+
+Sat 23-Nov-91: Acquired the following packages from a Finnish BBS to
+garbo.uwasa.fi archives:
+/pc/arcutil
+ac142.zip       Archive converter by Donald Langhorne.
+                Worth a look if you routinely need conversions from
+                one archive type to another. Reasonably
+                configurable, but reading of the documents is
+                necessary. Making the AC.CFG better self-documenting
+                wouldn't have been a bad idea.
+/pc/dirutil
+dbldr136.zip    Double Directory management by George Tylutki
+                Two directories side by side can be managed in many
+                ways, such as copy files, delete etc. Obviously
+                useful.
+/pc/unix
+dosnx94i.zip    Dosnix Unix style utilities from G. Vrooman.
+                One more to the plethora of Unix like command
+                collections for MsDos. I did not test this one, and
+                I'll thus leave the review open to others.
+/pc/screen
+nab17.zip       "Noger Nabbit" Grab ASCII from screen.
+                Takes some reading and remembering of the docs, but
+                can be useful for grabbing text from the screen and
+                transferring it from one application to another.
+
+Mon 18-Nov-91: Some new acquisitions to garbo.uwasa.fi archives:
+/pc/batchutil
+catsig.zip      Audible and visual alarm for ending a long batch
+/pc/business
+int201.zip      The Interest Analyzer (updates int108.zip)
+/pc/education
+recall1.zip     Shareware version of Total Recall educational program
+/pc/editor
+tp-et.zip       Thumb Print Software's Electric Typewriter
+
+Mon 11-Nov-91: I have had to remove
+  garbo.uwasa.fi:/pc/gifutil/cshw833b.zip
+CompuShow GIF viewer from our archives and replace it by the older
+  garbo.uwasa.fi:/pc/gifutil/cshw821b.zip
+because it turned out to my consternation that the newer version has
+gone fully commercial.  It is good of users to be alert for cases
+like this, since it is not always easy for the moderator to notice.
+In the case of cshw833b.zip this came as a total surprise since I
+have seen it around in BBSes (which shouldn't happen given the
+changed Cshow status).  But, frankly, also the author's way of
+making the change detectable and publicly known leaves much to be
+desired.  Responsible users are implored not to misuse unfortunate
+instances like this one.
+
+Fri 8-Nov-91: Acquired garbo.uwasa.fi:/pc/sysinfo/bench60.zip PC
+Magazine's benchmarks from a Finnish BBS.  The interface has been
+radically changed since version 5.6 (which I retained in the
+/pc/goldies directory).  The old one used text mode without a mouse.
+The new one uses dialog box type graphics and a mouse.  (It is a
+matter of taste, but I an not personally very keen on the this type
+of an interface.  But I am positive that Windows3 users will just
+love it).  The benchmarks now also include 486 comparisons.  Even
+the version was large (330Kb), but the new is even bigger.  A whole
+506Kb zipped.
+
+Mon 4-Nov-91: Obtained an upgrade of Kim Kokkonen's TSR management
+utilities from a Finnish BBS.  This version has been updated for
+compatibility with DOS 5.0 high memory management.
+  garbo.uwasa.fi:/pc/memutil/tsrcom30.zip
+
+Sun 3-Nov-91: Here is a repeat of a little trick for QEdit editor
+users.  You can easily check the spelling of the edited file from
+within QEdit by a single keystroke. It takes a bit setting it up,
+though, and you have to have the necessary programs. You'll need
+ garbo.uwasa.fi:/pc/editor/qedit215.zip
+ garbo.uwasa.fi:/pc/ts/tschek12.arc
+ garbo.uwasa.fi:/pc/fileutil/list76b.zip
+Furthermore it is useful to have
+ garbo.uwasa.fi:/pc/sysutil/shrom18g.zip
+ garbo.uwasa.fi:/pc/ts/tsqed12.arc
+The way it goes is this. Define a keyboar macro such as
+@- MacroBegin
+   Dos 'spell spelled3.dny /f '
+   CurrentFilename ' | list /s' Return
+Then you only need to press Alt- and the file is checked for
+spelling. An additional trick is to call Qedit by using
+shroom -s r:\ q.exe (where r:\ refers to ramdisk). This way you'll
+not be running out of memory since QEdit is swapped to disk for the
+duration of the checking.
+
+Sat 2-Nov-91: I have updated my choice of (now) 21 best MsDos
+programs.  I decided to make this a separate file and it is now
+available as garbo.uwasa.fi:/pc/pd2/bestprog.zip.  Enjoy the
+list,...  and these great programs.
+
+Fri 1-Nov-91: Obtained from a Finnish BBS Patriquin's Text and file
+searcher garbo.uwasa.fi:/pc/fileutil/ps50.zip.  Otherwise ok, but it
+still crashes in searches with upper ascii characters.
+
+Wed 30-Oct-91: Do something really different for a change.  Call a
+Finnish BBS.  See garbo.uwasa.fi:/pc/bbs/fi911026.arc for the
+numbers.
+
+Sun 27-Oct-91: I have been taking a closer look at some programs we
+have downloaded to garbo.uwasa.fi archives from the binary postings
+and from SIMTEL20.
+/pc/sysinfo
+asq130.zip      Tutorial style system information program.
+                Takes a nicely paternal approach to presenting and
+                analyzing system information from nested menus
+                rather than subsequent pages of system information.
+                Whether you'll like its format is up to your
+                personal tastes, but it is certainly worth a look as
+                an alternative sysinfo program.
+/pc/fileutil
+cdump142.zip    Cos File Dump Utility by Ofer Inbar.
+                Not the first, and not probably the last of many
+                file dump programs written (especially if one takes
+                into account that so binary editors can act as fiole
+                dumps, too). This filedump is one of the more useful
+                renditions having the options to produce several
+                types of output.  One of the useful options is to
+                find the texts in a binary file.
+/pc/termutil
+gsz1015.zip     Full-screen version of DSZ Zmodem.
+                As programs Chuck Forsberg's ZModems are undoubtedly
+                among the all time PC greats. GSZ adds color and
+                text graphics to the somewhat drab DSZ interface.
+/pc/screen
+dump0891.zoo    Dump CGA,EGA,VGA or HERC graphics screen to printer.
+                A resident graphics screen dump by just pressing the
+                PrintScreen key. (At least taxed merrily my inkjet
+                cartridge :-).
+/pc/sysutil
+shrom18g.zip    Swap to disc when shelling from an application.
+                Every once and awhile one comes upon a program, or
+                an idea that is a veritable gem. SHellROOM certainly
+                is. When you usually shell to MsDos from an
+                application you are left with much less room than
+                usual. SHROOM swaps the application to disk at shell
+                leaving you with much room. Unfortunately it does
+                not work with each and every application (eg Turbo
+                Pascal) unless I have made an error or missed
+                something again. I'll be interested to observe what
+                it does with Telnet when I get at my office 386.
+/pc/filefind
+cudup21.zip     Colorado Utilities Duplicate File Manager.
+                I've written about this useful utility before. Finds
+                the duplicates even within archives. It has a good
+                interface. Can also be used to browse and delete the
+                duplicate files when they have been found. I have
+                programmed a duplicate file finder myself in
+                tsutlc16.arc, but honestly it cannot hold the canle
+                to this one.
+/pc/programming
+interc2.zip     Intercept and interpret BIOS calls of a program.
+                This is a specialist's tool. It is useful to
+                advanced programmers especially in studying the
+                interrupt usage of programs and register values of
+                the interrupt calls.
+
+Wed 16-Oct-91: It is nice having become such a popular ftp site, but
+this also has its downsides.  At the moment we have to contemplate
+setting a limit on the number of simultaneous FTP users, just like
+SIMTEL20 does.  Please remember the alternative of using batchftp
+(if you can) for more efficient usage.  It is available as
+garbo.uwasa.fi:/unix/ftp/batchftp102.tar.Z.
+
+Tue 15-Oct-91: Acquired garbo.uwasa.fi:/pc/sysinfo/sysid62.zip
+system information by Steve Grant from a Finnish BBS.  This program
+has interesting offshoots, because /pc/sysinfo/ifp1p147.zip is based
+on same code (the latter, that is InfoPlus docs stated sysid444).
+The new sysid62 dates to 2nd of September 1991.
+
+Mon 14-Oct-91: To decrease the load please note that the heavily
+downloaded garbo.uwasa.fi MsDos filelist /pc/INDEX is alternatively
+available as /pc/filelist/garboidx.arc (with MsDos eolns) and
+/pc/filelist/garboidx.Z (with Unix eolns).  These files are updated
+at our archive site at the same time as the original /pc/INDEX.
+
+Sat 12-Oct-91: As you may recall I recently posted about the further
+FAQ, feedback, etc information file
+           garbo.uwasa.fi:/pc/pd2/post05.txt.
+There is one problem with this system.  I keep updating the latest
+file in the post01.txt - post05.txt series until it contains 30 mail
+readable messages.  This means that the users who are interested in
+this should be told about it having been updated.  No problem
+though, since we now have the special discussion subgroup
+cbip.archives for the archive site announcements.  I'll just make a
+brief announcement each time the file has been updated.
+
+Thu 10-Oct-91: Besides my Frequently Asked Questions collection
+garbo.uwasa.fi:/pc/ts/tsfaq23a.arc I gave gathered further FAQs,
+feedback, advice, and interesting messages in /pc/pd2/post##.txt
+files.  I update these files until they have 30 messages.  The
+fourth in the series (post04.txt) is now complete.  I have also
+started the fifth (post05.txt), but it is still almost empty. The
+post##.txt files are in such a format that you can easily read them
+(also) with Unix elm or PC /pc/mail/rmail401.zip.
+
+Wed 9-Oct-91: I have updated the list of MsDos FTP sites & their
+moderators.  It is garbo.uwasa.fi:/pc/pd2/moder.lst.  This is a
+minor update bringing up to date the information on the Australian
+SIMTEL20 and garbo mirror site, now rana.cc.deaking.oz.au.
+
+Sat 5-Oct-91: Acquired to garbo.uwasa.fi archives from a Finnish BBS
+/pc/programming
+dosref21.zip    Dos technical reference by Dave Williams
+/pc/execomp
+pklte113.exe    PKWare's .exe and .com file compress/uncompress
+/pc/arcutil
+am65.zip        ArcMaster visual two window user interface (good)
+shez64.zip      Compression Companion for arcers be Jim Derr (good)
+
+Thu 3-Oct-91: Summary: Please avoid uploading "naked" .exe's.
+Again a word to your kind uploaders.  (With the natural exception of
+self-extracting archivers) we would like to get and distribute all
+our MsDos material in archived (preference order: .zip, new .zoo)
+format.  Although uploads are welcome, if they come as .exe's or
+.com's, this causes us a definite dilemma.  Please avoid using this
+format in your kind uploads.
+
+Mon 30-Sep-91: I have updated for a change an exotic file
+garbo.uwasa.fi:/pub/pc/bbs/fi910928.arc.  It contains lists of
+Finnish BBSes.  (The little Finnish language in the list is not a
+real problem, since the layout gives the basic idea of the
+information).
+
+Wed 25-Sep-91: Acquired garbo.uwasa.fi:/pc/fileutil/list76b.zip from
+a Finnish BBS.  If you are a new PC user and you don't happen to
+know Buerg's file browser, you are well advised to get it to be able
+to list the contents of your files.  It is one of the best-known (if
+not the best known) utilities for MsDos, and there are many other
+programs (some of mine included) that utilize it to perform the
+listing tasks.  More advanced users will find a number of useful
+properties and settings.  For example users who have a Unix
+background will find LIST /S pipe a useful replacement of Unix less
+on MsDos.
+
+Mon 23-Sep-91: A word to our kind uploaders to garbo.uwasa.fi
+archives.  While we support all the major archive formats, our
+preferences are 1) Zipped or failing that 2) Zooed (2.10 high
+compression).  Also other formats are welcome if it is very
+inconvenient for you to use these methods.
+   Many of your uploaders have recently used LHARC, that is .lzh
+files.  If it doesn't make a big difference to you, would you please
+help us by using your preferred methods because processing the .lzh
+files causes extra work to my fellow moderator Harri Valkama.  But
+of course good uploads are more important than the package method if
+you have no choice.
+
+Sat 21-Sep-91: I was very pleased to learn that the good people at
+Columbia decided to do as I implored and prepared a .zip collection
+of the MsKermit version 3.11 files for MsDos usage.  It is now
+available also from garbo.uwasa.fi as /pc/termprog/msker311.zip.
+
+Sat 14-Sep-91: Obtained QEdit editor update /pc/editor/qedit215.zip
+and the corresponding macro compiler /pc/editor/qmac215.zip from
+SIMTEL20 after Keith Petersen kindly gave me an advance notice of
+the impending announcement from SIMTEL20.  Semware's QEdit etitor is
+my personal favorite for a text editor, and I use it extensively.
+   If you want a spelling checker and macros to be used with it,
+take a look at /pc/ts/tsqed11.arc.
+
+Wed 11-Sep-91: Obtained from a Finnish BBS /pc/astronomy/starry.zip
+Starry Nights Indoor Astronomy by Rob Crockett.
+
+Fri 6-Sep-91: Got the current version of the big file list of the
+English speaking Micro Maniacs BBS 2:220/22 run by Ron Dwight.  The
+file is /pc/filelist/files-mm.zip.
+
+Thu 5-Sep-91: Got updates of two Finnish BBS lists and put them in
+/pc/bbs/fi910905.arc.
+
+Tue 3-Aug-91: Unix-like less for MsDos by Mark Nudelman later improved
+by Mark Lord is now available also from garbo.uwasa.fi archives as
+/pc/unix/mless177.zip.  Less is a good complement for the MsDos TYPE and
+MORE commands for Unix oriented users since it can handle multiple files
+and can be used for browsing with many options.  It also has a nicely
+colorful man(ual) page.  The other obvious option for MsDos browsing is
+/pc/fileutil/list76a.zip.
+
+Mon 2-Sep-91: We have converted all our old MsDos and Unix (the /pc
+and /unix directories) Zoo files to the newer version 2.10 Zoos with
+high compression.  We naturally hope that everything is ok, but some
+files might have errors since the conversion first balked at a
+couple of large zoo archives with multilayered, embedded
+directories.
+
+Sun 1-Sep-91: Received Ralf Brown's impressive interrupt lists
+/pc/programming/inter27a.zip and inter27b.zip directly from the
+author.  They are a must for every serious programmer.
+
+Sun 1-Sep-91: Obtained some updates from SIMTEL20 including the
+following very worthwhile packages.
+/pc/arcutil
+am64.zip        ArcMaster visual two window user interface. Along
+                with shez63.zip the shell to have for handling
+                archives.  Personally I use shez, but this is also
+                very good.
+/pc/filefind
+cudup20.zip     Colorado Utilities Duplicate File Manager.  A good
+                interface.  Finds the duplicates even within archives.
+/pc/execomp
+drx106.zip      List and handle compressed executables. A very handy
+                shell for listing and compressing or uncompressing
+                executables. But a what's new would be in order.
+
+Sat 31-Aug-91: Acquired from comp.binaries.ibm.pc and SIMTEL20 to
+garbo.uwasa.fi archives:
+/pc/execomp
+unlzexe6.zip    Uncompress an lzexe-compressed executable file. This
+                is a fix of an annoying little bug which froze the
+                PC under certain circumstances. The problem fix was
+                found by David Kirschbaum.
+/pc/arcutil
+zipoff.zoo      Split a large .zip file into smaller parts. Useful
+                to counter the dilemma that arises if a .zip file is
+                becoming larger than the floppy where it is headed.
+                By Morgan Schweers.
+/pc/termutil
+szmod150.zip    Alternative Zmodem by Scott Baker.  Worked without a
+                hitch in the few tests I made.  This seems a very
+                interesting development.
+
+Sat 31-Aug-91: Obtained /pc/calendar/an204.zip Ample Notice reminder
+and calendar from SIMTEL20.  For those who preferred the full-screen
+version I have retained /pc/goldies/an131.zip.  The new format uses
+non-overlapping windows which make a split-screen (or have I missed
+some option), and I find the earlier version clearer.  A matter of
+taste, perhaps.
+
+Fri 30-Aug-91: Acquired the following files from a Finnish BBS to
+garbo.uwasa.fi archives.
+/pc/termutil
+gsz0807.zip     Full-screen version of DSZ Zmodem
+/pc/filefind
+dupcheck.zip    Identify duplicate files across fixed disk
+/pc/editor
+amac39a.zip     AllMacro; QEdit macros
+
+Fri 30-Aug-91: I have acquired an updated version of Compart BBS's
+MsDos file list /pc/filelist/cbbs_dos.zip.  I keep a couple of BBS
+file lists available even if the files need not be on garbo in order
+to have information on what can be found on good BBSes in way of
+packages.
+
+Thu 29-Aug-91: Got /pc/math/sm13a.zip.  It is a mathematical
+expression evaluator which can process the expressions symbolically
+in a manner similar to the commercial Mathematica and Macsyma.
+   Recall that even if there is a gap of ten days in these news, it
+does not mean that there hasn't been any new files acquired to garbo
+archives in between.  Take a look at /pc/_files.in for the monthly
+list of all incoming MsDos files.
+
+Mon 19-Aug-91: Acquired the following files from a Finnish BBS
+/pc/filefind
+fff37.zip       File Finder Pack v3.7 by Jim Derr (author of Shez)
+                A useful file finder which presents you with a menu
+                of the files found.
+/pc/stat
+fit2.zip        Statistics curve fitting and data modelling
+
+Fri 16-Aug-91: Forrest Gehrke feg@clyde.att.com kindly sent update
+/pc/termutil/zdoc0814.zip for the DSZ and GSZ Zmodem programs.  Very
+useful.
+
+Wed 14-Aug-91: Our old laser printer at the department broke down
+and I had to use newer laser for printing an article I am writing.
+The dilemma was that this is a PostScript laser and I had to find an
+ascii to PostScript conversion program in a hurry.  My search of
+garbo.uwasa.fi and SIMTEL20 archives gave four potential candidates
+for the task, and my choice was an oldish /pc/printer/text2ps.zip.
+It is very possible that being in a hurry I didn't scan carefully
+enough, but I was slightly surprised at how few programs we had for
+this purpose.  The question that remains in my mind is that are
+SIMTEL20 and garbo missing something essential in this field.
+
+Tue 13-Aug-91: There is a very useful auxiliary documentation for
+DSZ Zmodem usage /pc/termutil/zdoc0416.zip which I just downloaded
+from SIMTEL20 based on a tip from Keith.  We had an older version at
+garbo.  This file is something of a must to DSZ users giving a
+wealth of information about the numerous DSZ settings.  Because of
+the widely varying transfer circumstances (different host and PC
+machines, modems, etc) a suitable DSZ command line takes some
+figuring out.  This advice file (along with the examples in the
+original DSZ documentation) is a good help in that task.
+
+Fri 9-Aug-91: Got the new /pc/arcers/lha213.exe archiver for .lzh
+files from SIMTEL20.  Self-extracting.
+
+Tue 6-Aug-91: Started the fourth collection /pc/pd2/post04.txt of
+informative email and postings.
+
+Mon 5-Aug-91: Jim Dunn kindly uploaded /pc/batchutil/doscall0.zip.
+It is a free implementation of the call command needed as an
+external program in earlier MsDos.  Tight executable.
+
+Sat 3-Aug-91 : Got /pc/memutil/tlb-v120.zip Upper Memory Manager
+update directly from the author Dan Lewis.  Shareware.  Uploads
+device drivers and TSR in the upper memory.  The unregister version
+limits the number of the modules that can be loaded to two, but that
+is adequate for evaluating the program.  I use this one myself with
+MsDos 3.30 on my 386s.
+
+Wed 31-Jul-91: Acquired /pc/arcutil/shez63.zip Compression Companion
+update.
+
+Tue 30-Jul-91: I have updated /pc/pd2/moder.lst, my list of MsDos
+FTP sites, and their moderators.
+
+Sun 28-Jul-91: I took a look at /pc/batchutil/ask11.zip, which is
+one of the many ASK commands to enhance batch files.  (It was just
+distributed in cbip, and has been on the archives for some time).
+   One feature that MsDos is sorely lacking is the ability to ASK
+questions in a batch file, and then branch accordingly.  Many
+authors (I included in tsbat26.arc) have come up with the missing
+command, usually called ASK (there are also a few other names like
+QUERY and BRANCH).
+   What these programs do is that they return and errorlevel in
+accordance with the user's response to the query string.  A kind of
+a standard begins to emerge here, because it is now quite common
+that the error level returned is equal to the ascii code of the
+(first) letter of user's reply.
+   ASK11 adds the option for timed-out input.  It is also quite
+small since it is written in assembler with the source code
+included.  One switch which it seems to be missing in ASK11 is the
+option to impose whether the enter key has to be pressed in ASK in
+giving the response.
+   It is generally not a good idea to make bacth files dependent on
+too many commands which MsDos does not originally include.  The ASK
+commands are a clear exception to this rule, because they enhance
+batch programming in such a drastic way.
+
+Thu 25-Jul-91: Obtained from SIMTEL20 an interesting small Turbo
+Pascal module.  It is now in the /pc/turbopas directory at
+garbo.uwasa.fi and PD1:<MSDOS.TURBOPAS> at SIMTEL20.  I have
+rewritten the file description line.
+pckselfm.zip    Selfmodifying code which survives execompression. By
+                Jim Nicholson. Source included. I tested it with
+                pklite, and it really seems to work. I have written
+                selfmodifying mode myself in the /pc/ts/
+                tspas24##.arc packages, but they do not achieve this
+                feat.
+
+Thu 25-Jul-91: Took down /pc/batchutil/call.zip from binary postings
+comp.binaries.ibm.pc.  It makes it possible to use the call command
+in MsDos versions earlier than 3.30 where it was introduced as an
+internal command.  Call is the command that can be used to call
+another batch for another batch and to return to the original batch.
+It can also used to call a batch repeatedly from the MsDos command
+line in the following manner: for %f (*.zip) do call rezip %f where
+rezip.bat is an example of a batch file.  (Note that this would not
+work properly if you omitted the keyword call from the loop.  It
+would work only if rezip were an executable program).
+
+Thu 25-Jul-91: Acquired from a Finnish BBS /pc/termutil/txswp121.zip
+The Telix Application Swapper.  You can toggle Telix by using the
+hot key ctrl-shift-T.  I have been using Telix for a long time, and
+along with Mskermit it is my own favorite Telecomm prog.  Perhaps I
+have not taken a look the right utilities, but this is one of the
+very few of the numerous add-on utilities for Telix that I find
+potentially useful.
+
+Wed 17-Jul-91: Got update /pc/filefind/dfl301.zip of one of the best
+duplicate file finders.
+
+Wed 17-Jul-91: Got update /pc/mail/rmail401.zip directly from the
+author Jeroen Schipper. It is an excellent news, mail and message
+reader for the PC.
+
+Thu 16-Jul-91: Withdrew /pc/miscutil/xdos320.zip because of
+suspicions that were brought to my attention of it containing
+material stolen from other authors.
+
+Sun 14-Jul-91: Acquired PKWare's /pc/execomp/pklte112.exe executable
+compressor from simtel20.  One of the musts.
+
+Fri 12-Jul-91: My fellow moderator Harri Valkama and I downloaded
+the new zoo v2.10 MsDos version from comp.binaries.ibm.pc, and as
+the logic of an archiver dictates in my opinion, Harri converted it
+into a self-extracting form.  It is now available from garbo as
+/pc/arcers/zoo210.exe.  We are retaining the old version for a
+littele while for added security as /pc/goldies/zoo201.exe, because
+archivers are such vital utilities for archive management.  Thus
+both the Unix and MsDos 2.10 versions are now downloadable from us.
+
+Wed 10-Jul-91: Acquired from a Finnish BBS the following files.
+Since someone cracked the pkzip 1.10 authenticity (-av) code some
+BBSes have been putting in their own ads as the authenticity labels.
+I removed the labels from these .zip files lest they give a false
+sense of security.
+/pc/source
+comspeed.zip    A simple speed test, includes qbasic sources
+                I decided to include this one only because some
+                users might be interested in qbasic sources.
+/pc/filefind
+dupes300.zip    Find/query delete duplicate files v3.00 R.Adams
+/pc/filefind
+fd500.zip       Find duplicate files v5.00, dialog interface, J.Bean
+/pc/fileutil
+pgp10.zip       Pretty Good Privacy 1.0 RSA public key cryptography
+                Takes some figuring out :-).
+/pc/stock
+sprm33.zip      A stock portfolio record manager rel3.3 (Jun 91)
+/pc/sysinfo
+sysck224.zip    System Checkout, info on your PC, v2.24 (nice)
+                Check this one out.  I liked the concise way in
+                which the information was selected and presented.
+
+Tue 9-Jul-91: Occasionally one comes upon pairs of programs that
+collide.  Here is a pair that crashes at least the two 386 I have
+tried them on. If the Last Byte Upper Memeory Manager, which is a
+very useful program for giving more Dos base many has been loaded,
+then using unlzexe causes a freeze. I managed to correct a similar
+situation with NCSA Telnet by redefining Last Byte interrupts. No
+such luck yet with unlzexe. Any comments or experiences?
+   The reason why unlzexe is useful for me is for virus checking for
+the compresses and uncompressed file forms with various virus
+checkers. For my own compressions I usually go for
+/pc/execomp/pklte105.exe.
+   Incidentally, virus checking is becoming more and more
+problematic with the introduction of such execompressed programs
+that do not allow decompression. This makes the denial of
+decompression a somewhat harmful switch.
+/pc/memutil
+tlb-v119.zip    The Last Byte MsDos Upper Memory Manager v1.19
+/pc/execomp
+unlzexe5.zip    Uncompress an lzexe-compressed executable file
+
+Mon 8-Jul-91: /pc/games/blast.zoo is back after Harri blasted the
+offending part from the package.
+
+Sat 6-Jul-91: Deleted /pc/games/blast.zoo because of the obscenity
+that was hidden in it.  Besides I am not overly keen of having these
+games on garbo.uwasa.fi archives anyway.
+
+Thu 4-Jul-91: Received /pc/mail/rmail40.zip update of ReadMail MsDos
+mail reader from the author Jeroen Schipper.  This excellent reader
+program is one of my big favorites.
+
+Thu 4-Jul-91: There are two forms of garbo.uwasa.fi download
+statistics.  An annotated (ie including file descriptions) sampled
+MsDos download list /pc/filelist/dload##.lst that I have compiled
+weekly until now, and a Monday to Monday list ftplog##.lst that is
+automatically compiled each week covering all the downloaded files
+for garbo files (ie also non-MsDos files).  The latter gives also
+total daily downloads and uploads, and downloader sites.
+   I am going to make the former list a monthly list after the
+current dload26.lst.  The other download list, ftplog##, is not
+posted to cbib.archives, but it is downloadable from garbo from the
+/pc/filelist directory.
+
+Wed 3-Jul-91: Acquired from SIMTEL20 to garbo.uwasa.fi
+/pc/math
+cc4.zip         Calculus Calculator experimental version 4 (good)
+                A comprehensive expression evaluator and function
+                plotter by David Meredith. Includes a help file, can
+                save sessions, and is easy to use. Worth a closer
+                look.
+
+Tue 2-Jul-91: I have a couple of file lists of good Finnish BBSes on
+garbo.uwasa.fi which can be used on the side of SIMTEL20 and garbo
+filelists to see what MsDos material is in circulation.  I received
+an update of Micro Maniacs BBS 2:220/22 from the SysOp Ron Dwight
+(thanks Ron), and it is now available as /pc/filelist/files-mm.zip.
+Mind you, though.  It is almost 800K in zipped form.
+
+Mon 1-Jul-91: Gary Mussar kindly uploaded /pc/programming/
+dosref20.zip MsDos technical reference by Dave Williams.  This and
+Ralf Brown's inter26a.zip & inter26b.zip lists make up a
+comprehensive documentation of MsDos interrupts.  These are musts
+for every serious MsDos programmer.
+
+Sun 30-Jun-91: Keith (Petersen) kindly uploaded a bugfix of the
+small full'screen binary editor, and it is now
+/pc/binedit/edcom44.zip.
+
+Sat 29-Jun-91: Acquired from a Finnish BBS
+/pc/binedit
+edcom43.zip     A small full-screen editor for binary files
+
+Thu 27-Jun-91: The McAfee virus checking set v80 commencing from
+scanv80.zip is now in our /pc/virus directory.
+
+Wed 26-Jun-91: Acquired from a Finnish BBS
+/pc/dirutil
+dcom344.zip     Directory Commander v3.44, DAC Micro Systems
+
+Sun 23-Jun-91: Acquired from a Finnish BBS
+/pc/batchutil
+stackey3.zip    Stackey stuff keys & BatUtils by CTRLALT Associates
+Extracts from the documentation:
+I.1 What STACKEY Does
+      STACKEY, a utility from the makers of CTRLALT, will
+automatically place keystrokes in your keyboard buffer.  It is
+intended for use in connection with BATch files.  Here is a typical
+example of a BATch file "lot.bat" for use with 1-2-3 using STACKEY:
+      stackey W18 CR"/FR%1.wk1" CR
+      123
+Entering "lot mysht" at the DOS command line starts the BATch
+file with mysht as %1.  STACKEY has the command line passed to it
+by the BATch processor with %1 already replaced by mysht.  Thus
+STACKEY places in the keyboard buffer the text: "/FRmysht.wk1"
+followed by a carriage return.  The initial W18 tells STACKEY to
+pause about 1 second to allow 123 to load.  If it weren't there 123
+would happily remove the keystrokes from the buffer before allowing
+any input.  These characters wait in the buffer until a program
+requests keyboard input.  The BATch file then loads 123 which
+requests input and gets it from STACKEY.  /FR calls up a dialog to
+retrieve a worksheet and %1.wk1 followed by a CR loads that
+worksheet.  The CR after the W18 will banish the opening logo
+screen in those versions with an opening logo.
+I.2 What BATUTIL does
+      BATUTIL is a program with two purposes: to give you power
+inside your batch files and to give you more control over the DOS
+environment.  Included in the information that you can get returned
+in either the DOS errorlevel or an environmental variable are
+      -  current time, date, day of the week
+      -  total amount and amount free of disk space, memory and EMS
+      -  CPU type and type of coprocessor if present
+      -  whether a file exists not only in the current directory
+but on the DOS path and if it exists on the DOS path, the actual
+directory can be returned in another environmental variable
+      -  whether a file has today's date or not
+      -  whether one of two files is older than another
+      -  you can parse a filespec into individual components
+Some of these options may not seem so useful at first sight, but,
+for example, whether a file has today's date or not can be used to
+make a routine that will only get run once per day.  Chapter VI
+will explain sample uses of BATUTIL.
+
+Sat 22-Jun-91: Acquired from a Finnish BBS /pc/dirutil/eddy552.zip
+EDit DirectorY full-screen directory editor.  Once in a while one
+comes upon a really good MsDos utility program that one has not
+noticed before.  John Scofield's EDDY File and Directory Editor
+belongs to this category.  Once you get going after a couple of
+minutes initial disorientation, you'll soon see that this is a very
+handy tool for example for touching filedates, altering file
+attributes, etc, etc.  But nothing, of course, is without problems,
+and I also managed to mishandle the program to lock my machine
+needing ctrl-alt-del.
+
+Mon 17-Jun-91: Acquired Fridrik Skulason's F-PROT virus protection
+package update /pc/virus/fprot116.zip from a Finnish bulletin board.
+
+Sun 16-Jun-91: Harri has made Ralf Brown's new interrupt list
+release available as
+ /pc/programming/inter26a.zip
+ /pc/programming/inter26b.zip
+
+Thu 13-Jun-91: Acquired /pc/virus/virussig.z16 virus footprint for
+tbscan Dutch virus scanner v2.3.
+
+Tue 11-Jun-91: Update /pc/printer/pprint53.zip of Patriquin's
+printer facility.
+
+Sat 8-Jun-91: Again updated my list of MsDos FTP sites & moderators
+/pc/pd2/moder.lst after getting the missing information for
+msdos.archive.umich.edu thanks to Keith Petersen and Allan
+Bjorklund.
+
+Fri 7-Jun-91: I have updated my list of MsDos FTP sites & moderators
+/pc/pd2/moder.lst.  It is a text file.  But I am still missing any
+confirmation from msdos.archive.umich.edu.
+
+Thu 30-May-91: Updated /pc/miscutil/utillist.txt.
+
+Wed 29-May-91: Another download from SIMTEL20 that I have looked at
+a little more closely is /pc/plot/rk-plot.zip which plots three
+dimensional contours.  It makes an interesting demo, and I decided
+to make an exception and include it in our collections even if its
+documentation is not in English (it is in German).
+
+Wed 29-May-91: Another utility worth seeing that I have downloaded
+from SIMTEL20 is /pc/programming/helppc21.zip Advanced Programmer's
+Quick Reference Utility by David Jurgens.  It has for example
+interrupt information in a handy format, with a good interface to
+use the help.  This one has class.
+
+Tue 28-May-91: Every now and then one comes across a utility that is
+exceptionally useful. I recently acquired /pc/screen/buffit30.zip
+from SIMTEL20. It is screen scollback program. In other words you
+can get back text that scrolled off the screen. The idea itself is
+very old, but the scrollback utilities I have tried before have had
+problems with my 386 equipment. Buffit works, and is a nicely
+programmed utility altogether. Take a look see.
+
+Mon 27-May-91: Don't forget the /pc/pd2/post02.txt news file either.
+I have collected items of relevance from email and news to that file
+(and its first part01.txt).  Today, I have updated post02.txt again.
+
+Sat 25-May-91: Harri got the following interesting upload to
+garbo.uwasa.fi archives, and I took a slightly closer look.
+/pc/diskutil
+dskut330.zip    Diskutils for copying and formatting v3.30. In
+                effect there are two main programs in this package
+                by Ulrich Feldmuller. One is a nifty diskcopy
+                substitute with a useful user interface. But my test
+                also revealed problems. The copying program copied
+                programs from the source to the target floppy as it
+                should, but the rest of the target tracks remained
+                unusable, and I couldn't write anything on them.
+                Obviously various floppy formats got confused. The
+                other main utility in the Diskutilities package is a
+                disk formatting program.
+
+Fri 24-May-91: Acquired several files from SIMTEL20 archives to
+garbo.uwasa.fi archives. They were just announced in the c.b.i.p.d.
+news. There is one package that I would like to draw your attention
+to because it is of an exceptionally high quality, and because of
+its special interest for calculus. Try it. It is
+/pc/math
+mrcry203.zip    Equation solver based on Borland's Eureka. Excellent.
+
+Thu 23-May-91: Removed on request from garbo.uwasa.fi archives:
+/pc/bbs
+nodelist.zip    Fidonet Nodelist for Friday, 10 May, 1991 (big)
+                See /pc/pd2/post02.txt for the reasons of the
+                deletion.
+
+Wed 22-May-91: Acquired to garbo.uwasa.fi archives:
+/pc/virus
+tbscan23.zip    A Dutch virus scanner v2.3 by Frans Veldman. To use
+                this scanner you'll have to unzip the virussig.dat
+                file from virussig.z16, which is within the package.
+
+Wed 22-May-91: Acquired the following files to garbo.uwasa.fi
+archives:
+/pc/bbs
+aboot200.zip    AutoBoot for BBS crashes v2.00 (weird docs)
+nodelist.zip    Fidonet Nodelist for Friday, 10 May, 1991 (big)
+/pc/database
+stinfo13.zip    US State Information Program v1.30 by Gary Moore
+                (Has a hacked .zip -av authenticy label)
+
+Tue 21-May-91: Acquired update /pc/filecopy/pcopy90d.zip of
+Patriquin's file copy program.
+
+Mon 20-May-91: Acquired again an update of the ExtraDos utilities
+collection /pc/miscutil/xdos280.zip.  It is 460K in zipped form.
+There are many useful utilities in it worth evaluating.  But is the
+authenticy label SQUIRREL Mailbox for real or is it a MAKEAV hack?
+(Well, it is a hack, and this is funny in a pathetic sort of way.
+Distribution of MAKEAV outside North America is prohibited by US
+regulations because of this powerful encyption algorithm.  Then
+along comes some two bit hacker and merrily cracks the encryption
+:-).
+
+Sun 19-May-91: The most frequently downloaded file at garbo.uwasa.fi
+is not surprisingly the /pc/INDEX list of our MsDos files.  To save
+transfer load, this file is also available both in archived format
+(with PC eolns) and Unix compressed format (with Unix eolns).  These
+files are respectively /pc/filelist/garboidx.arc and
+/pc/filelist/garboidx.Z.
+
+Fri 17-April-91: Received /pc/cmdutil/anarkey4.zip directly from the
+author Steven Calwas.  Thanks for your upload Steven.  The readme
+file says: "Anarkey is an intelligent command-line editor for DOS.
+With Anarkey, complete input lines can be entered with two or three
+keystrokes.  Anarkey is intelligent because there is no need to tell
+it what you want to enter on the command line; simply press the
+<Tab> key and Anarkey figures out what you want and does it for
+you."
+
+Thu 16-Apr-91: Harri and I decided to create two new directories.
+They are /pc/diskcopy and /pc/filecopy, and transfer some of the
+files there.  The names should be self-explanatory.
+
+Mon 13-Apr-91: Again acquired some semi-old programs to garbo
+archives:
+/pc/astronomy
+estr8911.zip     A starmap program v8911, reqs EGA
+vstr8911.zip     A starmap program v8911, reqs 286+, VGA
+                 Interesting, _if_ you are an enthusiast.
+/pc/format
+ezf32a.zip       Menu driven Easy disk Format, v3.20
+ezf32b.zip       Menu driven Easy disk Format documents, v3.20
+                 Nice interface and idea. Definitely worth a look,
+                 with appropriate carefulness.
+
+Sun 12-May-91: Found /pc/astronomy/gmovie.zip lying around in a
+Finnish BBS. It is an old, simple demo of a rotating Earth.
+
+Sat 11-May-91: Acquired /pc/pcmag/vol10n08.zip to garbo.uwasa.fi
+because it contains an interesting utility cdx.com for changing
+directories based only on a part of a directory name or a file name.
+Worth a look.
+
+Sat 11-May-91: In my series of semiold updates acquired to garbo
+archives:
+/pc/filefind
+dfl261.zip      Duplicate File Locator v2.61. Good interface.
+                Quoting my earlier review: "This facility to find
+                the duplicate files on your hard disk has quite many
+                bells and whistles and sports a very nice user
+                interface. Works in two modes, names and exact,
+                which should be self-explanatory. There are already
+                other duplicate finders around, but this one
+                certainly has many features the others don't. The
+                others include finddupe (which crashes my PC),
+                /pc/filefind/sst_52a.zip (which has duplicate
+                finding as one of its extra options), and
+                doubles.exe in /pc/ts/tsutlc16.arc (which has an
+                intermediate mode the other lack for faster finding
+                of 'exact' duplicates by name, size, and date)."
+/pc/diskutil
+cudm319.zip     Colorado Utilities Disk Manager v3.1.9
+                It is a disk cataloging utility and the interface
+                looks nice. This is one of the programs where you
+                have to dis deep into the manual if you want to find
+                out what the program is supposed to do.
+/pc/diskutil
+dm313.zip       Directory Master III v3.13 File Manager. Cute,
+                colorful exploding windows. The author says:
+                "Directory Master III is a File Manager. It copies,
+                moves, and deletes files quickly and easily. You can
+                view text files, too. Furthermore, Directory Master
+                III makes it easy to create, modify and move between
+                directories."
+
+Sat 11-May-91: Keith Petersen has found two newer versions of the
+oldish updates I have been going through lately.  They are
+/pc/miscutil/xdos263.zip and /pc/termutil/tfe_221.zip.  Thanks
+Keith.
+
+Fri 10-May-91: Started a new list /pc/pd2/moder.lst, a list of MsMos
+FTP site mdoerators.
+
+Fri 10-May-91: Prepared as usual on Fridays the weekly garbo
+download statistics /pc/fileinfo/dload19.lst.  Replaced dloadold.arc
+by dload91.arc which contains all the all these Friday to Friday
+stats since week 7.  To me they make interesting reading, since they
+tell what is being popular.
+
+Thu 9-May-91: Acquired to garbo.uwasa.fi archives:
+/pc/fileutil
+what29.zip      File format recognition utility v2.9 Boots & Pepper
+                Tells various word processor files formats from each
+                other, recognizes different gif files, etc. Useful.
+/pc/miscutil
+xdos260a.zip    ExtraDOS utilities v2.60 1/2 by Foley Hi-Tech Systems
+xdos260b.zip    ExtraDOS utilities v2.60 2/2 by Foley Hi-Tech Systems
+/pc/editor
+galaxy3.zip     Galaxy v3.0 word processor
+
+Wed 8-May-91: Acquired to garbo.uwasa.fi archives:
+/pc/diskutil
+copyq226.zip    Multiple one-go Format/Copy/Verify Diskettes v2.26.
+                A nifty utility - with an inevitable shareware nag,
+                that was so much discussed just lately.
+/pc/editor
+pco334.zip      PC-outline; outlining and planning program v3.34
+                This program is an old one dating back to 1987 but
+                it is nevertheless a more recent version than we
+                previously had.
+/pc/termutil
+tfe_220.zip     TelixFonEd dialing directory full-screen editor
+                v2.20
+
+Tue 7-May-91: Acquired to garbo.uwasa.fi archives:
+ /pc/diskutil
+ hdtst495.zip    Hard Disk Test/Repair Utility v4.95
+ /pc/doc
+ theref41.zip    Hard drive & controller info v4.1 by R. Falbo
+I did not test what hdtst does to a hard disk, so be careful. Stand
+by, Keith will soon be announcing hdtst498.zip from Simtel20.
+
+Mon 6-May-91: Harri and I made today a major overhaul of all the
+.zip files in all the /pc directories. Their datestamps now give the
+date of the lastest file within arch archive. This can be useful
+information for assessing how current the archives are, and for
+comparing potential updates, etc.
+
+Fri 3-May-91: Acquired the following updates to garbo.uwasa.fi
+archives:
+/pc/execomp
+drx102.zip      List and handle compressed executables. Very good.
+chk4c310.zip    Detect compressed executables v3.10 by John Land
+/pc/filefind
+fff35.zip       File Finder Pack v3.5 by Jim Derr (author of Shez)
+/pc/bbs
+fondir55.zip    BBS Text File to Phone Directory Translate Utility
+/pc/database
+vidcat70.zip    Videocasette Catalog Program v7.0 by William Jackson
+
+Fri 3-May-91: Got two neat ascii maps of Finland from Tuomas
+Kaikkonen.  They are in the /pc/pd2 directory.
+ finserv.map     An ascii map of Finnish IRC servers
+ finland.map     An ascii map drawing of Finland
+
+Wed 1-May-91: Got /pc/turbopas/tpmusic.zip from the author J C
+Kessels.  It is a Turbo Pascal unit for playing music in the
+background using BASIC-like commands.  I scanned through the .pas
+file it contained, but I did not make any tests.
+
+Wed 1-May-91: I have moved the 1-Jan-91 to 30-Apr-91 garbo.uwasa.fi
+news file /pc/pd2/0news-pd2 to /pc/pd2/0news91a.pd2.  The 0news-pd2
+file will thus contain news from 1-May-91 on.  The reason for not
+waiting until the end of the year is the amount of material that has
+piled up during the first four months of 1991.

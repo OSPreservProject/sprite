@@ -1,0 +1,97 @@
+% Provide access to the boldface san serif type style for LaTeX.  Once you
+% have included "bsf" as a style option, you can use the \bsf command to
+% select the boldface san serif style, just as you would select the usual
+% boldface Roman style with \bf, EXCEPT:
+%
+%	The various fonts defined here are all "loaded on demand".  As
+%	discussed in the LaTeX book, Section C.14.4, a loaded on demand
+%	font is subject to two restrictions when used in math mode:
+%
+%	- The font must be used OUTSIDE of math mode before it is used
+%	  INSIDE of math mode.  The \load command can be used to get
+%	  around this restriction.
+%
+%	- Only a single font size is available within math mode - the
+%	  display, text, script and scriptscriptfonts will all be the
+%	  same.  This can be avoided ONLY by changing the definitions
+%	  given here to pre-load the appropriate fonts; see LFONTS.TEX
+%	  for further information.  (Alternatively, \@getfont could be
+%	  made more clever.)  Note that pre-loading the fonts could cause
+%	  you to fill font space with fonts you never really use.
+%
+% In order to allow other style files that need access to \bsf to input this
+% file safely, it is designed so that an attempt to input it a second time -
+% or, more exactly, when command "\bsf" is already defined - is ignored.
+%
+% This file can be adapted easily to define other font type styles.  The real
+% limit is likely to come from the requirement that each style so defined must
+% be given a unique family number - TeX only supports 16 families and LaTeX
+% as usually configured already uses 10.  The right way to avoid this problem
+% is to modify \@getfont so that it ignores a family number of -1.  Fonts
+% so specified would not be usable in math mode, but that's no big deal; you
+% don't WANT to use tons of non-math fonts in math mode anyway.
+%
+% As currently written, this file assumes that you have boldface san serif
+% fonts available at the following point sizes:
+%
+%	lcmssb8
+%	lcmssb8 at 9pt
+%	cmssbx10
+%	cmssbx10 at 11pt
+%	cmssbx10 at 12pt
+%	cmssbx10 at 17pt
+%	cmssbx10 at 25pt
+%
+% All but the last of these should be commonly available.  I'm not sure about
+% the last one; LFONTS.TEX does not assume the availability of ANY 25 pt fonts
+% other than Roman.  If necessary, change the definition of \bsfxxv@ to
+% \@subfont\bsf\rm.  (Alternatively, if you have boldface sans serif fonts
+% at sizes smaller than 8pt, you might want to change the definitions of
+% \bsfv@, \bsfvi@, and \bsfvii@.)
+%
+% Technical note:  It is possible to do without the \bsf<size>@ macros by
+% including their contents, with a whole bunch of \@prtct's, within the
+% \@addfontinfo definitions.  This is a pain to do, and probably doesn't end
+% up saving any space anyway.  This way costs you a bunch of extra macros,
+% but it's a LOT easier to understand!
+%
+% Written by Jerry Leichter (LEICHTER-JERRY@CS.YALE.EDU)
+% Modified, 27-Jan-89 by Jerry Leichter
+%	Fixed typos in file name for lcmssb8.
+% Modified, 16-Jun-89 by Jerry Leichter
+%	Changed family name for consistency.  Fixed a typo in the definition
+%	for 9pt, introduced by the 27-Jan fix.  Sigh, such a *simple* file....
+
+\expandafter\ifx\csname bsf\endcsname\relax		%Once only, please
+% Note:  It's a pain to use \@ifundefined here - we don't want to pass the
+% rest of the definitions as an argument, but we can't easily use \endinput
+% since, with docsty, we can't control where the line breaks occur.
+
+\typeout{Document Option `bsf': 16 Jun 89}
+\def\bsf{\protect\pbsf}
+\newfam\bsffam
+\@addfontinfo\@vpt{\@prtct\bsfv@}
+  \def\bsfv@{\def\pbsf{\@subfont\bsf\bf}}
+\@addfontinfo\@vipt{\@prtct\bsfvi@}
+  \def\bsfvi@{\def\pbsf{\@subfont\bsf\bf}}
+\@addfontinfo\@viipt{\@prtct\bsfvii@}
+  \def\bsfvii@{\def\pbsf{\@subfont\bsf\bf}}
+\@addfontinfo\@viiipt{\@prtct\bsfviii@}
+  \def\bsfviii@{\def\pbsf{\@getfont\pbsf\bsffam\@viiipt{lcmssb8}}}
+\@addfontinfo\@ixpt{\@prtct\bsfx@}
+  \def\bsfx@{\def\pbsf{\@getfont\pbsf\bsffam\@ixpt{lcmssb8\@halfmag}}}
+\@addfontinfo\@xpt{\@prtct\bsfx@}
+  \def\bsfx@{\def\pbsf{\@getfont\pbsf\bsffam\@xpt{cmssbx10}}}
+\@addfontinfo\@xipt{\@prtct\bsfxi@}
+  \def\bsfxi@{\def\pbsf{\@getfont\pbsf\bsffam\@xipt{cmssbx10\@halfmag}}}
+\@addfontinfo\@xiipt{\@prtct\bsfxii@}
+  \def\bsfxii@{\def\pbsf{\@getfont\pbsf\bsffam\@xiipt{cmssbx10\@magscale1}}}
+\@addfontinfo\@xivpt{\@prtct\bsfxiv@}
+  \def\bsfxiv@{\def\pbsf{\@getfont\pbsf\bsffam\@xivpt{cmssbx10\@magscale2}}}
+\@addfontinfo\@xviipt{\@prtct\bsfxvii@}
+  \def\bsfxvii@{\def\pbsf{\@getfont\pbsf\bsffam\@xviipt{cmssbx10\@magscale3}}}
+\@addfontinfo\@xxpt{\@prtct\bsfxx@}
+  \def\bsfxx@{\def\pbsf{\@getfont\pbsf\bsffam\@xxpt{cmssbx10\@magscale4}}}
+\@addfontinfo\@xxvpt{\@prtct\bsfxxv@}
+  \def\bsfxxv@{\def\pbsf{\@getfont\pbsf\bsffam\@xxvpt{cmssbx10\@magscale5}}}
+\fi

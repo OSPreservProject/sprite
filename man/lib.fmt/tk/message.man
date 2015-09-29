@@ -1,0 +1,198 @@
+
+
+
+message                   User Commands                   message
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     message - Create and manipulate message widgets
+
+SSYYNNOOPPSSIISS
+     mmeessssaaggee _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     bbaacckkggrroouunndd      ffoonntt           ppaaddyy                           |
+     bboorrddeerrWWiiddtthh     ffoorreeggrroouunndd     rreelliieeff                         |
+     ccuurrssoorr          ppaaddxx           tteexxtt                           |
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           aassppeecctt
+     Class:          AAssppeecctt
+     Command-Line Switch:--aassppeecctt
+
+          Specifies  a  non-negative  integer  value   indicating
+          desired  aspect ratio for the window.  The aspect ratio
+          is specified as 100*width/height.  100 means the window
+          should  be  as wide as it is tall, 200 means the window
+          should be twice as wide as it is  tall,  50  means  the
+          window  should  be  twice as tall as it is wide, and so
+          on.  Defaults to 150.
+
+     Name:           jjuussttiiffyy
+     Class:          JJuussttiiffyy
+     Command-Line Switch:--jjuussttiiffyy
+
+          Specifies how to just the text within the message  win-
+          dow.   Must be one of lleefftt, cceenntteerr, or rriigghhtt.  Defaults
+          to lleefftt.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmeessssaaggee command creates a new window (given by the _p_a_t_h_-
+     _N_a_m_e  argument)  and  makes it into a message widget.  Addi-
+     tional options, described above, may  be  specified  on  the
+     command  line or in the option database to configure aspects
+     of the message such as its colors, font, text,  and  initial
+     relief.   The mmeessssaaggee command returns its _p_a_t_h_N_a_m_e argument.
+     At the time this command is invoked, there must not exist  a
+     window named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent must exist.
+
+     A message is a widget that displays  a  textual  string.   A
+     message widget has three special features.  First, it breaks
+     up its string into lines in order to produce a given  aspect
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+message                   User Commands                   message
+
+
+
+     ratio  for  the  window.  The line breaks are chosen at word
+     boundaries wherever possible (if  not  even  a  single  word
+     would  fit  on  a  line,  then the word will be split across
+     lines).  Newline characters in the string  will  force  line
+     breaks;  they can be used, for example, to leave blank lines
+     in the display.
+
+     The second feature of a  message  widget  is  justification.
+     The  text  may be displayed left-justified (each line starts
+     at the left side of the window), centered on a  line-by-line
+     basis,  or right-justified (each line ends at the right side
+     of the window).
+
+     The third feature of a message widget  is  that  it  handles
+     control  characters  and  non-printing characters specially.
+     Tab characters are replaced with enough blank space to  line
+     up  on  the  next 8-character boundary.  Newlines cause line
+     breaks.  Other control  characters  (ASCII  code  less  than
+     0x20)  and  characters not defined in the font are displayed
+     as a four-character sequence \\xx_h_h where _h_h is the  two-digit
+     hexadecimal  number  corresponding to the character.  In the
+     unusual case where the font doesn't contain all of the char-
+     acters in ``0123456789abcdef\x'' then control characters and
+     undefined characters are not displayed at all.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The mmeessssaaggee command creates a new Tcl command whose name  is
+     _p_a_t_h_N_a_m_e.  This command may be used to invoke various opera-
+     tions on the widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.  The following commands are possible for message widg-
+     ets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the mmeessssaaggee command.
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+message                   User Commands                   message
+
+
+
+DDEEFFAAUULLTT BBIINNDDIINNGGSS
+     When a new message is created, it has no default event bind-
+     ings: messages are intended for output purposes only.
+
+
+BBUUGGSS
+     Tabs don't work very well with  text  that  is  centered  or
+     right-justified.  The most common result is that the line is
+     justified wrong.
+
+
+KKEEYYWWOORRDDSS
+     message, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

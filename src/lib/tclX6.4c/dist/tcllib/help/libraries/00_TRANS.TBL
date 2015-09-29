@@ -1,0 +1,11 @@
+F AUTOLOAD.;1                       	autoload
+F AUTOPROC.;1                       	autoprocs
+F BUILDPAC.;1                       	buildpackageindex
+F CONVERT_.;1                       	convert_lib
+F DEMAND_L.;1                       	demand_load
+F LOAD.;1                           	load
+F LOADLIBI.;1                       	loadlibindex
+F PACKAGEL.;1                       	packagelib
+F PACKAGES.;1                       	packages
+F UNKNOWN.;1                        	unknown
+F UTILPROC.;1                       	utilprocs

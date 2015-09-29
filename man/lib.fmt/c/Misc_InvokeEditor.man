@@ -1,0 +1,68 @@
+
+
+
+Misc                  C Library Procedures                   Misc
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Misc_InvokeEditor - Invoke an editor for a user
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<lliibbcc..hh>>
+
+     int
+     MMiisscc__IInnvvookkeeEEddiittoorr(_f_i_l_e)
+
+AARRGGUUMMEENNTTSS
+     char   *_f_i_l_e   (in)      Name of the file to edit.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     If a program needs to have the user edit a file, it can sim-
+     ply  call  MMiisscc__IInnvvookkeeEEddiittoorr  with  the  name of the file to
+     edit.  The user's editor (as defined by the EDITOR  environ-
+     ment  variable,  with vvii being the default) will be invoked.
+     MMiisscc__IInnvvookkeeEEddiittoorr returns the exit status from  the  editor.
+     For  setuid  and setgid programs, the editor is invoked with
+     the user's real (not effective) user and group IDs.
+
+
+KKEEYYWWOORRDDSS
+     edit, file
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 4, 1991                     1
+
+
+

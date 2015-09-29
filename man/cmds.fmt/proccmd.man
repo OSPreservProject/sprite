@@ -1,0 +1,66 @@
+
+
+
+proccmd                   User Commands                   proccmd
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     proccmd - set Spur processor parameters.
+
+SSYYNNOOPPSSIISS
+     pprrooccccmmdd [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --ss _p_r_o_c_e_s_s_o_r        The specified processor is started.
+
+     --ii _p_r_o_c_e_s_s_o_r        The specified processor is idled.
+
+IINNTTRROODDUUCCTTIIOONN
+     This command controls the processors of the  Spur  multipro-
+     cessor.
+
+BBUUGGSS
+     If all processors are idled, it is bad.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 5, 1990                     1
+
+
+

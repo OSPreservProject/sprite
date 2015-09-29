@@ -1,0 +1,190 @@
+
+asyncbuf.h,320
+#define	DEFBUF(95,3899
+#define	baccs(180,6658
+#define	bget(155,5817
+#define	bgetclr(186,6781
+#define	bgetp(148,5586
+#define	bgets(162,5992
+#define	boverclr(192,6897
+#define	boverp(189,6845
+#define	bput(134,5263
+#define	bputclr(183,6717
+#define	bputo(141,5442
+#define	bsize(195,6948
+#define	initbuf(108,4236
+
+boot.h,0
+
+if.h,196
+#define	IF_ADJ(128,4812
+#define	IF_DEQUEUE(148,5255
+#define	IF_DEQUEUEIF(137,5001
+#define	IF_DROP(105,4137
+#define	IF_ENQUEUE(106,4180
+#define	IF_PREPEND(115,4371
+#define	IF_QFULL(104,4076
+
+if_arp.h,0
+
+if_ether.h,249
+#define ether_cmp(110,3337
+#define ether_cmp(118,3503
+#define ether_cmp(122,3595
+#define ether_copy(131,3878
+#define ether_copy(136,4000
+#define ether_copy(141,4157
+#define ip_copy(150,4437
+#define ip_copy(154,4518
+#define ip_copy(159,4636
+
+in.h,178
+#define	IN_CLASSA(94,2161
+#define	IN_CLASSB(99,2311
+#define	IN_CLASSC(104,2470
+#define	htonl(128,2959
+#define	htons(129,2980
+#define	ntohl(126,2917
+#define	ntohs(127,2938
+
+in_systm.h,92
+typedef u_long	n_long;19,507
+typedef u_short n_short;18,444
+typedef	u_long	n_time;20,568
+
+inet.c,257
+arp(187,4908
+comarp(242,6286
+ether_print(416,10563
+in_broadaddr(364,9601
+in_lnaof(348,9341
+inet_init(63,1324
+inet_print(406,10399
+ip_input(117,2819
+ip_output(80,1735
+ipcksum(387,10039
+#define millitime(27,500
+myetheraddr(45,950
+revarp(216,5605
+
+ip.h,89
+#define	IPOPT_CLASS(58,1718
+#define	IPOPT_COPIED(57,1682
+#define	IPOPT_NUMBER(59,1753
+
+main.c,14
+main(41,1126
+
+memvar.h,417
+#define	CAT(86,3051
+#define IDENT(85,3032
+#define	MP_NOTMPR(99,3486
+extern int	(*mem_lrcode(122,4036
+#define mpr_d(39,1197
+#define	mpr_linebytes(44,1380
+#define	mpr_mdlinebytes(48,1565
+#define mpr_prlinebytes(46,1479
+#define mpr_static(88,3079
+#define mprd8_addr(56,1872
+#define mprd_addr(51,1630
+#define	mprd_skew(62,2100
+#define	mprs8_addr(65,2240
+#define	mprs_addr(64,2176
+#define	mprs_skew(66,2305
+
+pixrect.h,874
+#define	PIXOP_NEEDS_DST(182,6637
+#define	PIXOP_NEEDS_SRC(183,6705
+#define PIX_COLOR(175,6504
+#define PIX_NOT(172,6328
+#define PIX_OPCOLOR(176,6534
+#define pr_batchrop(134,4713
+#define pr_destroy(136,4815
+#define	pr_get(138,4880
+#define	pr_getattributes(148,5342
+#define	pr_getcolormap(146,5224
+#define	pr_put(140,4948
+#define	pr_putattributes(129,4462
+#define	pr_putcolormap(127,4344
+#define	pr_region(144,5139
+#define pr_rop(125,4227
+#define pr_stencil(132,4568
+#define pr_vector(142,5026
+#define prs_batchrop(207,7549
+#define prs_destroy(209,7662
+#define	prs_get(211,7729
+#define	prs_getattributes(225,8430
+#define	prs_getcolormap(221,8219
+#define	prs_put(213,7809
+#define	prs_putattributes(223,8338
+#define	prs_putcolormap(219,8100
+#define	prs_region(217,8013
+#define prs_rop(202,7295
+#define prs_stencil(204,7403
+#define prs_vector(215,7899
+
+sainet.h,0
+
+socket.h,0
+
+systypes.h,1105
+#define	FD_CLR(102,2745
+#define	FD_ISSET(103,2822
+#define	FD_SET(101,2669
+#define FD_ZERO(104,2899
+typedef	char *	caddr_t;61,1705
+typedef	unsigned char	35,1081
+typedef	long	clock_t;72,1949
+typedef	long	daddr_t;60,1683
+typedef	short	dev_t;74,1978
+typedef long	fd_mask;91,2436
+} fd_set;99,2658
+typedef	short	gid_t;77,2040
+#define	howmany(94,2535
+typedef	u_long	ino_t;63,1793
+typedef	unsigned int	37,1143
+typedef long	key_t;78,2061
+} label_t;45,1377
+} label_t;51,1505
+typedef	unsigned long	38,1171
+#define	major(22,766
+#define	makedev(33,1033
+#define	minor(28,923
+typedef	long	off_t;75,1999
+typedef	struct	_physadr { int r[1]; } *physadr;42,1290
+typedef	struct	_physadr { short r[1]; } *physadr;48,1416
+typedef	long *	qaddr_t;62,1729
+typedef struct _quad {long val[2]; } quad;57,1584
+typedef	unsigned short	36,1111
+typedef	unsigned short	39,1201
+typedef	int	size_t;67,1869
+typedef	long	swblk_t;64,1815
+typedef	long	time_t;71,1928
+typedef	struct	_uquad {unsigned long val[2]; } u_quad;58,1627
+typedef	short	uid_t;76,2019
+#define unix_major(24,823
+#define	unix_minor(30,965
+
+tftp.c,114
+etheropen(97,2214
+etherstrategy(109,2470
+#define millitime(39,603
+#define millitime(41,646
+tftpload(131,2949
+
+tftp.h,0
+
+types.h,102
+#define mem_alloc(20,270
+#define mem_alloc(26,410
+#define mem_free(21,309
+#define mem_free(27,460
+
+udp.h,0
+
+xxboot.c,84
+devclose(91,1806
+devopen(49,892
+tftpboot(131,2675
+ttboot(98,1895
+xxboot(21,330

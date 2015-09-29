@@ -1,0 +1,77 @@
+\unnumbchapentry {Introduction}{1}
+\unnumbchapentry {Conditions for Using Bison}{3}
+\unnumbchapentry {Bison General Public License}{5}
+\unnumbsecentry {Copying Policies}{5}
+\unnumbsecentry {NO WARRANTY}{7}
+\chapentry {The Concepts of Bison}{1}{9}
+\secentry {Languages and Context-Free Grammars}{1}{1}{9}
+\secentry {From Formal Rules to Bison Input}{1}{2}{10}
+\secentry {Semantic Values}{1}{3}{11}
+\secentry {Semantic Actions}{1}{4}{12}
+\secentry {Bison Output: the Parser File}{1}{5}{13}
+\secentry {Stages in Using Bison}{1}{6}{13}
+\secentry {The Overall Layout of a Bison Grammar}{1}{7}{14}
+\chapentry {Examples}{2}{17}
+\secentry {Reverse Polish Notation Calculator}{2}{1}{17}
+\subsecentry {Declarations for Rpcalc}{2}{1}{1}{17}
+\subsecentry {Grammar Rules for Rpcalc}{2}{1}{2}{18}
+\subsubsecentry {Explanation of {\fam \ttfam \tentt \rawbackslash input}\hbox {}}{2}{1}{2}{1}{19}
+\subsubsecentry {Explanation of {\fam \ttfam \tentt \rawbackslash line}\hbox {}}{2}{1}{2}{2}{20}
+\subsubsecentry {Explanation of {\fam \ttfam \tentt \rawbackslash expr}\hbox {}}{2}{1}{2}{3}{20}
+\subsecentry {The Rpcalc Lexical Analyzer}{2}{1}{3}{21}
+\subsecentry {The Controlling Function}{2}{1}{4}{22}
+\subsecentry {The Error Reporting Routine}{2}{1}{5}{23}
+\subsecentry {Running Bison to Make the Parser}{2}{1}{6}{23}
+\subsecentry {Compiling the Parser File}{2}{1}{7}{24}
+\secentry {Infix Notation Calculator: {\fam \ttfam \tentt \rawbackslash calc}\hbox {}}{2}{2}{24}
+\secentry {Simple Error Recovery}{2}{3}{26}
+\secentry {Multi-Function Calculator: {\fam \ttfam \tentt \rawbackslash mfcalc}\hbox {}}{2}{4}{27}
+\subsecentry {Declarations for {\fam \ttfam \tentt \rawbackslash mfcalc}\hbox {}}{2}{4}{1}{28}
+\subsecentry {Grammar Rules for {\fam \ttfam \tentt \rawbackslash mfcalc}\hbox {}}{2}{4}{2}{29}
+\subsecentry {Managing the Symbol Table for {\fam \ttfam \tentt \rawbackslash mfcalc}\hbox {}}{2}{4}{3}{29}
+\secentry {Exercises}{2}{5}{33}
+\chapentry {Bison Grammar Files}{3}{35}
+\secentry {Outline of a Bison Grammar}{3}{1}{35}
+\subsecentry {The C Declarations Section}{3}{1}{1}{35}
+\subsecentry {The Bison Declarations Section}{3}{1}{2}{35}
+\subsecentry {The Grammar Rules Section}{3}{1}{3}{36}
+\subsecentry {The Additional C Code Section}{3}{1}{4}{36}
+\secentry {Symbols, Terminal and Nonterminal}{3}{2}{36}
+\secentry {Syntax of Grammar Rules}{3}{3}{38}
+\secentry {Recursive Rules}{3}{4}{39}
+\secentry {The Semantics of the Language}{3}{5}{40}
+\subsecentry {The Data Types of Semantic Values}{3}{5}{1}{40}
+\subsecentry {More Than One Type for Semantic Values}{3}{5}{2}{41}
+\subsecentry {Actions}{3}{5}{3}{41}
+\subsecentry {Data Types of Values in Actions}{3}{5}{4}{42}
+\subsecentry {Actions in Mid-Rule}{3}{5}{5}{43}
+\secentry {Bison Declarations}{3}{6}{45}
+\subsecentry {Declaring Token Type Names}{3}{6}{1}{46}
+\subsecentry {Declaring Operator Precedence}{3}{6}{2}{47}
+\subsecentry {Declaring the Collection of Value Types}{3}{6}{3}{47}
+\subsecentry {Declaring Value Types of Nonterminal Symbols}{3}{6}{4}{48}
+\subsecentry {Preventing Warnings about Conflicts}{3}{6}{5}{48}
+\subsecentry {Declaring the Start-Symbol}{3}{6}{6}{49}
+\subsecentry {Requesting a Pure (Reentrant) Parser}{3}{6}{7}{49}
+\subsecentry {Bison Declaration Summary}{3}{6}{8}{50}
+\chapentry {Parser C-Language Interface}{4}{51}
+\secentry {The Parser Function {\fam \ttfam \tentt \rawbackslash yyparse}\hbox {}}{4}{1}{51}
+\secentry {The Lexical Analyzer Function {\fam \ttfam \tentt \rawbackslash yylex}\hbox {}}{4}{2}{51}
+\secentry {The Error Reporting Function {\fam \ttfam \tentt \rawbackslash yyerror}\hbox {}}{4}{3}{54}
+\secentry {Special Features for Use in Actions}{4}{4}{54}
+\chapentry {The Algorithm of the Bison Parser}{5}{57}
+\secentry {Look-Ahead Tokens}{5}{1}{58}
+\secentry {Shift/Reduce Conflicts}{5}{2}{59}
+\secentry {Operator Precedence}{5}{3}{60}
+\subsecentry {When Precedence is Needed}{5}{3}{1}{60}
+\subsecentry {How to Specify Operator Precedence}{5}{3}{2}{61}
+\subsecentry {Precedence Examples}{5}{3}{3}{61}
+\subsecentry {How Precedence Works}{5}{3}{4}{61}
+\secentry {Operators with Context-Dependent Precedence}{5}{4}{62}
+\secentry {Parser States}{5}{5}{63}
+\secentry {Reduce/Reduce conflicts}{5}{6}{63}
+\chapentry {Error Recovery}{6}{67}
+\chapentry {Debugging Your Parser}{7}{69}
+\chapentry {Invocation of Bison; Command Options}{8}{71}
+\chapentry {Table of Bison Symbols}{Appendix \char 65}{73}
+\chapentry {Glossary}{Appendix \char 66}{75}

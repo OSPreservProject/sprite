@@ -1,0 +1,174 @@
+.\" SCCSID: @(#)shmctl.2	4.1	12/9/88
+.TH shmctl 2
+.\" Last modified by BAM on 31-Oct-1985 1300.
+.\"
+.\" Last modified by BAM on 8-Aug-85  1300  
+.\"
+.SH NAME
+shmctl \- shared memory control operations
+.SH SYNTAX
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+.PP
+.ft B
+int shmctl (shmid, cmd, buf)
+int shmid, cmd;
+struct shmid_ds *buf;
+.fi
+.SH DESCRIPTION
+.NXR "shmctl system call"
+.NXA "shmctl system cal" "plock system call"
+.NXA "shmctl system call" "shmop system call"
+.NXR "shared memory" "control operations"
+The
+.PN shmctl
+system call
+provides a variety of shared memory
+control operations as specified by
+.I cmd.
+The following 
+.I cmds
+are available:
+.NXR "shmctl system call" "commands"
+.TP 15
+.B IPC_STAT
+Place the current value of each member
+of the data structure associated with
+.I shmid
+into the structure pointed to by 
+.IR buf .
+The contents of this structure are defined in
+.MS intro 2 .
+.TP 15
+.B IPC_SET
+Set the value of the following members
+of the data structure associated with
+.I shmid
+to the corresponding value found
+in the structure pointed to by
+.IR buf :
+.EX
+shm_perm.uid
+shm_perm.gid
+shm_perm.mode    /* only low 9 bits */
+.EE
+.RS 8
+.PP
+This 
+.I cmd
+can only be executed by a process
+that has an effective user ID equal to
+either that of super user or to the value of
+.B shm_perm.uid
+in the data structure associated with 
+.I shmid.
+.RE
+.TP 15
+.B IPC_RMID
+Remove the shared memory identifier specified by 
+.I shmid
+from the system and destroy the shared
+memory segment and data structure
+associated with it. This
+.I cmd
+can only be executed by a process that
+has an effective user ID equal to
+either that of super user or to the value of 
+.B shm_perm.uid
+in the data structure associated with
+.IR shmid .
+.TP 15
+.B SHM_LOCK
+Lock the shared memory segment specified by
+.I shmid
+in memory.
+This 
+.I cmd
+can only be executed by a process that has an effective usr ID equal to
+super user.
+.TP 15
+.B SHM_UNLOCK
+Unlock the shared memory segment specified by
+.I shmid.
+This 
+.I cmd
+can only be executed by a process that has an effective usr ID equal to
+super user.
+.SH RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of -1 is returned and 
+.I errno 
+is set to indicated the error.
+.SH DIAGNOSTICS
+.NXR "shmctl system call" "diagnostics"
+The
+.PN shmctl
+system call
+will fail if one or more of the following are true:
+.TP 15
+[EINVAL]
+The
+.I shmid
+is not a valid shared memory identifier. 
+.TP 15
+[EINVAL]
+The
+.I cmd
+is not a valid command.  
+.TP 15
+[EACCES]
+The
+.I cmd
+is equal to IPC_STAT
+and read permission is
+denied to the calling process.  For further information, see
+.MS errno 2 . 
+.TP 15
+[EPERM]
+The
+.I cmd
+is equal to IPC_RMID or IPC_SET
+and the effective user ID of the
+calling process is not equal to that of
+super user and it is not equal to the value of 
+.B shm_perm.uid
+in the data structure associated with
+.I shmid. 
+.TP 15
+[EPERM]
+The
+.I cmd
+is equal to SHM_LOCK
+or SHM_UNLOCK
+and the effective user ID
+of the calling process is not equal to that of superuser.
+.TP 15
+[EINVAL]
+The
+.I cmd
+is equal to SHM_LOCK 
+and the shared memory segment is currently locked by
+this process.
+.TP 15
+[EINVAL]
+The
+.I cmd
+is equal to SHM_UNLOCK 
+and the shared memory segment specified by 
+.I shmid
+is not currently locked in memory by
+this process.
+.TP 15
+[EFAULT]
+The
+.I buf
+points to an illegal address. 
+.SH SEE ALSO
+shmget(2), shmop(2)
+.SH BUGS
+The System V shared memory functions are implemented at user level on top
+of the mmap(2) interface.  Not all the System V functionality is
+implemented.

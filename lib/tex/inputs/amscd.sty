@@ -1,0 +1,180 @@
+%% This is file `amscd.sty' generated from `amscd.doc'
+%% on 21-JUN-1991 by the docstrip.ams utility (1.0). 
+%% 
+%%@texfile{
+%% filename="amscd.sty",
+%% version="1.1",
+%% date="21-JUN-1991",
+%% filetype="AMS-LaTeX: option",
+%% copyright="Copyright (C) American Mathematical Society, all rights
+%%   reserved.  Copying of this file is authorized only if either:
+%%   (1) you make absolutely no changes to your copy, including name;
+%%   OR (2) if you do make changes, you first rename it to some other
+%%   name.",
+%% author="American Mathematical Society",
+%% address="American Mathematical Society,
+%%   Technical Support Group,
+%%   P. O. Box 6248,
+%%   Providence, RI 02940,
+%%   USA",
+%% telephone="401-455-4080 or (in the USA) 800-321-4AMS",
+%% email="Internet: Tech-Support@Math.AMS.com",
+%% checksumtype="line count",
+%% checksum="180",
+%% codetable="ISO/ASCII",
+%% keywords="latex, amslatex, ams-latex, commutative diagram",
+%% abstract="This file is part of the AMS-\LaTeX{} package, ver. 1.1.
+%%   It is a \LaTeX{} option that adapts the commutative diagram macros
+%%   of AMS-\TeX{} for use in \LaTeX{}."
+%%}
+\expandafter\ifx\csname amscd.sty\endcsname\relax
+\expandafter\def\csname amscd.sty\endcsname{}
+\else\message{---already loaded}\endinput\fi
+\def\filename{amscd.sty}
+\def\fileversion{1.1} \def\filedate{21-JUN-1991}
+\immediate\write16{%
+AMS-Latex option `\filename' (\fileversion, \filedate)}
+%%% end of file header
+\def\Invalid@@{Invalid use of \string}
+\def\Let@{\let\\\math@cr}
+\def\RIfM@{\relax\protect\ifmmode}
+\@ifundefined{math@cr}
+  {\def\math@cr{{\ifnum0=`}\fi
+   \new@ifstar{\global\@eqpen\@M\math@cr@}%
+          {\global\@eqpen\interdisplaylinepenalty \math@cr@}}}
+  {}
+\def\math@cr@{\new@ifnextchar[\math@cr@@{\math@cr@@[\z@]}}
+\def\math@cr@@[#1]{\ifnum0=`{\fi}\math@cr@@@
+  \noalign{\vskip#1\relax}}
+\def\restore@math@cr{\def\math@cr@@@{\cr}}
+\restore@math@cr
+\def\new@ifnextchar#1#2#3{%
+  \let\@tempe #1\def\@tempa{#2}\def\@tempb{#3}\futurelet
+    \@tempc\new@ifnch}
+\def\new@ifnch{\ifx\@tempc \@tempe \let\@tempd\@tempa
+             \else\let\@tempd\@tempb\fi\@tempd}
+\def\new@ifstar#1#2{\new@ifnextchar *{\def\@tempa*{#1}\@tempa}{#2}}
+\def\DN@{\def\next@}
+\def\FN@{\futurelet\next}
+\def\setboxz@h{\setbox\z@\hbox}
+\def\wdz@{\wd\z@}
+\def\setbox@ne{\setbox\@ne}
+\def\wd@ne{\wd\@ne}
+\def\rightarrowfill@#1{\m@th\setboxz@h{$#1-$}\ht\z@\z@
+  $#1\copy\z@\mkern-6mu\cleaders
+  \hbox{$#1\mkern-2mu\box\z@\mkern-2mu$}\hfill
+  \mkern-6mu\mathord\rightarrow$}
+\def\leftarrowfill@#1{\m@th\setboxz@h{$#1-$}\ht\z@\z@
+  $#1\mathord\leftarrow\mkern-6mu\cleaders
+  \hbox{$#1\mkern-2mu\copy\z@\mkern-2mu$}\hfill
+  \mkern-6mu\box\z@$}
+\def\leftrightarrowfill@#1{\m@th\setboxz@h{$#1-$}\ht\z@\z@
+  $#1\mathord\leftarrow\mkern-6mu\cleaders
+  \hbox{$#1\mkern-2mu\box\z@\mkern-2mu$}\hfill
+  \mkern-6mu\mathord\rightarrow$}
+\long\def\@leftmark#1#2{#1}
+\long\def\@rightmark#1#2{#2}
+\long\def\@ifempty#1{%
+ \expandafter\ifx\@car#1@\@nil @\@empty
+  \expandafter\@leftmark\else\expandafter\@rightmark\fi}
+\long\def\@ifnotempty#1{\@ifempty{#1}{}}
+\def\atdef@#1{\expandafter\def\csname\space @\string#1\endcsname}
+\begingroup \catcode`\@=\active
+\xdef @{\expandafter\noexpand\csname FN\string @\endcsname
+  \expandafter\noexpand\csname at\string @\endcsname}
+\endgroup
+\def\at@{\let\next@\at@@
+ \ifcat\noexpand\next a\else
+ \ifcat\noexpand\next0\else
+ \ifcat\noexpand\next\relax\else
+ \let\next@\at@@@\fi\fi\fi\next@}
+\def\at@@#1{\expandafter
+  \ifx\csname\space @\string#1\endcsname\relax
+    \DN@{\at@@@#1}%
+  \else
+    \DN@{\csname\space @\string#1\endcsname}%
+  \fi\next@}%
+\def\at@@@{\err@{\Invalid@@ @}{\the\athelp@}\char64\relax}
+\@ifundefined{athelp@}{\csname newhelp\endcsname\athelp@
+{Only certain combinations beginning with @ make sense to me.^^J%
+I'll assume you wanted @@ for a printed @.}}{}
+\@ifundefined{err@}{\def\err@{\@latexerr}}{}
+\@ifundefined{default@tag}%
+  {\def\default@tag{%
+    \def\tag{\err@{\string\tag\space not allowed here}\@eha}}}
+  {}
+\@ifundefined{ex@}{\newdimen\ex@}{}
+\@ifundefined{minaw@}{\newdimen\minaw@}{}
+\@ifundefined{bigaw@}{\newdimen\bigaw@}{}
+\minaw@11.11128\ex@
+\newdimen\minCDarrowwidth
+\minCDarrowwidth2.5pc
+\newif\ifCD@
+\let\ampersand@\relax
+\def\CD{\catcode`\@\active
+ \bgroup\relax\iffalse{\fi\let\ampersand@&\iffalse}\fi
+ \CD@true\vcenter\bgroup\Let@\restore@math@cr\default@tag
+ \tabskip\z@skip\baselineskip20\ex@
+ \lineskip3\ex@\lineskiplimit3\ex@\halign\bgroup
+ &\hfill$\m@th##$\hfill\crcr}
+\def\endCD{\crcr\egroup\egroup\egroup}
+\def\CD@check#1#2{\ifCD@\DN@{#2}\else
+  \DN@{\err@{@\string#1 not
+    allowed outside of the CD environment}\@eha}%
+  \fi\next@}
+\atdef@>#1>#2>{\ampersand@
+  \ifCD@ \global\bigaw@\minCDarrowwidth \else \global\bigaw@\minaw@ \fi
+  \setboxz@h{$\m@th\scriptstyle\;{#1}\;\;$}%
+  \ifdim\wdz@>\bigaw@\global\bigaw@\wdz@\fi
+  \@ifnotempty{#2}{\setbox@ne\hbox{$\m@th\scriptstyle\;{#2}\;\;$}%
+    \ifdim\wd@ne>\bigaw@\global\bigaw@\wd@ne\fi}%
+ \ifCD@\enskip\fi
+   \mathrel{\mathop{\hbox to\bigaw@{\rightarrowfill@\displaystyle}}%
+     \limits^{#1}\@ifnotempty{#2}{_{#2}}}%
+ \ifCD@\enskip\fi \ampersand@}
+\atdef@<#1<#2<{\ampersand@
+  \ifCD@ \global\bigaw@\minCDarrowwidth \else \global\bigaw@\minaw@ \fi
+  \setboxz@h{$\m@th\scriptstyle\;\;{#1}\;$}%
+  \ifdim\wdz@>\bigaw@ \global\bigaw@\wdz@ \fi
+  \@ifnotempty{#2}{\setbox@ne\hbox{$\m@th\scriptstyle\;\;{#2}\;$}%
+    \ifdim\wd@ne>\bigaw@ \global\bigaw@\wd@ne \fi}%
+  \ifCD@\enskip\fi
+    \mathrel{\mathop{\hbox to\bigaw@{\leftarrowfill@\displaystyle}}%
+      \limits^{#1}\@ifnotempty{#2}{_{#2}}}%
+  \ifCD@\enskip\fi \ampersand@}
+\begingroup \catcode`\~=\active \lccode`\~=`\@
+\lowercase{%
+  \global\atdef@)#1)#2){~>#1>#2>}
+  \global\atdef@(#1(#2({~<#1<#2<}
+}% end lowercase
+\endgroup
+\atdef@ A#1A#2A{\CD@check{A..A..A}{\llap{$\m@th\vcenter{\hbox
+  {$\scriptstyle#1$}}$}\Big\uparrow
+  \rlap{$\m@th\vcenter{\hbox{$\scriptstyle#2$}}$}&&}}
+\atdef@ V#1V#2V{\CD@check{V..V..V}{\llap{$\m@th\vcenter{\hbox
+  {$\scriptstyle#1$}}$}\Big\downarrow
+  \rlap{$\m@th\vcenter{\hbox{$\scriptstyle#2$}}$}&&}}
+\atdef@={\CD@check={&\enskip\mathrel
+  {\vbox{\hrule\@width\minCDarrowwidth\vskip2\ex@\hrule\@width
+  \minCDarrowwidth}}\enskip&}}
+\atdef@|{\CD@check|{\Big\Vert&&}}
+\atdef@\vert{\CD@check\vert{\Big\Vert&&}}
+\atdef@.{\CD@check.{&&}}
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+\endinput
+%% 
+%% End of file `amscd.sty'.

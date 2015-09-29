@@ -1,0 +1,19 @@
+The following changes have been made to this directory since R3:
+
+	o  New DDX interfaces integrated
+	o  8-bit specific code added:
+
+		Stipples, text, copyplane, pushpixels
+
+	o  non-8 bit code added:
+
+		0-width lines, 0-width arcs, filled arcs,
+		tiles, copyarea
+	
+	o  New colormap code.  CFB now provides all 6 standard
+	   visual types.  Other non-frame buffer displays should
+	   use the new color resolving functions.
+
+This directory now provides a real implementation for 8-bit frame buffers,
+driving the frame buffer at memory bandwidth for many operations using
+a reasonable CPU (R2000, SPARC at least).

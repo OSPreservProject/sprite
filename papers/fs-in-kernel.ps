@@ -1,0 +1,3144 @@
+%!
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%DocumentFonts: (atend)
+%%EndComments
+%
+% FrameMaker PostScript Prolog 2.0, for use with FrameMaker 2.0
+% Copyright (c) 1986,87,89 by Frame Technology, Inc.  All rights reserved.
+%
+% Known Problems:
+%	Due to bugs in Transcript, the 'PS-Adobe-' is omitted from line 1
+/FMversion (2.0) def 
+% Set up Color vs. Black-and-White
+	/FMPrintInColor systemdict /colorimage known def
+% Uncomment this line to force b&w on color printer
+%   /FMPrintInColor false def
+/FrameDict 190 dict def 
+systemdict /errordict known not {/errordict 10 dict def
+		errordict /rangecheck {stop} put} if
+% The readline in 23.0 doesn't recognize cr's as nl's on AppleTalk
+FrameDict /tmprangecheck errordict /rangecheck get put 
+errordict /rangecheck {FrameDict /bug true put} put 
+FrameDict /bug false put 
+mark 
+% Some PS machines read past the CR, so keep the following 3 lines together!
+currentfile 5 string readline
+00
+0000000000
+cleartomark 
+errordict /rangecheck FrameDict /tmprangecheck get put 
+FrameDict /bug get { 
+	/readline {
+		/gstring exch def
+		/gfile exch def
+		/gindex 0 def
+		{
+			gfile read pop 
+			dup 10 eq {exit} if 
+			dup 13 eq {exit} if 
+			gstring exch gindex exch put 
+			/gindex gindex 1 add def 
+		} loop
+		pop 
+		gstring 0 gindex getinterval true 
+		} def
+	} if
+/FMVERSION {
+	FMversion ne {
+		/Times-Roman findfont 18 scalefont setfont
+		100 100 moveto
+		(FrameMaker version does not match postscript_prolog!)
+		dup =
+		show showpage
+		} if
+	} def 
+/FMLOCAL {
+	FrameDict begin
+	0 def 
+	end 
+	} def 
+	/gstring FMLOCAL
+	/gfile FMLOCAL
+	/gindex FMLOCAL
+	/orgxfer FMLOCAL
+	/orgproc FMLOCAL
+	/organgle FMLOCAL
+	/orgfreq FMLOCAL
+	/yscale FMLOCAL
+	/xscale FMLOCAL
+	/manualfeed FMLOCAL
+	/paperheight FMLOCAL
+	/paperwidth FMLOCAL
+/FMDOCUMENT { 
+	array /FMfonts exch def 
+	/#copies exch def
+	FrameDict begin
+	0 ne dup {setmanualfeed} if
+	/manualfeed exch def
+	/paperheight exch def
+	/paperwidth exch def
+	setpapername
+	manualfeed {true} {papersize} ifelse 
+	{manualpapersize} {false} ifelse 
+	{desperatepapersize} if
+	/yscale exch def
+	/xscale exch def
+	currenttransfer cvlit /orgxfer exch def
+	currentscreen cvlit /orgproc exch def
+	/organgle exch def /orgfreq exch def
+	end 
+	} def 
+	/pagesave FMLOCAL
+	/orgmatrix FMLOCAL
+	/landscape FMLOCAL
+/FMBEGINPAGE { 
+	FrameDict begin 
+	/pagesave save def
+	3.86 setmiterlimit
+	/landscape exch 0 ne def
+	landscape { 
+		90 rotate 0 exch neg translate pop 
+		}
+		{pop pop}
+		ifelse
+	xscale yscale scale
+	/orgmatrix matrix def
+	gsave 
+	} def 
+/FMENDPAGE {
+	grestore 
+	pagesave restore
+	end 
+	showpage
+	} def 
+/FMDEFINEFONT { 
+	FrameDict begin
+	findfont 
+	ReEncode 
+	2 index exch 
+	definefont exch 
+	scalefont 
+	FMfonts 3 1 roll 
+	put
+	end 
+	} bind def
+/FMNORMALIZEGRAPHICS { 
+	newpath
+	0.0 0.0 moveto
+	1 setlinewidth
+	0 setlinecap
+	0 0 0 sethsbcolor
+	0 setgray 
+	} bind def
+	/fx FMLOCAL
+	/fy FMLOCAL
+	/fh FMLOCAL
+	/fw FMLOCAL
+	/llx FMLOCAL
+	/lly FMLOCAL
+	/urx FMLOCAL
+	/ury FMLOCAL
+/FMBEGINEPSF { 
+	end 
+	/FMEPSF save def 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	[/fy /fx /fh /fw /ury /urx /lly /llx] {exch def} forall 
+	fx fy translate 
+	rotate
+	fw urx llx sub div fh ury lly sub div scale 
+	llx neg lly neg translate 
+	} bind def
+/FMENDEPSF {
+	FMEPSF restore
+	FrameDict begin 
+	} bind def
+FrameDict begin 
+/setmanualfeed {
+%%BeginFeature *ManualFeed True
+	 statusdict /manualfeed true put
+%%EndFeature
+	} def
+/max {2 copy lt {exch} if pop} bind def
+/min {2 copy gt {exch} if pop} bind def
+/inch {72 mul} def
+/pagedimen { 
+	paperheight sub abs 16 lt exch 
+	paperwidth sub abs 16 lt and
+	{/papername exch def} {pop} ifelse
+	} def
+	/papersizedict FMLOCAL
+/setpapername { 
+	/papersizedict 14 dict def 
+	papersizedict begin
+	/papername /unknown def 
+		/Letter 8.5 inch 11.0 inch pagedimen
+		/LetterSmall 7.68 inch 10.16 inch pagedimen
+		/Tabloid 11.0 inch 17.0 inch pagedimen
+		/Ledger 17.0 inch 11.0 inch pagedimen
+		/Legal 8.5 inch 14.0 inch pagedimen
+		/Statement 5.5 inch 8.5 inch pagedimen
+		/Executive 7.5 inch 10.0 inch pagedimen
+		/A3 11.69 inch 16.5 inch pagedimen
+		/A4 8.26 inch 11.69 inch pagedimen
+		/A4Small 7.47 inch 10.85 inch pagedimen
+		/B4 10.125 inch 14.33 inch pagedimen
+		/B5 7.16 inch 10.125 inch pagedimen
+	end
+	} def
+/papersize {
+	papersizedict begin
+		/Letter {lettertray} def
+		/LetterSmall {lettertray lettersmall} def
+		/Tabloid {11x17tray} def
+		/Ledger {ledgertray} def
+		/Legal {legaltray} def
+		/Statement {statementtray} def
+		/Executive {executivetray} def
+		/A3 {a3tray} def
+		/A4 {a4tray} def
+		/A4Small {a4tray a4small} def
+		/B4 {b4tray} def
+		/B5 {b5tray} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	/FMdicttop countdictstack 1 add def
+	statusdict begin stopped end 
+	countdictstack -1 FMdicttop {pop end} for
+	} def
+/manualpapersize {
+	papersizedict begin
+		/Letter {letter} def
+		/LetterSmall {lettersmall} def
+		/Tabloid {11x17} def
+		/Ledger {ledger} def
+		/Legal {legal} def
+		/Statement {statement} def
+		/Executive {executive} def
+		/A3 {a3} def
+		/A4 {a4} def
+		/A4Small {a4small} def
+		/B4 {b4} def
+		/B5 {b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	stopped 
+	} def
+/desperatepapersize {
+	statusdict /setpageparams known
+		{
+		paperwidth paperheight 0 1 
+		statusdict begin
+		{setpageparams} stopped pop 
+		end
+		} if
+	} def
+/savematrix {
+	orgmatrix currentmatrix pop
+	} bind def
+/restorematrix {
+	orgmatrix setmatrix
+	} bind def
+/dmatrix matrix def
+/dpi    72 0 dmatrix defaultmatrix dtransform
+    dup mul exch   dup mul add   sqrt def
+/freq dpi 18.75 div 8 div round dup 0 eq {pop 1} if 8 mul dpi exch div def
+/sangle 1 0 dmatrix defaultmatrix dtransform exch atan def
+/DiacriticEncoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /space /exclam /quotedbl
+/numbersign /dollar /percent /ampersand /quotesingle /parenleft
+/parenright /asterisk /plus /comma /hyphen /period /slash /zero /one
+/two /three /four /five /six /seven /eight /nine /colon /semicolon
+/less /equal /greater /question /at /A /B /C /D /E /F /G /H /I /J /K
+/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft /backslash
+/bracketright /asciicircum /underscore /grave /a /b /c /d /e /f /g /h
+/i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z /braceleft /bar
+/braceright /asciitilde /.notdef /Adieresis /Aring /Ccedilla /Eacute
+/Ntilde /Odieresis /Udieresis /aacute /agrave /acircumflex /adieresis
+/atilde /aring /ccedilla /eacute /egrave /ecircumflex /edieresis
+/iacute /igrave /icircumflex /idieresis /ntilde /oacute /ograve
+/ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex
+/udieresis /dagger /.notdef /cent /sterling /section /bullet
+/paragraph /germandbls /registered /copyright /trademark /acute
+/dieresis /.notdef /AE /Oslash /.notdef /.notdef /.notdef /.notdef
+/yen /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/ordfeminine /ordmasculine /.notdef /ae /oslash /questiondown
+/exclamdown /logicalnot /.notdef /florin /.notdef /.notdef
+/guillemotleft /guillemotright /ellipsis /.notdef /Agrave /Atilde
+/Otilde /OE /oe /endash /emdash /quotedblleft /quotedblright
+/quoteleft /quoteright /.notdef /.notdef /ydieresis /Ydieresis
+/fraction /currency /guilsinglleft /guilsinglright /fi /fl /daggerdbl
+/periodcentered /quotesinglbase /quotedblbase /perthousand
+/Acircumflex /Ecircumflex /Aacute /Edieresis /Egrave /Iacute
+/Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex /.notdef /Ograve
+/Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde /macron
+/breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
+] def
+/ReEncode { 
+	dup 
+	length 
+	dict begin 
+	{
+	1 index /FID ne 
+		{def} 
+		{pop pop} ifelse 
+	} forall
+	Encoding StandardEncoding eq 
+	{
+		/Encoding DiacriticEncoding def
+	}if
+	currentdict 
+	end 
+	} bind def
+/graymode true def
+	/bwidth FMLOCAL
+	/bpside FMLOCAL
+	/bstring FMLOCAL
+	/onbits FMLOCAL
+	/offbits FMLOCAL
+	/xindex FMLOCAL
+	/yindex FMLOCAL
+	/x FMLOCAL
+	/y FMLOCAL
+/setpattern {
+	 /bwidth  exch def
+	 /bpside  exch def
+	 /bstring exch def
+	 /onbits 0 def  /offbits 0 def
+	 freq sangle landscape {90 add} if 
+		{/y exch def
+		 /x exch def
+		 /xindex x 1 add 2 div bpside mul cvi def
+		 /yindex y 1 add 2 div bpside mul cvi def
+		 bstring yindex bwidth mul xindex 8 idiv add get
+		 1 7 xindex 8 mod sub bitshift and 0 ne
+		 {/onbits  onbits  1 add def 1}
+		 {/offbits offbits 1 add def 0}
+		 ifelse
+		}
+		setscreen
+	 {} settransfer
+	 offbits offbits onbits add div FMsetgray
+	/graymode false def
+	} bind def
+/grayness {
+	FMsetgray
+	graymode not {
+		/graymode true def
+		orgxfer cvx settransfer
+		orgfreq organgle orgproc cvx setscreen
+		} if
+	} bind def
+	/HUE FMLOCAL
+	/SAT FMLOCAL
+	/BRIGHT FMLOCAL
+	/Colors FMLOCAL
+FMPrintInColor 
+	
+	{
+	/HUE 0 def
+	/SAT 0 def
+	/BRIGHT 0 def
+	% array of arrays Hue and Sat values for the separations [HUE BRIGHT]
+	/Colors   
+	[[0    0  ]    % black
+	 [0    0  ]    % white
+	 [0.00 1.0]    % red
+	 [0.37 1.0]    % green
+	 [0.60 1.0]    % blue
+	 [0.50 1.0]    % cyan
+	 [0.83 1.0]    % magenta
+	 [0.16 1.0]    % comment / yellow
+	 ] def
+      
+	/BEGINBITMAPCOLOR { 
+		BITMAPCOLOR} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPCOLORc} def
+	/K { 
+		Colors exch get dup
+		0 get /HUE exch store 
+		1 get /BRIGHT exch store
+		  HUE 0 eq BRIGHT 0 eq and
+			{1.0 SAT sub setgray}
+			{HUE SAT BRIGHT sethsbcolor} 
+		  ifelse
+		} def
+	/FMsetgray { 
+		/SAT exch 1.0 exch sub store 
+		  HUE 0 eq BRIGHT 0 eq and
+			{1.0 SAT sub setgray}
+			{HUE SAT BRIGHT sethsbcolor} 
+		  ifelse
+		} bind def
+	}
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPGRAY} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPGRAYc} def
+	/FMsetgray {setgray} bind def
+	/K { 
+		pop
+		} def
+	}
+ifelse
+/normalize {
+	transform round exch round exch itransform
+	} bind def
+/dnormalize {
+	dtransform round exch round exch idtransform
+	} bind def
+/lnormalize { 
+	0 dtransform exch cvi 2 idiv 2 mul 1 add exch idtransform pop
+	} bind def
+/H { 
+	lnormalize setlinewidth
+	} bind def
+/Z {
+	setlinecap
+	} bind def
+/X { 
+	fillprocs exch get exec
+	} bind def
+/V { 
+	gsave eofill grestore
+	} bind def
+/N { 
+	stroke
+	} bind def
+/M {newpath moveto} bind def
+/E {lineto} bind def
+/D {curveto} bind def
+/O {closepath} bind def
+	/n FMLOCAL
+/L { 
+ 	/n exch def
+	newpath
+	normalize
+	moveto 
+	2 1 n {pop normalize lineto} for
+	} bind def
+/Y { 
+	L 
+	closepath
+	} bind def
+	/x1 FMLOCAL
+	/x2 FMLOCAL
+	/y1 FMLOCAL
+	/y2 FMLOCAL
+	/rad FMLOCAL
+/R { 
+	/y2 exch def
+	/x2 exch def
+	/y1 exch def
+	/x1 exch def
+	x1 y1
+	x2 y1
+	x2 y2
+	x1 y2
+	4 Y 
+	} bind def
+/RR { 
+	/rad exch def
+	normalize
+	/y2 exch def
+	/x2 exch def
+	normalize
+	/y1 exch def
+	/x1 exch def
+	newpath
+	x1 y1 rad add moveto
+	x1 y2 x2 y2 rad arcto
+	x2 y2 x2 y1 rad arcto
+	x2 y1 x1 y1 rad arcto
+	x1 y1 x1 y2 rad arcto
+	closepath
+	16 {pop} repeat
+	} bind def
+/C { 
+	grestore
+	gsave
+	R 
+	clip
+	} bind def
+/U { 
+	grestore
+	gsave
+	} bind def
+/F { 
+	FMfonts exch get
+	setfont
+	} bind def
+/T { 
+	moveto show
+	} bind def
+/RF { 
+	rotate
+	0 ne {-1 1 scale} if
+	} bind def
+/TF { 
+	gsave
+	moveto 
+	RF
+	show
+	grestore
+	} bind def
+/P { 
+	moveto
+	0 32 3 2 roll widthshow
+	} bind def
+/PF { 
+	gsave
+	moveto 
+	RF
+	0 32 3 2 roll widthshow
+	grestore
+	} bind def
+/S { 
+	moveto
+	0 exch ashow
+	} bind def
+/SF { 
+	gsave
+	moveto
+	RF
+	0 exch ashow
+	grestore
+	} bind def
+/B { 
+	moveto
+	0 32 4 2 roll 0 exch awidthshow
+	} bind def
+/BF { 
+	gsave
+	moveto
+	RF
+	0 32 4 2 roll 0 exch awidthshow
+	grestore
+	} bind def
+	/x FMLOCAL
+	/y FMLOCAL
+	/dx FMLOCAL
+	/dy FMLOCAL
+	/dl FMLOCAL
+	/t FMLOCAL
+	/t2 FMLOCAL
+	/Cos FMLOCAL
+	/Sin FMLOCAL
+	/r FMLOCAL
+/W { 
+	dnormalize
+	/dy exch def
+	/dx exch def
+	normalize
+	/y  exch def
+	/x  exch def
+	/dl dx dx mul dy dy mul add sqrt def
+	dl 0.0 gt {
+		/t currentlinewidth def
+		savematrix
+		/Cos dx dl div def
+		/Sin dy dl div def
+		/r [Cos Sin Sin neg Cos 0.0 0.0] def
+		/t2 t 2.5 mul 3.5 max def
+		newpath
+		x y translate
+		r concat
+		0.0 0.0 moveto
+		dl t 2.7 mul sub 0.0 rlineto
+		stroke
+		restorematrix
+		x dx add y dy add translate
+		r concat
+		t 0.67 mul setlinewidth
+		t 1.61 mul neg  0.0 translate
+		0.0 0.0 moveto
+		t2 1.7 mul neg  t2 2.0 div     moveto
+		0.0 0.0 lineto
+		t2 1.7 mul neg  t2 2.0 div neg lineto
+		stroke
+		t setlinewidth
+		restorematrix
+		} if
+	} bind def
+/G { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath fill
+	grestore
+	} bind def
+/A { 
+	gsave
+	savematrix
+	newpath
+	2 index 2 div add exch 3 index 2 div sub exch 
+	normalize 2 index 2 div sub exch 3 index 2 div add exch 
+	translate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	stroke
+	grestore
+	} bind def
+	/x FMLOCAL
+	/y FMLOCAL
+	/w FMLOCAL
+	/h FMLOCAL
+	/xx FMLOCAL
+	/yy FMLOCAL
+	/ww FMLOCAL
+	/hh FMLOCAL
+	/FMsaveobject FMLOCAL
+	/FMoptop FMLOCAL
+	/FMdicttop FMLOCAL
+/BEGINPRINTCODE { 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count 4 sub def 
+	/FMsaveobject save def
+	userdict begin 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	3 index neg 3 index neg translate
+	} bind def
+/ENDPRINTCODE {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMsaveobject restore 
+	} bind def
+/gn { 
+	0 
+	{	46 mul 
+		cf read pop 
+		32 sub 
+		dup 46 lt {exit} if 
+		46 sub add 
+		} loop
+	add 
+	} bind def
+	/str FMLOCAL
+/cfs { 
+	/str sl string def 
+	0 1 sl 1 sub {str exch val put} for 
+	str def 
+	} bind def
+/ic [ 
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0
+	{0 hx} {1 hx} {2 hx} {3 hx} {4 hx} {5 hx} {6 hx} {7 hx} {8 hx} {9 hx}
+	{10 hx} {11 hx} {12 hx} {13 hx} {14 hx} {15 hx} {16 hx} {17 hx} {18 hx}
+	{19 hx} {gn hx} {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}
+	{13} {14} {15} {16} {17} {18} {19} {gn} {0 wh} {1 wh} {2 wh} {3 wh}
+	{4 wh} {5 wh} {6 wh} {7 wh} {8 wh} {9 wh} {10 wh} {11 wh} {12 wh}
+	{13 wh} {14 wh} {gn wh} {0 bl} {1 bl} {2 bl} {3 bl} {4 bl} {5 bl} {6 bl}
+	{7 bl} {8 bl} {9 bl} {10 bl} {11 bl} {12 bl} {13 bl} {14 bl} {gn bl}
+	{0 fl} {1 fl} {2 fl} {3 fl} {4 fl} {5 fl} {6 fl} {7 fl} {8 fl} {9 fl}
+	{10 fl} {11 fl} {12 fl} {13 fl} {14 fl} {gn fl}
+	] def
+	/sl FMLOCAL
+	/val FMLOCAL
+	/ws FMLOCAL
+	/im FMLOCAL
+	/bs FMLOCAL
+	/cs FMLOCAL
+	/len FMLOCAL
+	/pos FMLOCAL
+/ms { 
+	/sl exch def 
+	/val 255 def 
+	/ws cfs 
+	/im cfs 
+	/val 0 def 
+	/bs cfs 
+	/cs cfs 
+	} bind def
+400 ms 
+/ip { 
+	is 
+	0 
+	cf cs readline pop 
+	{	ic exch get exec 
+		add 
+		} forall 
+	pop 
+	
+	} bind def
+/wh { 
+	/len exch def 
+	/pos exch def 
+	ws 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/bl { 
+	/len exch def 
+	/pos exch def 
+	bs 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/s1 1 string def
+/fl { 
+	/len exch def 
+	/pos exch def 
+	/val cf s1 readhexstring pop 0 get def
+	pos 1 pos len add 1 sub {im exch val put} for
+	pos len 
+	} bind def
+/hx { 
+	3 copy getinterval 
+	cf exch readhexstring pop pop 
+	} bind def
+	/h FMLOCAL
+	/w FMLOCAL
+	/d FMLOCAL
+	/lb FMLOCAL
+	/bitmapsave FMLOCAL
+	/is FMLOCAL
+	/cf FMLOCAL
+/wbytes { 
+	dup 
+	8 eq {pop} {1 eq {7 add 8 idiv} {3 add 4 idiv} ifelse} ifelse
+	} bind def
+/BEGINBITMAPBWc { 
+	1 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAPGRAYc { 
+	8 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAP2BITc { 
+	2 {} COMMONBITMAPc
+	} bind def
+/COMMONBITMAPc { 
+	/r exch def
+	/d exch def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	r                    
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} image 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BEGINBITMAPBW { 
+	1 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAPGRAY { 
+	8 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAP2BIT { 
+	2 {} COMMONBITMAP
+	} bind def
+/COMMONBITMAP { 
+	/r exch def
+	/d exch def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/bitmapsave save def 
+	r                    
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} image
+	bitmapsave restore 
+	grestore
+	} bind def
+	/proc1 FMLOCAL
+	/proc2 FMLOCAL
+	/newproc FMLOCAL
+/Fmcc {
+    /proc2 exch cvlit def
+    /proc1 exch cvlit def
+    /newproc proc1 length proc2 length add array def
+    newproc 0 proc1 putinterval
+    newproc proc1 length proc2 putinterval
+    newproc cvx
+} bind def
+/ngrayt 256 array def
+/nredt 256 array def
+/nbluet 256 array def
+/ngreent 256 array def
+	/gryt FMLOCAL
+	/blut FMLOCAL
+	/grnt FMLOCAL
+	/redt FMLOCAL
+	/indx FMLOCAL
+	/cynu FMLOCAL
+	/magu FMLOCAL
+	/yelu FMLOCAL
+	/k FMLOCAL
+	/u FMLOCAL
+/colorsetup {
+	currentcolortransfer
+	/gryt exch def
+	/blut exch def
+	/grnt exch def
+	/redt exch def
+	0 1 255 {
+		/indx exch def
+		/cynu 1 red indx get 255 div sub def
+		/magu 1 green indx get 255 div sub def
+		/yelu 1 blue indx get 255 div sub def
+		/k cynu magu min yelu min def
+		/u k currentundercolorremoval exec def
+		nredt indx 1 0 cynu u sub max sub redt exec put
+		ngreent indx 1 0 magu u sub max sub grnt exec put
+		nbluet indx 1 0 yelu u sub max sub blut exec put
+		ngrayt indx 1 k currentblackgeneration exec sub gryt exec put
+	} for
+	{255 mul cvi nredt exch get}
+	{255 mul cvi ngreent exch get}
+	{255 mul cvi nbluet exch get}
+	{255 mul cvi ngrayt exch get}
+	setcolortransfer
+	{pop 0} setundercolorremoval
+	{} setblackgeneration
+	} bind def
+	/tran FMLOCAL
+/fakecolorsetup {
+	/tran 256 string def
+	0 1 255 {/indx exch def 
+		tran indx
+		red indx get 77 mul
+		green indx get 151 mul
+		blue indx get 28 mul
+		add add 256 idiv put} for
+	currenttransfer
+	{255 mul cvi tran exch get 255.0 div}
+	exch Fmcc settransfer
+} bind def
+/BITMAPCOLOR { 
+	/d 8 def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/bitmapsave save def 
+	colorsetup
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} {is} {is} true 3 colorimage 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCOLORc { 
+	/d 8 def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	colorsetup
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} {is} {is} true 3 colorimage
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPGRAY { 
+	8 {fakecolorsetup} COMMONBITMAP
+	} bind def
+/BITMAPGRAYc { 
+	8 {fakecolorsetup} COMMONBITMAPc
+	} bind def
+/ENDBITMAP {
+	} bind def
+end 
+%%EndProlog
+%%BeginSetup
+(2.0) FMVERSION
+1 1 612 792 0 1 11 FMDOCUMENT
+/fillprocs 32 array def
+fillprocs 0 { 0.000000 grayness } put
+fillprocs 1 { 0.100000 grayness } put
+fillprocs 2 { 0.300000 grayness } put
+fillprocs 3 { 0.500000 grayness } put
+fillprocs 4 { 0.700000 grayness } put
+fillprocs 5 { 0.900000 grayness } put
+fillprocs 6 { 0.970000 grayness } put
+fillprocs 7 { 1.000000 grayness } put
+fillprocs 8 {<0f87c3e1f0783c1e> 8 1 setpattern } put
+fillprocs 9 {<0f1e3c78f0e1c387> 8 1 setpattern } put
+fillprocs 10 {<cccccccccccccccc> 8 1 setpattern } put
+fillprocs 11 {<ffff0000ffff0000> 8 1 setpattern } put
+fillprocs 12 {<8142241818244281> 8 1 setpattern } put
+fillprocs 13 {<8040201008040201> 8 1 setpattern } put
+fillprocs 14 {<03060c183060c081> 8 1 setpattern } put
+fillprocs 15 {} put
+fillprocs 16 { 1.000000 grayness } put
+fillprocs 17 { 0.900000 grayness } put
+fillprocs 18 { 0.700000 grayness } put
+fillprocs 19 { 0.500000 grayness } put
+fillprocs 20 { 0.300000 grayness } put
+fillprocs 21 { 0.100000 grayness } put
+fillprocs 22 { 0.030000 grayness } put
+fillprocs 23 { 0.000000 grayness } put
+fillprocs 24 {<f0783c1e0f87c3e1> 8 1 setpattern } put
+fillprocs 25 {<f0e1c3870f1e3c78> 8 1 setpattern } put
+fillprocs 26 {<3333333333333333> 8 1 setpattern } put
+fillprocs 27 {<0000ffff0000ffff> 8 1 setpattern } put
+fillprocs 28 {<7ebddbe7e7dbbd7e> 8 1 setpattern } put
+fillprocs 29 {<7fbfdfeff7fbfdfe> 8 1 setpattern } put
+fillprocs 30 {<fcf9f3e7cf9f3f7e> 8 1 setpattern } put
+fillprocs 31 {} put
+%%EndSetup
+0 14 /Times-Bold FMDEFINEFONT
+1 12 /Times-Italic FMDEFINEFONT
+2 12 /Times-Bold FMDEFINEFONT
+3 11 /Times-Italic FMDEFINEFONT
+4 11 /Times-Roman FMDEFINEFONT
+%%Page: "1" 1
+%%BeginPaperSize: Letter
+%%EndPaperSize
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+0 F
+0 X
+(The File System Belongs in the Kernel) 192.12 710.67 T
+1 F
+(Br) 276.96 680 T
+(ent W) 288.51 680 T
+(elch) 315.05 680 T
+(welch@par) 249.64 666 T
+(c.xer) 304.87 666 T
+(ox.com) 328.06 666 T
+(Xer) 276.18 652 T
+(ox P) 293.06 652 T
+(ARC) 313.16 652 T
+(3333 Coyote Hill Road) 250.53 638 T
+(Palo Alto, CA 94304) 256.02 624 T
+2 F
+(Abstract) 90 589 T
+3 F
+-0.03 (This paper ar) 90 571.67 P
+-0.03 (gues that a shar) 149.35 571.67 P
+-0.03 (ed, distributed name space and I/O interface should be implemented ) 219.34 571.67 P
+(inside the operating system kernel. The gr) 90 558.67 T
+(ounding for the ar) 274.21 558.67 T
+(gument is a comparison between the ) 354.07 558.67 T
+(Sprite network operating system and the Mach micr) 90 545.67 T
+(okernel. Sprite optimizes the common case of ) 317.54 545.67 T
+(\336le and device access, both local and r) 90 532.67 T
+(emote, by pr) 260.46 532.67 T
+(oviding a kernel-level implementation. Sprite ) 314.67 532.67 T
+-0.58 (also allows for user) 90 519.67 P
+-0.58 (-level extensibility by letting a user) 175.03 519.67 P
+-0.58 (-level pr) 326 519.67 P
+-0.58 (ocess implement the naming and I/O ) 361.93 519.67 P
+(interfaces of the \336le system. Mach, in contrast, pr) 90 506.67 T
+(ovide general interpr) 307.17 506.67 T
+(ocess communication and ) 400.13 506.67 T
+(does not de\336ne a \336le system pr) 90 493.67 T
+(otocol in the kernel.) 224.46 493.67 T
+-0.13 ([Published in the Pr) 90 476.67 P
+-0.13 (oceedings of the 2nd USENIX Mach Symposium, Nov 20-22, 1991, pages 233-) 178.62 476.67 P
+(250]) 90 463.67 T
+2 F
+(1 Intr) 90 444 T
+(oduction) 119.43 444 T
+4 F
+-0.26 (This paper ar) 90 426.67 P
+-0.26 (gues that the \336le system is a mature enough abstraction that it should be implemented ) 147.24 426.67 P
+-0.68 (inside the operating system kernel for optimal performance. Data storage and high-level naming are ) 90 413.67 P
+-0.34 (fundamental features of today\325) 90 400.67 P
+-0.34 (s computer systems, along with process and communication abstrac-) 223.54 400.67 P
+-0.27 (tions. In the Sprite network operating system, a shared network \336le system is the basis for a distrib-) 90 387.67 P
+(uted system, and it is implemented inside the operating system kernel. The kernel provides the ) 90 374.67 T
+-0.57 (framework for a transparently distributed hierarchical name space and for an I/O stream abstraction ) 90 361.67 P
+-0.51 (with UNIX semantics. The Sprite \336le system provides higher performance than NFS and AFS [Nel-) 90 348.67 P
+(son88] [Ousterhout90]. Unlike these two systems, the Sprite \336le system retains the full semantics ) 90 335.67 T
+(of the UNIX I/O stream abstraction even in cases of network sharing [W) 90 322.67 T
+(elch90].) 408.25 322.67 T
+(In comparison, the central abstractions in Mach are ports, messages, tasks, threads, and memory ) 90 305.67 T
+-0.53 (objects. These are lower) 90 292.67 P
+-0.53 (-level, more general purpose abstractions than those of a \336le system. There-) 194.96 292.67 P
+-0.08 (fore, many would ar) 90 279.67 P
+-0.08 (gue that the operating system should provide only these general-purpose facil-) 178.64 279.67 P
+-0.16 (ities and defer higher) 90 266.67 P
+-0.16 (-level facilities like the \336le system to implementation at user) 182.36 266.67 P
+-0.16 (-level. However) 446.49 266.67 P
+-0.16 (, ) 516.67 266.67 P
+-0.14 (I ar) 90 253.67 P
+-0.14 (gue that our experiences with UNIX have taught us the value of the \336le system abstractions, so ) 104.6 253.67 P
+(they merit ef) 90 240.67 T
+(\336cient support in a kernel-level implementation. Consider the following quote from ) 145.94 240.67 T
+(Butler Lampson\325) 90 227.67 T
+(s article ) 164.16 227.67 T
+3 F
+(Hints on Computer System Design) 201.38 227.67 T
+4 F
+( [Lampson83].) 352.74 227.67 T
+-0.44 (\322If the interface is used widely enough, the ef) 126 210.67 P
+-0.44 (fort put into designing and tuning the ) 322.74 210.67 P
+(implementation can pay of) 126 197.67 T
+(f many times over) 243.28 197.67 T
+(. But do this only for an interface ) 322.32 197.67 T
+-0.59 (whose importance is already known from existing uses. And be sure that you know ) 126 184.67 P
+(how to make it fast.\323) 126 171.67 T
+(The \336le system satis\336es both of Lampson\325) 90 154.67 T
+(s criteria; its importance is well-known and there are ) 275.55 154.67 T
+-0.03 (caching techniques that make it perform well. The fundamental dif) 90 141.67 P
+-0.03 (ferences between the VM inter-) 383.02 141.67 P
+(face and the \336le system interface will discussed in more detail below) 90 128.67 T
+(.) 391.66 128.67 T
+-0.51 (Aiming at a high-level interface has two bene\336ts. First, the interface provides more functionality so ) 90 111.67 P
+-0.55 (its clients are simpler) 90 98.67 P
+-0.55 (. In particular) 181.41 98.67 P
+-0.55 (, the Sprite \336le system abstraction handles network transparency) 239.36 98.67 P
+-0.55 (. ) 517.06 98.67 P
+(Second, in focusing on a high-level interface, the designers have more freedom to make dif) 90 85.67 T
+(ferent ) 490.71 85.67 T
+FMENDPAGE
+%%EndPage: "1" 2
+%%Page: "2" 2
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+(design decisions. Sprite optimizes network access by providing a kernel-to-kernel RPC protocol, ) 90 712.67 T
+-0.02 (and it optimizes remote \336le access by providing a distributed caching scheme. It optimizes perfor-) 90 699.67 P
+-0.7 (mance in general by putting the implementation inside the kernel. The hierarchical \336le system name ) 90 686.67 P
+(space has names for a variety of object types, not just \336les.This requires careful design of the \336le ) 90 673.67 T
+-0.62 (system interfaces, which are described in more detail below) 90 660.67 P
+-0.62 (. The \336nal touch is to add an upcall facil-) 346.98 660.67 P
+-0.13 (ity[Clark85] so that a user) 90 647.67 P
+-0.13 (-level process can implement the naming and I/O interface for functions ) 203.99 647.67 P
+-0.23 (we did not wish to put into the kernel. Thus Sprite takes a hybrid approach. It chose a well-known, ) 90 634.67 P
+-0.26 (high-level, widely used interface and supports it in the kernel, yet provides an escape hatch to user) 90 621.67 P
+-0.26 (-) 518.34 621.67 P
+(level for more arbitrary functionality) 90 608.67 T
+(.) 250.99 608.67 T
+-0.17 ( In contrast, a microkernel requires an external \336le system implementation in order to be generally ) 90 591.67 P
+(useful. The strategy taken by Mach is to layer \336le access on top of the virtual memory system by ) 90 578.67 T
+-0.27 (using mapped \336les. The section below describes why this is not necessarily a good idea, especially ) 90 565.67 P
+-0.41 (in a network environment. Also, one of the nice features of the UNIX \336le system is the hierarchical ) 90 552.67 P
+(name space. The only names implemented in the Mach microkernel are ports, which are too low-) 90 539.67 T
+-0.07 (level to be useful by themselves. Instead, a name service is also required for the microkernel to be ) 90 526.67 P
+(useful. In short, you\325ll need a \336le system anyway) 90 513.67 T
+(, and layering it on top of a virtual memory-ori-) 305.32 513.67 T
+-0.44 (ented, message-passing kernel is not the best way to go about it. The next few sections elaborate on ) 90 500.67 P
+(this point.) 90 487.67 T
+2 F
+(2 The File System vs. V) 90 468 T
+(irtual Memory) 208.82 468 T
+4 F
+(The fundamental dif) 90 450.67 T
+(ference between the virtual memory interface and the \336le system interface is ) 179.51 450.67 T
+(that the virtual memory interface is used on every load and store instruction, while the \336le system ) 90 437.67 T
+(interface is invoked at a few well de\336ned moments. As a result, considerable hardware support is ) 90 424.67 T
+-0.46 (provided for the VM system so it performs well. T) 90 411.67 P
+-0.46 (ranslations from virtual to physical addresses are ) 307.65 411.67 P
+(cached in fast registers, and CPUs are designed so they can make virtual memory references with ) 90 398.67 T
+(little or no penalty) 90 385.67 T
+(. However) 170.16 385.67 T
+(, this model does not extend well to networks of loosely coupled ) 215.48 385.67 T
+-0.58 (machines. W) 90 372.67 P
+-0.58 (ork by Kai Li has demonstrated that it is feasible, but his work is applicable to a certain ) 145.9 372.67 P
+(class of applications that share memory at a relatively infrequent rate [Li89].) 90 359.67 T
+(In contrast, the \336le system is oriented towards access to slow devices such as disks and terminals. ) 90 342.67 T
+(In these cases, it is more natural to use read and write procedures that move data from the slower ) 90 329.67 T
+-0.15 (devices into main memory) 90 316.67 P
+-0.15 (. Open and close procedures provide convenient points at which the sys-) 205.71 316.67 P
+(tem can set up state about the underlying device in order to optimize later read and write calls. In ) 90 303.67 T
+(particular) 90 290.67 T
+(, setup can be performed to optimize network accesses. Sharing resources is also easier ) 131.66 290.67 T
+(via the \336le system interface because the calls into the \336le system interface provide well de\336ned ) 90 277.67 T
+-0.43 (points at which to check for consistency among shared copies. In contrast, network shared memory ) 90 264.67 P
+-0.04 (schemes must rely on complex page protection schemes that grant ownership of a page to a partic-) 90 251.67 P
+(ular process.) 90 238.67 T
+(Consider the hard case for network sharing when processes on dif) 90 221.67 T
+(ferent machines are sharing and ) 379.04 221.67 T
+-0.76 (modifying the same page of data. If the page is shared via the VM interface, the system must arrange ) 90 208.67 P
+(page protections so that one process has read-write privileges, while all other processes have no ) 90 195.67 T
+-0.24 (access rights. The later processes will suf) 90 182.67 P
+-0.24 (fer a page fault and the cost of copying a whole hardware ) 269.88 182.67 P
+-0.39 (pageframe across the network when they try to access the shared page. Recall that this can occur as ) 90 169.67 P
+(often as every load and store instruction. In contrast, the Sprite \336le system uses a simple trick to ) 90 156.67 T
+(handle the hard case. It simply disables the caching for the shared \336le, forcing the read and write ) 90 143.67 T
+-0.29 (calls to go over the network to the server for the \336le[Nelson88]. I/O operations are serialized in the ) 90 130.67 P
+(main memory \336le cache of the server) 90 117.67 T
+(. In most cases less data is transferred over the network, too, ) 252.93 117.67 T
+(because only the modi\336ed bytes need to be sent to the server in this case, not the whole page.) 90 104.67 T
+-0.4 (This example illustrates another fundamental dif) 90 87.67 P
+-0.4 (ference between the \336le system and VM. A virtual ) 301.07 87.67 P
+FMENDPAGE
+%%EndPage: "2" 3
+%%Page: "3" 3
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+-0.09 (memory page always has to be resident in physical memory in order to access it, while \336le system ) 90 712.67 P
+(data can be streamed into memory from the device, often using a highly tuned hardware channel ) 90 699.67 T
+-0.49 (interface. Granted, the \336le system interface implies a copy operation from the device into the user) 90 686.67 P
+-0.49 (\325) 512.41 686.67 P
+-0.49 (s ) 515.47 686.67 P
+(memory) 90 673.67 T
+(, but this occurs when the programmer invokes read, plus it can be further optimized by ) 125.9 673.67 T
+(caching the data in main memory) 90 660.67 T
+(.) 236.05 660.67 T
+-0.73 (Another dif) 90 643.67 P
+-0.73 (ference between the two systems is the way they access memory) 140.03 643.67 P
+-0.73 (. Accesses to \336le system ) 415.78 643.67 P
+-0.09 (data is by and lar) 90 630.67 P
+-0.09 (ge sequential, while virtual memory accesses are more randomized. Systems that ) 164.49 630.67 P
+-0.35 (layer the \336le system on top of mapped \336les often suf) 90 617.67 P
+-0.35 (fer performance problems because of this. The ) 316.99 617.67 P
+-0.31 (classic bug is that copying a lar) 90 604.67 P
+-0.31 (ge \336le can throw out the working set of the running programs, slow-) 225.83 604.67 P
+-0.35 (ing down all those load and store instructions. In Sprite, the \336le system and the virtual memory sys-) 90 591.67 P
+(tem each maintain their own pool of memory pages. When they run out, they negotiate over who ) 90 578.67 T
+-0.65 (should give up a page. The two systems compare their oldest LRU times, and system with the oldest ) 90 565.67 P
+(time gives up a page. This technique is re\336ned by biasing against the \336le system. The VM system ) 90 552.67 T
+(cheats and adds 20 minutes to its time before telling the \336le system. This means that no VM page ) 90 539.67 T
+-0.19 (that has been accessed within the last 20 minutes will be thrown out in favor of a \336le system cache ) 90 526.67 P
+(page [Nelson88]. A system that uses a common pool of pages for a generalized memory object ) 90 513.67 T
+-0.2 (either does not support this optimization, or it clutters up the memory object interface to achieve it.) 90 500.67 P
+2 F
+(3 Micr) 90 481 T
+(o vs. Monolithic) 124.08 481 T
+4 F
+(\322So what?\323, you say) 90 463.67 T
+(, given ef) 178.99 463.67 T
+(\336cient IPC, you could perform all those tricks in the \336le system that ) 219.98 463.67 T
+(accompanies the microkernel. However) 90 450.67 T
+(, the microkernel makes a fundamental trade-of) 264.07 450.67 T
+(f between ) 472.25 450.67 T
+-0.48 (security clearance procedures and performance. Smaller programs are easier to certify as secure, so ) 90 437.67 P
+-0.07 (the goal of the Mach microkernel is to have a small kernel and a set of small system servers. How-) 90 424.67 P
+(ever) 90 411.67 T
+(, by moving system services out of the kernel address space there are inevitable performance ) 108.47 411.67 T
+(consequences.) 90 398.67 T
+-0.33 ( First, the resources controlled by the \336le system are ultimately accessed via kernel-resident device ) 90 381.67 P
+-0.17 (drivers. Note that in Sprite, this includes access to the network as well as to disks and other periph-) 90 368.67 P
+-0.29 (eral devices. Therefore, the execution path ultimately has to end up inside the kernel. If the \336le sys-) 90 355.67 P
+-0.7 (tem is implemented in a separate address space, then \336le system accesses suf) 90 342.67 P
+-0.7 (fer additional traps into ) 419.21 342.67 P
+-0.67 (the kernel in order to ef) 90 329.67 P
+-0.67 (fect the change of address space. Furthermore, each additional address space ) 189.86 329.67 P
+(that is crossed places more load on the MMU. For example, the Sun MMU is designed to support ) 90 316.67 T
+-0.06 (ef) 90 303.67 P
+-0.06 (\336cient access to 8 or 16 address spaces, one of which is reserved for the kernel. The DECstation ) 98.34 303.67 P
+-0.78 (has a 64 entry TLB, but it can get away with this because most of the operating system kernel resides ) 90 290.67 P
+(in a memory range that is mapped one-for) 90 277.67 T
+(-one to physical pages, thus bypassing the small TLB. ) 274.37 277.67 T
+-0.31 (Processor caches have similar problems. Often a change of address space requires a cache \337ush. In ) 90 264.67 P
+-0.63 (the Suns, the cache is only \337ushed when one of the hardware contexts is reused, but this will happen ) 90 251.67 P
+-0.5 (more often when there are more address spaces placed in the critical path of the \336le system. Finally) 90 238.67 P
+-0.5 (, ) 517.01 238.67 P
+(each address space crossing adds more instructions to the execution path. There is an inevitable ) 90 225.67 T
+(amount of glue code, however small, associated with the boundary) 90 212.67 T
+(. If the message abstraction is ) 382.51 212.67 T
+(added, then there is even more code to pack and unpack things from the messages.) 90 199.67 T
+(Thread scheduling is another potential source of overhead in the microkernel approach. Not only ) 90 182.67 T
+-0.58 (does the execution path cross address spaces, but a new thread must be found to execute in the other ) 90 169.67 P
+-0.63 (address space. This overhead is not present in a kernel-resident system. The application thread traps ) 90 156.67 P
+-0.27 (into the kernel and continues to execute in the kernel\325) 90 143.67 P
+-0.27 (s protected address space. After that, commu-) 322.85 143.67 P
+(nication between various kernel-provided services is achieved with a simple procedure call.) 90 130.67 T
+-0.04 (Recently) 90 113.67 P
+-0.04 (, Bershad has extended this idea to apply to user) 128.34 113.67 P
+-0.04 (-level IPC, eliminating the need to sched-) 339.49 113.67 P
+-0.17 (ule a new thread [Bershad90]. In Bershad\325) 90 100.67 P
+-0.17 (s LRPC mechanism an execution stack is mapped into a ) 274.75 100.67 P
+-0.77 (server process for each client that is bound to it. The client thread traps into the kernel when crossing ) 90 87.67 P
+FMENDPAGE
+%%EndPage: "3" 4
+%%Page: "4" 4
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+(the protection boundary) 90 712.67 T
+(, but it continues to execute on the shared execution stack after the kernel ) 194.25 712.67 T
+(\336xes up the address space. Using this technique, Bershad reports a null round-trip time of 125 ) 90 699.67 T
+-0.61 (microseconds on a 3-MIP C-vax. In contrast, Draves reports the same time for an optimized version ) 90 686.67 P
+(of Mach IPC, but on a 12-MIP DECstation [Draves90].) 90 673.67 T
+-0.78 (In spite of recent advances in IPC by Bershad, which I applaud, the fact remains that execution paths ) 90 656.67 P
+-0.11 (will be longer in services that are provided outside the operating system kernel. Extra glue code at ) 90 643.67 P
+-0.09 (the interfaces, traps into the kernel, and MMU ef) 90 630.67 P
+-0.09 (fects from changing address spaces all contribute ) 303.87 630.67 P
+-0.06 (to overhead. Given that the \336le system is as fundamentally important as the VM interface, and the ) 90 617.67 P
+-0.04 (potential problems with implementing one in terms of the other) 90 604.67 P
+-0.04 (, it seems reasonable to provide an ) 367.86 604.67 P
+(ef) 90 591.67 T
+(\336cient, kernel-level implementation of the \336le system.) 98.34 591.67 T
+2 F
+(4 Bene\336ts of a Shar) 90 572 T
+(ed File System) 189.07 572 T
+4 F
+-0.7 (A UNIX \336le system supports two main abstractions, pathnames and I/O streams. These abstractions ) 90 554.67 P
+(were derived from earlier work in Multics [Feirtag71]. Experiences with these abstractions have ) 90 541.67 T
+-0.79 (shown that the notions of device-independent naming and I/O are extremely useful, and that the lack ) 90 528.67 P
+(of them in a network environment is frustrating. Accordingly) 90 515.67 T
+(, Sprite extends these \336le system ) 358.11 515.67 T
+(abstractions to a network environment. Additionally) 90 502.67 T
+(, Sprite provides process migration so that ) 318.76 502.67 T
+-0.67 (cycles can be shared across the network. The combination of a shared \336le system and process migra-) 90 489.67 P
+(tion makes a network of Sprite workstations into a powerful computing platform.) 90 476.67 T
+-0.78 (If the \336le system is chosen as the basis for the system, a number of simpli\336cations are possible. First, ) 90 459.67 P
+(the \336le system can act as the name space for the system. UNIX, for example, uses special \336les to ) 90 446.67 T
+(represent peripheral devices. Additionally) 90 433.67 T
+(, Sprite uses special \336les to represent user) 273.57 433.67 T
+(-level server ) 456.43 433.67 T
+(processes known as ) 90 420.67 T
+3 F
+(pseudo-devices) 179.4 420.67 T
+4 F
+( [W) 246.51 420.67 T
+(elch88]. The services implemented as pseudo-devices ) 262.41 420.67 T
+-0.18 (include a TCP/IP protocol server) 90 407.67 P
+-0.18 (, terminal emulators, and the X display server) 233.48 407.67 P
+-0.18 (. More details about ) 432.09 407.67 P
+(the pseudo-device mechanism will be given below) 90 394.67 T
+(.) 311.42 394.67 T
+(Another simpli\336cation possible in Sprite is that regular \336les are used as virtual memory backing ) 90 377.67 T
+(store as opposed to having preallocated, dedicated swap space. This is especially convenient in a ) 90 364.67 T
+-0.28 (network of diskless workstations. First, it is not necessary to preallocate swap space on disk as it is ) 90 351.67 P
+-0.72 (in most UNIX systems. Second, a remote \336le server can share a swap directory among many clients. ) 90 338.67 P
+-0.73 (This approach is valuable in today\325) 90 325.67 P
+-0.73 (s networks of workstations with lar) 240.43 325.67 P
+-0.73 (ge memories and applications ) 391.28 325.67 P
+-0.57 (with lar) 90 312.67 P
+-0.57 (ge working sets. The Sprite network at Berkeley uses a single, 600 Meg disk for the backing ) 123.1 312.67 P
+(store of over 40 hosts. ) 90 299.67 T
+(The shared \336le system also simpli\336es the implementation of process migration. An address space ) 90 282.67 T
+(is moved to a new host simply by paging it all out to the shared \336le system and demand paging it ) 90 269.67 T
+-0.23 (back it at the new site. Similarly) 90 256.67 P
+-0.23 (, there is no dif) 229.82 256.67 P
+-0.23 (\336culty with data \336les or device access after a migra-) 294.92 256.67 P
+(tion because all \336le system resources are uniformly available on all hosts. I will admit, however) 90 243.67 T
+(, ) 510.34 243.67 T
+-0.42 (that the algorithm to correctly migrate an open I/O stream while preserving the semantics of shared ) 90 230.67 P
+(UNIX I/O streams was tricky to get right.) 90 217.67 T
+2 F
+(5 Sprite Featur) 90 198 T
+(es and Development History) 167.73 198 T
+4 F
+-0.73 (Sprite is a 4.3 BSD UNIX compatible operating system with extensions for a distributed \336le system, ) 90 180.67 P
+(process migration, multi-threaded address spaces, and a multi-threaded kernel for use on a multi-) 90 167.67 T
+(processor) 90 154.67 T
+(. The kernel was coded from scratch in C, from the device drivers and boot code up ) 131.49 154.67 T
+-0.45 (through the system call layer) 90 141.67 P
+-0.45 (. The project began with professor John Ousterhout and 4 graduate stu-) 214.53 141.67 P
+-0.69 (dents: myself, Andrew Cherenson, Fred Douglis, and Mike Nelson. Later students included Mendel ) 90 128.67 P
+-0.8 (Rosenblum, Mary Baker) 90 115.67 P
+-0.8 (, John Hartmann, Ken Sherrif) 196.28 115.67 P
+-0.8 (f, and Jim Mott-Smith. Adam de Boor) 322.86 115.67 P
+-0.8 (, Robert ) 485.46 115.67 P
+(Bruce, and Mike Kupfer were valuable staf) 90 102.67 T
+(f members.) 279.87 102.67 T
+(The facilities implemented in the Sprite kernel include:) 90 85.67 T
+FMENDPAGE
+%%EndPage: "4" 5
+0 9 /Times-Roman FMDEFINEFONT
+1 10 /Times-Roman FMDEFINEFONT
+%%Page: "5" 5
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+(\245 A debugnub to support remote kernel debugging.) 90 712.67 T
+(\245 Device drivers.) 90 699.67 T
+(\245 A kernel-to-kernel RPC network protocol.) 90 686.67 T
+(\245 Address spaces with virtual memory) 90 673.67 T
+(. ) 256.38 673.67 T
+(\245 Multiple threads of execution per address space.) 90 660.67 T
+(\245 A transparently distributed hierarchical name space. ) 90 647.67 T
+(\245 An transparently distributed I/O interface. ) 90 634.67 T
+(\245 A local \336le system. ) 90 621.67 T
+(\245 Host monitoring and failure recovery) 90 608.67 T
+(. ) 259.42 608.67 T
+(\245 Integration of user) 90 595.67 T
+(-level services into the name space and I/O interfaces. ) 177.53 595.67 T
+(\245 Process migration. ) 90 582.67 T
+-0.12 (During the \32484-85 academic year) 90 565.67 P
+-0.12 (, I built a prototype of the \336le system by modifying SunOS 1.1 to ) 234.31 565.67 P
+-0.68 (use pre\336x tables to distribute the name space uniformly among workstations [W) 90 552.67 P
+-0.68 (elch86b], and to use ) 433.48 552.67 P
+(a kernel-to-kernel RPC protocol for network communication [W) 90 539.67 T
+(elch 86a]. Implementation of the ) 372.58 539.67 T
+-0.14 (true Sprite kernel began in the Summer of 1985 using Sun2 workstations. The debugnub was built ) 90 526.67 P
+(early so we could use a symbolic debugger via a remote workstation running UNIX. File service ) 90 513.67 T
+-0.36 (was initially provided by the prototype Sprite \336le server) 90 500.67 P
+-0.36 (. This approach let us defer writing the \336rst ) 332.43 500.67 P
+-0.12 (local Sprite \336le system, including disk drivers and a \336le system format, until the Summer of 1986. ) 90 487.67 P
+-0.38 (W) 90 474.67 P
+-0.38 (ork on the distributed caching system followed soon after the native \336le server was up. In the fall ) 99.49 474.67 P
+-0.06 (of 1987 the system sources were moved to a native Sprite \336le server) 90 461.67 P
+-0.06 (, a Sun3 with 16 Meg of main ) 388.5 461.67 P
+(memory) 90 448.67 T
+(, and all development continued using Sprite itself. W) 125.9 448.67 T
+(ork continued on graceful failure ) 361.82 448.67 T
+(recovery) 90 435.67 T
+(, user) 127.72 435.67 T
+(-level extensions, and process migration. During the \32487-88 academic year I rede-) 151.29 435.67 T
+-0.06 (signed and reimplemented the \336le system architecture to better support the many features that had ) 90 422.67 P
+-0.81 (crept into the system. In 1989, Sprite was ported to the Sun4, DECstation, and SPUR multiprocessor ) 90 409.67 P
+-0.19 ([Hill86]. In the Fall of 1989 the Sprite network expanded to support a number of regular users that ) 90 396.67 P
+-0.41 (included professors and grad students working on other projects. The most recent work on Sprite is ) 90 383.67 P
+(the log-structured \336le system[Rosenblum90][Rosenblum91] and extensive measurements of the ) 90 370.67 T
+-0.51 (system\325) 90 357.67 P
+-0.51 (s day-to-day performance [Baker91]. T) 123.57 357.67 P
+-0.51 (oday the main Sprite network at Berkeley includes 1 ) 293.14 357.67 P
+(primary \336le server) 90 344.67 T
+(, a Sun4 with 128 Meg of main memory) 170.72 344.67 T
+(, 3 auxiliary \336le servers, and about 40 ) 346.08 344.67 T
+-0.33 (workstations. The time from initial development to day-to-day usage by non-developers was about ) 90 331.67 P
+(5 years, which matches experiences with other operating system projects [Lauer81].) 90 318.67 T
+-0.31 (In contrast, Mach began as a modi\336cation of a 4.2 BSD kernel. This gave it a nice head start, and it ) 90 301.67 P
+-0.27 (was quickly used on a number of multiprocessors because it improved on the BSD virtual memory ) 90 288.67 P
+-0.33 (interface that was oriented heavily towards the V) 90 275.67 P
+-0.33 (AX architecture. In 1986, a USENIX paper hailed ) 301.95 275.67 P
+-0.63 (Mach as a \322new kernel foundation for UNIX development.\323 [Accetta86] However) 90 262.67 P
+-0.63 (, 5 years later) 444.75 262.67 P
+-0.63 (, the ) 501.6 262.67 P
+-0.81 (microkernel and its accompanying set of server processes is still under development. My conclusion ) 90 249.67 P
+(is that it is ultimately cleaner to start from scratch, although there is an initial start-up penalty as ) 90 236.67 T
+(basic features are reimplemented.) 90 223.67 T
+2 F
+(6 Sprite File System Ar) 90 204 T
+(chitectur) 209.04 204 T
+(e) 254.78 204 T
+4 F
+-0.58 ( The internals of the \336le system were rewritten in an object-oriented style during the period of about ) 90 186.67 P
+-0.04 (one year \050academic year \32487-88\051 to clean up and simplify the interactions among various features. ) 90 173.67 P
+(The redesign introduced a generalized ) 90 160.67 T
+3 F
+(object descriptor) 260.54 160.67 T
+4 F
+(, which is a main-memory data structure ) 334.86 160.67 T
+-0.06 (maintained by the kernel, not a disk-resident representation of an object. A basic object descriptor ) 90 147.67 P
+-0.2 (has a type, uid, server ID \050a sprite Host ID\051, a reference count, and a lock bit. Objects are speci\336ed ) 90 134.67 P
+-0.16 (internally by a tuple of <type, serverID, uid>. This base data structure is subclassed) 90 121.67 P
+0 F
+-0.13 (*) 454.83 126.07 P
+4 F
+-0.16 ( for the imple-) 459.33 121.67 P
+90 96 522 110.98 C
+90 96 522 110.98 R
+7 X
+0 K
+V
+99 108.96 243 108.96 2 L
+V
+0.5 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 F
+0 X
+0 K
+(*. The various kinds of object descriptors would be the result of subclassing if Sprite were written ) 108 89.33 T
+(in C++. However) 108 77.33 T
+(, all the object-oriented features described here were hand crafted in C.) 177.44 77.33 T
+FMENDPAGE
+%%EndPage: "5" 6
+%%Page: "6" 6
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+(mentations of various object types. The object-oriented approach allowed clean separation of dif-) 90 488.67 T
+(ferent object implementations, as well as sharing between similar objects like remote devices and ) 90 475.67 T
+-0.58 (remote pipes. At the same time, the interface between the top-level, generic layers of the \336le system ) 90 462.67 P
+(and the lower) 90 449.67 T
+(-level, object-speci\336c layers was cleaned up based on experiences with the initial ) 149.58 449.67 T
+(design. A diagram of the \336le system architecture is given in Figure 1.) 90 436.67 T
+-0.54 ( The pathname interface illustrates the three basic cases handled by the Sprite kernel. The server for ) 90 419.67 P
+-0.43 (a pathname may be the local kernel, in which case the \336le system implementation is accessed by an ) 90 406.67 P
+-0.01 (ordinary procedure call within the Sprite kernel. The server may be remote, in which case the ker-) 90 393.67 P
+-0.07 (nel-to-kernel RPC protocol is used to pass the pathname to the server) 90 380.67 P
+-0.07 (. Finally) 392.89 380.67 P
+-0.07 (, the server may be a ) 428.74 380.67 P
+(user) 90 367.67 T
+(-level process, in which case an upcall mechanism, which is described below) 108.08 367.67 T
+(, is used to pass ) 445.74 367.67 T
+(the operation up to user level. Thus there are three orthogonal cases that are supported by a Sprite ) 90 354.67 T
+-0.72 (kernel, a local, kernel-resident module, a remote module, and a user) 90 341.67 P
+-0.72 (-level module. The I/O interface ) 380.98 341.67 P
+-0.08 (is similar) 90 328.67 P
+-0.08 (, except that the local and remote cases may be further specialized depending on the type ) 130.07 328.67 P
+(of the object being accessed.) 90 315.67 T
+-0.27 (The importance of this approach is that it extends the general features implemented in upper levels ) 90 298.67 P
+(of the kernel to local, remote, and user) 90 285.67 T
+(-provided objects. Notable, high-level features include the ) 259.11 285.67 T
+-0.45 (name space, error recovery) 90 272.67 P
+-0.45 (, and blocking I/O. Thus, the focus of the \336le system architecture has rel-) 206.89 272.67 P
+(atively little to do with actual disk management. The focus is on extending the high-level abstrac-) 90 259.67 T
+(tions of pathnames and I/O streams to the network environment.) 90 246.67 T
+2 F
+(7 The Sprite Name Space) 90 227 T
+4 F
+(Sprite uses a pre\336x table mechanism to implement a uniformly shared, hierarchical name space. ) 90 209.67 T
+-0.4 (Each Sprite kernel keeps a cache of pathname pre\336xes. The pre\336xes de\336ne the way server domains ) 90 196.67 P
+(are coalesced into a single hierarchy) 90 183.67 T
+(. The Sprite naming protocol ensures that servers export their ) 248.84 183.67 T
+-0.52 (domains consistently so that all hosts, and therefore all processes, see exactly the same name space. ) 90 170.67 P
+-0.24 (In contrast, the V) 90 157.67 P
+-0.24 (-system and Mach 3.0 use a pre\336x cache that is maintained on a per) 164.55 157.67 P
+-0.24 (-process basis ) 458.4 157.67 P
+-0.02 (by library routines. While this is advertised as a feature that allows custom name spaces, I believe ) 90 144.67 P
+-0.61 (this is a case where generality is not what you want. Users, administrators, and developers enjoy the ) 90 131.67 P
+(simplicity of a single, shared name space. The resulting, fully shared \336le system supports cross-) 90 118.67 T
+(compilation and easy maintenance for all architectures from any workstation.) 90 105.67 T
+(The Sprite pre\336x implementation and the naming protocol are very simple. After matching a path-) 90 88.67 T
+-0.13 (name against the pre\336x cache, the remaining pathname is sent to the server identi\336ed in the cache. ) 90 75.67 P
+90 72 522 720 C
+91.26 496 520.74 720 C
+91.26 496 520.74 720 R
+7 X
+0 K
+V
+99.24 504 516.24 548 R
+V
+4 F
+0 X
+-0.5 (Figure 1. An overview of the Sprite \336le system architecture. The two primary interfaces involve ) 99.24 540.67 P
+(pathnames and I/O streams. The Upcall module forwards operations to user) 99.24 527.67 T
+(-level processes. ) 431.3 527.67 T
+(RPC forwards operations across the network to other Sprite kernels.) 99.24 514.67 T
+121.74 677 274.74 704 R
+7 X
+V
+1 H
+2 Z
+0 X
+N
+121.74 578 175.74 650 R
+7 X
+V
+0 X
+N
+256.74 560 292.74 596 R
+7 X
+V
+0 X
+N
+211.74 560 247.74 596 R
+7 X
+V
+0 X
+N
+1 F
+(Pathnames \050pre\336xes\051) 153.44 688.18 T
+(Local) 130.74 614 T
+(Disk) 130.74 604 T
+(RPC) 264.74 569 T
+(Upcall) 215.1 570.18 T
+283.74 677 499.74 704 R
+7 X
+V
+0 X
+N
+(I/O Streams \050of) 317.72 687 T
+(fsets, blocking, errors\051) 379.72 687 T
+455.74 604 491.74 640 R
+7 X
+V
+0 X
+N
+409.74 604 445.74 640 R
+7 X
+V
+0 X
+N
+359.74 558 395.74 612 R
+7 X
+V
+0 X
+N
+(Devices) 458.74 615 T
+(Pipes) 416.74 617 T
+(Files) 368.74 578.17 T
+314.74 576 350.74 612 R
+7 X
+V
+0 X
+N
+(Remote) 319.65 596.17 T
+(Files) 322.3 587.18 T
+314.74 621 395.74 639 R
+7 X
+V
+0 X
+N
+(Block Cache) 331.74 627 T
+159.45 652.62 147.74 650 156.29 658.43 157.87 655.52 4 Y
+V
+156.99 655.04 197.74 677 2 L
+N
+228.81 607.97 229.74 596 222.61 605.66 225.71 606.81 4 Y
+V
+226.07 605.87 199.74 677 2 L
+N
+269.33 606.72 274.73 596.01 264.48 602.23 266.91 604.48 4 Y
+V
+267.59 603.74 199.74 677 2 L
+N
+283.92 603.73 274.74 596.01 278.43 607.42 281.18 605.57 4 Y
+V
+280.63 604.74 328.74 677 2 L
+N
+240.75 600.78 229.74 596 236.55 605.88 238.65 603.33 4 Y
+V
+237.88 602.69 328.74 677 2 L
+N
+331.38 651.43 327.74 640 324.77 651.63 328.08 651.53 4 Y
+V
+328.05 650.53 328.74 674 2 L
+N
+366.83 650.81 373.74 641 362.68 645.66 364.76 648.24 4 Y
+V
+365.54 647.61 328.74 677 2 L
+N
+418.03 648.07 427.73 641 415.76 641.86 416.89 644.96 4 Y
+V
+417.85 644.62 328.74 677 2 L
+N
+464.31 646.95 474.73 641 462.74 640.53 463.53 643.74 4 Y
+V
+464.51 643.5 328.74 676 2 L
+N
+305.1 579.15 293.74 583 305.42 585.76 305.26 582.46 4 Y
+V
+304.27 582.5 314.74 582 2 L
+N
+(\050namei\051) 130.74 594 T
+373 621 373 612 2 L
+0.5 H
+N
+329 621 329 612 2 L
+N
+90 72 522 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "6" 7
+%%Page: "7" 7
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+-0.26 (The server traverses its directory structure, expanding symbolic links if necessary) 90 712.67 P
+-0.26 (, until the lookup ) 445.21 712.67 P
+-0.26 (terminates or the pathname leaves its domain. A symbolic link to an absolute pathname is one way ) 90 699.67 P
+-0.49 (a pathanme exits, and specifying \322..\323 in the server) 90 686.67 P
+-0.49 (\325) 305.22 686.67 P
+-0.49 (s root directory is the other way) 308.28 686.67 P
+-0.49 (. If the server pro-) 444.35 686.67 P
+(cesses the whole pathname, it performs the requested operation \050create, delete, rename, mkdir) 90 673.67 T
+(,...\051. ) 501.44 673.67 T
+-0.14 (Otherwise, the server returns the remaining pathname to the client. Relative pathnames bypass the ) 90 660.67 P
+(pre\336x match and are sent to the server of the current working directory) 90 647.67 T
+(.) 400.48 647.67 T
+-0.5 (Mount points are handled by placing a special symbolic link at the mount point. The contents of the ) 90 630.67 P
+-0.48 (symbolic link is the absolute pathname of the mount point, and the link has a dif) 90 617.67 P
+-0.48 (ferent \336le type than ) 435.42 617.67 P
+(ordinary symbolic links so that the server knows when it hits a mount point. After expanding this ) 90 604.67 T
+-0.26 (link, the server returns the new pathname to the client along with an indication of how much of the ) 90 591.67 P
+-0.32 (pathname is the pre\336x of the mount point so that the client can add the pre\336x to its cache. Note that ) 90 578.67 P
+-0.14 (there is nothing in the link but its own name, so some other mechanism is used to locate the server ) 90 565.67 P
+-0.35 (for that name. Currently) 90 552.67 P
+-0.35 (, Sprite uses broadcast to locate the server) 194.42 552.67 P
+-0.35 (. After locating the server) 375.65 552.67 P
+-0.35 (, the cli-) 486.39 552.67 P
+-0.47 (ent reiterates the lookup procedure. Bootstrapping is achieved by broadcasting for the server of \322/\323. ) 90 539.67 P
+-0.15 (There are a number of good properties of the name space, and one limitation. First, clients are sim-) 90 522.67 P
+(pli\336ed. They do not iterate through directories or expand symbolic links, in contrast to the NFS ) 90 509.67 T
+-0.36 (naming protocol. The pre\336x mechanism completely replaces the UNIX mount mechanism, so serv-) 90 496.67 P
+(ers are no more complex. The most important property is that the name space remains uniform ) 90 483.67 T
+-0.65 (across machines because it is the contents of the symbolic links at the mount points that de\336nes how ) 90 470.67 P
+-0.54 (domains \336t together) 90 457.67 P
+-0.54 (, not a per) 176.38 457.67 P
+-0.54 (-host or per) 218.48 457.67 P
+-0.54 (-process con\336guration \336le. An advantage in common with ) 267.84 457.67 P
+-0.16 (all pre\336x caching schemes is that the root server is usually bypassed because ) 90 444.67 P
+-0.16 (clients quickly cache ) 427.58 444.67 P
+-0.11 (pre\336xes for the domains they use. Mount points can occur in any directory) 90 431.67 P
+-0.11 (, so it is possible to nest ) 415.35 431.67 P
+(server domains arbitrarily) 90 418.67 T
+(.) 202.79 418.67 T
+(The primary limitation of the Sprite scheme is the use of broadcast to locate servers. This choice ) 90 401.67 T
+(was made for simplicity) 90 388.67 T
+(, but it obviously limits the range of the name space. A general solution ) 195.17 388.67 T
+(would be make an upcall in the case that the broadcast fails so that a user) 90 375.67 T
+(-level process can take ) 411.06 375.67 T
+-0.23 (arbitrary action to locate the server) 90 362.67 P
+-0.23 (. For example, the Domain name server or some other name ser-) 241.7 362.67 P
+(vice could be used. This solution has the nice property that the kernel implements a lightweight ) 90 349.67 T
+(mechanism \050broadcast\051 that works for the common case, but can rely on the escape hatch to user) 90 336.67 T
+(-) 513.57 336.67 T
+(level in the hard case.) 90 323.67 T
+2 F
+(8 Separating Naming and I/O) 90 304 T
+4 F
+-0.34 (A mistake that is easy to make when extending a \336le system to handle more than just \336les is to blur ) 90 286.67 P
+(the distinction between the naming and I/O interfaces. The SunOS implementation, for example, ) 90 273.67 T
+(has a ) 90 260.67 T
+3 F
+(vfs) 115.02 260.67 T
+4 F
+( interface that is primarily concerned with the mount protocol, and a ) 127.22 260.67 T
+3 F
+(vnode) 429.6 260.67 T
+4 F
+( interface that ) 455.83 260.67 T
+-0.59 (includes both naming and I/O operations. These interfaces stemmed from the original UNIX design ) 90 247.67 P
+-0.54 (where the namei procedure was the central core of name lookup. The problem is that namei handles ) 90 234.67 P
+-0.52 (both mount points and directory scanning. When generalizing the implementation to handle remote ) 90 221.67 P
+-0.16 (\336le systems, namei was retained and the interfaces to mounts and directory scanning were general-) 90 208.67 P
+(ized. This erroneously lumps name lookup operations with I/O operations together into the vnode ) 90 195.67 T
+(interface. In contrast, the Sprite pre\336x abstraction replaces the mount abstraction and goes further ) 90 182.67 T
+(by hiding the notion of directory scanning altogether) 90 169.67 T
+(.) 321 169.67 T
+-0.37 (Consider the open system call that maps from a pathname to an I/O stream. In Sprite, this is broken ) 90 152.67 P
+(into two, high-level operations: name_open and io_open. The name_open procedure returns ) 90 139.67 T
+(attributes of the named object. The io_open procedure uses these attributes to create an open I/O ) 90 126.67 T
+-0.47 (stream. The name_open and io_open procedures may be implemented by dif) 90 113.67 P
+-0.47 (ferent servers, and this ) 421.67 113.67 P
+(is implemented cleanly by branching through the object-oriented naming and I/O interfaces. Note ) 90 100.67 T
+(that a stateless protocol like NFS has no notion of an io_open operation.) 90 87.67 T
+FMENDPAGE
+%%EndPage: "7" 8
+%%Page: "8" 8
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+-0.31 (The clean separation of naming and I/O allows for a number of optimizations. First, simple objects ) 90 712.67 P
+-0.46 (like devices can rely on a \336le server to implement the naming interface on their behalf. Special \336les ) 90 699.67 P
+-0.15 (are used to represent devices and pseudo-devices in the name space. Furthermore, a \336le server can ) 90 686.67 P
+(have special \336les that represent devices and pseudo-devices on any machine in the network. Con-) 90 673.67 T
+-0.43 (trast this with NFS, which doesn\325) 90 660.67 P
+-0.43 (t support remote device access, or even RFS, which only supports ) 234.74 660.67 P
+-0.06 (accesses to devices on the \336le server) 90 647.67 P
+-0.06 (. These systems are limited by the vnode \050or equivalent\051 inter-) 249.51 647.67 P
+(face that lumps naming and I/O together) 90 634.67 T
+(.) 266.98 634.67 T
+-0.36 (Another obvious optimization is that in the case of regular \336les, name_open sets up enough state to ) 90 617.67 P
+(support an I/O stream to the \336le. This eliminates the need for io_open to contact the \336le server a ) 90 604.67 T
+(second time. This is a subtle, but important optimization for the common case of \336le access.) 90 591.67 T
+-0.35 (Both of the above optimizations are implemented cleanly by introducing a one-procedure interface ) 90 574.67 P
+(on the \336le servers that has dif) 90 561.67 T
+(ferent implementations for dif) 219.18 561.67 T
+(ferent ) 351.1 561.67 T
+3 F
+(\336le) 379.47 561.67 T
+4 F
+( types \050i.e., for each kind of ) 392.89 561.67 T
+-0.09 (special \336le used on the server\051. After a \336le server \336nds a \336le with a general directory traversal pro-) 90 548.67 P
+(cedure) 90 535.67 T
+0 F
+(*) 119.28 540.07 T
+4 F
+(, its name_open procedure calls through the interface to a type-speci\336c procedure that ) 123.77 535.67 T
+-0.39 (extracts attributes from the disk-resident \336le descriptor and takes any special action needed for that ) 90 522.67 P
+-0.16 (type. It is at this point that the cache consistency protocol for regular \336les is invoked, for example. ) 90 509.67 P
+(The attributes are returned to the client for use in calling the io_open procedure.) 90 496.67 T
+-0.73 (There are two areas in which Sprite and the Mach microkernel provide similar features, interprocess ) 90 479.67 P
+(communication and user) 90 466.67 T
+(-level extensibility of a kernel-level abstraction.) 197.8 466.67 T
+2 F
+(9 Interpr) 90 447 T
+(ocess Communication) 136.75 447 T
+4 F
+-0.63 (The Mach kernel provides a communication mechanism between threads on the same host. Threads ) 90 429.67 P
+-0.18 (inherit or create communication ) 90 416.67 P
+3 F
+-0.18 (ports) 232.67 416.67 P
+4 F
+-0.18 ( that are the destinations for messages. A ) 255.26 416.67 P
+3 F
+-0.18 (send right) 436.55 416.67 P
+4 F
+-0.18 ( to a port ) 480.62 416.67 P
+-0.54 (can be passed in a message so that communication patterns among threads can be built up. Network ) 90 403.67 P
+-0.71 (communication is achieved by using a user) 90 390.67 P
+-0.71 (-level server) 274.7 390.67 P
+-0.71 (, the ) 328.15 390.67 P
+3 F
+-0.71 (netmsgserver) 348.4 390.67 P
+4 F
+-0.71 (, that maintains a mapping ) 406.54 390.67 P
+-0.14 (between local and remote ports and forwards messages over the network using a network protocol ) 90 377.67 P
+-0.46 (to a peer netmsgserver) 90 364.67 P
+-0.46 (. Note that this design means that there are 4 user) 187.18 364.67 P
+-0.46 (-level processes involved in ) 398.73 364.67 P
+(a network message exchange: the two processes that wish to exchange the messages and the two ) 90 351.67 T
+-0.79 (netmsgserver processes that forward the message across the network. Extrapolating the microkernel ) 90 338.67 P
+-0.48 (philosophy) 90 325.67 P
+-0.48 (, the code for the protocol stacks may also be implemented in user level. In the most gen-) 138.12 325.67 P
+(eral design, the function of the netmsgserver might even be separated from the implementation of ) 90 312.67 T
+-0.29 (the network protocol stack. In that case there would be an additional two processes involved in net-) 90 299.67 P
+(work communication. Another paper in this Symposium describes optimizations to this scheme ) 90 286.67 T
+([Barrera91].) 90 273.67 T
+(In contrast, Sprite provides two special-purpose communication mechanisms, both of which are ) 90 256.67 T
+-0.11 (basically hidden behind the \336le system interface. The \336rst is its network RPC protocol that is used ) 90 243.67 P
+(solely for communication among Sprite kernels. If a kernel operation needs to be carried out on a ) 90 230.67 T
+-0.39 (remote machine, the kernel-to-kernel RPC protocol is used to invoke it. The other mechanism is an ) 90 217.67 P
+(upcall facility that is used in a similar way) 90 204.67 T
+(, except that it forwards the operation up to a user) 275.43 204.67 T
+(-level ) 493.36 204.67 T
+-0.51 (process that implements a pseudo-device. The upcall mechanism is somewhat analogous to a Mach ) 90 191.67 P
+-0.19 (kernel using a port to communicate with a user) 90 178.67 P
+-0.19 (-level external pager process. The equivalent of net-) 294.52 178.67 P
+-0.06 (work RPC is not de\336ned by the Mach kernel. Instead, it is left up to the netmsgserver implementa-) 90 165.67 P
+-0.19 (tion. Note that the two Sprite mechanisms compose nicely) 90 152.67 P
+-0.19 (. If a remote, user) 343.77 152.67 P
+-0.19 (-level process needs to ) 420.26 152.67 P
+(be invoked, then the network RPC protocol is used \336rst. At the remote host, the operation is con-) 90 139.67 T
+(verted into an upcall by calling through the object-oriented interface) 90 126.67 T
+90 96 522 110.98 C
+90 96 522 110.98 R
+7 X
+0 K
+V
+99 108.96 243 108.96 2 L
+V
+0.5 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 F
+0 X
+0 K
+(*. W) 108 89.33 T
+(e are ignoring the ef) 126.63 89.33 T
+(fects of the pre\336x mechanism. This discussion applies to the \336nal server ) 206.94 89.33 T
+(involved in a pathname resolution, the one in whose domain the pathname terminates.) 108 77.33 T
+FMENDPAGE
+%%EndPage: "8" 9
+%%Page: "9" 9
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+-0.36 (The network RPC protocol is based on the Birrell-Nelson RPC protocol that uses implicit acknowl-) 90 712.67 P
+(edgments so that ordinarily an RPC requires only two network packets[Birrell84]. Their basic ) 90 699.67 T
+(model was extended to optimize bulk data transfer) 90 686.67 T
+(. Lar) 311.22 686.67 T
+(ge messages are fragmented into multiple ) 331.77 686.67 T
+-0 (packets, and the whole batch is acknowledged by the reply packet \050or subsequent request if it was ) 90 673.67 P
+(the reply that was fragmented\051. A custom implementation allows other optimizations. An RPC ) 90 660.67 T
+-0.65 (request or reply is composed of two buf) 90 647.67 P
+-0.65 (fers plus the header) 260.09 647.67 P
+-0.65 (. One buf) 343.26 647.67 P
+-0.65 (fer) 382.95 647.67 P
+-0.65 (, the parameter block, is used ) 394.7 647.67 P
+-0.29 (to marshall small ar) 90 634.67 P
+-0.29 (guments. The other buf) 175.9 634.67 P
+-0.29 (fer refers to a lar) 277.36 634.67 P
+-0.29 (ge, uninterpreted block of data, usually ) 349.21 634.67 P
+(in user) 90 621.67 T
+(-space, that can remain in place until copied onto the network by the network interface. ) 119.38 621.67 T
+-0.29 (Packet headers and parameter blocks are automatically byte-swapped at a low level, but only if the ) 90 608.67 P
+(receiver has a dif) 90 595.67 T
+(ferent byte order) 165.15 595.67 T
+(. Packet headers contain a boot time-stamp so that crashes and ) 237.76 595.67 T
+-0.51 (reboots can be easily detected. These optimizations tune the RPC protocol for its primary use as the ) 90 582.67 P
+(\336le system\325) 90 569.67 T
+(s network transport protocol.) 140.36 569.67 T
+-0.12 (While the RPC protocol is designed to optimize network traf) 90 552.67 P
+-0.12 (\336c, the upcall mechanism is designed ) 355.78 552.67 P
+(to reduce context switching and data copying. The buf) 90 539.67 T
+(fer space for the upcall messages is kept in ) 328.71 539.67 T
+(the server process\325) 90 526.67 T
+(s address space, not in the kernel. This allows the kernel to copy data directly ) 171.76 526.67 T
+-0.48 (between address spaces of the client application and the server process. A write on a pseudo-device ) 90 513.67 P
+(can be made asynchronous at the server) 90 500.67 T
+(\325) 264.91 500.67 T
+(s option. In this case, write messages are allowed to accu-) 267.97 500.67 T
+-0.07 (mulate in the server) 90 487.67 P
+-0.07 (\325) 177.15 487.67 P
+-0.07 (s buf) 180.2 487.67 P
+-0.07 (fer until another type of operation occurs, or until the buf) 201.6 487.67 P
+-0.07 (fer \336lls up. The ) 451.8 487.67 P
+(server can also use a read buf) 90 474.67 T
+(fer to decouple client reads from the generation of the data by the ) 219.14 474.67 T
+(server) 90 461.67 T
+(. In this case, the server adds data to the read buf) 116.24 461.67 T
+(fer as it is generated, and the kernel copies ) 329.91 461.67 T
+-0.06 (data out of the buf) 90 448.67 P
+-0.06 (fer in response to read operations by other processes. For example, the X server ) 170.12 448.67 P
+(diverts mouse and keyboard input to read buf) 90 435.67 T
+(fers associated with dif) 289.05 435.67 T
+(ferent windows, and applica-) 390.45 435.67 T
+-0.04 (tions read the data at their leisure. The select call is also optimized by keeping state bits inside the ) 90 422.67 P
+-0.44 (kernel. The kernel can test the state of a pseudo-device without a context switch to the process. The ) 90 409.67 P
+-0.36 (server updates the state bits as part of the upcall protocol, and it can notify the kernel directly when ) 90 396.67 P
+(a pseudo-device changes state.) 90 383.67 T
+(The Sprite RPC protocol is reasonably ef) 90 366.67 T
+(\336cient. A null call takes 2.45 msec between Sun3 class ) 270.45 366.67 T
+-0.72 (hosts, and about 1 msec between Sun4 and DECstation 3100 class hosts. This is about the same time ) 90 353.67 P
+-0.65 (it takes to exchange a byte of data between user) 90 340.67 P
+-0.65 (-level processes on the same host using UNIX pipes. ) 293.52 340.67 P
+-0.65 (Using 16 Kbyte block sizes, Sun3 workstations can transfer data at 800 Kbytes/sec on a 10 Mbit/sec ) 90 327.67 P
+(ethernet, while Sun4 workstations can achieve 900 Kbytes/sec. Other systems have implemented ) 90 314.67 T
+(faster protocols. Amoeba claims the fastest RPC time in with a 1.4 msec null RPC on a Sun3 ) 90 301.67 T
+([Renesse88]. The x-kernel group reports a Sprite RPC implementation that makes a null RPC ) 90 288.67 T
+(between Sun3 hosts in 1.73 msec [Hutchinson89]. The improvements by the x-kernel result from ) 90 275.67 T
+-0.11 (careful design of the protocol stacks, while I suspect that much of the performance of the Amoeba ) 90 262.67 P
+(system stems from an assembly language implementation. The Sprite upcall mechanism has not ) 90 249.67 T
+-0.16 (been tuned at all, so it is about as expensive as exchanging data with UNIX pipes, or about 1 msec ) 90 236.67 P
+(on a DS3100. This is the time to make a null ioctl on a pseudo-device.) 90 223.67 T
+2 F
+(10 User) 90 204 T
+(-Level Extensibility) 128.52 204 T
+4 F
+(The purpose of the Sprite upcall mechanism is to allow user processes to extend the kernel\325) 90 186.67 T
+(s path-) 491.24 186.67 T
+(name and I/O interfaces. A user process can implement any semantics it chooses for a pseudo-) 90 173.67 T
+(device or a pseudo-\336le-system. Unlike simple message passing, the value of this approach is that ) 90 160.67 T
+(general purpose features provided by the kernel, in particular network transparency) 90 147.67 T
+(, are inherited ) 455.09 147.67 T
+-0.12 (by the user) 90 134.67 P
+-0.12 (-level server processes. For example, the X server lives under the pathname /hosts/) 137.75 134.67 P
+3 F
+-0.12 (host-) 500.03 134.67 P
+(name) 90 121.67 T
+4 F
+(/X0. \050The /hosts/) 113.8 121.67 T
+3 F
+(hostname) 187.95 121.67 T
+4 F
+( directories are just ordinary directories that are used for the few ) 230.07 121.67 T
+-0.55 (\336les needed on a per) 90 108.67 P
+-0.55 (-host basis.\051 A process wishing to display a window on a particular host merely ) 177.88 108.67 P
+-0.5 (needs to open the corresponding pseudo-device. The kernel\325) 90 95.67 P
+-0.5 (s RPC protocol is used to forward oper-) 350.69 95.67 P
+(ations to the particular host. Similarly) 90 82.67 T
+(, NFS access is provided by a user) 255.3 82.67 T
+(-level pseudo-\336le-system ) 405.81 82.67 T
+FMENDPAGE
+%%EndPage: "9" 10
+%%Page: "10" 10
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+(that maps Sprite \336le system requests onto the NFS protocol. The server process runs on a single ) 90 712.67 T
+(workstation, yet the NFS pseudo-\336le-system is transparently integrated into the distributed name ) 90 699.67 T
+-0.16 (space using the pre\336x table mechanism described earlier) 90 686.67 P
+-0.16 (. Another feature that is inherited is block-) 336.36 686.67 P
+-0.32 (ing I/O. The server process can respond just like a device driver in order to cause the client process ) 90 673.67 P
+(to block. As a result, the select system call can be used to wait on a set of devices and pseudo-) 90 660.67 T
+(devices that are located throughout the network.) 90 647.67 T
+(Mach is similar in that the interface to a memory object can be exported to user) 90 630.67 T
+(-level [Y) 438.53 630.67 T
+(oung90]. ) 476.79 630.67 T
+-0.08 (In this case a user) 90 617.67 P
+-0.08 (-level process responds to kernel requests to create and destroy memory objects, ) 167.55 617.67 P
+-0.55 (and to fetch and store pages. This facility allows a number of interesting applications, including net-) 90 604.67 P
+-0.57 (work shared memory) 90 591.67 P
+-0.57 (, compressed paging, and even remote \336le systems. In this case, features of the ) 181.51 591.67 P
+(kernel-resident VM implementation are inherited by the external pager) 90 578.67 T
+(. This includes the general ) 400.61 578.67 T
+(notion of memory objects, and more detailed features like copy-on-write.) 90 565.67 T
+-0.01 (Overall, the notion of an escape hatch to a user) 90 548.67 P
+-0.01 (-level implementation is quite useful. A key dif) 295.9 548.67 P
+-0.01 (fer-) 503.72 548.67 P
+(ence between message passing among user processes and an upcall from the kernel is that with ) 90 535.67 T
+(upcalls the kernel performs some processing on behalf of the user) 90 522.67 T
+(-level applications. The alterna-) 378.41 522.67 T
+-0.24 (tive in a pure message passing kernel is to put some amount of system software into runtime librar-) 90 509.67 P
+-0.2 (ies. The fundamental dif) 90 496.67 P
+-0.2 (ference, however) 196.61 496.67 P
+-0.2 (, is that it is more dif) 271.61 496.67 P
+-0.2 (\336cult to share data structures among ) 361.47 496.67 P
+-0.31 (libraries, while the kernel has its own address space in which to maintain critical, shared data struc-) 90 483.67 P
+(tures. Recall the dif) 90 470.67 T
+(ferences between the kernel-resident pre\336x tables in Sprite vs. the per) 175.85 470.67 T
+(-process ) 481.64 470.67 T
+(pre\336x tables in V and Mach.) 90 457.67 T
+(Exporting a kernel interface via upcall is so useful that I have regretted the cases where it is not ) 90 440.67 T
+(done. Notably) 90 427.67 T
+(, the cache consistency protocol is not exported via upcall, so caching data from ) 151.53 427.67 T
+(pseudo-devices and pseudo-\336le-systems is not supported. As a result, the Sprite-to-NFS gateway ) 90 414.67 T
+-0.69 (provides absolutely no caching, and the Andrew benchmark runs twice as slow through the gateway ) 90 401.67 P
+(as it does with a native Sprite \336le server) 90 388.67 T
+(. \050In this case, the user) 265.15 388.67 T
+(-level UDP/IP server is also in the ) 363.48 388.67 T
+-0.57 (loop.\051 Also, as mentioned earlier) 90 375.67 P
+-0.57 (, an upcall would be very useful in the case where the broadcast for ) 231.3 375.67 P
+-0.65 (a pre\336x fails. There is no fundamental reason why these features could not be implemented, it is just ) 90 362.67 P
+(a small matter of programming.) 90 349.67 T
+(The main drawback with Sprite\325) 90 332.67 T
+(s use of upcall is that ioctl is the only way to get at arbitrary func-) 231.58 332.67 T
+(tionality in the server process. Ioctl is perfectly general because it takes a command ID, an input ) 90 319.67 T
+(buf) 90 306.67 T
+(fer) 104.45 306.67 T
+(, and a reply buf) 116.2 306.67 T
+(fer) 187.7 306.67 T
+(. While this is obviously clumsy) 199.29 306.67 T
+(, it has proved suf) 340.19 306.67 T
+(\336cient for user) 418.41 306.67 T
+(-level ) 482.27 306.67 T
+-0.6 (implementations of sockets and the TCP/IP protocols, terminal emulation, and the X display server) 90 293.67 P
+-0.6 (. ) 517.1 293.67 P
+-0 (The ioctl model also assumes a request-reply pattern of interaction, while Mach ports can provide ) 90 280.67 P
+(more general patterns of communication.) 90 267.67 T
+2 F
+(1) 90 248 T
+(1 Sprite Performance.) 95.34 248 T
+4 F
+-0.76 (Performance of Andrew \336le system benchmark, a benchmark that copies, stats, and compiles a lar) 90 230.67 P
+-0.76 (ge ) 509.64 230.67 P
+(program, shows how well Sprite performs in the remote case. The numbers given in T) 90 217.67 T
+(able 1 were ) 467.59 217.67 T
+(measured by Ousterhout in a series of measurements of UNIX systems [Ousterhout90]. This is a ) 90 204.67 T
+(part of T) 90 191.67 T
+(able 7 from that paper) 127.67 191.67 T
+(.) 224.09 191.67 T
+(The microkernel was unavailable to him at the time Ousterhout made his measurements. While a ) 90 174.67 T
+(recent paper has reported that the microkernel with the single-server UNIX emulator can perform ) 90 161.67 T
+-0.6 (about as well as the Mach 2.5 kernel on the Andrew benchmark [Golub90], this makes no statement ) 90 148.67 P
+(about the performance in the remote case, nor for performance with a multi-server con\336guration.) 90 135.67 T
+(The primary reason for the performance advantage of the Sprite workstations is the dif) 90 118.67 T
+(ferences in ) 470.27 118.67 T
+(the \336le caching protocol. Sprite uses a delayed write strategy on both diskless clients and servers, ) 90 105.67 T
+-0.6 (while NFS writes data from a client through to the servers disk. The ef) 90 92.67 P
+-0.6 (fectiveness of the Sprite cach-) 392 92.67 P
+(ing system is presented in [Nelson88] and [W) 90 79.67 T
+(elch91]. As much as 50% of the data generated by ) 290.2 79.67 T
+FMENDPAGE
+%%EndPage: "10" 11
+%%Page: "11" 11
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+(Sprite clients is deleted before being written back to the server) 90 478.39 T
+(. This result is from long term \050i.e., ) 364 478.39 T
+-0.09 (months long\051 measurements of clients that use the standard 30-second delay policy inherited from ) 90 465.39 P
+(UNIX.) 90 452.39 T
+-0.29 (Recent work by Rosenblum has dramatically improved the performance of Sprite in the local case, ) 90 435.39 P
+(as well. The log-structured \336le system aggressively optimizes writing performance, which is ) 90 422.39 T
+(becoming the bottleneck as lar) 90 409.39 T
+(ge main memory caches reduce the percentage of reads that go ) 224.05 409.39 T
+(through to the disk [Rosenblum90][Rosenblum91].) 90 396.39 T
+2 F
+(12 The Cost of Complexity) 90 376.72 T
+4 F
+-0.33 (The danger) 90 359.39 P
+-0.33 (, of course, with providing a fancy distributed \336le system is in complexity) 138.95 359.39 P
+-0.33 (. Consider the ) 458.92 359.39 P
+(following sources of complexity) 90 346.39 T
+(.The cache consistency protocol relies on state maintained by the ) 231.79 346.39 T
+(server) 90 333.39 T
+(, and this state has to be recovered after a server reboots. Users can abort operations with ) 116.4 333.39 T
+-0.08 (down servers, or they can wait for automatic recovery) 90 320.39 P
+-0.08 (. During process migration the server) 325.67 320.39 P
+-0.08 (\325) 489.21 320.39 P
+-0.08 (s state ) 492.26 320.39 P
+-0.43 (has to be updated, and the semantics of shared UNIX I/O streams \050e.g., the shared seek of) 90 307.39 P
+-0.43 (fset\051 have ) 477.1 307.39 P
+-0.31 (to be maintained so that migration is transparent to the processes involved [Douglis90].Finally) 90 294.39 P
+-0.31 (, the ) 500.94 294.39 P
+(system supports a variety of \322\336le system\323 objects, including devices, \336les, pipes, and user) 90 281.39 T
+(-level ) 484.33 281.39 T
+(server processes. ) 90 268.39 T
+-0.25 (The main cost of this complexity is in development time. As described earlier) 90 251.39 P
+-0.25 (, it was about 5 years ) 428 251.39 P
+(before Sprite was stable enough to be used by outsiders, although I began using Sprite for all my ) 90 238.39 T
+-0.04 (day-to-day work 2 years before that. Complexity doesn\325) 90 225.39 P
+-0.04 (t necessarily imply lar) 336.03 225.39 P
+-0.04 (ger programs. They ) 433.04 225.39 P
+-0.55 (do get lar) 90 212.39 P
+-0.55 (ger as \322small\323 features are added incrementally over time. However) 130.2 212.39 P
+-0.55 (, major re-writes often ) 423.2 212.39 P
+(reduce code size and simplify things. The \336le system bene\336ted considerably from a re-write after ) 90 199.39 T
+(initial experiences with process migration, crash recovery) 90 186.39 T
+(, and the upcall mechanism. Another of ) 342.83 186.39 T
+(Butler Lampson\325) 90 173.39 T
+(s quotes is:) 164.16 173.39 T
+(\322Plan to throw one away; you will anyhow) 126 156.39 T
+(.\323 [Lampson83]) 313.56 156.39 T
+2 F
+(13 The Size of the Sprite Kernel) 90 136.72 T
+4 F
+-0.13 (The sizes of the Sprite kernel modules are given in Appendix 1. Overall, the kernel contains about ) 90 119.39 P
+(95,000 lines of code, excluding comments, and it compiles into about 1 Megabyte on a DS3100. ) 90 106.39 T
+(The lar) 90 93.39 T
+(gest modules are the \336le system \05038% of lines of code\051, process manager \05010%\051, which ) 121.22 93.39 T
+-0.2 (includes process migration, network and device drivers \05012%\051, virtual memory \050%8\051, and the RPC ) 90 80.39 P
+90 72 522 720 C
+91.26 485.72 520.74 720 C
+91.26 485.72 520.74 720 R
+7 X
+0 K
+V
+93 456 520 720 R
+V
+1 F
+0 X
+(Con\336guration) 129 713.33 T
+(Copy) 253.99 713.33 T
+(Compile) 326 713.33 T
+(T) 398 713.33 T
+(otal) 403.41 713.33 T
+(Penalty) 451.99 713.33 T
+(DS3100 Sprite Local) 129 697.33 T
+(22) 253.99 697.33 T
+(98) 326 697.33 T
+(120) 398 697.33 T
+(DS3100 Sprite Diskless) 129 681.33 T
+(34) 253.99 681.33 T
+(93) 326 681.33 T
+(127) 398 681.33 T
+(6%) 451.99 681.33 T
+(DS3100 Mach 2.5 Local) 129 665.33 T
+(29) 253.99 665.33 T
+(107) 326 665.33 T
+(136) 398 665.33 T
+(DS3100 Mach 2.5 NFS) 129 649.33 T
+(58) 253.99 649.33 T
+(147) 326 649.33 T
+(205) 398 649.33 T
+(50%) 451.99 649.33 T
+(Sun4 Mach 2.5 Local) 129 633.33 T
+(37) 253.99 633.33 T
+(122) 326 633.33 T
+(159) 398 633.33 T
+(Sun4 Sprite Local) 129 617.33 T
+(44) 253.99 617.33 T
+(128) 326 617.33 T
+(172) 398 617.33 T
+(Sun4 Sprite Diskless) 129 601.33 T
+(56) 253.99 601.33 T
+(128) 326 601.33 T
+(184) 398 601.33 T
+(7%) 451.99 601.33 T
+(Sun4 SunOS 4.0.3 Local) 129 585.33 T
+(54) 253.99 585.33 T
+(133) 326 585.33 T
+(187) 398 585.33 T
+(Sun4 SunOS 4.0.3 NFS) 129 569.33 T
+(92) 253.99 569.33 T
+(213) 326 569.33 T
+(305) 398 569.33 T
+(63%) 451.99 569.33 T
+(Sun3 Sprite Local) 129 553.33 T
+(52) 253.99 553.33 T
+(375) 326 553.33 T
+(427) 398 553.33 T
+(Sun3 Sprite Diskless) 129 537.33 T
+(75) 253.99 537.33 T
+(364) 326 537.33 T
+(439) 398 537.33 T
+(3%) 451.99 537.33 T
+(T) 129 521.33 T
+(able 1. Comparison of local and remote \336le system performance. The times are in seconds. The ) 134.41 521.33 T
+-0.03 (last column gives the percent slowdown of the benchmark when using a remote \336le system under ) 129 509.33 P
+(the same OS) 129 497.33 T
+90 72 522 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "11" 12
+0 11 /Times-Bold FMDEFINEFONT
+5 10 /Times-Bold FMDEFINEFONT
+%%Page: "12" 12
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+-0.06 (protocol \0504%\051. The remaining third of the kernel is split among a miscellaneous group of modules ) 90 712.67 P
+(that implement signals, synchronization primitives, the scheduler) 90 699.67 T
+(, a timer) 375.8 699.67 T
+(, a host monitor that trig-) 411.67 699.67 T
+(gers recovery) 90 686.67 T
+(, a debug nub to support remote debugging, malloc, free, printf, and support for pro-) 148.77 686.67 T
+(\336ling with the UNIX gprof program.) 90 673.67 T
+(The \336le system is broken into a number of modules. The lar) 90 656.67 T
+(gest,) 352.84 656.67 T
+0 F
+( fs) 373.28 656.67 T
+4 F
+( \0508%\051, contains an emulation ) 383.96 656.67 T
+-0.27 (library for 4.3 BSD system calls that used to be linked into applications via the C library) 90 643.67 P
+-0.27 (. The parts ) 473.39 643.67 P
+-0.43 (of \336le system that directly manage disks are relatively small.) 90 630.67 P
+0 F
+-0.43 ( fsdm) 352.79 630.67 P
+4 F
+-0.43 ( \0501%\051 has generic code to handle ) 378.29 630.67 P
+(\336le descriptors and superblocks, while ) 90 617.67 T
+0 F
+(lfs) 261.49 617.67 T
+4 F
+( \0506%\051 and ) 272.47 617.67 T
+0 F
+(ofs) 318.54 617.67 T
+4 F
+( \0503%\051 implement particular block layouts. ) 331.96 617.67 T
+(One layer higher) 90 604.67 T
+(,) 163.39 604.67 T
+0 F
+( fscache) 166.13 604.67 T
+4 F
+( \0503%\051 maintains a cache of local and remote \336le blocks, while) 203.05 604.67 T
+0 F
+( fsconsist) 474.6 604.67 T
+4 F
+( ) 517.02 604.67 T
+-0.29 (\0501%\051 implements the network consistency protocol. The ) 90 591.67 P
+0 F
+-0.29 (fslcl) 337.59 591.67 P
+4 F
+-0.29 ( \0502%\051 module implements a directory ) 356.51 591.67 P
+(hierarchy on a local disk, while) 90 578.67 T
+0 F
+( ) 227.91 578.67 T
+(fspr) 230.66 578.67 T
+(e\336x ) 249.38 578.67 T
+4 F
+(\0501%\051 implements a transparently distributed name space. ) 268.61 578.67 T
+(Local and remote implementations of various \336le system objects are implemented in ) 90 565.67 T
+0 F
+(fsio) 464.11 565.67 T
+4 F
+( \0503.5%\051 ) 480.59 565.67 T
+-0.66 (and ) 90 552.67 P
+0 F
+-0.66 (fsrmt) 107.95 552.67 P
+4 F
+-0.66 ( \0503.5%\051, respectively) 133.57 552.67 P
+-0.66 (. The ) 223.06 552.67 P
+0 F
+-0.66 (fspdev) 247.06 552.67 P
+4 F
+-0.66 ( \0503%\051 module implements the upcall l facility) 277.58 552.67 P
+-0.66 (. The) 472.11 552.67 P
+0 F
+-0.66 ( fsutil) 494.02 552.67 P
+4 F
+-0.66 ( ) 519.91 552.67 P
+(\0501%\051 module maintains the table of object descriptors and contains other supporting routines.) 90 539.67 T
+-0.15 (Note that a Sprite kernel leaves out some things that are found in other UNIX kernels, notably pro-) 90 522.67 P
+(tocol stacks and terminal emulation. The only network protocol in the Sprite kernel is the kernel-) 90 509.67 T
+-0.45 (to-kernel RPC protocol. The TCP/IP protocols are implemented in a user) 90 496.67 P
+-0.45 (-level process as a pseudo-) 406.02 496.67 P
+-0.67 (device. The socket interface is implemented in a library that makes ioctl calls on the TCP/IP pseudo-) 90 483.67 P
+-0.44 (device to setup and destroy network connections. The kernel-resident terminal driver is very crude, ) 90 470.67 P
+-0.58 (relying on a more sophisticated terminal emulator that runs as part of a window system. Thus Sprite ) 90 457.67 P
+-0.27 (takes a hybrid approach, putting performance critical features into the kernel, yet exporting the \336le ) 90 444.67 P
+(system interface via upcall in order to allow for user) 90 431.67 T
+(-level extensibility) 319.53 431.67 T
+(.) 400.9 431.67 T
+2 F
+(14 The Size of the Mach Micr) 90 412 T
+(okernel) 241.01 412 T
+4 F
+-0.33 (T) 90 394.67 P
+-0.33 (able 3 gives the sizes of the code in the directories that make up a microkernel for the DECstation ) 95.94 394.67 P
+(3100. For comparison, the compiled size of the emulator library and the single server are also ) 90 381.67 T
+-0.76 (given.The Mach microkernel is about 65% the size of a Sprite kernel in the number of non-comment ) 90 368.67 P
+-0.65 (code lines. This is approximately equal to leaving out the Sprite \336le system, although other modules ) 90 355.67 P
+(in the Sprite kernel depend on the \336le system. The single process UNIX server is about the same ) 90 342.67 T
+(size as the microkernel, although I suspect there may be some dead code in the UNIX server) 90 329.67 T
+(. I do ) 495.48 329.67 T
+-0.02 (not have access to a multi-server implementation, so I cannot comment on the size of that system. ) 90 316.67 P
+-0.41 (All-in-all, the code size comparison comes out a wash. By the time a \336le system is added back onto ) 90 303.67 P
+90 72 522 720 C
+92.48 72 519.52 295 C
+92.48 72 519.52 295 R
+7 X
+0 K
+V
+97.48 74 511.48 290 R
+V
+1 F
+0 X
+(Directory) 97.48 283.33 T
+(Description) 159.98 283.33 T
+(Procedures) 258.06 283.33 T
+(Lines) 337.28 283.33 T
+(T) 395.87 283.33 T
+(ext) 401.28 283.33 T
+(Bytes) 451.71 283.33 T
+(boot_ufs) 97.48 271.33 T
+(Bootstrap \336le system) 159.98 271.33 T
+(30) 292.47 271.33 T
+(3006) 339.5 271.33 T
+(chips) 97.48 259.33 T
+(Common device code.) 159.98 259.33 T
+(235) 287.48 259.33 T
+(641) 339.87 259.33 T
+(1) 354.49 259.33 T
+(ddb) 97.48 247.33 T
+(Kernel debugger) 159.98 247.33 T
+(1) 288.22 247.33 T
+(1) 292.84 247.33 T
+(1) 297.47 247.33 T
+(2836) 339.5 247.33 T
+(device) 97.48 235.33 T
+(Device interface) 159.98 235.33 T
+(91) 292.47 235.33 T
+(3912) 339.5 235.33 T
+(inline) 97.48 223.33 T
+(Compiler support) 159.98 223.33 T
+(12) 292.47 223.33 T
+(360) 344.5 223.33 T
+(ipc) 97.48 211.33 T
+(Messages and ports) 159.98 211.33 T
+(224) 287.48 211.33 T
+(13097) 334.51 211.33 T
+(kern) 97.48 199.33 T
+(T) 159.98 199.33 T
+(asks and threads) 165.39 199.33 T
+(387) 287.48 199.33 T
+(1) 334.88 199.33 T
+(1573) 339.5 199.33 T
+(scsi) 97.48 187.33 T
+(Generic SCSI) 159.98 187.33 T
+(1) 287.85 187.33 T
+(13) 292.47 187.33 T
+(4225) 339.5 187.33 T
+(vm) 97.48 175.33 T
+(V) 159.98 175.33 T
+(irtual memory) 166.6 175.33 T
+(137) 287.48 175.33 T
+(9209) 339.5 175.33 T
+(pmax) 97.48 163.33 T
+(DS3100-speci\336c code) 159.98 163.33 T
+(190) 287.48 163.33 T
+(6016) 339.5 163.33 T
+(T) 97.48 151.33 T
+(otal) 102.89 151.33 T
+(A DS3100 Microkernel) 159.98 151.33 T
+(1550) 282.48 151.33 T
+(60645) 334.51 151.33 T
+(473576) 383.51 151.33 T
+(574880) 444.49 151.33 T
+(Emulator) 97.48 139.33 T
+(The emulator library/process) 159.98 139.33 T
+(81) 292.47 139.33 T
+(2421) 339.5 139.33 T
+(65536) 388.51 139.33 T
+(73728) 449.49 139.33 T
+(Server) 97.48 127.33 T
+(The monolithic UNIX server) 159.98 127.33 T
+(1424) 282.48 127.33 T
+(63816) 334.51 127.33 T
+(503808) 383.51 127.33 T
+(615600) 444.49 127.33 T
+5 F
+(T) 97.48 103.33 T
+(able 3) 103.23 103.33 T
+1 F
+(. Sizes for a DECstation 3100 microkernel. The kernel modules are not linked separately) 128.5 103.33 T
+(, so I ) 482.31 103.33 T
+(have not given compiled sizes for each module. The total size of the emulator and server are given for ) 97.48 91.33 T
+(comparison) 97.48 79.33 T
+95.48 160 482.48 160 2 L
+0.5 H
+2 Z
+N
+96.48 280 483.48 280 2 L
+N
+97.48 148 484.48 148 2 L
+N
+96.48 136 483.48 136 2 L
+N
+96.48 124 483.48 124 2 L
+N
+90 72 522 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "12" 13
+%%Page: "13" 13
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+(the microkernel, both systems are about the same size.) 90 712.67 T
+2 F
+(15  Other Comparisons) 90 693 T
+3 F
+(Ease of Development ) 90 675.67 T
+4 F
+(- A microkernel is hailed as providing an easier environment in which to ) 186.11 675.67 T
+-0.23 (develop system services. After all, they are ordinary user processes so they can be debugged in the ) 90 662.67 P
+(normal ways. However) 90 649.67 T
+(, Sprite has always had a symbolic debugging facility for its kernel. The ) 191.77 649.67 T
+(debugnub implements enough functionality to support the ptrace interface used by UNIX debug-) 90 636.67 T
+-0.2 (gers. It communicates with the debugger over a serial line, or over the ethernet. It is possible to set ) 90 623.67 P
+-0.11 (breakpoints and even single step the kernel. Debugging a multi-server environment might even be ) 90 610.67 P
+(more dif) 90 597.67 T
+(\336cult because system services are distributed into dif) 127.33 597.67 T
+(ferent address spaces. In this case, it ) 359.34 597.67 T
+-0.6 (isn\325) 90 584.67 P
+-0.6 (t as easy to trace the execution of something like exec that involves the process manager) 106.28 584.67 P
+-0.6 (, the \336le ) 485.33 584.67 P
+(system, and the virtual memory system.) 90 571.67 T
+3 F
+(V) 90 554.67 T
+(irtual Memory) 95.9 554.67 T
+4 F
+(- Mach provides an excellent internal interface to the machine-dependent MMU ) 159.68 554.67 T
+(facilities. One of the most dif) 90 541.67 T
+(\336cult aspects of porting an operating system is dealing with a new ) 218.57 541.67 T
+(MMU. Much of Mach\325) 90 528.67 T
+(s success is due to the pmap interface and its support for multiprocessors. ) 191.3 528.67 T
+(Sprite, too, has a decent internal interface between the machine-dependent and machine-indepen-) 90 515.67 T
+-0.03 (dent parts of the kernel. It also runs on multiprocessors. However) 90 502.67 P
+-0.03 (, the Mach VM interface re\337ects ) 376.67 502.67 P
+(a long history of experience with VM in the Rig and Accent kernels.) 90 489.67 T
+3 F
+(Real T) 90 472.67 T
+(ime) 118.39 472.67 T
+4 F
+( - The key to real time performance is a preemptible kernel, not necessarily the use of a ) 134.25 472.67 T
+-0 (microkernel. Early versions of Sprite had a scheduler that preempted kernel threads, although this ) 90 459.67 P
+-0.11 (feature was eliminated in order to simplify the scheduler) 90 446.67 P
+-0.11 (. The Sprite kernel is multi-threaded inter-) 336.86 446.67 P
+-0.4 (nally) 90 433.67 P
+-0.4 (, and with some ef) 111.26 433.67 P
+-0.4 (fort the scheduler could revert to a preemptive one. Another important issue ) 190.3 433.67 P
+-0.27 (for real time is guaranteed I/O bandwidth. Again, a microkernel ) 90 420.67 P
+3 F
+-0.27 (per se ) 370.42 420.67 P
+4 F
+-0.27 (makes no guarantees in this ) 399.17 420.67 P
+(regard. I suspect that the next version of SunOS will be readily converted to a real time kernel ) 90 407.67 T
+(because it is multi-threaded internally and has a preemptive scheduler[Powell91].) 90 394.67 T
+3 F
+-0.55 (Multiple Personalities) 90 377.67 P
+4 F
+-0.55 ( - Mach has done a good job of extracting UNIX emulation in to a library and ) 187.42 377.67 P
+-0.02 (an associated server process. However) 90 364.67 P
+-0.02 (, Sprite also emulates the BSD and Ultrix system call inter-) 258.81 364.67 P
+(faces with a simple library) 90 351.67 T
+(. The bulk of UNIX compatibility is in the \336le system, which is already ) 205.84 351.67 T
+-0.34 (provided. Another approach to emulation is taken by the Chorus microkernel. Dif) 90 338.67 P
+-0.34 (ferent system ser-) 444.58 338.67 P
+-0.17 (vices are downloaded into the kernel depending on the needs of the applications [Guillemont91]. I ) 90 325.67 P
+-0.31 (prefer this approach to the Mach multi-server approach because I feel that kernel-resident modules ) 90 312.67 P
+-0.49 (will perform better) 90 299.67 P
+-0.49 (. As for Mac and DOS emulation, I do not see a real need for this given the multi-) 171.4 299.67 P
+-0.63 (tasking facilities available with W) 90 286.67 P
+-0.63 (indows 3.0 and Mac\325) 237.18 286.67 P
+-0.63 (s System 7. Only a small set of programmers ) 327.46 286.67 P
+(will want to program UNIX-style on DOS or a Mac, while commercial developers and users will ) 90 273.67 T
+(almost certainly prefer their native DOS and Mac environments.) 90 260.67 T
+2 F
+(16 What I W) 90 241 T
+(ould Do Differ) 155.64 241 T
+(ently) 229.38 241 T
+4 F
+(If I were to write a new operating system today \050which I am not\051, I would like to pick and choose ) 90 223.67 T
+(from the excellent work done by various research groups. For example, the Mach pmap interface, ) 90 210.67 T
+(the x-kernel protocol stacks, the Sprite distributed \336le system, and Bershad\325) 90 197.67 T
+(s LRPC would be an ) 422.61 197.67 T
+(excellent starting point. The other crucial factor is support from the hardware vendors in the form ) 90 184.67 T
+-0.77 (of device drivers and bootstrap code. There are a number of dif) 90 171.67 P
+-0.77 (\336culties with this approach, however) 358.94 171.67 P
+-0.77 (. ) 517.28 171.67 P
+(A practical matter is that each of these have been developed in their own environment, so integra-) 90 158.67 T
+-0.35 (tion would be dif) 90 145.67 P
+-0.35 (\336cult, even if it were possible to get the source code. The other) 164.11 145.67 P
+-0.35 (, central problem is ) 435.85 145.67 P
+-0.29 (that the interfaces to these sub-systems are not always well de\336ned. Often the top-level interface is ) 90 132.67 P
+(published, but the interfaces relied on by the implementations are not speci\336ed.) 90 119.67 T
+-0.08 (The next time around I would still not choose message passing. Instead, I would provide two com-) 90 102.67 P
+-0.6 (munication mechanisms in the kernel, LRPC for local communication and network RPC for remote ) 90 89.67 P
+(communication. I believe that the procedure call model is right abstraction to present to program-) 90 76.67 T
+FMENDPAGE
+%%EndPage: "13" 14
+3 10 /Times-Italic FMDEFINEFONT
+%%Page: "14" 14
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+4 F
+0 X
+-0.21 (mers. I would provide, in the kernel, a high-level distributed name space using a pre\336x table mech-) 90 712.67 P
+-0.14 (anism. I would retain the \336le system\325) 90 699.67 P
+-0.14 (s I/O interface as the default interface, but I would also allow ) 251.82 699.67 P
+(other interfaces to be associated with pathnames. Thus the kernel would still provide the default, ) 90 686.67 T
+(high-performance \336le system. However) 90 673.67 T
+(, user processes could use the hierarchical name space for ) 264.08 673.67 T
+-0.7 (binding to arbitrary interfaces implemented by other) 90 660.67 P
+-0.7 (, user) 315.45 660.67 P
+-0.7 (-level processes. Finally) 338.33 660.67 P
+-0.7 (, I would leverage ) 442.71 660.67 P
+(more on dynamic loading so that only the needed kernel modules need to be loaded on any partic-) 90 647.67 T
+(ular machine, and so that turn-around time in development would improve.) 90 634.67 T
+2 F
+(17 Conclusions) 90 615 T
+4 F
+(First, while it is always true that you can build things with general purpose, low-level facilities, it ) 90 597.67 T
+-0.81 (is also true that choosing a higher) 90 584.67 P
+-0.81 (-level abstraction gives you more \337exibility in the implementation. ) 232.63 584.67 P
+-0.01 (A higher) 90 571.67 P
+-0.01 (-level abstraction also does more for its clients. For Sprite we chose the \336le system inter-) 128.51 571.67 P
+-0.45 (face as opposed to a message passing interface. As a result, we had the \337exibility to implement sim-) 90 558.67 P
+-0.66 (ple, ef) 90 545.67 P
+-0.66 (\336cient mechanisms for its transparently distributed name space and its remote \336le access. The ) 116.6 545.67 P
+-0.42 (\336le system also provides an overall structure to the system that provides a bene\336t in uniformity and ) 90 532.67 P
+(simplicity) 90 519.67 T
+(. The danger in choosing a high-level abstraction is that it may not be appropriate for ) 133.24 519.67 T
+-0.11 (every application. However) 90 506.67 P
+-0.11 (, in the case of the \336le system I can safely assert that this abstraction is ) 211.06 506.67 P
+(useful to a wide range of applications.) 90 493.67 T
+-0.57 (Second, while it is important for performance to provide kernel-level support, an upcall mechanism ) 90 476.67 P
+(that integrates user) 90 463.67 T
+(-level processes into kernel abstractions is a good idea.The kernel can provide ) 172.77 463.67 T
+-0.73 (the basic framework for the system, such as a high-level name space or a copy-on-write VM facility) 90 450.67 P
+-0.73 (, ) 517.24 450.67 P
+-0.28 (yet the user) 90 437.67 P
+-0.28 (-level processes can extend the system in new ways without modifying the kernel. This ) 139.88 437.67 P
+-0.62 (is dif) 90 424.67 P
+-0.62 (ferent than pure message passing where the kernel makes no statements about the overall struc-) 111.46 424.67 P
+-0 (ture of the system. By now) 90 411.67 P
+-0 (, I think we know enough to provide some higher) 207.66 411.67 P
+-0 (-level functionality in ) 424.06 411.67 P
+(the kernel.) 90 398.67 T
+2 F
+(18 Acknowledgments) 90 379 T
+4 F
+(I would like to that all the helpful feedback from the reviewers, especially Dave Nichols. I would ) 90 361.67 T
+-0.31 (like to thank the program committee and Alan Langerman for giving me the opportunity to present ) 90 348.67 P
+(these ideas to this audience. ) 90 335.67 T
+2 F
+(19  Refer) 90 316 T
+(ences ) 136.4 316 T
+1 F
+(Accetta86.) 90 299.33 T
+-0.24 (M. Accetta, R. Baron, W) 161 299.33 P
+-0.24 (. Bolosky) 259.05 299.33 P
+-0.24 (, D. Golub, R. Rashid, A. T) 296.48 299.33 P
+-0.24 (evanian, M. Y) 404.28 299.33 P
+-0.24 (oung, Mach: A ) 459.98 299.33 P
+(New Kernel Foundation for UNIX Development. ) 162 287.33 T
+3 F
+(Pr) 361.57 287.33 T
+(oc. of the Summer 1986 USENIX ) 371.2 287.33 T
+(Confer) 162 275.33 T
+(ence) 189.4 275.33 T
+1 F
+(, July 1986.) 207.71 275.33 T
+(Baker91.) 90 259.33 T
+(M. Baker) 161 259.33 T
+(, J. Hartman, M. Kupfer) 198.35 259.33 T
+(, K. Shirrif) 293.99 259.33 T
+(f and J. Ousterhout, Measurements of a ) 337.11 259.33 T
+(Distributed File System, ) 162 247.33 T
+3 F
+(\050to appear\051 Pr) 261.95 247.33 T
+(oc. of the 13th Symp. on Operating System Prin., ) 319.32 247.33 T
+(Operating Systems Review) 162 235.33 T
+1 F
+(, Oct. 1991.) 267.94 235.33 T
+(Bershad91.) 90 219.33 T
+-0.08 ( B. N. Bershad, T) 161 219.33 P
+-0.08 (. E. Anderson, E. D. Lazowska and H. M. Levy) 230.17 219.33 P
+-0.08 (, User) 418.65 219.33 P
+-0.08 (-Level Interprocess ) 442.23 219.33 P
+(Communication for Shared Memory Multiprocessors, ) 162 207.33 T
+3 F
+(ACM T) 379.64 207.33 T
+(ransactions on Computer ) 408.24 207.33 T
+(System) 162 195.33 T
+1 F
+(s, 9, 2 \050May 1991\051, 175-198.) 189.76 195.33 T
+(Birrell84.) 90 179.33 T
+-0.1 (A. D. Birrell and B. J. Nelson, Implementing Remote Procedure Calls,) 161 179.33 P
+3 F
+-0.1 ( ACM T) 442.05 179.33 P
+-0.1 (ransactions ) 472.96 179.33 P
+(on Computer Systems) 162 167.33 T
+1 F
+( 2, 1 \050Feb. 1984\051, 39-59.) 248.61 167.33 T
+(Clark85.) 90 151.33 T
+-0.3 (D. Clark, The Structuring of Systems Using Upcalls, ) 161 151.33 P
+3 F
+-0.3 (Pr) 372.07 151.33 P
+-0.3 (oc. of the 10th Symp. on Operating ) 381.7 151.33 P
+(System Prin., Operating Systems Review ) 162 139.33 T
+1 F
+(19, 5 \050Dec. 1985\051, 171-180.) 326.61 139.33 T
+(Douglis90.) 90 123.33 T
+( F) 161 123.33 T
+(. Douglis, T) 168.26 123.33 T
+(ransparent Process Migration for Personal W) 215.66 123.33 T
+(orkstations, PhD Thesis, Sep. ) 395 123.33 T
+(1990. University of California, Berkeley) 162 111.33 T
+(.) 323.46 111.33 T
+(Draves90.) 90 95.33 T
+( R. Draves, A Revised IPC Interface, ) 161 95.33 T
+3 F
+(Pr) 311.44 95.33 T
+(oc. of the Mach W) 321.06 95.33 T
+(orkshop) 393.14 95.33 T
+1 F
+(, Oct. 1990, 101-121) 425.35 95.33 T
+(Feirtag71.) 90 79.33 T
+-0.52 (R. Feirtag, E. Or) 161 79.33 P
+-0.52 (ganick, The Multics Input/Output System, ) 225.88 79.33 P
+3 F
+-0.52 (Pr) 394.56 79.33 P
+-0.52 (oc. of the 3r) 404.19 79.33 P
+-0.52 (d SOSP) 450.56 79.33 P
+1 F
+-0.52 (, 1971, 35-) 479.74 79.33 P
+FMENDPAGE
+%%EndPage: "14" 15
+%%Page: "15" 15
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+1 F
+0 X
+(41.) 162 713.33 T
+(Golub90. ) 90 697.33 T
+(D. Golub, R. Dean, Forin and R. Rashid, UNIX as an Application Program, ) 161 697.33 T
+3 F
+(Pr) 465.8 697.33 T
+(oc. of the ) 475.43 697.33 T
+(Summer 1990 USENIX Confer) 162 685.33 T
+(ence) 284.05 685.33 T
+1 F
+(, June 1990, 87-96.) 302.36 685.33 T
+(Guillemont91.) 90 669.33 T
+-0.69 ( M. Guillemont, J. Lipkis, D. Orr and M. Rozier) 161 669.33 P
+-0.69 (, A Second-Generation Micro-Kernel Based ) 346.73 669.33 P
+(UNIX; Lessons in Performance and Compatibility) 162 657.33 T
+(, ) 362.61 657.33 T
+3 F
+(Pr) 367.61 657.33 T
+(oc. of the W) 377.23 657.33 T
+(inter 1991 USENIX ) 424.43 657.33 T
+(Confer) 162 645.33 T
+(ence) 189.4 645.33 T
+1 F
+(, Jan. 1991, 13-22.) 207.71 645.33 T
+(Hill86.) 90 629.33 T
+-0.19 ( M. D. Hill, S. J. Eggers, J. R. Larus, G. S. T) 161 629.33 P
+-0.19 (aylor) 336.59 629.33 P
+-0.19 (, G. Adams, B. K. Bose, G. A. Gibson, P) 356.73 629.33 P
+-0.19 (. ) 517.19 629.33 P
+(M. Hansen, J. Keller) 162 617.33 T
+(, S. I. Kong, C. G. Lee, D. Lee, J. M. Pendleton, S. A. Ritchie, D. A. ) 244.32 617.33 T
+(W) 162 605.33 T
+(ood, B. G. Zorn, P) 170.63 605.33 T
+(. N. Hil\336nger) 243.38 605.33 T
+(, D. Hodges, R. H. Katz, J. Ousterhout and D. A. ) 296.28 605.33 T
+(Patterson, Design Decisions in SPUR, ) 162 593.33 T
+3 F
+(IEEE Computer) 317.2 593.33 T
+1 F
+( 19, 1) 381.32 593.33 T
+(1 \050November 1986\051.) 403.44 593.33 T
+(Hutchinson89.) 90 577.33 T
+( N. C. Hutchinson, L. L. Peterson, M. B. Abbott and S. O\325Malley) 161 577.33 T
+(, RPC in the x-Kernel: ) 421.59 577.33 T
+(Evaluating New Design T) 162 565.33 T
+(echniques, ) 265.39 565.33 T
+3 F
+(Pr) 310.36 565.33 T
+(oc. 12th Symp. on Operating System Prin., ) 319.98 565.33 T
+(Operating Systems Review) 162 553.33 T
+1 F
+( 23, 5 \050December 1989\051, 91-101.) 268.59 553.33 T
+(Barrara91.) 90 537.33 T
+-0.04 (J. S. Barrera. III, A Fast Mach Network IPC Implementation, ) 161 537.33 P
+3 F
+-0.04 (\050to appear\051 Pr) 407.95 537.33 P
+-0.04 (oc. of the 2nd ) 465.24 537.33 P
+(Mach Symposium) 162 525.33 T
+1 F
+(, Nov) 232.78 525.33 T
+(. 1991.) 254.34 525.33 T
+(Lampson83. ) 90 509.33 T
+(B. Lampson, Hints for Computer System Design, ) 161 509.33 T
+3 F
+(Pr) 360.89 509.33 T
+(oc. 9th Symp. on Operating System ) 370.52 509.33 T
+(Prin., Operating Systems Review ) 162 497.33 T
+1 F
+(17, 5 \050October 1983\051, 33-48.) 296.36 497.33 T
+(Lauer81.) 90 481.33 T
+( H. C. Lauer) 161 481.33 T
+(, Observations on the Development of an Operating System, ) 210.28 481.33 T
+3 F
+(Pr) 453.73 481.33 T
+(oc. of the 8th ) 463.35 481.33 T
+(Symp. on Operating System Prin., Operating Systems Review ) 162 469.33 T
+1 F
+(15, 5 \050Dec. 1981\051, 30-36.) 409.33 469.33 T
+(Li89) 90 453.33 T
+(.K. Li and P) 161 453.33 T
+(. Hudak, Memory Coherence in Shared V) 208.47 453.33 T
+(irtual Memory Systems, ) 374.41 453.33 T
+3 F
+(ACM ) 473.25 453.33 T
+(T) 162 441.33 T
+(ransactions on Computer Systems) 167.01 441.33 T
+1 F
+( 7, 4 \050Nov) 302.76 441.33 T
+(. 1989\051, 321-359.) 342.64 441.33 T
+(Nelson88.) 90 425.33 T
+-0.26 ( M. Nelson, B. W) 161 425.33 P
+-0.26 (elch and J. Ousterhout, Caching in the Sprite Network File System, ) 229.97 425.33 P
+3 F
+-0.26 (ACM ) 498.66 425.33 P
+(T) 162 413.33 T
+(ransactions Computer Systems) 167.01 413.33 T
+1 F
+( 6, 1 \050Feb. 1988\051, 134-154.) 290.27 413.33 T
+(Ousterhout90.) 90 397.33 T
+-0.14 (J. Ousterhout, Why Aren\325) 161 397.33 P
+-0.14 (t Operating Systems Getting Faster As Fast as Hardware?, ) 263.94 397.33 P
+3 F
+-0.14 (Pr) 498.08 397.33 P
+-0.14 (oc. ) 507.71 397.33 P
+(of the Summer 1990 USENIX Confer) 162 385.33 T
+(ence) 309.04 385.33 T
+1 F
+(., June 1990, 247-256.) 327.35 385.33 T
+(Powell91.) 90 369.33 T
+( M. L. Powell, S. R. Kleiman, S. Barton, D. Shah, D. Stein and M. W) 161 369.33 T
+(eeks, SunOS Multi-) 437.55 369.33 T
+(thread Architecture, ) 162 357.33 T
+3 F
+(Pr) 244.43 357.33 T
+(oc. of the W) 254.05 357.33 T
+(inter 1991 USENIX Confer) 301.24 357.33 T
+(ence) 409.42 357.33 T
+1 F
+(, Jan. 1991, 65-80.) 427.73 357.33 T
+(Renesse88. ) 90 341.33 T
+(R. Renesse, H. Staveren and A. W) 161 341.33 T
+(. T) 297.76 341.33 T
+(anenbaum, Performance of the W) 308.16 341.33 T
+(orld\325) 441.97 341.33 T
+(s Fastest ) 460.85 341.33 T
+(Distributed Operating System, ) 162 329.33 T
+3 F
+(Operating Systems Review) 286.37 329.33 T
+1 F
+( 22, 4 \050Oct. 1988\051, 25- 34.) 392.96 329.33 T
+(Rosenblum90.) 90 313.33 T
+-0.53 ( M. Rosenblum and J. K. Ousterhout, The LFS Storage Manager) 161 313.33 P
+-0.53 (, ) 413.43 313.33 P
+3 F
+-0.53 (Pr) 417.89 313.33 P
+-0.53 (oc. of the Summer 1990 ) 427.51 313.33 P
+(USENIX Confer) 162 301.33 T
+(ence) 226.32 301.33 T
+1 F
+(, June 1990, 247-256.) 244.62 301.33 T
+(Rosenblum91. ) 90 285.33 T
+-0.1 (M. Rosenblum and J. K. Ousterhout, The Design and Implementation of a Log-Structured ) 161 285.33 P
+(File System, \050) 162 273.33 T
+3 F
+(to appear\051 Pr) 217.81 273.33 T
+(oc. of the 13th Symp. on Operating System Prin.) 271.85 273.33 T
+1 F
+(, Operating ) 464.78 273.33 T
+(Systems Review) 162 261.33 T
+(, Oct. 1991.) 227.7 261.33 T
+(W) 90 245.33 T
+(elch86a.) 98.64 245.33 T
+-0.5 ( B. B. W) 161 245.33 P
+-0.5 (elch, The Sprite Remote Procedure Call System, T) 193.98 245.33 P
+-0.5 (echnical Report UCB/Computer ) 392.18 245.33 P
+(Science Dpt. 86/302, University of California, Berkeley) 162 233.33 T
+(, June 1986.) 384.81 233.33 T
+(W) 90 217.33 T
+(elch86b.) 98.64 217.33 T
+(B. B. W) 161 217.33 T
+(elch and J. K. Ousterhout, Pre\336x T) 192.96 217.33 T
+(ables: A Simple Mechanism for Locating Files ) 331.34 217.33 T
+(in a Distributed Filesystem, ) 162 205.33 T
+3 F
+(Pr) 275 205.33 T
+(oc. of the 6th ICDCS) 284.62 205.33 T
+1 F
+(, May 1986, 184-189.) 368.19 205.33 T
+(W) 90 189.33 T
+(elch88. ) 98.64 189.33 T
+-0.73 (B. B. W) 161 189.33 P
+-0.73 (elch and J. K. Ousterhout, Pseudo-Devices: User) 191.5 189.33 P
+-0.73 (-Level Extensions to the Sprite File ) 382.03 189.33 P
+(System, ) 162 177.33 T
+3 F
+(Pr) 196.43 177.33 T
+(oc. of the 1988 Summer USENIX Conf) 206.06 177.33 T
+1 F
+(., June 1988, 184-189.) 359.57 177.33 T
+(W) 90 161.33 T
+(elch90. ) 98.64 161.33 T
+(B. B. W) 161 161.33 T
+(elch, Naming, State Management, and User) 192.96 161.33 T
+(-Level Extensions in the Sprite ) 367.08 161.33 T
+(Distributed File System, PhD Thesis, 1990. University of California, Berkeley) 162 149.33 T
+(.) 474.78 149.33 T
+(W) 90 133.33 T
+(elch91) 98.64 133.33 T
+(.B. B. W) 161 133.33 T
+(elch, Measured Performance of Caching in the Sprite Network File System, ) 195.46 133.33 T
+3 F
+(\050to ) 500.52 133.33 T
+(appear late \32491\051 Computing Systems) 162 121.33 T
+1 F
+(.) 308.02 121.33 T
+(Y) 90 105.33 T
+(oung87.) 96.22 105.33 T
+-0.35 ( ) 162 105.33 P
+-0.35 (M. Y) 164.15 105.33 P
+-0.35 (oung, A. T) 183.89 105.33 P
+-0.35 (evanian, R. Rashid, D. Golub, J. Eppinger) 225.79 105.33 P
+-0.35 (, J. CHew) 391.5 105.33 P
+-0.35 (, W) 429.56 105.33 P
+-0.35 (. Bolosky) 442.72 105.33 P
+-0.35 (, D. Black ) 480.03 105.33 P
+(and R. Baron, The Duality of Memory and Communication in the Implementation of a ) 162 93.33 T
+-0.49 (Multiprocessor Operating System, ) 162 81.33 P
+3 F
+-0.49 (Pr) 300.46 81.33 P
+-0.49 (oc. 1) 310.08 81.33 P
+-0.49 (1th Symp. on Operating System Prin., Operating ) 328.29 81.33 P
+FMENDPAGE
+%%EndPage: "15" 16
+%%Page: "16" 16
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+3 F
+0 X
+(Systems Review) 162 713.33 T
+1 F
+( 21, 5 \050Nov) 225.01 713.33 T
+(. 1987\051, 63-76.) 269.88 713.33 T
+FMENDPAGE
+%%EndPage: "16" 17
+2 12 /Times-Roman FMDEFINEFONT
+%%Page: "17" 17
+612 792 0 FMBEGINPAGE
+90 746 522 756 R
+7 X
+0 K
+V
+90 32.67 522 42.67 R
+V
+90 72 522 720 R
+V
+2 F
+0 X
+(.) 90 91 T
+90 72 522 720 C
+91.26 99 520.74 720 C
+91.26 99 520.74 720 R
+7 X
+0 K
+V
+99 84 523 721 R
+V
+1 F
+0 X
+(Module) 99 714.33 T
+(Description) 161.5 714.33 T
+(Procedures) 259.58 714.33 T
+(Lines) 338.8 714.33 T
+(T) 397.39 714.33 T
+(ext) 402.8 714.33 T
+(Bytes) 453.23 714.33 T
+(dbg.ds3100) 99 702.33 T
+(Debug Nub) 161.5 702.33 T
+(27) 293.99 702.33 T
+(1509) 341.02 702.33 T
+(13680) 390.02 702.33 T
+(24672) 451.01 702.33 T
+(dev) 99 690.33 T
+(Devices) 161.5 690.33 T
+(1) 289.36 690.33 T
+(17) 293.99 690.33 T
+(4159) 341.02 690.33 T
+(83296) 390.02 690.33 T
+(127472) 446.01 690.33 T
+(dev) 99 678.33 T
+(.ds3100) 112.78 678.33 T
+(DS3100 drivers) 161.5 678.33 T
+(67) 293.99 678.33 T
+(5350) 341.02 678.33 T
+(fs) 99 666.33 T
+(FS syscalls & BSD compat.) 161.5 666.33 T
+(158) 288.99 666.33 T
+(8018) 341.02 666.33 T
+(76784) 390.02 666.33 T
+(97296) 451.01 666.33 T
+(fscache) 99 654.33 T
+(Cache manager) 161.5 654.33 T
+(70) 293.99 654.33 T
+(2747) 341.02 654.33 T
+(24032) 390.02 654.33 T
+(27184) 451.01 654.33 T
+(fsconsist) 99 642.33 T
+(Consistency protocol) 161.5 642.33 T
+(35) 293.99 642.33 T
+(1338) 341.02 642.33 T
+(1) 390.39 642.33 T
+(1584) 395.02 642.33 T
+(14080) 451.01 642.33 T
+(fsdm) 99 630.33 T
+(Local disk manager) 161.5 630.33 T
+(8) 298.99 630.33 T
+(889) 346.02 630.33 T
+(5904) 395.02 630.33 T
+(7344) 456 630.33 T
+(fsio) 99 618.33 T
+(Local I/O objects) 161.5 618.33 T
+(100) 288.99 618.33 T
+(3490) 341.02 618.33 T
+(26352) 390.02 618.33 T
+(31760) 451.01 618.33 T
+(fslcl) 99 606.33 T
+(Local directories) 161.5 606.33 T
+(43) 293.99 606.33 T
+(2086) 341.02 606.33 T
+(16896) 390.02 606.33 T
+(19104) 451.01 606.33 T
+(fspdev) 99 594.33 T
+(Upcall to user) 161.5 594.33 T
+(-level) 217.37 594.33 T
+(68) 293.99 594.33 T
+(3155) 341.02 594.33 T
+(24784) 390.02 594.33 T
+(28176) 451.01 594.33 T
+(fspre\336x) 99 582.33 T
+(Distributed naming) 161.5 582.33 T
+(29) 293.99 582.33 T
+(1200) 341.02 582.33 T
+(10704) 390.02 582.33 T
+(1) 451.38 582.33 T
+(1824) 456 582.33 T
+(fsrmt) 99 570.33 T
+(Remote I/O objects) 161.5 570.33 T
+(91) 293.99 570.33 T
+(3644) 341.02 570.33 T
+(28816) 390.02 570.33 T
+(32336) 451.01 570.33 T
+(fsutil) 99 558.33 T
+(T) 161.5 558.33 T
+(able management) 166.9 558.33 T
+(62) 293.99 558.33 T
+(1547) 341.02 558.33 T
+(13792) 390.02 558.33 T
+(16464) 451.01 558.33 T
+(lfs) 99 546.33 T
+(Log Structured FS) 161.5 546.33 T
+(132) 288.99 546.33 T
+(5394) 341.02 546.33 T
+(46096) 390.02 546.33 T
+(52064) 451.01 546.33 T
+(libc) 99 534.33 T
+(Printf, etc.) 161.5 534.33 T
+(80) 293.99 534.33 T
+(5133) 341.02 534.33 T
+(39104) 390.02 534.33 T
+(57056) 451.01 534.33 T
+(libc.ds3100) 99 522.33 T
+(ditto) 161.5 522.33 T
+(1) 298.99 522.33 T
+(99) 351.01 522.33 T
+(mach.ds3100) 99 510.33 T
+(T) 161.5 510.33 T
+(rap handlers & Ultirx compat.) 167.25 510.33 T
+(135) 288.99 510.33 T
+(5595) 341.02 510.33 T
+(63840) 390.02 510.33 T
+(80384) 451.01 510.33 T
+(main.ds3100) 99 498.33 T
+(System start-up) 161.5 498.33 T
+(3) 298.99 498.33 T
+(294) 346.02 498.33 T
+(2480) 395.02 498.33 T
+(3648) 456 498.33 T
+(mem) 99 486.33 T
+(Malloc/free) 161.5 486.33 T
+(17) 293.99 486.33 T
+(841) 346.02 486.33 T
+(6128) 395.02 486.33 T
+(22544) 451.01 486.33 T
+(net) 99 474.33 T
+(Network interface) 161.5 474.33 T
+(42) 293.99 474.33 T
+(1718) 341.02 474.33 T
+(37760) 390.02 474.33 T
+(45408) 451.01 474.33 T
+(net.ds3100) 99 462.33 T
+(Network devices) 161.5 462.33 T
+(18) 293.99 462.33 T
+(875) 346.02 462.33 T
+(ofs) 99 450.33 T
+(Old disk layout) 161.5 450.33 T
+(51) 293.99 450.33 T
+(2724) 341.02 450.33 T
+(23360) 390.02 450.33 T
+(2744) 456 450.33 T
+(proc) 99 438.33 T
+(Process manager) 161.5 438.33 T
+(225) 288.99 438.33 T
+(9747) 341.02 438.33 T
+(77776) 390.02 438.33 T
+(96000) 451.01 438.33 T
+(proc.ds3100) 99 426.33 T
+(ditto) 161.5 426.33 T
+(1) 298.99 426.33 T
+(52) 351.01 426.33 T
+(prof) 99 414.33 T
+(Kernel pro\336ling) 161.5 414.33 T
+(8) 298.99 414.33 T
+(198) 346.02 414.33 T
+(2464) 395.02 414.33 T
+(3904) 456 414.33 T
+(prof.ds3100) 99 402.33 T
+(mtrace, etc.) 161.5 402.33 T
+(7) 298.99 402.33 T
+(288) 346.02 402.33 T
+(raid) 99 390.33 T
+(Disk arrays) 161.5 390.33 T
+(1) 289.36 390.33 T
+(16) 293.99 390.33 T
+(3230) 341.02 390.33 T
+(32 *) 397.52 390.33 T
+(128 *) 453.5 390.33 T
+(recov) 99 378.33 T
+(Network recovery) 161.5 378.33 T
+(40) 293.99 378.33 T
+(1253) 341.02 378.33 T
+(10448) 390.02 378.33 T
+(12144) 451.01 378.33 T
+(rpc) 99 366.33 T
+(Remote Procedure Call) 161.5 366.33 T
+(79) 293.99 366.33 T
+(3709) 341.02 366.33 T
+(38704) 390.02 366.33 T
+(50928) 451.01 366.33 T
+(rpc.ds3100) 99 354.33 T
+(ditto) 161.5 354.33 T
+(1) 298.99 354.33 T
+(8) 356.01 354.33 T
+(sched) 99 342.33 T
+(Scheduler) 161.5 342.33 T
+(24) 293.99 342.33 T
+(814) 346.02 342.33 T
+(9440) 395.02 342.33 T
+(1) 451.38 342.33 T
+(1888) 456 342.33 T
+(sig) 99 330.33 T
+(Signals) 161.5 330.33 T
+(31) 293.99 330.33 T
+(1) 341.39 330.33 T
+(189) 346.02 330.33 T
+(9200) 395.02 330.33 T
+(1097) 456 330.33 T
+(sync) 99 318.33 T
+(Monitors, condition vars) 161.5 318.33 T
+(42) 293.99 318.33 T
+(1493) 341.02 318.33 T
+(16152) 390.02 318.33 T
+(17348) 451.01 318.33 T
+(sys) 99 306.33 T
+(Syscalls and miscellany) 161.5 306.33 T
+(38) 293.99 306.33 T
+(1847) 341.02 306.33 T
+(9312) 395.02 306.33 T
+(17184) 451.01 306.33 T
+(timer) 99 294.33 T
+(T) 161.5 294.33 T
+(imer and callout) 167.25 294.33 T
+(17) 293.99 294.33 T
+(463) 346.02 294.33 T
+(8560) 395.02 294.33 T
+(15168) 451.01 294.33 T
+(timer) 99 282.33 T
+(.ds3100) 119.55 282.33 T
+(T) 161.5 282.33 T
+(imer device) 167.25 282.33 T
+(1) 294.36 282.33 T
+(1) 298.99 282.33 T
+(247) 346.02 282.33 T
+(utils) 99 270.33 T
+(Hash and T) 161.5 270.33 T
+(race) 207.22 270.33 T
+(17) 293.99 270.33 T
+(710) 346.02 270.33 T
+(6656) 395.02 270.33 T
+(9200) 456 270.33 T
+(utils.ds3100) 99 258.33 T
+(ditto) 161.5 258.33 T
+(3) 298.99 258.33 T
+(39) 351.01 258.33 T
+(vm) 99 246.33 T
+(V) 161.5 246.33 T
+(irtual Memory) 168.11 246.33 T
+(198) 288.99 246.33 T
+(6565) 341.02 246.33 T
+(77328) 390.02 246.33 T
+(103200) 446.01 246.33 T
+(vm.ds3100) 99 234.33 T
+(ditto) 161.5 234.33 T
+(49) 293.99 234.33 T
+(1068) 341.02 234.33 T
+(T) 99 222.33 T
+(OT) 104.93 222.33 T
+(AL) 117.45 222.33 T
+(A DS3100 Sprite kernel) 161.5 222.33 T
+(2261) 283.99 222.33 T
+(94725) 336.02 222.33 T
+(828576) 385.02 222.33 T
+(1085632) 441.01 222.33 T
+0 F
+(Appendix 1) 99 193.67 T
+4 F
+(. Module sizes for the Sprite kernel. The count of lines of code exclude comment ) 153.03 193.67 T
+-0.52 (blocks and cpp directives. The T) 99 180.67 P
+-0.52 (ext and Bytes columns give the text size and total size of the com-) 239.01 180.67 P
+-0.64 (piled modules as reported by the UNIX size command. The compiled sizes are for the DECstation ) 99 167.67 P
+(3100. Machine-dependent modules are named with a .ds3100 suf) 99 154.67 T
+(\336x. They are linked together ) 385.01 154.67 T
+(with corresponding machine-independent modules so separate compiled sizes are not given. ) 99 141.67 T
+-0.74 (Compiled sizes for the Sun3 are roughly 75% the size for the other) 99 128.67 P
+-0.74 (, RISC-based architectures. The ) 383.18 128.67 P
+(presence of compatibility code in both fs and mach.ds3100 is because the compatibility code is ) 99 115.67 T
+(being rewritten. There is considerable overlap between the two.) 99 102.67 T
+90 72 522 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "17" 18
+%%Trailer
+%%BoundingBox: 0 0 612 792
+%%Pages: 17 1
+%%DocumentFonts: Times-Bold
+%%+ Times-Italic
+%%+ Times-Roman

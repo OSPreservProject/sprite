@@ -1,0 +1,6 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F DFA.O;1                           	dfa.o
+F GREP.;1                           	grep
+F GREP.O;1                          	grep.o
+F MD.MK;1                           	md.mk
+F REGEX.O;1                         	regex.o

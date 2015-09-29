@@ -1,0 +1,105 @@
+% geophysics.sty
+% For Geophysics, a publication of the Society of Exploration Geophysicists.
+%
+% This style option is designed to work with the article document
+% style of LaTeX version 2.09.  Use
+% \documentstyle[geophysics]{article}
+%
+% The rules here are from "Instructions to authors" Geophysics January 1986.
+
+% 15 Jan 87
+
+% Copyright (c) 1987 by Stephen Gildea
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+
+% If you make any improvements, I'd like to hear about them.
+
+% Stephen Gildea
+% MIT Earth Resources Lab
+% Cambridge, Mass. 02139
+% mit-erl!gildea
+% gildea@erl.mit.edu
+
+
+\oddsidemargin=.25in
+\topmargin=0in
+\textwidth=6in
+
+% set \textheight to about 8in.  Must be multiple of \baselineskip.
+\ifcase \@ptsize
+    % 10 pt (\baselineskip=12pt)
+    \textheight=576pt
+\or % 11 pt (\baselineskip=13.6pt)
+    \textheight=584.8pt
+\or % 12 pt  (\baselineskip=15pt)
+    \textheight=585pt
+\fi
+
+%everything is to be double spaced, and 1.5 looks double spaced.
+\def\baselinestretch{1.5}
+
+\parindent=1em
+\parskip=0in
+
+\def\fnum@figure{{\sc Fig.}\ \thefigure}
+
+% Use period instead of colon
+\long\def\@makecaption#1#2{
+ \vskip 10pt 
+ \setbox\@tempboxa\hbox{#1.\ #2}
+ \ifdim \wd\@tempboxa >\hsize \unhbox\@tempboxa\par \else \hbox
+to\hsize{\hfil\box\@tempboxa\hfil} 
+ \fi}
+
+\def\thebibliography#1{\section*{References\markboth
+ {REFERENCES}{REFERENCES}}\list
+ {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}\@bibsetup}
+ \def\newblock{\hskip .11em plus .33em minus -.07em}
+ \sloppy
+ \sfcode`\.=1000\relax}
+
+% Don't put the citation in an hbox.
+\def\@citex[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+  \def\@citea{}\@cite{\@for\@citeb:=#2\do
+    {\@citea\def\@citea{\@citesep}\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+       {Citation `\@citeb' on page \thepage \space undefined}}%
+{\csname b@\@citeb\endcsname}}}{#1}}
+
+% undent first line of reference by using negative \itemindent.
+\def\@bibsetup{\itemindent=-\leftmargin}
+
+% Use a semicolon instead of a comma between multiple citations.
+\def\@citesep{; }
+
+% round parens instead of square brackets
+\def\@cite#1#2{({#1\if@tempswa , #2\fi})}
+ 
+% Labels should not be printed in References
+\def\@biblabel#1{\hfill}
+
+% Headings:
+%   for principal heading use \section
+%   for lower rank heading use \subsection
+%   for still lower rank heading use \subsubsection
+\setcounter{secnumdepth}{0}
+
+% \section is tricky because we want to both support \section* and have
+% the section title uppercased.
+\def\section{\secdef\@sectionb\@sections}
+\def\@sectionb[#1]#2{\@sections{#2}}
+\def\@sections#1{\@startsection
+  {section}{1}{\z@}{14pt}{14pt}{\centering\bf}{\uppercase{#1}}}
+\def\subsection{\@startsection {subsection}{2}{\z@}{14pt}{14pt}{\bf}}
+\def\subsubsection#1{\par\addvspace{14pt}{\bf #1.---\/}\ignorespaces}
+
+\def\acknowledgments{\section{Acknowledgments}}

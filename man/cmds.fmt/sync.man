@@ -1,0 +1,68 @@
+
+
+
+SYNC                      User Commands                      SYNC
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     sync - force the file system's cache to the disk or the file
+     server.
+
+SSYYNNOOPPSSIISS
+     ssyynncc
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     This command forces the file system's cache to the  disk  or
+     the file server.
+
+KKEEYYWWOORRDDSS
+     sync, write-back, cache, file system
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 28, 1990                    1
+
+
+

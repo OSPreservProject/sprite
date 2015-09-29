@@ -1,0 +1,13 @@
+          while test body
+               The while command evaluates test as an  expression  (in
+               the  same  way  that expr evaluates its argument).  The
+               value of the expression must be numeric; if it is  non-
+               zero  then  body  is  executed by passing it to the Tcl
+               interpreter.  Once body has been executed then test  is
+               evaluated   again,   and   the  process  repeats  until
+               eventually test evaluates  to  a  zero  numeric  value.
+               Continue  commands  may  be  executed  inside  body  to
+               terminate the current iteration of the loop, and  break
+               commands may be executed inside body to cause immediate
+               termination of the while command.   The  while  command
+               always returns an empty string.

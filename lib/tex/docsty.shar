@@ -1,0 +1,274 @@
+#! /bin/sh
+# This is a shell archive, meaning:
+# 1. Remove everything above the #! /bin/sh line.
+# 2. Save the resulting text in a file.
+# 3. Execute the file with /bin/sh (not csh) to create:
+#	docsty.readme
+#	docsty.c
+# This archive created: Sun Jan 31 22:13:02 1988
+# By:	Ken Yap ()
+export PATH; PATH=/bin:/usr/bin:$PATH
+echo shar: "extracting 'docsty.readme'" '(268 characters)'
+if test -f 'docsty.readme'
+then
+	echo shar: "will not over-write existing file 'docsty.readme'"
+else
+cat << \SHAR_EOF > 'docsty.readme'
+Attached is DOCSTY.C (augh! a TeX program in C???), a
+program for converting .DOC files to .STY files.  It runs on VMS or
+UNIX.  The usage is 
+
+	% docsty docfile 
+
+without an extension...
+
+[Editor's note: anybody want to volunteer to write a Makefile and
+a man page?]
+SHAR_EOF
+if test 268 -ne "`wc -c < 'docsty.readme'`"
+then
+	echo shar: "error transmitting 'docsty.readme'" '(should have been 268 characters)'
+fi
+fi
+echo shar: "extracting 'docsty.c'" '(5885 characters)'
+if test -f 'docsty.c'
+then
+	echo shar: "will not over-write existing file 'docsty.c'"
+else
+cat << \SHAR_EOF > 'docsty.c'
+/*
+ * DOCSTY.C
+ *
+ * Convert TeX DOC files to TeX STY files for faster loading.  The input
+ * file must obey the following rules:
+ *
+ *	% is the comment character;
+ *	\ is the escape character;
+ *	Does not depend on RETURN RETURN producing a \par;
+ *	Ends with a final newline, or can have one added.
+ *	Works if the characters SPACE, TAB (^^I), LINEFEED (^^J), VERTICAL TAB
+ *		(^^K), FORMFEED (^^L), and RETURN (^^M) are all to be treated
+ *		as spaces; in fact, they are CONVERTED to spaces (except after
+ *		a \).
+ *	Works if all the SPACE characters are converted to newlines.
+ *
+ * The first two of these are equivalent to the definitions in PLAIN.  The
+ * last is NOT:  PLAIN makes ^^L active, translating into \par; ^^K as the
+ * superscript character, and so on.  However, such uses are not needed in
+ * a DOC file.  DOCSTY does NOT translate the "^^" forms to the actual
+ * characters; it reacts only to the actual control characters.  So while
+ * you can't have a FORMFEED in the input, you CAN have the three-character
+ * sequence ^^L, which TeX will translate into a FORMFEED.  Note that you
+ * can get around the last condition - which mainly shows up in a context in
+ * which you've made SPACE an active character and are doing something like
+ * \def {...something...} - by using ^^` in place of SPACE.
+ * 
+ * DOCSTY will try to keep its output lines short, but it will only break
+ * a line at a space.  If an input line is very long but contains no space,
+ * the output will contain a very long line, too.
+ */
+
+/*
+ *  Tony Li (tli%sargas.usc.edu@oberon.USC.EDU)
+ *  5/22/86
+ *
+ * Copyright (c) 1986
+ * University of Southern California
+ */
+
+/*
+ * Modified, 6-Nov-87, by Jerry Leichter (LEICHTER-JERRY@CS.YALE.EDU)
+ *	\% doesn't mark the beginning of a comment; in fact, in general, the
+ *	character just after \ should be left alone.  Break ONLY at spaces;
+ *	previous version would force a line out if it got too long, producing
+ *	an extra linefeed.  This was aggravated by the fact that the newline
+ *	after a comment was retained.
+ * Modified, 30-Jan-88, by Jerry Leichter
+ *	TeX always discards leading space after a newline, even if a "%" came
+ *	first.  We have to do the same.  (Problem found by Steve Cochran,
+ *	<cochran%brand.usc.edu@oberon.usc.edu>.)
+ */
+
+#include <stdio.h>
+#include <ctype.h>
+#define STRLEN	256
+#define WHITE	1
+#define BLACK	2
+#define COMMENT	'%'
+#define BACK	'\\'
+#define SP	' '
+#define NL	'\n'
+#define CR	'\r'
+#define EOS	'\0'
+#define THRESH	78
+
+#ifdef vms
+#define FAIL	0
+#else
+#define FAIL	1
+#endif
+
+/*
+ * dumpline() ensures that there is room for at least two characters in
+ * the output buffer.  Hence, SAVECHAR can be called twice between calls
+ * to TESTBUF.
+ */
+#define SAVECHAR	{buf[linelen++] = ch;}
+#define TESTBUF		{if (linelen >= THRESH) dumpline(out);}
+
+char	buf[STRLEN];	/* Output buffer		*/
+int	linelen = 0;	/* Length of output line so far	*/
+int	linenum = 1;	/* Input line number		*/
+
+main(argc, argv)
+int	argc;
+char	*argv[];
+{	char	dest[STRLEN];
+	FILE	*in;
+	FILE	*out;
+	int	state;
+	int	ret;
+	char	ch;
+
+	if (argc != 2)
+	{	fprintf(stderr,"Usage:  docsty <file-name>\n");
+		exit(FAIL);
+	}
+	strcpy(dest,argv[1]);
+	strcat(argv[1],".doc");
+	strcat(dest,".sty");
+	if ((in = fopen(argv[1],"r")) == NULL)
+	{	perror("Can't open input file");
+		exit(FAIL);
+	}
+#ifdef vms
+	out = fopen(dest,"w","rfm=var","rat=cr");
+#else
+	out = fopen(dest,"w");
+#endif
+	if (out == NULL)
+	{	perror("Can't open output file");
+		exit(FAIL);
+	}
+
+	state = WHITE;
+	while ((ch = getc(in)) != EOF)
+    	{	if (ch == COMMENT)
+		{	/*
+			 * Scan to end of line
+			 */
+			while ((ch = getc(in)) != EOF && ch != NL)
+				;
+			if (ch == EOF)
+				break;
+			linenum++;
+			/*
+			 * Scan over leading whitespace on line, if any
+			 */
+			while ((ch = getc(in)) != EOF && isspace(ch))
+				if (ch == NL)
+					break;
+			/*
+			 * Re-scan beyond splice point
+			 */
+			ungetc(ch,in);
+			continue;
+		}
+		else if (ch == BACK)
+		{	TESTBUF;
+			SAVECHAR;
+			if ((ch = getc(in)) == EOF)
+				break;
+			if (ch == NL)
+				linenum++;
+			SAVECHAR;
+			state = BLACK;
+		}
+		else if (isspace(ch))
+		{   if (ch == NL)
+			linenum++;
+		    if (state == BLACK)		/* No space yet		*/
+		    {	ch = SP;
+			TESTBUF;		/* put it out		*/
+			SAVECHAR;		/* and append a space	*/
+			state = WHITE;		/* we've seen a space	*/
+		    }
+		}				/* otherwise, ignore	*/
+		else				/* other char		*/
+		{   TESTBUF;
+		    SAVECHAR;			/* save it		*/
+		    state = BLACK;		/* we saw it		*/
+		}
+	};
+	emptybuf(out);
+	fclose(in);
+	fclose(out);
+}
+
+/*
+ * Dump the buffer.
+ *
+ * We break ONLY at a space.  If no SPACE can be found in the line so far,
+ * we do nothing; the next call will try again.  If the line buffer overflows,
+ * we complain right here.
+ *
+ * The surrounding code may assume that, on return, there is room for at
+ * least two more characters in buf.
+ */
+dumpline(out)
+FILE	*out;
+{	char	*pt;
+	char	*tt;
+
+	tt = pt = &buf[linelen-1];
+	while (pt >= buf && *pt != SP)
+		pt--;
+	if (pt >= buf)
+	{	*pt++ = EOS;		/* Terminate at space		*/
+		fputs(buf,out);		/* Put line out			*/
+		fputc(NL,out);		/* Terminate it			*/
+		if (strlen(buf) > THRESH)
+		{	printf(
+"Warning:  Line longer than %d characters generated; near input line %d.\n",
+			THRESH,linenum);
+		}
+		/*
+		 * Copy the remaining characters to the beginning of the
+		 * buffer, re-computing linelen in the process.
+		 */
+		linelen = 0;
+		while (pt <= tt)
+			buf[linelen++] = *pt++;
+	}
+	else if (linelen >= sizeof(buf) - 2)
+	{	fprintf(stderr,
+"Too many input characters without a space; near input line %d.\n",
+			linenum);
+		exit(FAIL);
+	}
+}
+
+/*
+ * Clear the buffer.  Normally, the last character of the input file was a
+ * newline, so dumpline() will be able to write the line out immmediately;
+ * but if not, we tack on a SPACE.
+ */
+emptybuf(out)
+FILE	*out;
+{	char	ch;
+
+	dumpline(out);
+	if (linelen != 0)
+	{	ch = SP;
+		SAVECHAR;
+		dumpline(out);
+	}
+}
+SHAR_EOF
+if test 5885 -ne "`wc -c < 'docsty.c'`"
+then
+	echo shar: "error transmitting 'docsty.c'" '(should have been 5885 characters)'
+fi
+fi
+exit 0
+#	End of shell archive

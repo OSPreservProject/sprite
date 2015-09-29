@@ -1,0 +1,1 @@
+/sprite/src/cmds/cc1.mips/config.h

@@ -1,0 +1,264 @@
+
+
+
+scale                     User Commands                     scale
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     scale - Create and manipulate scale widgets
+
+SSYYNNOOPPSSIISS
+     ssccaallee _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aaccttiivveeFFoorreeggrroouunndd               bboorrddeerrWWiiddtthh     ffoonnttoorriieenntt     |
+     bbaacckkggrroouunndd      ccuurrssoorr         ffoorreeggrroouunndd      rreelliieeff         |
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           ccoommmmaanndd
+     Class:          CCoommmmaanndd
+     Command-Line Switch:--ccoommmmaanndd
+
+          Specifies the prefix of a Tcl command to  invoke  when-
+          ever  the  value of the scale is changed interactively.
+          The actual command consists of this option followed  by
+          a  space  and  a  number.  The number indicates the new
+          value of the scale.
+
+     Name:           ffrroomm
+     Class:          FFrroomm
+     Command-Line Switch:--ffrroomm
+
+          Specifies the value corresponding to the  left  or  top
+          end of the scale.  Must be an integer.
+
+     Name:           llaabbeell
+     Class:          LLaabbeell
+     Command-Line Switch:--llaabbeell
+
+          Specifies a string to displayed  as  a  label  for  the
+          scale.  For vertical scales the label is displayed just
+          to the right of the top end of the scale.  For horizon-
+          tal  scales  the label is displayed just above the left
+          end of the scale.
+
+     Name:           lleennggtthh
+     Class:          LLeennggtthh
+     Command-Line Switch:--lleennggtthh
+
+          Specifies the desired long dimension of  the  scale  in  |
+          screen  units  (i.e.  any  of  the  forms acceptable to  |
+          TTkk__GGeettPPiixxeellss).  For vertical scales this is the scale's
+          height;  for horizontal scales it is the scale's width.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+scale                     User Commands                     scale
+
+
+
+     Name:           sshhoowwVVaalluuee
+     Class:          SShhoowwVVaalluuee
+     Command-Line Switch:--sshhoowwvvaalluuee
+
+          Specifies a boolean value indicating whether or not the
+          current value of the scale is to be displayed.
+
+     Name:           sslliiddeerrFFoorreeggrroouunndd
+     Class:          sslliiddeerrFFoorreeggrroouunndd
+     Command-Line Switch:--sslliiddeerrffoorreeggrroouunndd
+
+          Specifies the color to use for drawing the slider under
+          normal  conditions.   When  the  mouse is in the slider
+          window then the slider's color  is  determined  by  the
+          aaccttiivveeFFoorreeggrroouunndd option.
+
+     Name:           sslliiddeerrLLeennggtthh
+     Class:          SSlliiddeerrLLeennggtthh
+     Command-Line Switch:--sslliiddeerrlleennggtthh
+
+          Specfies the size of the  slider,  measured  in  screen  |
+          units along the slider's long dimension.  The value may  |
+          be  specified  in  any  of  the  forms  acceptable   to  |
+          TTkk__GGeettPPiixxeellss.
+
+     Name:           ttiicckkIInntteerrvvaall
+     Class:          TTiicckkIInntteerrvvaall
+     Command-Line Switch:--ttiicckkiinntteerrvvaall
+
+          Must be  an  integer  value.   Determines  the  spacing
+          between  numerical tick-marks displayed below or to the
+          left of the slider.  If specified as 0, then  no  tick-
+          marks will be displayed.
+
+     Name:           ttoo
+     Class:          TToo
+     Command-Line Switch:--ttoo
+
+          Specifies the value corresponding to the right or  bot-
+          tom  end of the scale.  Must be an integer.  This value
+          may be either  less  than  or  greater  than  the  ffrroomm
+          option.
+
+     Name:           wwiiddtthh
+     Class:          WWiiddtthh
+     Command-Line Switch:--wwiiddtthh
+
+          Specifies the desired narrow dimension of the scale  in  |
+          screen  units  (i.e.  any  of  the  forms acceptable to  |
+          TTkk__GGeettPPiixxeellss).  For vertical scales this is the scale's
+          width;   for  horizontal  scales  this  is  the scale's
+          height.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+scale                     User Commands                     scale
+
+
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssccaallee command creates a new window (given by  the  _p_a_t_h_-
+     _N_a_m_e argument) and makes it into a scale widget.  Additional
+     options, described above, may be specified  on  the  command
+     line  or  in the option database to configure aspects of the
+     scale such as its  colors,  orientation,  and  relief.   The
+     ssccaallee  command  returns  its _p_a_t_h_N_a_m_e argument.  At the time
+     this command is invoked, there must not exist a window named
+     _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent must exist.
+
+     A scale is a widget that displays a rectangular region and a
+     small _s_l_i_d_e_r.  The rectangular region corresponds to a range
+     of integer values (determined by the ffrroomm and  ttoo  options),
+     and  the position of the slider selects a particular integer
+     value.  The slider's position (and hence the scale's  value)
+     may  be  adjusted  by clicking or dragging with the mouse as
+     described in  the  BINDINGS  section  below.   Whenever  the
+     scale's  value  is  changed, a Tcl command is invoked (using
+     the ccoommmmaanndd option) to notify other  interested  widgets  of
+     the change.
+
+     Three annotations may be displayed in  a  scale  widget:   a
+     label appearing at the top-left of the widget (top-right for
+     vertical scales), a number  displayed  just  underneath  the
+     slider (just to the left of the slider for vertical scales),
+     and a collection of numerical tick-marks just underneath the
+     current  value  (just  to  the left of the current value for
+     vertical scales).  Each of these three  annotations  may  be
+     selectively  enabled  or  disabled  using  the configuration
+     options.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The ssccaallee command creates a new Tcl command  whose  name  is
+     _p_a_t_h_N_a_m_e.  This command may be used to invoke various opera-
+     tions on the widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.   The  following commands are possible for scale widg-
+     ets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+scale                     User Commands                     scale
+
+
+
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the ssccaallee command.
+
+     _p_a_t_h_N_a_m_e ggeett
+          Returns a decimal string giving the  current  value  of
+          the scale.
+
+     _p_a_t_h_N_a_m_e sseett _v_a_l_u_e
+          This command is invoked to change the current value  of
+          the  scale,  and hence the position at which the slider
+          is displayed.  _V_a_l_u_e gives the new value for the scale.
+
+
+BBIINNDDIINNGGSS
+     When a new scale is created, it is given the following  ini-
+     tial behavior by default:
+
+     <<EEnntteerr>>             Change  the  slider   display   to   use
+                         aaccttiivveeFFoorreeggrroouunndd  instead of sslliiddeerrFFoorree--
+                         ggrroouunndd.
+
+     <<LLeeaavvee>>             Reset the slider display to use  sslliiddeerr--
+                         FFoorreeggrroouunndd instead of aaccttiivveeFFoorreeggrroouunndd.
+
+     <<BBuuttttoonnPPrreessss--11>>     Change the slider display  so  that  the
+                         slider   appears   sunken   rather  than
+                         raised.  Move the slider (and adjust the
+                         scale's  value)  to  correspond  to  the
+                         current mouse position.
+
+     <<BBuuttttoonn11--MMoottiioonn>>    Move the slider (and adjust the  scale's
+                         value)  to  correspond  to  the  current
+                         mouse position.
+
+     <<BBuuttttoonnRReelleeaassee--11>>   Reset the slider  display  so  that  the
+                         slider appears raised again.
+
+
+KKEEYYWWOORRDDSS
+     scale, widget
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

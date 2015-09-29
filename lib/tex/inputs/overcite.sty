@@ -1,0 +1,138 @@
+%     OVERCITE.STY -- compressed superscript numerical citations.
+%     See also CITE.STY.
+%
+%     Copyright (C) 1989,1990 by Donald Arseneau
+%     These macros may be freely transmitted, reproduced, or modified for
+%     non-commercial purposes provided that this notice is left intact.
+%     
+%     Instructions follow \endinput.
+%  ------------------------------------
+%
+%  Pull out the code that writes the aux file citation and formats 
+%  the number.  \citen can be used by itself to give citation numbers 
+%  without the other formatting; e.g., "See also ref.~\citen{junk}."
+%
+\def\citen#1{%
+\if@filesw \immediate \write \@auxout {\string \citation {#1}}\fi 
+\@tempcntb\m@ne \let\@h@ld\relax \def\@citea{}%
+\@for \@citeb:=#1\do {%
+  \@ifundefined {b@\@citeb}%
+    {\@h@ld\@citea\@tempcntb\m@ne{\bf ?}%
+    \@warning {Citation `\@citeb ' on page \thepage \space undefined}}%
+% else, defined
+    {\@tempcnta\@tempcntb \advance\@tempcnta\@ne
+    \setbox\z@\hbox\bgroup % check if citation is a number:
+    \ifnum0<0\csname b@\@citeb \endcsname \relax
+       \egroup \@tempcntb\number\csname b@\@citeb \endcsname \relax
+       \else \egroup \@tempcntb\m@ne \fi
+    \ifnum\@tempcnta=\@tempcntb % Number follows previous--hold on to it
+       \ifx\@h@ld\relax % first pair of successives
+          \edef \@h@ld{\@citea\csname b@\@citeb\endcsname}% 
+       \else % compressible list of successives
+%         % use \hbox to avoid easy \exhyphenpenalty breaks 
+          \edef\@h@ld{\hbox{--}\penalty\@highpenalty
+            \csname b@\@citeb\endcsname}%
+       \fi
+    \else   %  non-successor--dump what's held and do this one
+       \@h@ld\@citea\csname b@\@citeb \endcsname 
+       \let\@h@ld\relax
+    \fi}%
+%%    To put space after the comma, use:
+ \def\@citea{,\penalty\@highpenalty\hskip.13em plus.1em minus.1em}%
+%%    For no space after comma, use:
+%% \def\@citea{,\penalty\@highpenalty}% 
+%%
+}\@h@ld}
+% 
+%
+\def\cite{\leavevmode\unskip\@ifnextchar[{\@tempswatrue\@citew}%
+            {\@tempswafalse\@citex}}
+%
+%  With note, so do on line...highpenalty before
+% 
+\def\@citew[#1]#2{\ifnum\lastpenalty=\z@ \penalty\@highpenalty \fi
+   \ [{\multiply\@highpenalty 3 % ...triple-highpenalties within
+   \citen{#2}},\penalty\@highpenalty\ #1]\spacefactor\@m}
+%
+%  No note, so superscript, but check for punctuation first.
+%
+\def\@citex#1{\begingroup\leavevmode\unskip
+  \def\@tempa{\@cite{\citen{#1}}\endgroup}\futurelet\@tempb\@citey}%
+%% to not move punctuation, replace previous line with:
+%%  \@cite{\citen{#1}}\endgroup}
+%
+%  Move trailing punctuation before the citation:
+%
+\def\@citey{\let\@tempc\@tempa
+   % Watch for double periods and suppress them
+   \ifx\@tempb.\ifnum\spacefactor>2999 \let\@tempb\relax\fi\let\@tempc\@citez
+   % Move other punctuation
+   \else\ifx\@tempb,\let\@tempc\@citez
+   \else\ifx\@tempb:\let\@tempc\@citez % add other punctuation as necessary,
+   \else\ifx\@tempb;\let\@tempc\@citez % with balancing \fi s
+   \fi\fi\fi\fi
+   \@tempc}%
+%
+\def\@citez#1{\@tempb\futurelet\@tempb\@citey}%
+%
+\def\@cite#1{$\m@th\the\scriptfont\z@\edef\bf{\the\scriptfont\bffam}%
+      ^{\hbox{#1}}$}
+%
+\endinput
+%
+%     
+%                          OVERCITE.STY
+%
+%    Modify LaTeX's normal citation mechanism to:
+%
+%    o Display citations as superscript numbers, where each number is 
+%      separated by a comma and a small space.  
+%
+%    o Compress lists of three or more consecutive numbers to one 
+%      number range.  No sorting to optimize compression is done.  
+%      All numbers should be greater than zero.
+%
+%    o If an optional note is given, typeset the whole list of citations
+%      as if cite.sty was in effect.  (See cite.sty).
+%
+%    o Use THE SAME INPUT FORMAT as for ordinary citations; this style
+%      will move trailing punctuation to before the citation.  For example, 
+%      "...information \cite{source};" ignores the space before the 
+%      citation and puts the simicolon before the number, just as if 
+%      you typed  "...information;$^{12}$"
+%
+%      The punctuation that will migrate before the superscript is .,;:.
+%      Perhaps ! and ? should too, but they weren't listed in the APS style 
+%      manual I looked at.  Quotes were, but they should never have to 
+%      migrate because both on-line and superscript versions put quotes 
+%      before the citation.  This gives one difficulty: the trailing 
+%      punctuation won't migrate inside the quotation:
+%                    ``Transition State Theory''\cite{Eyring}.   
+%      gives         ``Transition State Theory''.$^8$            
+%      when you want ``Transition State Theory.''$^8$            
+%
+%    o Doubling of periods (.., ?., !.) is checked for and suppressed.
+%      The \spacefactor is not propagated across the citation because
+%      such constructs as {\em et al.}~\cite{name} would lose the ordinary
+%      space of the ~ and treat the space after the citation as a sentence
+%      space.  There is enough white space after a superscript citation
+%      to end a sentence anyway.  There is another problem though:
+%      double periods will not be detected after a capitalized abbreviation
+%      or directly after \@ : Both "N.A.S.A. \cite{space}." and "et al.\@ 
+%      \cite{many}." will give doubled periods.  These can be fixed as
+%      follows: "N.A.S.A\@. \cite{space}." and "et al.\ \cite{many}.".
+%      These work properly for both cite.sty and overcite.sty, but the NASA
+%      example gives the wrong spacing when there is no citation.  Sorry.
+%      Use \  after abbreviations like et al. to get the right spacing 
+%      within a sentence whether or not a citation follows.
+%
+%      To get just the numbers (and write to the aux file) without the
+%      extra formatting, use \citen just like \cite.
+%
+%      FRAGILE!
+%
+% Send problem reports to asnd@triumfcl.bitnet or Arseneau@mtsg.ubc.ca
+%
+% test integrity:
+% brackets: round, square, curly, angle:   () [] {} <>
+% backslash, slash, vertical, hat, tilde:   \ / | ^ ~

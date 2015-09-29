@@ -1,0 +1,264 @@
+
+
+
+TEX                       User Commands                       TEX
+
+
+
+NNAAMMEE
+     tex, initex, virtex  - text formatting and typesetting
+
+SSYYNNOOPPSSIISS
+     tteexx [ first line ]
+
+     iinniitteexx [ first line ]
+
+     vviirrtteexx [ first line ]
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TeX formats the interspersed text and commands contained in
+     the named files and outputs a typesetter independent file
+     (called _D_V_I which is short for _De_Vice _Independent).  TeX
+     capabilities and language are described in _T_h_e _T_e_X_b_o_o_k by
+     Donald E. Knuth, published by Addison-Wesley.  There is also
+     an older manual, _T_e_X _a_n_d _M_E_T_A_F_O_N_T, which describes the older
+     version of TeX, now called TeX78, but this description is
+     now obsolete.  The present version of TeX (often refered to
+     internally as TeX82) incorporates literally hundreds of
+     changes from this older version.
+
+     Any arguments given on the command line to the TeX programs
+     are passed to them as the first input line.  As described in
+     _T_h_e _T_e_X_b_o_o_k, that line should begin with a file name or a
+     \controlsequence.  The normal usage is to say ``tteexx _p_a_p_e_r''
+     to start processing _p_a_p_e_r._t_e_x. The name ``paper'' will be
+     the ``jobname'', and is used in forming output file names.
+     If TeX doesn't get a file name in the first line, the job-
+     name is ``texput''.  The default `.tex' extension can be
+     overridden by specifying an extension explicitly.
+
+     If there is no paper.tex in the current directory, TeX will
+     look look through a search path of directories to try to
+     find it.  The standard library on the default search path
+     has the basic format package, plain.tex, described in the
+     TeXbook, as well as several others.  Note that it is hardly
+     ever necessary to \input plain, since the _t_e_x program has
+     preloaded it.  This means that all of the control sequences
+     discussed in the TeXbook are known to TeX.
+
+     The output DVI file is written on _n_a_m_e._d_v_i where _n_a_m_e is the
+     jobname.  A log of error messages goes into _n_a_m_e._l_o_g.
+
+     Note that there have been incompatible changes in the DVI
+     format between TeX78 and TeX82, so programs used to print
+     TeX78 output will not work for TeX82.  A number of output
+     drivers are available.  Ask your local TeX guru for informa-
+     tion on what one you should use.
+
+     There are some environment variables that can be used to set
+
+
+
+Sprite v1.0                  12/4/83                            1
+
+
+
+
+
+
+TEX                       User Commands                       TEX
+
+
+
+     up directory paths to search when TeX opens a file for
+     input.  For example, the _c_s_h command
+       setenv TEXINPUTS .:/usr/me/mylib:/usr/local/lib/tex82
+     or the _s_h command sequence
+       TEXINPUTS=.:/usr/me/mylib:/usr/local/lib/tex82
+       export TEXINPUTS
+     would cause all invocations of tex and its derivatives to
+     look for \input files first in the current directory, then
+     in a hypothetical user's ``mylib'', and finally in the sys-
+     tem library.  Normally, the user will place the command
+     sequence which sets up the TEXINPUTS environment variable in
+     the ._c_s_h_r_c or ._p_r_o_f_i_l_e file.  The Environment section below
+     lists the relevant environment variables, and their
+     defaults.
+
+     The _e response to TeX's error prompt causes the _v_i editor to
+     start up at the current line of the current file.  There is
+     an environment variable, TEXEDIT, that can be used to change
+     the editor used.  It should contain a string with "%s" indi-
+     cating where the filename goes and "%d" indicating where the
+     decimal linenumber (if any) goes.  For example, a TEXEDIT
+     string for (Gosling's) _e_m_a_c_s can be set by:
+       setenv TEXEDIT "/usr/local/emacs -l/usr/lib/tex82/tex-
+     start -estartline %d %s"
+     (replacing the path name for the emacs as appropriate on
+     your system).
+
+     A convenient file in the library is null.tex, containing
+     nothing.  When tex can't find a file it thinks you want to
+     input, it keeps asking you for another file name;  respond-
+     ing `null' gets you out of the loop if you don't want to
+     input anything.
+
+     Two other TeX programs, _i_n_i_t_e_x and _v_i_r_t_e_x, can be used to
+     create fast-loading customized versions of TeX.  The _i_n_i_t_e_x
+     program is used to create a _f_o_r_m_a_t (._f_m_t) file that permits
+     fast loading of fonts and macro packages.  After processing
+     the fonts and definitions desired, a \dump command will
+     create the format file.  The format file is used by _v_i_r_t_e_x.
+     It needs to be given a format file name as the first thing
+     it reads.  A format file name is preceded by an &, which
+     needs to be escaped with \ if given on the command line.
+     So, for instance, one could create a file myfmt.fmt using
+     initex, and then set up a cshell alias with
+       alias mytex "virtex \&myfmt"
+     to allow the use of ``mytex paper''.
+
+EENNVVIIRROONNMMEENNTT
+     TEXINPUTS
+          Search path for \input and \openin files.  It should be
+          colon-separated, and start with ``.''.  Default:
+          .:/usr/local/lib/tex82
+
+
+
+Sprite v1.0                  12/4/83                            2
+
+
+
+
+
+
+TEX                       User Commands                       TEX
+
+
+
+     TEXFONTS
+          Search path for font metric files.  Default:
+          /usr/local/fonts/tfm
+
+     TEXFORMATS
+          Search path for format files.  Default:
+          /usr/local/lib/tex82
+
+     TEXPOOL
+          Search path for TeX strings.  Default:
+          /usr/local/lib/tex82
+
+     TEXEDIT
+          Command template for switching to editor.  Default:
+          "/usr/ucb/vi +%d %s"
+
+
+FFIILLEESS
+     /usr/local/lib/tex82     TeX's library area
+
+     /usr/local/lib/tex82/tex.pool
+
+     Encoded text of TeX's messages
+                              /usr/local/fonts/*.*pxl Bit maps
+                              for low resolution devices
+
+     /usr/local/fonts/*.tfm   Width information used by TeX (TeX
+                              Font Metric files)
+
+     /usr/local/lib/tex82/macros
+                              TeX system macros and .fmt files
+
+SSEEEE AALLSSOO
+     Donald E. Knuth, _T_h_e _T_e_X_b_o_o_k
+     Leslie Lamport, _T_h_e _L_a_T_e_X _D_o_c_u_m_e_n_t _P_r_e_p_a_r_a_t_i_o_n _S_y_s_t_e_m
+     Michael Spivak, _T_h_e _J_o_y _o_f _T_E_X
+     _T_U_G_B_O_A_T (the publication of the TeX Users Group)
+     _D_i_f_f_e_r_e_n_c_e_s _b_e_t_w_e_e_n _T_e_X_8_2 _a_n_d _S_A_I_L _T_e_X
+
+TTRRIIVVIIAA
+     TeX, pronounced properly, rhymes with ``blecchhh.''  Note
+     that the proper spelling in typewriter-like output is
+     ``TeX'' and not ``TEX'' or ``tex.''
+
+BBUUGGSS
+     Maybe there should be character other than & to specify for-
+     mat files, since if you forget the \ on the command line, it
+     doesn't do what you want!  Also, there is no way to read a
+     TeX input file with no filename extension.
+
+AAUUTTHHOORRSS
+     TeX was designed by Donald E. Knuth, who implemented it
+
+
+
+Sprite v1.0                  12/4/83                            3
+
+
+
+
+
+
+TEX                       User Commands                       TEX
+
+
+
+     using his WEB system for Pascal programs.  It was ported to
+     Unix at Stanford by Howard Trickey, and at Cornell by Pavel
+     Curtis.  This version is a combination of their efforts.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                  12/4/83                            4
+
+
+

@@ -1,0 +1,193 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  srv030:1.4 srv028:1.4 srv027:1.4 srv026:1.4 srv024:1.4 srv022:1.4 srv021:1.4 srv019:1.4 srv018:1.4 srv016:1.4 srv014:1.4 srv010:1.4 srv008:1.4 srv007:1.4 srv006:1.4 srv005:1.4 srv004:1.4 srv003:1.4 srv002:1.4 srv001:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.03.13.20.40.53;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.03.12.19.22.28;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.12.21.44.06;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.10.15.53.42;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Fix include's.
+@
+text
+@/* 
+ * mknod.c --
+ *
+ *	Procedure to map from Unix mknod system call to Sprite.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/mknod.c,v 1.3 92/03/12 19:22:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <mach.h>
+#include <mach/message.h>
+#include <fs.h>
+#include "compatInt.h"
+#include <errno.h>
+#include <spriteEmuInt.h>
+#include <string.h>
+#include <sys/file.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * mknod --
+ *
+ *	Procedure to map from Unix mkdir system call to Sprite Fs_MakeDevice.
+ *	Unfortunately, this doesn't map from Unix land device types to
+ *	Sprite device types.  This means a tar of /dev on a UNIX system
+ *	will not be recreated correctly on a Sprite system, unless the
+ *	tar program itself is fixed.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Otherwise UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	Creates a special file used to refer to a device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+mknod(pathName, mode, dev)
+    char *pathName;		/* The name of the directory to create */
+    int mode;			/* Permission mask plus type */
+    int dev;			/* Specifies minor and major dev numbers */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    int streamID;
+    Boolean sigPending = FALSE;
+
+    switch (mode & S_IFMT) {
+	case S_IFREG:
+	    status = Fs_Open(pathName, FS_CREATE, mode & 0777, &streamID);
+	    if (status == SUCCESS) {
+		(void)close(streamID);
+	    }
+	    break;
+	case S_IFBLK:
+	case S_IFCHR: {
+	    Fs_Device device;
+
+	    device.serverID = FS_LOCALHOST_ID;
+	    device.type = major(dev);
+	    device.unit = minor(dev);
+
+	    kernStatus = Fs_MakeDeviceStub(SpriteEmu_ServerPort(),
+					   pathName, pathNameLength,
+					   device, mode & 0777, &status,
+					   &sigPending);
+	    if (kernStatus != KERN_SUCCESS) {
+		status = Utils_MapMachStatus(kernStatus);
+	    }
+	    break;
+	}
+	default:
+	    status = GEN_INVALID_ARG;
+	    break;
+    }
+
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.3
+log
+@Add sigPending parameter to Sprite calls.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/mknod.c,v 1.2 91/12/12 21:44:06 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/mknod.c,v 1.1 91/12/10 15:53:42 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d57 1
+d76 2
+a77 1
+					   device, mode & 0777, &status);
+d84 6
+a89 2
+	    errno = EINVAL;
+	    return(UNIX_ERROR);
+d91 1
+a91 1
+     if (status != SUCCESS) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mknod.c,v 1.3 88/06/29 15:41:05 ouster Exp $ SPRITE (Berkeley)";
+d14 4
+a17 2
+#include "sprite.h"
+#include "fs.h"
+d20 1
+d53 3
+a55 1
+    ReturnStatus status;	/* result returned by Fs_Open */
+d73 6
+a78 1
+	    status = Fs_MakeDevice(pathName, &device, mode & 0777);
+@

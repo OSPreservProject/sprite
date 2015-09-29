@@ -1,0 +1,198 @@
+
+
+
+Ulog                  C Library Procedures                   Ulog
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Ulog - obtain or update information in the database of  user
+     logins and logouts.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee  <<uulloogg..hh>>
+
+     Ulog_Data *
+     UUlloogg__LLaassttLLooggiinn(_u_i_d)
+
+     int
+     UUlloogg__GGeettAAllllLLooggiinnss(_n_u_m_E_n_t_r_i_e_s, _l_o_c_P_t_r, _d_a_t_a_A_r_r_a_y)
+
+     int
+     UUlloogg__RReeccoorrddLLooggiinn(_u_i_d, _l_o_c_a_t_i_o_n, _p_o_r_t_I_D)
+
+     int
+     UUlloogg__RReeccoorrddLLooggoouutt(_u_i_d, _p_o_r_t_I_D)
+
+     int
+     UUlloogg__CClleeaarrLLooggiinnss()
+
+
+AARRGGUUMMEENNTTSS
+     int         _u_i_d           (in)      A  numerical  identifier
+                                         for  a  user for whom to
+                                         retrieve    or    update
+                                         information.
+
+     int         _n_u_m_E_n_t_r_i_e_s    (in)      The number of  Ulog_Data
+                                         structures  contained in
+                                         _d_a_t_a_A_r_r_a_y.
+
+     int         *_l_o_c_P_t_r       (in/out)  A pointer to an  integer
+                                         specifying  the index of
+                                         the next record  in  the
+                                         user log to access.
+
+     Ulog_Data   _d_a_t_a_A_r_r_a_y[]   (out)     A   buffer    to    hold
+                                         Ulog_Data        entries
+                                         returned     by      the
+                                         Ulog_GetAllLogins   rou-
+                                         tine.
+
+     char        *_l_o_c_a_t_i_o_n     (in)      String specifying  loca-
+                                         tion  of user logging in
+                                         (i.e., remote host)
+
+     int         _p_o_r_t_I_D        (in)      Numerical identifier for
+                                         login port.
+
+
+
+Sprite v.1.0        Printed:  January 3, 1989                   1
+
+
+
+
+
+
+Ulog                  C Library Procedures                   Ulog
+
+
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     The ulog library provides a facility to  record  logins  and
+     logouts  in  the  system,  to retrieve information about the
+     last time a user logged in or about all  users  logged  into
+     the system, and to clear the login entries for a host.  Each
+     host has a fixed number of entries allocated to  it  in  the
+     user  log  database  file.   One  entry,  with  a  _p_o_r_t_I_D of
+     UULLOOGG__LLOOCC__CCOONNSSOOLLEE, is reserved for the  console  of  a  host;
+     there  are  (UULLOOGG__MMAAXX__PPOORRTTSS - 1) other entries available for
+     rlogin processes.  (There is currently no facility for  mul-
+     tiple local logins, such as over a serial line.)
+
+     The _u_l_o_g library converts between the  ASCII  representation
+     stored in the database and an internal C structure, known as
+     a Ulog_Data structure.  This structure contains  information
+     giving <uid,hostID,portID> corresponding to a user logged in
+     on a particular ``port'' on a particular host.   Each  login
+     entry  also  includes  the  time  of the login, which is the
+     ttvv__sseecc part of a ttiimmee structure.  It also includes any addi-
+     tional  information for the location of the user; this is an
+     arbitrary string that typically gives the host from which an
+     rlogin  occurs.  Two database files are used: one for logins
+     on a host/port basis, and one for the  last  login  by  each
+     user.
+
+     A Ulog_Data structure is defined as follows:
+
+          ttyyppeeddeeff ssttrruucctt {
+              iinntt _u_i_d;              /* user identifier */
+              iinntt _h_o_s_t_I_D;           /* host for which data is
+                                       valid */
+              iinntt _p_o_r_t_I_D;           /* port within host */
+              iinntt _u_p_d_a_t_e_d;          /* login time (in seconds since
+                                       1/1/70); 0 if invalid */
+              cchhaarr _l_o_c_a_t_i_o_n[UULLOOGG__LLOOCC__LLEENNGGTTHH];
+                                    /* location of user */
+          } Ulog_Data;
+
+     The  UUlloogg__LLaassttLLooggiinn(())  procedure  returns  a  pointer  to  a
+     statically-allocated  Ulog_Data  structure.   Therefore, the
+     contents of the structure may change on subsequent calls  to
+     UUlloogg__LLaassttLLooggiinn(()).      The     information    returned    by
+     UUlloogg__LLaassttLLooggiinn(()) corresponds to the most recent login by the
+     user specified by _u_i_d.
+
+     UUlloogg__GGeettAAllllLLooggiinnss(()) provides a mechanism for retrieving mul-
+     tiple  login  entries  at  once.   The user must allocate an
+     array of Ulog_Data structures, and  pass  the  size  of  the
+     array    and    a    pointer   to   it   as   arguments   to
+     UUlloogg__GGeettAAllllLLooggiinnss(()).   In  addition,  the  _l_o_c_P_t_r   argument
+
+
+
+Sprite v.1.0        Printed:  January 3, 1989                   2
+
+
+
+
+
+
+Ulog                  C Library Procedures                   Ulog
+
+
+
+     specifies  where  in  the  login  database to start looking.
+     *_l_o_c_P_t_r should be initialized to 0 prior to the  first  call
+     to  UUlloogg__GGeettAAllllLLooggiinnss(()).   UUlloogg__GGeettAAllllLLooggiinnss(())  returns  the
+     number of entries in _d_a_t_a_A_r_r_a_y that were  filled.   If  that
+     number  is  less than the maximum number specified by _n_u_m_E_n_-
+     _t_r_i_e_s, then all data has been returned.  If it is  equal  to
+     _n_u_m_E_n_t_r_i_e_s,  then UUlloogg__GGeettAAllllLLooggiinnss(()) should be called again
+     to retrieve additional entries from  the point at which  the
+     last call left off (given by *_l_o_c_P_t_r).
+
+     UUlloogg__RReeccoorrddLLooggiinn(()) allows the caller to register information
+     for  a  new  login.  The caller specifies the user ID, loca-
+     tion, and port  of  the  user  logging  in.   The  procedure
+     obtains the hostID and current time, and records the login.
+
+     UUlloogg__RReeccoorrddLLooggoouutt(()) provides a similar  facility  to  record
+     logouts.  It takes a user ID and port number, and it removes
+     the corresponding loginn from the list of active logins.
+
+     UUlloogg__CClleeaarrLLooggiinnss(()) may be used at boot time to clear any old
+     entries  in  the  user log for the current host.  Note: if a
+     host is down, it may still have entries in the user log.  It
+     is  the  responsibility  of  the  user  to use the migration
+     information database to determine if a host is up, in  order
+     to validate user log entries.
+
+DDIIAAGGNNOOSSTTIICCSS
+     UUlloogg__RReeccoorrddLLooggiinn(()),         UUlloogg__RReeccoorrddLLooggoouutt(()),         and
+     UUlloogg__CClleeaarrLLooggiinnss(())  return zero if all went well.  Otherwise
+     they return -1 and the _e_r_r_n_o  variable  contains  additional
+     information  about what error occurred.  UUlloogg__GGeettAAllllLLooggiinnss(())
+     similarly returns -1 on error, but it returns 0 if  no  more
+     records  are  available.   UUlloogg__LLaassttLLooggiinn(())  returns NULL on
+     error.
+
+FFIILLEESS
+     /sprite/admin/data/userLog
+          The database of current logins on each host.
+
+     /sprite/admin/data/lastLog
+          The database of each user's most recent login.
+
+KKEEYYWWOORRDDSS
+     user log, user ID, sprite ID
+
+SSEEEE AALLSSOO
+     db, mig, Mig_GetInfo, login, rlogin, rlogind
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  January 3, 1989                   3
+
+
+

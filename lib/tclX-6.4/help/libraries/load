@@ -1,0 +1,3 @@
+
+          load file Source a file, as with the source command, except
+          search TCLPATH for the file.

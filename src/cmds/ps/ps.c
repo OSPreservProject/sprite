@@ -1,0 +1,1248 @@
+/* 
+ * ps.c --
+ *
+ *	This file contains a program that will print out process
+ *	status information for one or more processes.  See the
+ *	man page for details on what it does.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/ps/RCS/ps.c,v 1.22 90/09/02 20:50:50 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <ctype.h>
+#include <hash.h>
+#include <host.h>
+#include <option.h>
+#include <proc.h>
+#include <pwd.h>
+#include <spriteTime.h>
+#include <status.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <vm.h>
+
+/*
+ * Process status information may be printed in any of several ways,
+ * selected by command-line switches.  For each way there is a procedure
+ * that is called to print out in that format.  The following table
+ * identifies all such procedures:
+ */
+
+extern void UpdateMigInfo();
+extern void PrintIDs(), PrintLong(), PrintMigration();
+extern void PrintShort(), PrintSignals(), PrintVM();
+
+void (*(printProc[]))() = {
+    PrintShort,
+    PrintLong,
+    PrintIDs,
+    PrintVM,
+    PrintMigration,
+    PrintSignals,
+};
+
+/*
+ * Indexes into printProc:
+ */
+
+#define SHORT	0
+#define	LONG	1
+#define IDS	2
+#define VM	3
+#define MIG	4
+#define SIGS	5
+
+int printIndex = 0;
+
+/*
+ * Corresponding to each of the printing styles above, there is a
+ * corresponding sort procedure that is used as an argument to qsort
+ * in order to sort the process table entries in a particular way.
+ * 0 means don't sort:  just print them in table order.
+ */
+
+extern int AgeSort(), UsageSort();
+
+int (*(sortProc[]))() = {
+    AgeSort,
+    UsageSort,
+    0,
+    0,
+    0,
+    0
+};
+
+/*
+ * Flags set by command-line options:
+ */
+
+int aFlag =		0;	/* Non-zero means consider processes for
+				 * all users. */
+int AFlag =		0;	/* Non-zero means even consider dead procs. */
+int dFlag =		0;	/* Non-zero means only print info for
+				 * processes in debug state. */
+int kFlag =		0;	/* Non-zero means print out kernel processes
+				 * too. */
+int mFlag =		0;	/* Non-zero means only print out info for
+				 * processes in migrated state, or foreign
+				 * processes. */
+int lFlag =		0;	/* Non-zero means only print out local info for
+				 * migrated processes. */
+int lineWidth =		80;	/* Number of chars in each printed line. */
+
+/*
+ * The table below describes the various command-line options that
+ * are understood by this program:
+ */
+
+Option optionArray[] = {
+    OPT_DOC,		(char *) NULL,	(char *) NULL,
+	    "This program prints out process status information.\n Synopsis:  \"ps [switches] [pid pid ...]\"\n Command-line switches are:",
+    OPT_TRUE,		"a",		(char *) &aFlag,
+	    "Print info for all users' processes\n\t\tDefault: only current user's processes",
+    OPT_TRUE,		"A",		(char *) &AFlag,
+	    "Print info for absolutely all user processes, even dead ones",
+    OPT_TRUE,		"d",		(char *) &dFlag,
+	    "Print out only processes in DEBUG state",
+    OPT_CONSTANT(IDS),	"i",		(char *) &printIndex,
+	    "Print out various process ids",
+    OPT_TRUE,		"k",		(char *) &kFlag,
+	    "Print out kernel server processes as well as user processes",
+    OPT_TRUE,		"l",		(char *) &lFlag,
+	    "Print out only local information for migrated processes",
+    OPT_TRUE,		"m",		(char *) &mFlag,
+	    "Print out only processes that are foreign or migrated",
+    OPT_CONSTANT(SIGS),	"s",		(char *) &printIndex,
+	    "Print out information about signals",
+    OPT_CONSTANT(LONG),	"u",		(char *) &printIndex,
+	    "Print info in longer \"user-oriented\" form",
+    OPT_CONSTANT(VM),	"v",		(char *) &printIndex,
+	    "Print virtual memory information",
+    OPT_INT,		"w",		(char *) &lineWidth,
+	    "Next argument holds line width for output",
+    OPT_CONSTANT(MIG),	"M",		(char *) &printIndex,
+	    "Print out migration information for migrated processes",
+};
+
+/*
+ * The following type is used to associate a process control block an
+ * its argument string, so that during various sorts the two can be kept
+ * properly associated.
+ */
+
+typedef struct {
+    Proc_PCBInfo *infoPtr;
+    Proc_PCBArgString *argString;
+} ControlBlock;
+
+/*
+ * Miscellaneous global variables:
+ */
+
+int lastPCB;		/* Set to non-zero before processing last
+			 * control block (allows print procs to print
+			 * totals, if they want). */
+
+int pageSizeInKiloBytes; /* The size of the system's page in kilobytes. */
+
+int 	timerTicksPerSecond; 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	The main program for ps.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints information on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;		/* Number of command-line arguments. */
+    char **argv;	/* Values of command-line arguments. */
+{
+    int i, pcbsUsed;
+    ReturnStatus status;
+    struct winsize winsize;
+
+    pageSizeInKiloBytes = getpagesize()/1024;
+    timerTicksPerSecond = getTicksPerSecond();
+
+    /*
+     * Find out how big the lines are, for formatting output, then
+     * parse options.
+     */
+
+    if ((ioctl(fileno(stdout), TIOCGWINSZ, (char *) &winsize) == 0)
+	    && (winsize.ws_col != 0)) {
+	lineWidth = winsize.ws_col;
+    } else {
+	char buf[1024];
+	char *termEnv;
+
+	termEnv = getenv("TERM");
+	if (termEnv == 0) {
+	    termEnv = "";
+	}
+	if (tgetent(buf, termEnv) == 1) {
+	    i = tgetnum("co");
+	    if (i > 0) {
+		lineWidth = i;
+	    }
+	}
+    }
+
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray),
+	    OPT_ALLOW_CLUSTERING);
+
+    /*
+     * If particular process ids were given, then only print them.
+     * Otherwise look at all the processes in the system.
+     */
+
+    if (argc > 1) {
+	for (i = 1; i < argc; i++) {
+	    int pid;
+	    Proc_PCBInfo info;
+	    Proc_PCBInfo migInfo;
+	    Proc_PCBArgString argString;
+	    char *endPtr;
+
+	    pid = strtoul(argv[i], &endPtr, 16);
+	    if (endPtr == argv[i]) {
+		fprintf(stderr, "Bad process id \"%s\";  ignoring.\n", argv[i]);
+		continue;
+	    }
+	    status = Proc_GetPCBInfo(Proc_PIDToIndex(pid),
+				     Proc_PIDToIndex(pid), PROC_MY_HOSTID,
+				     sizeof(info),
+				     &info, &argString, &pcbsUsed);
+	    if (status != SUCCESS) {
+		fprintf(stderr, "Couldn't find pid \"%s\": %s.\n", argv[i],
+			Stat_GetMsg(status));
+		fflush(stderr);
+		continue;
+	    }
+	    /*
+	     * The process we got info for may not be the one that was
+	     * requested (different generation numbers);  check to be sure.
+	     */
+
+	    if (pid != info.processID) {
+		fprintf(stderr, "Pid %s not found.\n", argv[i]);
+		continue;
+	    }
+	    if (printIndex != MIG && info.state == PROC_MIGRATED && !lFlag) {
+		status = Proc_GetPCBInfo(Proc_PIDToIndex(info.peerProcessID),
+					 Proc_PIDToIndex(info.peerProcessID),
+					 info.peerHostID,
+					 sizeof(migInfo), &migInfo, 
+					 (Proc_PCBArgString *) NULL,
+					 (int *) NULL);
+		if (status != SUCCESS || migInfo.state == PROC_UNUSED) {
+		    /*
+		     * Skip an entry that's migrated locally and doesn't
+		     * exist remotely -- a race condition between the time
+		     * we found out about the process and the time the process
+		     * exited.  But if the status is not expected,
+		     * print a warning message.
+		     */
+		    if (status != PROC_INVALID_PID && status != SUCCESS) {
+			fprintf(stderr, "Couldn't find migrated pid \"%x\": %s.\n",
+				info.peerProcessID, Stat_GetMsg(status));
+		    }
+		    continue;
+		} else {
+		    UpdateMigInfo(&migInfo, &info);
+		}
+	    }
+	    if (i == (argc-1)) {
+		lastPCB = 1;
+	    }
+	    (*(printProc[printIndex]))(&info, &argString);
+	}
+    } else {
+#define NUM_PCBS 256
+	Proc_PCBInfo infos[NUM_PCBS];
+	Proc_PCBInfo migInfo;
+	ControlBlock blocks[NUM_PCBS];
+	Proc_PCBArgString argStrings[NUM_PCBS];
+	int numToPrint, uid;
+	register Proc_PCBInfo *infoPtr;
+
+	/*
+	 * Dump the entire process table into our memory.
+	 */
+
+	status = Proc_GetPCBInfo(0, NUM_PCBS-1, PROC_MY_HOSTID,
+				 sizeof(Proc_PCBInfo),
+				 infos, argStrings, &pcbsUsed);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "Couldn't read process table: %s\n",
+		    Stat_GetMsg(status));
+	    exit(1);
+	}
+
+	/*
+	 * Collect info into blocks suitable for sorting.  Along the way,
+	 * filter out irrelevant processes.
+	 */
+
+	uid = geteuid();
+	for (i = 0, numToPrint = 0, infoPtr = infos; i < pcbsUsed;
+		i++, infoPtr++) {
+	    if (infoPtr->state == PROC_UNUSED) {
+		if (!AFlag) {
+		    continue;
+		}
+		goto keepThisProc;
+	    }
+	    if (infoPtr->genFlags & PROC_KERNEL) {
+		if (!kFlag) {
+		    continue;
+		}
+		goto keepThisProc;
+	    }
+	    if ((!aFlag) && (uid != infoPtr->effectiveUserID)) {
+	       continue;
+	    }
+	    if (dFlag) {
+		if ((infoPtr->state != PROC_SUSPENDED) || !(infoPtr->genFlags
+			& (PROC_DEBUGGED | PROC_ON_DEBUG_LIST))) {
+		    continue;
+		}
+	    }
+	    if (mFlag &&
+		!((infoPtr->genFlags & PROC_FOREIGN)
+		  || (infoPtr->state == PROC_MIGRATED))) {
+		continue;
+	    }
+
+	    keepThisProc:
+	    /*
+	     * When not printing migration info, follow migrated processes.
+	     */
+	    if (printIndex != MIG &&  infoPtr->state == PROC_MIGRATED &&
+		!lFlag) {
+		status = Proc_GetPCBInfo(Proc_PIDToIndex(infoPtr->peerProcessID),
+					 Proc_PIDToIndex(infoPtr->peerProcessID),
+					 infoPtr->peerHostID,
+					 sizeof(migInfo), &migInfo, 
+					 (Proc_PCBArgString *) NULL,
+					 (int *) NULL);
+		if (status != SUCCESS || migInfo.state == PROC_UNUSED) {
+		    /*
+		     * Skip an entry that's migrated locally and doesn't
+		     * exist remotely -- a race condition between the time
+		     * we found out about the process and the time the process
+		     * exited.
+		     */
+		    if (status != PROC_INVALID_PID && status != SUCCESS) {
+			fprintf(stderr, "Couldn't find migrated pid \"%x\": %s.\n",
+				infoPtr->peerProcessID, Stat_GetMsg(status));
+		    }
+		    continue;
+		} else {
+		    UpdateMigInfo(&migInfo, infoPtr);
+		}
+	    }
+	    blocks[numToPrint].infoPtr = infoPtr;
+	    blocks[numToPrint].argString = &argStrings[i];
+	    numToPrint++;
+	}
+
+	/*
+         * Sort the processes, if a sorting procedure has been supplied.
+	 */
+
+	if (sortProc[printIndex] != 0) {
+	    qsort((char *) blocks, numToPrint, sizeof(ControlBlock),
+		    sortProc[printIndex]);
+	}
+
+	/*
+	 * Print them out in order.
+	 */
+
+	for (i = 0; i < numToPrint; i++) {
+	    if (i == (numToPrint-1)) {
+		lastPCB = 1;
+	    }
+	    (*(printProc[printIndex]))(blocks[i].infoPtr, blocks[i].argString);
+	}
+    }
+    exit(0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateMigInfo --
+ *
+ *	Update relevant information for a migrated process using the
+ *	PCB info obtained from its current host.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Fields are copied from one structure to the other.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+UpdateMigInfo(migPtr, infoPtr)
+    Proc_PCBInfo *migPtr;	/* Pointer to control block on current host. */
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block on this host. */
+{
+    register int i;
+    
+    infoPtr->processor = migPtr->processor;
+    infoPtr->state = migPtr->state;	
+    infoPtr->genFlags = migPtr->genFlags;
+    infoPtr->event = migPtr->event;
+    infoPtr->billingRate = migPtr->billingRate;
+    infoPtr->recentUsage = migPtr->recentUsage;
+    infoPtr->weightedUsage = migPtr->weightedUsage;
+    infoPtr->unweightedUsage = migPtr->unweightedUsage;
+    infoPtr->kernelCpuUsage = migPtr->kernelCpuUsage;
+    infoPtr->userCpuUsage = migPtr->userCpuUsage;
+    infoPtr->childKernelCpuUsage = migPtr->childKernelCpuUsage;
+    infoPtr->childUserCpuUsage = migPtr->childUserCpuUsage;
+    infoPtr->numQuantumEnds = migPtr->numQuantumEnds;
+    infoPtr->numWaitEvents = migPtr->numWaitEvents;
+    infoPtr->schedQuantumTicks = migPtr->schedQuantumTicks;
+    for (i = 0; i < VM_NUM_SEGMENTS; i++) {
+	infoPtr->vmSegments[i] = migPtr->vmSegments[i];
+    }
+    infoPtr->sigHoldMask = migPtr->sigHoldMask;
+    infoPtr->sigPendingMask = migPtr->sigPendingMask;
+    for (i = 0; i < SIG_NUM_SIGNALS; i++) {
+	infoPtr->sigActions[i] = migPtr->sigActions[i];
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimeString --
+ *
+ *	Given a process control block, return a string indicating how
+ *	much CPU time the process has used up.
+ *
+ * Results:
+ *	The return value is a statically-allocated string that holds
+ *	the time used by the process, in the format min:sec.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TimeString(infoPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block. */
+{
+    Time sum;
+    static char result[20];
+
+    Time_Add(infoPtr->userCpuUsage, infoPtr->kernelCpuUsage, &sum);
+    if (sum.microseconds >= 500000) {
+	sum.seconds += 1;
+    }
+    sprintf(result, "%d:%02d", sum.seconds/60, sum.seconds%60);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StateString --
+ *
+ *	Given a process control block, return a string describing
+ *	the process's current execution state.
+ *
+ * Results:
+ *	The return value is a statically-allocated string that describes
+ *	the process's state.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+StateString(infoPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block. */
+{
+    switch (infoPtr->state) {
+	case PROC_UNUSED:
+	    return "UNUSD";
+	    break;
+	case PROC_RUNNING:
+	    return "RUN  ";
+	    break;
+	case PROC_READY:
+	    return "READY";
+	    break;
+	case PROC_WAITING:
+	    if (infoPtr->event == -1) {
+		return "RWAIT";
+	    } else {
+		return "WAIT ";
+	    }
+	    break;
+	case PROC_EXITING:
+	    return "EXIT ";
+	    break;
+	case PROC_DEAD:
+	    return "DEAD ";
+	    break;
+	case PROC_MIGRATING:
+	    return "->MIG";
+	    break;
+	case PROC_MIGRATED:
+	    return "MIG  ";
+	    break;
+	case PROC_NEW:
+	    return "NEW  ";
+	    break;
+	case PROC_SUSPENDED:
+	    if (infoPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
+		return "DEBUG";
+	    } else {
+		return "SUSP ";
+	    }
+	    break;
+    }
+    return "?Huh?";
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PriString --
+ *
+ *	Given a process's billing rate, return a string describing
+ *	the process's priority.
+ *
+ * Results:
+ *	The return value is a statically-allocated string that describes
+ *	the process's priority.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+PriString(billingRate)
+    int billingRate;	/* process's kernel billing rate. */
+{
+    /*
+     * The default billing rate is 0.  Predefined constants are set up
+     * for -2 to 2.  2 is for servers and means they are not billed at all.
+     */
+    switch (billingRate) {
+	case 0:
+	    return("");
+	case -1:
+	    return("<");
+	case 1:
+	    return(">");
+	case 2:
+	    return("S");
+	case -2:
+	    return("<<");
+	default: {
+	    if (billingRate > 2) {
+		return("S");
+	    }
+	    return("<<");
+	}
+
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArgString --
+ *
+ *	Given an argument string for a command, modifies the string
+ *	to fit the line width for output.
+ *
+ * Results:
+ *	The return value is a pointer to the argument string.
+ *
+ * Side effects:
+ *	The argument string may be shortened by chopping off characters
+ *	and adding "...", if it is too long to fit on a single output line.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+ArgString(argPtr, colsTaken)
+    Proc_PCBArgString *argPtr;	/* Pointer to info about command line for
+				 * process. */
+    int colsTaken;		/* Number of output columns already taken up
+				 * by other printed information. */
+{
+    int charsToKeep;
+    char *arg;
+    register char *p;
+
+    arg = argPtr->argString;
+    charsToKeep = lineWidth - colsTaken;
+    if (charsToKeep < 10) {
+	charsToKeep = 10;
+    }
+    if (strlen(arg) <= charsToKeep) {
+	return arg;
+    }
+
+    /*
+     * Chop fields off the command line until reaching something that fits
+     * within the line and leaves enough space for an ellipsis.  If not even
+     * the command name fits, then print a partial field.
+     */
+
+    for (p = arg+charsToKeep-4; p > arg; p--) {
+	if (isspace(*p)) {
+	    break;
+	}
+    }
+    if (p == arg) {
+	p = arg+charsToKeep-3;
+    } else {
+	for (p--; isspace(*p); p--) {
+	    /* Null loop body;  just back over extra spaces. */
+	}
+	p += 2;
+    }
+    p[0] = '.';
+    p[1] = '.';
+    p[2] = '.';
+    p[3] = 0;
+    return arg;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UserString --
+ *
+ *	Given a user id, return a string identifying the user.
+ *
+ * Results:
+ *	The return value is a pointer to a statically-allocated
+ *	string identifying the user.
+ *
+ * Side effects:
+ *	User information gets cached in a hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+UserString(uid)
+    int uid;			/* User id to find name for. */
+{
+    static Hash_Table table;
+    static int init = 0;
+    char *result;
+    register Hash_Entry *entry;
+    register struct passwd *passwd;
+    int new;
+
+    if (!init) {
+	init = 1;
+	Hash_InitTable(&table, -1, HASH_ONE_WORD_KEYS);
+    }
+
+    /*
+     * See if we've already looked up this process id.
+     */
+
+    entry = Hash_CreateEntry(&table, (Address) uid, &new);
+    if (!new) {
+	return (char *) Hash_GetValue(entry);
+    }
+
+    /*
+     * Never heard of this process id before.  Look it up in the
+     * password file and fill in the hash table entry.
+     */
+
+    passwd = getpwuid(uid);
+    if (passwd == NULL) {
+	result = "???";
+    } else {
+	result = malloc((unsigned) (strlen(passwd->pw_name) + 1));
+	strcpy(result, passwd->pw_name);
+    }
+    Hash_SetValue(entry, result);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HostString --
+ *
+ *	Given a host id, return a string identifying the host.
+ *
+ * Results:
+ *	The return value is a pointer to a statically-allocated
+ *	string identifying the host.
+ *
+ * Side effects:
+ *	Host information gets cached in a hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+HostString(hostID)
+    int hostID;			/* Host id to find name for. */
+{
+    static Hash_Table table;
+    static int init = 0;
+    char *result, *name;
+    register Hash_Entry *entry;
+    register Host_Entry *hostPtr;
+    char storage[20];
+    int new;
+
+    if (!init) {
+	init = 1;
+	Hash_InitTable(&table, -1, HASH_ONE_WORD_KEYS);
+    }
+
+    /*
+     * See if we've already looked up this host id.
+     */
+
+    entry = Hash_CreateEntry(&table, (Address) hostID, &new);
+    if (!new) {
+	return (char *) Hash_GetValue(entry);
+    }
+
+    /*
+     * Never heard of this host before.  Look it up in the
+     * host file and fill in the hash table entry.
+     */
+
+    hostPtr = Host_ByID(hostID);
+    if (hostPtr == NULL) {
+	name = sprintf(storage, "%d", hostID);
+    } else {
+	if (hostPtr->aliases[0] != NULL) {
+	    name = hostPtr->aliases[0];
+	} else {
+	    name = hostPtr->name;
+	}
+    }
+    result = malloc((unsigned) (strlen(name) + 1));
+    strcpy(result, name);
+    Hash_SetValue(entry, result);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PctCpuString --
+ *
+ *	Given an process table entry, return a string indicating what
+ *	fraction of recent CPU time has gone to this process.
+ *
+ * Results:
+ *	The return value is a pointer to a statically-allocated
+ *	string in the form "xx.y".  The string will change on the
+ *	next call to this procedure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+PctCpuString(infoPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block. */
+{
+    static char result[10];
+    static int init = 0;
+    static double scaleFactor;
+    double percent;
+
+    /*
+     * WARNING:  the following definitions must match the corresponding
+     * definitions in the kernel's file "schedule.c".
+     */
+
+#define FORGET_MULTIPLY 14
+#define FORGET_SHIFT   4
+
+    if (!init) {
+	int denom;
+
+	init = 1;
+	scaleFactor = timerTicksPerSecond;
+	denom = 1<<FORGET_SHIFT;
+	scaleFactor *= denom;
+	scaleFactor /= denom-FORGET_MULTIPLY;
+    }
+
+    percent = infoPtr->unweightedUsage;
+    percent = percent*100.0/scaleFactor;
+    sprintf(result, "%4.1f", percent);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintShort --
+ *
+ *	This procedure is called to print out process information
+ *	in the "short" format.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints info on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintShort(infoPtr, argPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block containing
+				 * info to be printed. */
+    Proc_PCBArgString *argPtr;	/* Pointer to info about command line for
+				 * process. */
+{
+    static int firstTime = 1;
+
+    if (firstTime) {
+	firstTime = 0;
+	printf("PID   STATE   TIME COMMAND\n");
+    }
+    printf("%5x %s%7s %s\n", infoPtr->processID, StateString(infoPtr),
+	    TimeString(infoPtr), ArgString(argPtr, 20));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintLong --
+ *
+ *	This procedure is called to print out process information
+ *	in the "long" format (requested with the -u switch).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints info on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintLong(infoPtr, argPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block containing
+				 * info to be printed. */
+    Proc_PCBArgString *argPtr;	/* Pointer to info about command line for
+				 * process. */
+{
+    static int firstTime = 1;
+    Vm_Stat vmStat;
+    Vm_SegmentInfo segBuf[VM_NUM_SEGMENTS];
+    ReturnStatus status;
+    int rss, size;
+    double pctMem;
+
+    if (firstTime) {
+	firstTime = 0;
+	printf("USER     PID   %%CPU %%MEM  SIZE   RSS STATE   TIME PR COMMAND\n");
+	status = Vm_Cmd(VM_GET_STATS, &vmStat);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "Couldn't read Vm statistics: %s\n",
+		    Stat_GetMsg(status));
+	    exit(1);
+	}
+    }
+    if (infoPtr->genFlags & PROC_KERNEL) {
+	rss = size = 0;
+    } else {
+	status = Vm_GetSegInfo(infoPtr, 0, sizeof(Vm_SegmentInfo), 
+			          &(segBuf[1]));
+	switch(status) {
+	    case SUCCESS:
+		rss = segBuf[VM_CODE].resPages + segBuf[VM_HEAP].resPages
+			+ segBuf[VM_STACK].resPages;
+		size = segBuf[VM_CODE].numPages + segBuf[VM_HEAP].numPages
+			+ segBuf[VM_STACK].numPages;
+		break;
+	    case SYS_INVALID_ARG:
+		rss = -1;
+		break;
+	    default: 
+		fprintf(stderr, "Couldn't read segment info for pid %x: %s\n",
+			infoPtr->processID, Stat_GetMsg(status));
+		return;
+	}
+    }
+    if (status == SUCCESS) {
+	pctMem = rss;
+	rss *= pageSizeInKiloBytes;
+	size *= pageSizeInKiloBytes;
+	pctMem = (pctMem*100.0)/vmStat.numPhysPages;
+	printf("%-8.8s %5x %.8s %4.1f%6d%6d %s%7s %2s %s\n",
+		UserString(infoPtr->effectiveUserID),
+		infoPtr->processID, PctCpuString(infoPtr), pctMem, size, rss,
+		StateString(infoPtr), TimeString(infoPtr),
+	       PriString(infoPtr->billingRate), ArgString(argPtr, 53));
+    } else {
+	printf("%-8.8s %5x %.8s %4s%6s%6s %s%7s %2s %s\n",
+		UserString(infoPtr->effectiveUserID),
+		infoPtr->processID, PctCpuString(infoPtr),"---","---","---",
+		StateString(infoPtr), TimeString(infoPtr), 
+		PriString(infoPtr->billingRate), ArgString(argPtr, 53));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintIDs --
+ *
+ *	This procedure is called to print out process information
+ *	in the form of various ids.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints info on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintIDs(infoPtr, argPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block containing
+				 * info to be printed. */
+    Proc_PCBArgString *argPtr;	/* Pointer to info about command line for
+				 * process. */
+{
+    static int firstTime = 1;
+    char storage[10];
+    char *family;
+
+    if (firstTime) {
+	firstTime = 0;
+	printf("PID   PPID  GROUP USER     RUSER      TIME COMMAND\n");
+    }
+    if (infoPtr->familyID == -1) {
+	family = "   -1";
+    } else {
+	family = sprintf(storage, "%5x", infoPtr->familyID);
+    }
+    printf("%5x %5x %s %-8.8s %-8.8s%7s %s\n",
+	    infoPtr->processID, infoPtr->parentID, family,
+	    UserString(infoPtr->effectiveUserID), 
+	    UserString(infoPtr->userID), TimeString(infoPtr),
+	    ArgString(argPtr, 43));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintVM --
+ *
+ *	This procedure is called to print out vm-related information
+ *	for processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints info on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintVM(infoPtr, argPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block containing
+				 * info to be printed. */
+    Proc_PCBArgString *argPtr;	/* Pointer to info about command line for
+				 * process. */
+{
+    static int firstTime = 1;
+    static int sizes[VM_NUM_SEGMENTS], rss[VM_NUM_SEGMENTS];
+    static char *names[] = {"system", "code", "heap", "stack"};
+    int totalSize, totalRss, i;
+    Vm_SegmentInfo segBuf[VM_NUM_SEGMENTS];
+    ReturnStatus status;
+#define TOTAL_SEGS 256
+    char segSeen[TOTAL_SEGS];
+
+    if (firstTime) {
+	firstTime = 0;
+	printf("PID   CODSZ CODRS  HPSZ  HPRS STKSZ STKRS  SIZE   RSS COMMAND\n");
+    }
+
+    /*
+     * Kernel processes have no memory, so skip them.
+     */
+
+    if (infoPtr->genFlags & PROC_KERNEL) {
+	return;
+    }
+    status = Vm_GetSegInfo(infoPtr, 0, sizeof(Vm_SegmentInfo), &(segBuf[1]));
+    if (status == SYS_INVALID_ARG) {
+	totalSize = -1;
+    } else if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't read segment info for pid %x: %s\n",
+		infoPtr->processID, Stat_GetMsg(status));
+	return;
+    }
+    if (status == SUCCESS) {
+	totalSize = totalRss = 0;
+	for (i = VM_CODE; i < VM_NUM_SEGMENTS; i++) {
+	    totalSize += segBuf[i].numPages*(pageSizeInKiloBytes);
+	    totalRss += segBuf[i].resPages*(pageSizeInKiloBytes);
+	    if (segBuf[i].segNum >= TOTAL_SEGS) {
+		fprintf(stderr, "Pid %x has %s segment %d:  too large.\n",
+			infoPtr->processID, names[i], segBuf[i].segNum);
+		continue;
+	    }
+	    if (segSeen[segBuf[i].segNum]) {
+		continue;
+	    }
+	    segSeen[segBuf[i].segNum] = 1;
+	    sizes[i] += segBuf[i].numPages*(pageSizeInKiloBytes);
+	    rss[i] += segBuf[i].resPages*(pageSizeInKiloBytes);
+	}
+	printf("%5x%6d%6d%6d%6d%6d%6d%6d%6d %s\n",
+		infoPtr->processID,
+		segBuf[VM_CODE].numPages*(pageSizeInKiloBytes),
+		segBuf[VM_CODE].resPages*(pageSizeInKiloBytes),
+		segBuf[VM_HEAP].numPages*(pageSizeInKiloBytes),
+		segBuf[VM_HEAP].resPages*(pageSizeInKiloBytes),
+		segBuf[VM_STACK].numPages*(pageSizeInKiloBytes),
+		segBuf[VM_STACK].resPages*(pageSizeInKiloBytes),
+		totalSize, totalRss, ArgString(argPtr, 54));
+    } else {
+	printf("%5x%6s%6s%6s%6s%6s%6s%6s%6s %s\n",
+		infoPtr->processID,"---","---","---","---","---","---",
+		"---","---", ArgString(argPtr, 54));
+    }
+    if (lastPCB) {
+	printf("-----------------------------------------------------\n");
+	printf("Total%6d%6d%6d%6d%6d%6d%6d%6d\n",
+		sizes[VM_CODE], rss[VM_CODE], sizes[VM_HEAP], rss[VM_HEAP],
+		sizes[VM_STACK], rss[VM_STACK],
+		sizes[VM_CODE] + sizes[VM_HEAP] + sizes[VM_STACK],
+		rss[VM_CODE] + rss[VM_HEAP] + rss[VM_STACK]);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintMigration --
+ *
+ *	This procedure is called to print out migration-related information
+ *	for processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints info on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintMigration(infoPtr, argPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block containing
+				 * info to be printed. */
+    Proc_PCBArgString *argPtr;	/* Pointer to info about command line for
+				 * process. */
+{
+    static int firstTime = 1;
+
+    if (firstTime) {
+	firstTime = 0;
+	printf("PID   STATE   FLAGS    EVENT RNODE       RPID COMMAND\n");
+    }
+    if ((infoPtr->genFlags & PROC_FOREIGN)
+	    || (infoPtr->state == PROC_MIGRATED)) {
+	printf("%5x %s%8x %8x %-10.10s %5x %s\n",
+		infoPtr->processID, StateString(infoPtr),
+		infoPtr->genFlags, infoPtr->event,
+		HostString(infoPtr->peerHostID),
+		infoPtr->peerProcessID,
+		ArgString(argPtr, 46));
+    } else {
+	printf("%5x %s%8x %8x                  %s\n",
+		infoPtr->processID, StateString(infoPtr),
+		infoPtr->genFlags, infoPtr->event,
+		ArgString(argPtr, 46));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintSignals --
+ *
+ *	This procedure is called to print out signal-related information
+ *	for processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints info on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintSignals(infoPtr, argPtr)
+    Proc_PCBInfo *infoPtr;	/* Pointer to control block containing
+				 * info to be printed. */
+    Proc_PCBArgString *argPtr;	/* Pointer to info about command line for
+				 * process. */
+{
+    static int firstTime = 1;
+    int ignore, handle, i;
+
+    if (firstTime) {
+	firstTime = 0;
+	printf("PID    PENDING     HELD   IGNORE   HANDLE COMMAND\n");
+    }
+
+    ignore = handle = 0;
+    for (i = 1; i <= SIG_NUM_SIGNALS; i++) {
+	if (infoPtr->sigActions[i] == SIG_IGNORE_ACTION) {
+	    ignore |= 1<<(i-1);
+	} else if (infoPtr->sigActions[i] >> SIG_NUM_ACTIONS) {
+	    handle |= 1<<(i-1);
+	}
+    }
+    printf("%5x %8x %8x %8x %8x %s\n", infoPtr->processID,
+	    infoPtr->sigPendingMask, infoPtr->sigHoldMask,
+	    ignore, handle, ArgString(argPtr, 42));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UsageSort --
+ *
+ *	This procedure is called while sorting the process table
+ *	entries.  It returns a value that will sort the processes
+ *	in decreasing order of recent CPU usage.
+ *
+ * Results:
+ *	Returns < 0 if first's usage is > second's usage, >0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+UsageSort(first, second)
+    ControlBlock *first, *second;	/* Two PCBs to compare. */
+{
+    int i;
+    i = second->infoPtr->unweightedUsage - first->infoPtr->unweightedUsage;
+    return i;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AgeSort --
+ *
+ *	This procedure is called while sorting the process table
+ *	entries.  It attempts to return a value that will sort
+ *	processes by age.
+ *
+ * Results:
+ *	Returns < 0 if first is older than second.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+AgeSort(first, second)
+    ControlBlock *first, *second;	/* Two PCBs to compare. */
+{
+#ifdef NOTDEF
+    Time	firstTime, secondTime;
+
+    /*
+     * Unfortunately there's no direct indicator of age in the PCB.
+     * Instead, use the total time used by the process and all its
+     * children as a crude approximation.
+     */
+
+    Time_Add(first->infoPtr->kernelCpuUsage,
+	     first->infoPtr->userCpuUsage, &firstTime);
+    Time_Add(first->infoPtr->childKernelCpuUsage,
+	      firstTime, &firstTime);
+    Time_Add(first->infoPtr->childUserCpuUsage,
+	    firstTime, &firstTime);
+    Time_Add(second->infoPtr->kernelCpuUsage,
+	    second->infoPtr->userCpuUsage, &secondTime);
+    Time_Add(second->infoPtr->childKernelCpuUsage,
+	    secondTime, &secondTime);
+    Time_Add(second->infoPtr->childUserCpuUsage,
+	    secondTime, &secondTime);
+    if Time_GT(secondTicks, firstTime) {
+	return 1;
+    } else {
+	return -1;
+    }
+#endif
+    return second->infoPtr->numWaitEvents - first->infoPtr->numWaitEvents;
+}

@@ -1,0 +1,166 @@
+.\" @(#)varargs.3 1.3 86/08/04 SMI; from UCB 4.2 and S5
+.TH VARARGS 3  "17 July 1986"
+.SH NAME
+varargs \- handle variable argument list
+.SH SYNOPSIS
+.B "#include <varargs.h>"
+.PP
+.I function\c
+.RB ( va_alist )
+.br
+.B va_dcl
+.PP
+.B va_list
+.IR pvar ;
+.PP
+.B va_start\c
+.RI ( pvar );
+.PP
+f =
+.B va_arg\c
+.RI ( pvar ,
+.IR type );
+.PP
+.B va_end\c
+.RI ( pvar );
+.IX  "varargs function"  ""  "\fLvarargs\fP \(em variable argument list"
+.IX  "va_start function"  ""  "\fLva_start\fP \(em initialize varargs"
+.IX  "va_arg function"  ""  "\fLva_arg\fP \(em next argument in variable list"
+.IX  "va_end function"  ""  "\fLva_end\fP \(em finish variable argument list"
+.IX  "va_dcl"  ""  "\fLva_dcl\fP \(em variable argument declarations"
+.IX  "va_list"  ""  "\fLva_list\fP \(em variable argument declarations"
+.IX  "variable argument list, \(em \fLvarargs\fR"
+.IX  "argument lists, varying length \(em \fLvarargs\fR"
+.SH DESCRIPTION
+This set of macros provides a means of writing portable procedures that
+accept variable argument lists.
+Routines having variable argument lists (such as
+.IR printf (3S))
+but do not use
+.I varargs
+are inherently nonportable, since different
+machines use different argument passing conventions.
+.PP
+.B va_alist
+is used in a function header to declare a variable argument list.
+.PP
+.B va_dcl
+is a declaration for
+.BR va_alist .
+No semicolon should follow
+.BR va_dcl .
+.PP
+.B va_list
+is a type defined for the variable
+used to traverse the list.
+One such variable must always be declared.
+.PP
+.B va_start\c
+.RI ( pvar )
+is called to initialize
+.I pvar
+to the beginning of the list.
+.PP
+.B va_arg\c
+.RI ( pvar ,
+.IR type )
+will return the next argument in the list pointed to by
+.IR pvar .
+.I type
+is the type to which the expected argument will be converted
+when passed as an argument.
+In standard C, arguments that are
+.B char
+or
+.B short
+are converted to
+.B int
+and should be accessed as
+.BR int ,
+arguments that are
+.B "unsigned char
+or
+.B "unsigned short
+are converted to
+.B "unsigned int"
+and should be accessed as
+.BR "unsigned int" ,
+and arguments that are
+.B float
+are converted to
+.B double
+and should be accessed as
+.BR double .
+Different types can be mixed, but it is up
+to the routine to know what type of argument is
+expected, since it cannot be determined at runtime.
+.PP
+.B va_end\c
+.RI ( pvar )
+is used to finish up.
+.PP
+Multiple traversals, each bracketed by
+.B va_start
+\&...
+.B va_end,
+are possible.
+.LP
+.B va_alist
+must encompass the entire arguments list.  This insures that a
+.B #define
+statement can be used to redefine or expand its value.  
+.LP
+The argument list (or its remainder) can be passed to another
+function using a pointer to a variable of type
+.BR va_list \(em
+in which case a call to
+.B va_arg
+in the subroutine advances the argument-list pointer with
+respect to the caller as well.
+.SH EXAMPLE
+This example is a possible implementation of
+.IR execl (3).
+.nf
+	\fB#include\fP <varargs.h>
+	\fB#define\fP MAXARGS	100
+
+	/\(**	execl is called by
+			execl(file, arg1, arg2, ..., (char \(**)0);
+	\(**/
+	execl(\fBva_alist\fP)
+	\fBva_dcl\fP
+	{
+		\fBva_list\fP ap;
+		\fBchar\fP \(**file;
+		\fBchar\fP \(**args[MAXARGS];
+		\fBint\fP argno = 0;
+
+		\fBva_start\fP(ap);
+		file = \fBva_arg\fP(ap, \fBchar\fP \(**);
+		\fBwhile\fP ((args[argno++] = \fBva_arg\fP(ap, \fBchar\fP \(**)) != (\fBchar\fP \(**)0)
+			\fB;\fP
+		\fBva_end\fP(ap);
+		\fBreturn\fP execv(file, args);
+	}
+.fi
+.SH BUGS
+It is up to the calling routine to specify how many arguments
+there are, since it is not possible to determine this from the
+stack frame.  For example,
+.I execl
+is passed a zero pointer to signal the end of the list.
+.I Printf
+can tell how many arguments are supposed to be there by the format.
+.LP
+The macros
+.I va_start
+and
+.I va_end
+may be arbitrarily complex;
+for example,
+.I va_start
+might contain an opening brace,
+which is closed by a matching brace in
+.IR va_end .
+Thus, they should only be used where they could
+be placed within a single complex statement.

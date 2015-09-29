@@ -1,0 +1,14 @@
+vmOps.c:
+vmPager.c:
+vmSegment.c:
+vmSwapDir.c:
+vmMsgQueue.c:
+vmSubr.c:
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  vmOps.c 2(1152)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  vmSegment.c 2(464)
+sprintf, arg. 3 used inconsistently	vmSwapDir.c(122)  ::  vmSwapDir.c(258)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  vmSwapDir.c(319)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  vmSubr.c(455)
+TempFs_FileBeingMapped returns value which is always ignored
+Sync_SlowWait returns value which is always ignored
+TempFs_Close returns value which is always ignored

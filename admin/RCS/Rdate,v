@@ -1,0 +1,32 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    douglis:1.1; strict;
+comment  @# @;
+
+
+1.1
+date     89.11.17.12.39.28;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@script to run rdate after sleeping variable time
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/sprite/cmds/csh -f
+if (`hostname` =~ mint*) exit
+set id=`hostname -i`
+@@ id *= 5
+sleep $id
+rdate mint
+@

@@ -1,0 +1,68 @@
+
+
+
+KMSG                      User Commands                      KMSG
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     kmsg - Manipulate a remote Sprite kernel
+
+SSYYNNOOPPSSIISS
+     kkmmssgg _o_p_t_i_o_n _m_a_c_h_i_n_e
+
+OOPPTTIIOONNSS
+     --cc             Cause _m_a_c_h_i_n_e to leave the debugger and  con-
+                    tinue   normal   processing.    _M_a_c_h_i_n_e  must
+                    currently be in the debugger.
+
+     --dd             Cause _m_a_c_h_i_n_e to  suspend  normal  processing
+                    and enter the debugger.
+
+     --rr             Cause _m_a_c_h_i_n_e to reboot,  using  the  default
+                    boot  source.   _M_a_c_h_i_n_e  must currently be in
+                    the debugger.
+
+     --RR _s_t_r_i_n_g      Cause _m_a_c_h_i_n_e to reboot, using _s_t_r_i_n_g as  the
+                    boot  source.   _M_a_c_h_i_n_e  must currently be in
+                    the debugger.
+
+     --ss _s_t_r_i_n_g      Print out the version string  of  the  kernel
+                    being  run  by _m_a_c_h_i_n_e.  Exit with a 0 status
+                    if the version  string  matches  _s_t_r_i_n_g,  and
+                    exit  with  a  non-zero  status if it doesn't
+                    match.  _M_a_c_h_i_n_e  must  currently  be  in  the
+                    debugger.
+
+     --vv             Print out the version string  of  the  kernel
+                    being run by _m_a_c_h_i_n_e.  _M_a_c_h_i_n_e must currently
+                    be in the debugger.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The kkmmssgg command is used to assist in debugging and  reboot-
+     ing remote Sprite kernels.  _M_a_c_h_i_n_e is the name of a machine
+     running Sprite, and _o_p_t_i_o_n specifies what sort of  operation
+     to  perform  on that machine.  KKmmssgg will open a special net-
+     work port to the specified kernel and send  it  messages  to
+     carry out the specified operation.
+
+
+BBUUGGSS
+     The type (or at least byte-order?)  of  the  target  machine
+     must match that of the machine that kkmmssgg is run on.
+
+
+KKEEYYWWOORRDDSS
+     debug, kernel, reboot, version
+
+
+
+Sprite v.1.0         Printed:  March 1, 1991                    1
+
+
+

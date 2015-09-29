@@ -1,0 +1,134 @@
+.\"
+.\"	$Id: checkin.man,v 1.2 89/11/19 23:17:43 berliner Exp $
+.\"
+.TH CHECKIN L "16 November 1989"
+.SH "NAME"
+checkin \- Check a vendor source distribution into CVS
+.SH "SYNOPSIS"
+.B checkin 
+[
+.I \-v
+] [
+.I \-m message
+] [
+.I \-f message_file
+] 
+.I repository vendor_tag vendor_release_tag
+.SH "DESCRIPTION"
+.LP
+.B checkin
+traverses the tree rooted at the current directory checking all files 
+into the vendor branch of the repository directory located at 
+.IR CVSROOT/repository .
+If 
+.I SCCS 
+or 
+.I RCS 
+directories exist under the current directory, 
+.B checkin 
+checks out all files before committing them to the repository.  Any 
+.I RCS
+or
+.I SCCS 
+directories are then ignored when the files are checked in.
+.LP
+.B checkin
+logs all updates to locally modified files, new files, and new 
+directories to the standard output. If the 
+.I \-v
+option is specified it will log all updates instead of just the
+interesting ones.
+.LP
+When invoked with the 
+.I \-m
+flag, 
+.B checkin 
+takes the next argument to be the log message to use when 
+checking in the files.  The 
+.I \-f
+flag specifies the name of a file to use as the log message.  If 
+neither 
+.I \-m
+or 
+.I \-f
+is specified, 
+.B checkin 
+invokes your favorite editor for you to create a log message.
+.LP
+Each file is checked into the vendor branch specified by the 
+.I vendor_tag 
+on the command line.  If the specified branch does not exist, 
+.B checkin
+creates the branch 1.1.1 and labels it with the specified tag.  As
+each file is checked in, it is labeled with the 
+.I vendor_release_tag 
+and logged with the specified log message.
+.LP 
+.B checkin 
+also understands about the way 
+.B cvs
+removes files from a repository by moving them to an 
+.I attic
+sub-directory.
+If a new version of a removed file is encountered, 
+.B checkin 
+will update the copy of the file in the attic and will log 
+the update to the standard output.  The file can be brought back 
+into existence with the 
+.B cvs
+.I add
+command (see the 
+.B cvs
+man page for more details).
+.LP
+If 
+.B checkin
+encounters a file with an extension that 
+.BI rcs (l)
+doesn't recognize that contains the 
+.BI rcs (l)
+.I $log$ 
+header, it will prompt the terminal for a comment leader for that
+type of file.
+.SH "OPTIONS"
+.TP
+.I \-v
+causes 
+.B checkin
+to print a message as all files are updated instead of only printing 
+them for 
+.I interesting
+ones.
+.TP
+.I \-m message
+specifies the string to use as the log message for each update.
+.TP
+.I \-f file
+specifies a file containing the log message to use for each update.
+.SH "ENVIRONMENT VARIABLES"
+.TP
+.SM CVSROOT
+specifies the location of the root of the source repository.
+This variable must be present for 
+.B checkin 
+to continue.
+.TP
+.SM EDITOR
+specifies your favorite editor (defaults to 
+.BR vi ).
+.SH "SEE ALSO"
+.BR ci (l),
+.BR cvs (l),
+.BR rcs (l).
+.SH "BUGS"
+.LP
+Should know how to parse the 
+.I CVSROOT/CVSROOT.adm/loginfo 
+file to log all updates according to the same scheme as 
+.B cvs 
+itself.
+.LP
+Its a real CPU pig, but it works okay and isn't used nearly 
+as much as other portions of 
+.BR cvs .
+

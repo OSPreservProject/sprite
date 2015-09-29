@@ -1,0 +1,19 @@
+L CHARDEFS.H;1                      	chardefs.h	../dist/readline/chardefs.h
+D C_INCLUD                          	c_includes
+D DS3100_M                          	ds3100.md
+L FUNMAP.C;1                        	funmap.c	../dist/readline/funmap.c
+L HISTORY.C;1                       	history.c	../dist/readline/history.c
+L HISTORY.H;1                       	history.h	../dist/readline/history.h
+L HISTORY.TEX;1                     	history.texinfo	../dist/readline/history.texinfo
+L INC_HIST.TEX;1                    	inc-history.texinfo	../dist/readline/inc-history.texinfo
+L INC_READ.TEX;1                    	inc-readline.texinfo	../dist/readline/inc-readline.texinfo
+L KEYMAPS.C;1                       	keymaps.c	../dist/readline/keymaps.c
+L KEYMAPS.H;1                       	keymaps.h	../dist/readline/keymaps.h
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L MKMF.LOC;1                        	mkmf.local	/sprite/lib/mkmf/mkmf.library
+D RCS                               	RCS
+L READLINE.C;1                      	readline.c	../dist/readline/readline.c
+L READLINE.H;1                      	readline.h	../dist/readline/readline.h
+L READLINE.TEX;1                    	readline.texinfo	../dist/readline/readline.texinfo
+D SUN4_MD                           	sun4.md

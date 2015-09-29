@@ -1,0 +1,1793 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.12 symm:9.12 spur:9.12 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     91.09.24.21.31.33;  author shirriff;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.04.19.21.47.16;  author kupfer;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.03.29.16.34.14;  author kupfer;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.03.26.16.27.05;  author kupfer;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.03.23.00.08.22;  author kupfer;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.03.04.14.11.40;  author kupfer;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.19.16.00.00;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.12.13.36.31;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.10.44.43;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.07.30.11.42.01;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.17.59.57;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.17.26.50;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.31;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.09.07.14.24.39;  author shirriff;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.03.23.16.44;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.07.10.19.46.00;  author nelson;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.03.13.08.43.00;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.11.14.10.03;  author nelson;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.48;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.18.18.39;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.23.10.06.27;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.29.10;  author brent;  state Stable;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.05.18.02.40;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.15.15.20.18;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.12.12.16.25.37;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.12.11.13.27.41;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.11.18.21.52.14;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.27.17.09.02;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.22.14.51.10;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.53.29;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.12
+log
+@Fixed MakeUnaccessible to only unlock if it was a code or heap page.  Before
+it would try to unlock shared pages and get "expandcount<0"
+@
+text
+@/* vmMap.c -
+ *
+ *     	This file contains routines to map pages into the kernel's address
+ *	space.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.11 91/04/19 21:47:16 kupfer Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <lock.h>
+#include <list.h>
+#include <proc.h>
+#include <sched.h>
+#include <sync.h>
+#include <sys.h>
+#include <vmHack.h>
+#ifdef VM_CHECK_BSTRING_ACCESS
+#include <dbg.h>
+#include <stdlib.h>
+#endif
+
+
+Sync_Condition	mappingCondition;
+
+int	vmNumMappedPages = 16;
+int	vmMapBasePage;
+int	vmMapEndPage;
+Address vmMapBaseAddr;
+Address vmMapEndAddr;
+
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+/* 
+ * Temporary: keep a list of which processes have called
+ * Vm_MakeAccessible.  bcopy et al will check the list to verify that
+ * it's okay to access the user address space.
+ */
+
+typedef struct {
+    List_Links		links;
+    Proc_ControlBlock	*procPtr;
+    Address		startAddr; /* user address */
+    int			numBytes; /* as returned by Vm_MakeAccessible */
+    int			refCount;
+} VmAccessInfo;
+
+List_Links	vmAccessListHdr;
+List_Links	*vmAccessList = &vmAccessListHdr;
+static Sync_Lock	vmAccessListLock;
+
+Boolean		vmDoAccessChecks = FALSE;
+
+/* Forward references: */
+
+static void RegisterAccess _ARGS_ ((Proc_ControlBlock *procPtr,
+				    Address startAddr, int numBytes));
+static void RemoveAccess _ARGS_ ((Proc_ControlBlock *procPtr,
+				  Address startAddr, int numBytes));
+static VmAccessInfo *
+FindAccessElement _ARGS_ ((Proc_ControlBlock *procPtr, Address startAddr,
+			   int numBytes));
+
+#endif /* VM_CHECK_BSTRING_ACCESS */
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMapPage --
+ *
+ *      Map the given physical page into the kernels virtual address space.  
+ *	The kernel virtual address where the page is mapped is returned.
+ *	This routine is used when a page frame that is in a user's address
+ *	space needs to be accessed by the kernel.
+ *
+ * Results:
+ *      The kernel virtual address where the page is mapped.
+ *
+ * Side effects:
+ *      Kernel page table modified to validate the mapped page.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY Address
+VmMapPage(pfNum)
+    unsigned int	pfNum;	/* The page frame number that to map. */
+{
+    register Vm_PTE	*ptePtr;
+    Vm_VirtAddr		virtAddr;
+    register int	virtPage;
+    register Vm_Segment	*segPtr;
+
+    LOCK_MONITOR;
+
+    segPtr = vm_SysSegPtr;
+    /*
+     * Search through the page table until a non-resident page is found or we
+     * go past the pte that can be used for mapping.  If none can be found 
+     * then sleep.
+     */
+    while (TRUE) {
+	for (virtPage = vmMapBasePage,
+		 ptePtr = VmGetPTEPtr(segPtr, vmMapBasePage);
+	     virtPage < vmMapEndPage;
+	     virtPage++, VmIncPTEPtr(ptePtr, 1)) {
+	    if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+		virtAddr.segPtr = segPtr;
+		virtAddr.page = virtPage;
+		virtAddr.offset = 0;
+		virtAddr.flags = 0;
+		virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+		*ptePtr |= VM_PHYS_RES_BIT | pfNum;
+		VmMach_PageValidate(&virtAddr, *ptePtr);
+#ifdef spur
+		/*
+		 * Until we figure out how to handle virtual synonyms on 
+		 * SPUR, we always make map address noncachable. 
+		 */
+		VmMach_MakeNonCachable(&virtAddr, *ptePtr);
+#endif
+		UNLOCK_MONITOR;
+		return((Address) (virtPage << vmPageShift));
+	    }
+	}
+	vmStat.mapPageWait++;
+	(void) Sync_Wait(&mappingCondition, FALSE);
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmRemapPage --
+ *
+ *      Map the given physical page into the kernels virtual address space
+ *	at the given virtual address.  The address given must be produced from
+ *	VmMapPage.  The purpose of this routine is to reduce overhead for
+ *	routines that have to map numerous page frames into the kernel's
+ *	virtual address space.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Kernel page table modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmRemapPage(addr, pfNum)
+    Address		addr;	/* Virtual address to map the page frame at. */
+    unsigned int	pfNum;	/* The page frame number to map. */
+{
+    register	Vm_PTE	*ptePtr;
+    Vm_VirtAddr		virtAddr;
+    register Vm_Segment	*segPtr;
+
+   
+    LOCK_MONITOR;
+
+    segPtr = vm_SysSegPtr;
+    virtAddr.segPtr = segPtr;
+    virtAddr.page = (unsigned int) (addr) >> vmPageShift;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
+    /*
+     * Clean the old page from the cache.
+     */
+    VmMach_FlushPage(&virtAddr, TRUE);
+    ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
+    *ptePtr &= ~VM_PAGE_FRAME_FIELD;
+    *ptePtr |= pfNum;
+    VmMach_PageValidate(&virtAddr, *ptePtr);
+#ifdef spur
+    /*
+     * Until we figure out how to handle virtual synonyms on 
+     * SPUR, we always make map address noncachable. 
+     */
+    VmMach_MakeNonCachable(&virtAddr, *ptePtr);
+#endif
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmUnmapPage --
+ *
+ *      Free up a page which has been mapped by VmMapPage.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Kernel page table modified to invalidate the page.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmUnmapPage(mappedAddr)
+    Address	mappedAddr;	/* Virtual address of the page that is being
+				   unmapped. */
+{
+    Vm_VirtAddr		virtAddr;
+    Vm_PTE		*ptePtr;
+
+    LOCK_MONITOR;
+
+    virtAddr.segPtr = vm_SysSegPtr;
+    virtAddr.page = (unsigned int) (mappedAddr) >> vmPageShift;
+    virtAddr.offset = 0;
+    virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+
+    ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+    *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+    VmMach_PageInvalidate(&virtAddr, Vm_GetPageFrame(*ptePtr), FALSE);
+
+    Sync_Broadcast(&mappingCondition);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_MakeAccessible --
+ *
+ *      Make sure that the given range of address are valid.
+ *
+ * Results:
+ *	Return the address passed in in *retAddrPtr and the number of bytes
+ *	that are actually valid in *retBytesPtr.
+ *
+ * Side effects:
+ *      If the address that is being made accessible falls into a heap or
+ *	stack segment then the heap segment for the currently executing
+ *	process has the page table in-use count incremented.  This is to
+ *	ensure that the addresses remain valid until Vm_MakeUnaccessible
+ *	is called.
+ *	(Historical note: this function was originally used to access 
+ *	pages without worrying about page faults.  This scheme proved 
+ *	too slow, so there was a switch to CopyIn/CopyOut.  Now this 
+ *	function is useful to ensure the validity of pte pointers.  
+ *	See the sychronization comments in vmInt.h)
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
+    int			accessType;	/* One of VM_READONLY_ACCESS, 
+					 * VM_OVERWRITE_ACCESS, 
+					 * VM_READWRITE_ACCESS. */
+    int			numBytes;	/* The maximum number of bytes to make 
+					 * accessible. */
+    Address		startAddr;	/* The address in the user's address
+					 * space to start at. */
+    register	int	*retBytesPtr;	/* The actual number of bytes 
+					 * made accessible. */
+    register	Address	*retAddrPtr;	/* The kernel virtual address that
+					 * can be used to access the bytes. */
+{
+    register	Vm_Segment	*segPtr;
+    register	Vm_PTE		*ptePtr;
+    Vm_VirtAddr			virtAddr;
+    int				firstPage;
+    int				lastPage;
+    Proc_ControlBlock		*procPtr;
+
+    procPtr = Proc_GetCurrentProc();
+
+    /*
+     * Parse the virtual address to determine which segment that this page
+     * falls into and which page in the segment.
+     */
+    VmVirtAddrParse(procPtr, startAddr, &virtAddr);
+
+    segPtr = virtAddr.segPtr;
+    /*
+     * See if the beginning address falls into a segment.
+     */
+    if (segPtr == (Vm_Segment *) NIL) {
+	*retBytesPtr = 0;
+	*retAddrPtr = (Address) NIL;
+	goto done;
+    }
+
+    procPtr->vmPtr->numMakeAcc++;
+    *retBytesPtr = numBytes;
+
+#ifdef	sequent
+    /*
+     * Relocate the returned address to allow kernel to address it
+     * directly.  mach_KernelVirtAddrUser should be defined for all
+     * machines (with value == 0 on most).
+     */
+    *retAddrPtr = startAddr + mach_KernelVirtAddrUser;
+#else
+    *retAddrPtr = startAddr;
+#endif  /* sequent */
+
+    firstPage = virtAddr.page;
+    lastPage = ((unsigned int) (startAddr) + numBytes - 1) >> vmPageShift;
+    if (segPtr->type == VM_STACK) {
+	/*
+	 * If ending address goes past the end of the
+	 * stack then truncate it.  
+	 */
+	if (lastPage > mach_LastUserStackPage) {
+	    *retBytesPtr = (int)mach_MaxUserStackAddr - (int)startAddr;
+	}
+	/* 
+	 * Since is the stack segment we know the whole range
+	 * of addresses is valid so just return.
+	 */
+	goto done;
+    }
+
+    /*
+     * Truncate range of addresses so that it falls into the code or heap
+     * heap segment.
+     */
+    if (lastPage - segPtr->offset + 1 > segPtr->numPages) {
+	lastPage = segPtr->offset + segPtr->numPages - 1;
+	*retBytesPtr = ((lastPage + 1) << vmPageShift) - (int) startAddr;
+    }
+    if (segPtr->type == VM_CODE) {
+	/* 
+	 * Code segments are mapped contiguously so we know the whole range
+	 * of pages is valid.
+	 */
+	goto done;
+    }
+    /*
+     * We are left with a heap segment.  Go through the page table and make
+     * sure all of the pages in the range are valid.  Stop as soon as hit an
+     * invalid page.  We can look at the page table without fear because the
+     * segment has been prevented from being expanded by VmVirtAddrParse.
+     */
+    for (ptePtr = &(segPtr->ptPtr[virtAddr.page - segPtr->offset]);
+         virtAddr.page <= lastPage; 
+	 virtAddr.page++, ptePtr++) {
+	if (!(*ptePtr & VM_VIRT_RES_BIT)) {
+	    break;
+	}
+    }
+    /*
+     * If we couldn't map anything then just return.
+     */
+    if (virtAddr.page == firstPage) {
+        VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
+	procPtr->vmPtr->numMakeAcc--;
+	*retBytesPtr = 0;
+	*retAddrPtr = (Address) NIL;
+	goto done;
+    }
+    /* 
+     * If we couldn't make all of the requested pages accessible then return 
+     * the number of bytes that we actually made accessible.
+     */
+    if (virtAddr.page <= lastPage) {
+	*retBytesPtr = (virtAddr.page << vmPageShift) - (int) startAddr;
+    }
+
+ done:
+#ifdef VM_CHECK_BSTRING_ACCESS
+    if (vmDoAccessChecks && !dbg_BeingDebugged && *retBytesPtr != 0) {
+	RegisterAccess(procPtr, startAddr, *retBytesPtr);
+    }
+#else 
+    ;
+#endif
+}
+
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * Vm_MakeUnaccessible
+ *
+ *	Take the given kernel virtual address and make the range of pages
+ *	that it addresses unaccessible.  All that has to be done is to
+ *	decrement the in-use count on the page table for the calling process's
+ *	heap segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Heap segment page table in use count decremented if the address 
+ *	falls into a heap or stack segment.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY void
+Vm_MakeUnaccessible(addr, numBytes)
+    Address		addr;
+    int			numBytes;
+{
+    Proc_ControlBlock  	*procPtr;
+    register Vm_Segment	*segPtr;
+
+#ifdef	sequent
+    /*
+     * Un-relocate the address back to user-relative.
+     */
+    addr -= mach_KernelVirtAddrUser;
+#endif	/* sequent */
+
+    LOCK_MONITOR;
+
+    procPtr = Proc_GetCurrentProc();
+    segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
+    procPtr->vmPtr->numMakeAcc--;
+
+    if (((unsigned int) (addr) >> vmPageShift) >= segPtr->offset &&
+	    ((unsigned int)(addr)>>vmPageShift) <= mach_LastUserStackPage) {
+	/*
+	 * This address falls into a stack or heap segment.  The heap segment
+	 * was prevented from being expanded by Vm_MakeAccessible so we have
+	 * to let it be expanded now.
+	 */
+        segPtr->ptUserCount--;
+        if (segPtr->ptUserCount < 0) {
+            panic("Vm_MakeUnaccessible: expand count < 0\n");
+        }
+        if (segPtr->ptUserCount == 0) {
+            Sync_Broadcast(&segPtr->condition);
+        }
+    }
+
+    UNLOCK_MONITOR;
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+    if (vmDoAccessChecks && !dbg_BeingDebugged && numBytes != 0) {
+	RemoveAccess(procPtr, addr, numBytes);
+    }
+#endif
+}
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RegisterAccess --
+ *
+ *	Record the fact that the given process has acquired access to 
+ *	the given range of addresses.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds an element to the access linked list if the range isn't 
+ *	already registered.  Bumps the reference count for the range 
+ *	if it has.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RegisterAccess(procPtr, startAddr, numBytes)
+    Proc_ControlBlock	*procPtr;
+    Address		startAddr; /* user address */
+    int			numBytes; /* as returned by Vm_MakeAccessible */
+{
+    VmAccessInfo *accessPtr;
+
+    Sync_GetLock(&vmAccessListLock);
+
+    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+    if (accessPtr != (VmAccessInfo *)NIL) {
+	accessPtr->refCount++;
+    } else {
+	accessPtr = (VmAccessInfo *)malloc(sizeof(VmAccessInfo));
+	accessPtr->procPtr = procPtr;
+	accessPtr->startAddr = startAddr;
+	accessPtr->numBytes = numBytes;
+	accessPtr->refCount = 1;
+	List_InitElement((List_Links *)accessPtr);
+	List_Insert((List_Links *)accessPtr,
+		    LIST_ATREAR(vmAccessList));
+    }
+
+    Sync_Unlock(&vmAccessListLock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RemoveAccess --
+ *
+ *	Forget that the given process has access to the given range of 
+ *	addresses.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Decrements the reference count for the given range.  Removes 
+ *	the range from the list if the count goes to 0.  We assume
+ *	that the caller will surrender access to the entire range that
+ *	was acquired, rather than surrendering only part of the range.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RemoveAccess(procPtr, startAddr, numBytes)
+    Proc_ControlBlock	*procPtr;
+    Address		startAddr; /* user address */
+    int			numBytes; /* as returned by Vm_MakeAccessible */
+{
+    VmAccessInfo *accessPtr;
+
+    Sync_GetLock(&vmAccessListLock);
+
+    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+    if (accessPtr == (VmAccessInfo *)NIL) {
+	vmDoAccessChecks = FALSE;
+	panic("Vm_MakeUnAccessible: address range not registered");
+    }
+
+    accessPtr->refCount--;
+    if (accessPtr->refCount <= 0) {
+	List_Remove((List_Links *)accessPtr);
+	free((char *)accessPtr);
+    }
+
+    Sync_Unlock(&vmAccessListLock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindAccessElement --
+ *
+ *	Find the element in the access list corresponding to the given 
+ *	arguments.  The caller should be holding the lock for the 
+ *	access list.
+ *
+ * Results:
+ *	Returns a pointer to the element if found, NIL if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static VmAccessInfo *
+FindAccessElement(procPtr, startAddr, numBytes)
+    Proc_ControlBlock *procPtr;
+    Address	startAddr;
+    int		numBytes;
+{
+    VmAccessInfo *accessPtr;
+
+    LIST_FORALL(vmAccessList, (List_Links *)accessPtr) {
+	if (accessPtr->procPtr == procPtr
+		&& accessPtr->startAddr == startAddr
+		&& accessPtr->numBytes == numBytes) {
+	    return accessPtr;
+	}
+    }
+
+    return (VmAccessInfo *)NIL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_IsAccessible --
+ *
+ *	Verify that Vm_MakeAccessible has been called for the given 
+ *	range of addresses.
+ *
+ * Results:
+ *	Returns if okay, panics if not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Vm_CheckAccessible(startAddr, numBytes)
+    Address	startAddr;
+    int		numBytes;
+{
+    VmAccessInfo *accessPtr;
+    Proc_ControlBlock	*procPtr;
+    Boolean okay = FALSE;
+
+    if (!vmDoAccessChecks || dbg_BeingDebugged) {
+	return;
+    }
+
+    /* 
+     * All accesses to kernel memory are okay.  Assume that the 
+     * requested region doesn't wrap around the end of memory.
+     */
+    if (startAddr > mach_LastUserAddr
+	    || startAddr + numBytes <= mach_FirstUserAddr) {
+	return;
+    }
+
+    procPtr = Proc_GetCurrentProc();
+
+    Sync_GetLock(&vmAccessListLock);
+
+    LIST_FORALL(vmAccessList, (List_Links *)accessPtr) {
+	if (accessPtr->procPtr != procPtr) {
+	    continue;
+	}
+	/* 
+	 * Check the start and end of the given range against the 
+	 * range in the list element.  If the given range can't fit in 
+	 * the list element, go on to the next element.
+	 */
+	if (accessPtr->startAddr <= startAddr
+		&& (accessPtr->startAddr + accessPtr->numBytes
+		    >= startAddr + numBytes)) {
+	    okay = TRUE;
+	    break;
+	}
+    }
+
+    Sync_Unlock(&vmAccessListLock);
+
+    if (!okay) {
+	vmDoAccessChecks = FALSE;
+	panic("Vm_IsAccessible: accessing user memory improperly");
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMapInit --
+ *
+ *	Initialize the access list, lock, etc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The access list and lock are initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+VmMapInit()
+{
+    Sync_LockInitDynamic(&vmAccessListLock, "Vm:accessListLock");
+    List_Init(vmAccessList);
+}
+
+#endif /* VM_CHECK_BSTRING_ACCESS */
+@
+
+
+9.11
+log
+@Don't get the current proc pointer unless we're really going to check
+an address.  This should be more robust if the access check code is
+called early in the boot sequence.
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.10 91/03/29 16:34:14 kupfer Exp $ SPRITE (Berkeley)";
+d428 2
+a429 1
+    if (((unsigned int) (addr) >> vmPageShift) >= segPtr->offset) {
+@
+
+
+9.10
+log
+@Go back to checking exact ranges.  But keep: (1) don't do checks if in
+the debugger; (2) reference count the list elements; (3) misc. tweaks.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.9 91/03/26 16:27:05 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d608 1
+a608 1
+    Proc_ControlBlock	*procPtr = Proc_GetCurrentProc();
+d623 2
+@
+
+
+9.9
+log
+@Keep track of calls to MakeAccessible/MakeUnaccessible on a
+page-by-page basis (instead of using only the ranges returned to the
+caller).
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.8 91/03/23 00:08:22 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a25 1
+#include <stdio.h>
+d42 2
+a43 3
+ * Vm_MakeAccessible and what user pages the processes should have
+ * access to.  bcopy et al will check the list to verify that it's
+ * okay to access the user address space.
+d49 2
+a50 2
+    Address		startAddr; /* user address @@ start of first page */
+    Address		endAddr; /* user address @@ start of last page */
+d68 1
+a68 3
+			   Address endAddr));
+
+static Address TruncateToPageStart _ARGS_ ((Address));
+d460 1
+a460 1
+ *	the given range of pages.
+a479 1
+    Address	endAddr = TruncateToPageStart(startAddr + numBytes - 1);
+a480 2
+    startAddr = TruncateToPageStart(startAddr);
+
+d483 1
+a483 1
+    accessPtr = FindAccessElement(procPtr, startAddr, endAddr);
+d490 1
+a490 1
+	accessPtr->endAddr = endAddr;
+d507 1
+a507 1
+ *	pages.
+a527 3
+    Address	endAddr = TruncateToPageStart(startAddr + numBytes - 1);
+
+    startAddr = TruncateToPageStart(startAddr);
+d531 1
+a531 1
+    accessPtr = FindAccessElement(procPtr, startAddr, endAddr);
+d566 1
+a566 1
+FindAccessElement(procPtr, startAddr, endAddr)
+d568 2
+a569 2
+    Address	startAddr;	/* start addr of first page */
+    Address	endAddr;	/* start addr of last page */
+d576 1
+a576 1
+		&& accessPtr->endAddr == endAddr) {
+d636 1
+a636 1
+		&& (accessPtr->endAddr + vm_PageSize
+d664 1
+a664 1
+ *	The access list and lock are intialized.
+a673 25
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TruncateToPageStart --
+ *
+ *	Truncate an address to the start of a page.
+ *
+ * Results:
+ *	Returns the first address of the page that the given address 
+ *	belongs to.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Address
+TruncateToPageStart(addr)
+    Address addr;
+{
+    return (addr - (int)addr % (int)vm_PageSize);
+@
+
+
+9.8
+log
+@Add support for checking whether Vm_MakeAccessible was done before
+referencing user memory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.7 91/03/04 14:11:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d25 2
+d42 4
+a45 3
+ * Temporary: keep a list of which processes have called 
+ * Vm_MakeAccessible.  bcopy et al will check the list to verify that 
+ * it's okay to access the user address space.
+d51 3
+a53 2
+    Address		startAddr; /* user address */
+    int			numBytes; /* as returned by Vm_MakeAccessible */
+d70 1
+a70 1
+			   int numBytes));
+d72 2
+d382 1
+a382 1
+    if (vmDoAccessChecks && *retBytesPtr != 0) {
+d450 1
+a450 1
+    if (vmDoAccessChecks && numBytes != 0) {
+d464 1
+a464 1
+ *	the given range of addresses.
+d470 3
+a472 1
+ *	Adds an element to the access linked list.
+d484 3
+d490 1
+a490 1
+    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+d492 10
+a501 2
+	vmDoAccessChecks = FALSE;
+	panic("Vm_MakeAccessible: address range already registered");
+a502 6
+    accessPtr = (VmAccessInfo *)malloc(sizeof(VmAccessInfo));
+    accessPtr->procPtr = procPtr;
+    accessPtr->startAddr = startAddr;
+    accessPtr->numBytes = numBytes;
+    List_InitElement((List_Links *)accessPtr);
+    List_Insert((List_Links *)accessPtr, LIST_ATREAR(vmAccessList));
+d514 1
+a514 1
+ *	addresses.
+d520 4
+a523 4
+ *	Removes the element from the linked list that corresponds to 
+ *	the given arguments.  We assume that the caller will surrender 
+ *	access to the entire range that was acquired, rather than 
+ *	surrendering only part of the range.
+d535 3
+d541 1
+a541 1
+    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+d546 6
+a551 2
+    List_Remove((List_Links *)accessPtr);
+    free((char *)accessPtr);
+d576 1
+a576 1
+FindAccessElement(procPtr, startAddr, numBytes)
+d578 2
+a579 2
+    Address	startAddr;
+    int		numBytes;
+d586 1
+a586 1
+		&& accessPtr->numBytes == numBytes) {
+d621 1
+a621 1
+    if (!vmDoAccessChecks) {
+d646 2
+a647 2
+		&& (accessPtr->startAddr + accessPtr->numBytes >=
+		    startAddr + numBytes)) {
+d657 1
+a657 1
+	panic("accessing user memory improperly");
+d684 25
+@
+
+
+9.7
+log
+@Add historical comments to header of Vm_MakeAccessible.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.6 90/10/19 16:00:00 rab Exp Locker: kupfer $ SPRITE (Berkeley)";
+d23 4
+a26 1
+
+d37 33
+d294 1
+a294 1
+	return;
+d325 1
+a325 1
+	return;
+d341 1
+a341 1
+	return;
+d364 1
+a364 1
+	return;
+d373 9
+d442 222
+d665 2
+@
+
+
+9.6
+log
+@Changes for symmetry.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.5 90/09/12 13:36:31 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+d213 5
+@
+
+
+9.5
+log
+@Changed includes from quotes to angles.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.4 90/09/11 10:44:43 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d245 1
+a245 1
+    
+d258 9
+d268 2
+d362 7
+@
+
+
+9.4
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm.ken/RCS/vmMap.c,v 9.3 90/07/30 11:42:01 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d14 9
+a22 9
+#include "sprite.h"
+#include "vm.h"
+#include "vmInt.h"
+#include "lock.h"
+#include "list.h"
+#include "proc.h"
+#include "sched.h"
+#include "sync.h"
+#include "sys.h"
+@
+
+
+9.3
+log
+@Removed static declaration on Sync_Condition, so L1-i can get it.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.2 89/10/30 17:59:57 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+a14 1
+#include "vmMach.h"
+@
+
+
+9.2
+log
+@Fixed shared memory initialization.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 9.1 89/09/18 17:26:50 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d27 1
+a27 1
+static	Sync_Condition	mappingCondition;
+@
+
+
+9.1
+log
+@Changed NULL to NIL.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 8.5 89/09/07 14:24:39 shirriff Exp $ SPRITE (Berkeley)";
+d135 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 8.5 89/09/07 14:24:39 shirriff Exp Locker: douglis $ SPRITE (Berkeley)";
+d81 1
+a81 1
+		virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+d184 1
+a184 1
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+@
+
+
+8.5
+log
+@Changes for shared memory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /c/src/kernel/vm.ken/RCS/vmMap.c,v 1.2 89/08/15 12:01:53 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Deleted include of "mem.h", which no longer exists.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 8.3 89/07/10 19:46:00 nelson Exp Locker: rab $ SPRITE (Berkeley)";
+d81 1
+d184 1
+@
+
+
+8.3
+log
+@Incorporated changes from DECWRL.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 8.2 89/03/13 08:43:00 mendel Exp $ SPRITE (Berkeley)";
+a19 1
+#include "mem.h"
+@
+
+
+8.2
+log
+@Added patch to handle multiple mapping on SPUR.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 8.1 89/01/11 14:10:03 nelson Exp $ SPRITE (Berkeley)";
+d81 1
+d183 1
+@
+
+
+8.1
+log
+@Changed to fix bugs in page flushing and checking reference and modify
+bits.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 8.0 88/11/11 18:41:48 douglis Stable Locker: nelson $ SPRITE (Berkeley)";
+d26 2
+d83 7
+d142 7
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 6.2 88/10/28 18:18:39 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d128 1
+a128 1
+    VmMach_FlushPage(&virtAddr);
+@
+
+
+6.2
+log
+@Converted to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMap.c,v 6.1 88/08/23 10:06:27 mendel Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Added cache flush in remap proc.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmMap.c,v 6.0 88/08/11 12:29:10 brent Stable $ SPRITE (Berkeley)";
+d347 1
+a347 1
+            Sys_Panic(SYS_FATAL, "Vm_MakeUnaccessible: expand count < 0\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmMap.c,v 5.7 88/05/05 18:02:40 nelson Exp $ SPRITE (Berkeley)";
+d119 1
+d125 4
+@
+
+
+5.7
+log
+@Handles move of stuff from sys to mach.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmMap.c,v 5.6 87/12/15 15:20:18 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.6
+log
+@Comments.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmMap.c,v 5.5 87/12/12 16:25:37 nelson Exp $ SPRITE (Berkeley)";
+d214 1
+a214 1
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+d330 1
+a330 1
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+@
+
+
+5.5
+log
+@More work on moving out machine dependent stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmMap.c,v 5.4 87/12/11 13:27:41 nelson Exp $ SPRITE (Berkeley)";
+d49 1
+a49 1
+ *      None.
+d97 1
+a97 1
+ *	at the given virtual address.  The addres given must be produced from
+d144 1
+a144 1
+ *      None.
+d185 4
+a188 3
+ *	stack segment then the heap segment is prevented from being
+ *	expanded for the calling process.  This is to ensure that the addresses
+ *	remain valid until Vm_MakeUnaccessible is called.
+d218 1
+a218 3
+     * falls into and which page in the segment.  If it is a heap segment
+     * or stack segment, then the current process's heap segment will
+     * be prevented from being expanded.
+d284 1
+a284 1
+        VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
+d307 2
+a308 2
+ *	make the heap segment for the calling process expandable if it was
+ *	made unexpandable by Vm_MakeAccessible.
+d314 2
+a315 2
+ *	Heap segment made expandable if the address falls into a heap or
+ *	stack segment.
+d340 2
+a341 2
+        segPtr->notExpandCount--;
+        if (segPtr->notExpandCount < 0) {
+d344 1
+a344 1
+        if (segPtr->notExpandCount == 0) {
+@
+
+
+5.4
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmSunMap.c,v 5.3 87/11/18 21:52:14 nelson Exp $ SPRITE (Berkeley)";
+d164 1
+a164 1
+    VmMach_PageInvalidate(&virtAddr, VmGetPageFrame(*ptePtr), FALSE);
+d195 2
+a196 2
+					   VM_OVERWRITE_ACCESS, 
+					   VM_READWRITE_ACCESS. */
+d198 1
+a198 1
+					   accessible. */
+d200 1
+a200 1
+					   space to start at. */
+d202 1
+a202 1
+					   made accessible. */
+d204 1
+a204 1
+					   can be used to access the bytes. */
+d233 1
+d286 1
+d333 1
+@
+
+
+5.3
+log
+@Copy-on-write
+@
+text
+@d1 1
+a1 1
+/* vmSunMap.c -
+d11 1
+a11 1
+static char rcsid[] = "$Header: vmSunMap.c,v 5.2 87/10/27 17:09:02 nelson Exp $ SPRITE (Berkeley)";
+d15 1
+a15 1
+#include "vmSunConst.h"
+a19 1
+#include "machine.h"
+d28 6
+a39 33
+ *      Call internal routine to map the given page frame into the kernel's
+ *	virtual address space.
+ *
+ * Results:
+ *      The kernel virtual address where the page is mapped.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY Address
+VmMapPage(pfNum)
+    int		pfNum;	/* The page frame number that is being mapped. */
+{
+    Address	addr;
+
+    LOCK_MONITOR;
+
+    addr = VmMapPageInt(pfNum);
+
+    UNLOCK_MONITOR;
+
+    return(addr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMapPageInt --
+ *
+d53 3
+a55 4
+
+INTERNAL Address
+VmMapPageInt(pfNum)
+    int		pfNum;	/* The page frame number that is being mapped. */
+d57 3
+a59 3
+    register	Vm_PTE	*ptePtr;
+    VmVirtAddr		virtAddr;
+    register	int	virtPage;
+d62 1
+a62 1
+    segPtr = vmSysSegPtr;
+d64 1
+a69 1
+
+d71 3
+a73 3
+	for (virtPage = VM_MAP_BASE_PAGE, 
+	     ptePtr = VmGetPTEPtr(segPtr, VM_MAP_BASE_PAGE);
+	     virtPage <= VM_MAP_END_PAGE && ptePtr->resident == 1;
+d75 9
+a84 4
+	if (virtPage <= VM_MAP_END_PAGE) {
+	    break;
+	}
+
+a87 14
+
+    /*
+     * Initialize the pte and validate the page.
+     */
+
+    virtAddr.segPtr = segPtr;
+    virtAddr.page = virtPage;
+    virtAddr.offset = 0;
+    ptePtr = VmGetPTEPtr(segPtr, virtPage);
+    ptePtr->protection = VM_KRW_PROT;
+    ptePtr->pfNum = VmVirtToPhysPage(pfNum);
+    VmPageValidateInt(&virtAddr);
+
+    return((Address) (virtAddr.page << VM_PAGE_SHIFT));
+d110 1
+a110 2
+
+void
+d112 2
+a113 2
+    Address	addr;	/* Virtual address to map the page frame at. */
+    int		pfNum;	/* The page frame number that is being mapped. */
+d116 1
+a116 1
+    VmVirtAddr		virtAddr;
+d119 3
+a121 1
+    segPtr = vmSysSegPtr;
+d123 1
+a123 1
+    virtAddr.page = (unsigned int) (addr) >> VM_PAGE_SHIFT;
+d125 5
+a129 2
+    ptePtr->pfNum = VmVirtToPhysPage(pfNum);
+    VmPageValidate(&virtAddr);
+a147 1
+
+d153 3
+d158 2
+a159 31
+    VmUnmapPageInt(mappedAddr);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmUnmapPageInt --
+ *
+ *      Free up a page which has been mapped by VmMapPage.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+INTERNAL void
+VmUnmapPageInt(mappedAddr)
+    Address	mappedAddr;	/* Virtual address of the page that is being
+				   unmapped. */
+{
+    VmVirtAddr		virtAddr;
+
+    virtAddr.segPtr = vmSysSegPtr;
+    virtAddr.page = (unsigned int) (mappedAddr) >> VM_PAGE_SHIFT;
+d162 3
+a164 1
+    VmPageInvalidateInt(&virtAddr);
+a166 1
+}
+d168 1
+a168 64
+static Vm_PTE   intelSavedPTE;          /* The page table entry that is stored
+                                           at the address that the intel page
+                                           has to overwrite. */
+static int      intelPage;              /* The page frame that was allocated. */
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_MapIntelPage --
+ *
+ *      Allocate and validate a page for the Intel Ethernet chip.  This routine
+ *	is required in order to initialize the chip.  The chip expects 
+ *	certain stuff to be at a specific virtual address when it is 
+ *	initialized.  This routine sets things up so that the expected
+ *	virtual address is accessible.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The hardware segment table associated with the software segment
+ *      is modified to validate the page.  Also the old pte stored at the
+ *	virtual address and the page frame that is allocated are stored in
+ *	static globals.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+Vm_MapIntelPage(virtAddr) 
+    int	virtAddr;	/* Virtual address where a page has to be validated
+			   at. */
+{
+    Vm_PTE	pte;
+    VmVirtAddr	virtAddrStruct;
+
+#ifdef SUN3
+    return;
+#endif
+
+    /*
+     * Set up the page table entry.
+     */
+
+    pte = vm_ZeroPTE;
+    pte.resident = 1;
+    pte.protection = VM_KRW_PROT;
+    virtAddrStruct.page = (unsigned) (virtAddr) >> VM_PAGE_SHIFT;
+    virtAddrStruct.offset = 0;
+    virtAddrStruct.segPtr = vmSysSegPtr;
+    intelPage = VmPageAllocate(&virtAddrStruct, TRUE);
+    pte.pfNum = VmVirtToPhysPage(intelPage);
+
+    /*
+     * It is known that there is already a pmeg for the virtual address that we
+     * need to map.  Thus all that needs to be done is to store the pte.  
+     * However since this virtual page is already in use for VME bus memory 
+     * we need to save the pte that is already there before storing the 
+     * new one.
+     */
+
+    VM_PTE_TO_INT(intelSavedPTE) = Vm_GetPageMap((Address) virtAddr);
+    Vm_SetPageMap((Address) virtAddr, pte);
+a174 35
+ * Vm_UnmapIntelPage --
+ *
+ *      Deallocate and invalidate a page for the intel chip.  This is a special
+ *	case routine that is only for the intel ethernet chip.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The hardware segment table associated with the segment
+ *      is modified to invalidate the page.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+Vm_UnmapIntelPage(virtAddr) 
+    int	virtAddr;
+{
+#ifdef SUN3
+    return;
+#endif
+    /*
+     * Restore the saved pte and free the allocated page.
+     */
+
+    Vm_SetPageMap((Address) virtAddr, intelSavedPTE);
+
+    (void) VmPageFree(intelPage);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+a190 1
+
+d208 1
+a208 1
+    VmVirtAddr			virtAddr;
+d221 1
+a221 1
+    VmVirtAddrParse(procPtr, (int) startAddr, &virtAddr);
+a223 1
+
+a226 1
+
+a234 1
+
+d236 1
+a236 2
+    lastPage = ((unsigned int) (startAddr) + numBytes - 1) >> VM_PAGE_SHIFT;
+    
+d242 2
+a243 2
+	if (lastPage > MACH_LAST_USER_STACK_PAGE) {
+	    *retBytesPtr = MACH_MAX_USER_STACK_ADDR - (int) startAddr;
+a255 1
+
+d258 1
+a258 1
+	*retBytesPtr = ((lastPage + 1) << VM_PAGE_SHIFT) - (int) startAddr;
+a259 1
+
+a266 1
+
+a272 1
+
+d276 1
+a276 1
+	if (!ptePtr->validPage) {
+a279 1
+
+a282 1
+
+a288 1
+
+a292 1
+
+d294 1
+a294 1
+	*retBytesPtr = (virtAddr.page << VM_PAGE_SHIFT) - (int) startAddr;
+a317 1
+
+d332 1
+a332 1
+    if (((unsigned int) (addr) >> VM_PAGE_SHIFT) >= segPtr->offset) {
+@
+
+
+5.2
+log
+@Implemented a new cross-address-space copy routine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmSunMap.c,v 5.1 87/10/22 14:51:10 nelson Exp $ SPRITE (Berkeley)";
+d515 1
+a515 1
+            Sync_Broadcast(&vmSegExpandCondition);
+@
+
+
+5.1
+log
+@Changed proc table so that it points to VM stuff that is defined here.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmSunMap.c,v 5.0 87/08/11 10:53:29 sprite Exp $ SPRITE (Berkeley)";
+d372 2
+d380 1
+a380 2
+
+    VmVirtAddrParse((int) startAddr, &virtAddr);
+a452 1
+	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmSunMap.c,v 4.1 87/05/21 17:18:38 nelson Exp $ SPRITE (Berkeley)";
+d453 1
+a453 1
+        VmDecExpandCount(procPtr->segPtrArray[VM_HEAP]);
+d502 1
+a502 1
+    segPtr = procPtr->segPtrArray[VM_HEAP];
+@

@@ -1,0 +1,285 @@
+.\" @(#)semop.2 1.16 88/03/01 SMI; from S5R3
+.TH SEMOP 2 "21 November 1987"
+.SH NAME
+semop \- semaphore operations
+.SH SYNOPSIS
+.ft B
+#include <sys/types.h>
+.br
+#include <sys/ipc.h>
+.br
+#include <sys/sem.h>
+.LP
+.ft B
+.nf
+int semop(semid, sops, nsops)
+int semid;
+struct sembuf *sops;
+int nsops;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  semop  ""  "\fLsemop\fR  \(em semaphore operations"
+.IX  semaphore "operations \(em \fLsemop\fR"
+.B semop(\|)
+is used to atomically perform an array of semaphore operations on the
+set of semaphores associated with the semaphore identifier specified by
+.IR semid .
+.I sops
+is a pointer to the array of semaphore-operation structures.
+.I nsops
+is the number of such structures in the array.
+The contents of each structure includes the following members:
+.LP
+.RS
+.ta 8n 20n
+.ft B
+.nf
+short	sem_num;	/\(** semaphore number \(**/
+short	sem_op;	/\(** semaphore operation \(**/
+short	sem_flg;	/\(** operation flags \(**/
+.fi
+.ft R
+.RE
+.LP
+Each semaphore operation specified by
+.B sem_op
+is performed on the corresponding semaphore specified by
+.I semid
+and
+.BR sem_num .
+.LP
+.B sem_op
+specifies one of three semaphore operations as follows:
+.LP
+.RS 8
+If
+.B sem_op
+is a negative integer, one of the following will occur:
+.B \%{\s-1ALTER\s0}
+.TP
+\(bu
+If
+.I semval
+(see
+.BR intro (2))
+is greater than or equal to the absolute value of
+.BR sem_op ,
+the absolute value of
+.B sem_op
+is subtracted from
+.IR semval .
+.TP
+\(bu
+If
+.I semval
+is less than the absolute value of
+.B sem_op
+and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``true'',
+.B semop(\|)
+will return immediately.
+.TP
+\(bu
+If
+.I semval
+is less than the absolute value of
+.B sem_op
+and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``false'',
+.B semop(\|)
+will increment the
+.I semncnt
+associated with the specified semaphore
+and suspend execution of the calling process
+until one of the following conditions occur.
+.RS 12
+.LP
+.I semval
+becomes greater than or equal to the absolute value of
+.BR sem_op .
+When this occurs, the value of
+.I semncnt
+associated with the specified
+semaphore is decremented, the absolute value of
+.I sem_op
+is subtracted from
+.I semval .
+.LP
+The
+.I semid
+for which the calling process is awaiting action
+is removed from the system (see
+.BR semctl (2)).
+When this occurs,
+.B errno
+is set equal to
+.SM EIDRM\*S,
+and a value of \-1 is returned.
+.LP
+The calling process receives a signal.
+When this occurs, the value of
+.I semncnt
+associated with the specified
+semaphore is decremented,
+and the calling process resumes execution in the manner prescribed in
+.BR signal (2).
+.RE
+.LP
+If
+.B sem_op
+is a positive integer, the value of
+.B sem_op
+is added to
+.I semval .
+.B \%{\s-1ALTER\s0}
+.if t .bp
+.LP
+If
+.B sem_op
+is zero,
+one of the following will occur:
+.B \%{\s-1READ\s0}
+.TP
+\(bu
+If
+.I semval
+is zero,
+.B semop(\|)
+will return immediately.
+.TP
+\(bu
+If
+.I semval
+is not equal to zero and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``true'',
+.B semop(\|)
+will return immediately.
+.TP
+\(bu
+If
+.I semval
+is not equal to zero and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``false'',
+.B semop(\|)
+will increment the
+.I semzcnt
+associated with the specified semaphore
+and suspend execution of the calling process until
+one of the following occurs:
+.RS 12
+.LP
+.I semval
+becomes zero, at which time the value of
+.I semzcnt
+associated with the
+specified semaphore is decremented.
+.LP
+The
+.I semid
+for which the calling process is awaiting action
+is removed from the system.
+When this occurs,
+.B errno
+is set equal to
+.SM EIDRM\*S,
+and a value of \-1 is returned.
+.LP
+The calling process receives a signal that is to be caught.
+When this occurs, the value of
+.I semzcnt
+associated with the specified semaphore is decremented,
+and the calling process resumes execution in the manner prescribed in
+.BR signal (2).
+.RE
+.RE
+.LP
+Upon successful completion, the value of
+.I sempid
+for each semaphore specified in the array pointed to by
+.I sops
+is set equal to the process
+.SM ID
+of the calling process.
+.SH RETURN VALUE
+Upon successful completion, the value of
+.I semval
+at the time of the call for the
+last operation in the array pointed to by
+.I sops
+is returned.
+Otherwise, a value of \-1 is returned and
+.B errno
+is set to indicate the error.
+.SH ERRORS
+.B semop(\|)
+will fail if one or more of the following are true for any of the semaphore
+operations specified by
+.IR sops :
+.TP 20
+.SM EINVAL
+.I semid
+is not a valid semaphore identifier.
+.TP 20
+.SM EIDRM
+The set of semaphores referred to by
+.I msqid
+was removed from the system.
+.TP 20
+.SM EFBIG
+.B sem_num
+is less than zero or greater than or equal to the number of semaphores
+in the set associated with
+.IR semid .
+.TP 20
+.SM E2BIG
+.I nsops
+is greater than the system-imposed maximum.
+.TP 20
+.SM EACCES
+Operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP 20
+.SM EAGAIN
+The operation would result in suspension of the calling process but
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``true''.
+.TP 20
+.SM ERANGE
+An operation would cause a
+.I semval
+value to overflow the system-imposed limit.
+.TP 20
+.SM EFAULT
+.I sops
+points to an illegal address.
+.TP 20
+.SM EINTR
+The call was interrupted by the delivery of a signal.
+.SH SEE ALSO
+.BR exec (2),
+.BR exit (2),
+.BR fork (2),
+.BR intro (2),
+.BR semctl (2),
+.BR semget (2),
+.BR signal (2)
+.SH BUGS
+The SEM_UNDO function is not implemented.
+.LP
+Semaphores always exit with EINTR when a signal is received.  The signal
+cannot be caught inside the semaphore.

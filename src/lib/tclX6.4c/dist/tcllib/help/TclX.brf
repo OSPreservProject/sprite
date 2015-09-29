@@ -1,0 +1,114 @@
+control/commandloop	 Create an interactive command loop.
+control/loop	 Higher-performance for-style loop.
+debug/cmdtrace	 Trace Tcl execution.
+debug/edprocs	 Edit named procs, or all procs.
+debug/memory	 display and debug memory problems
+debug/profile	 Collect Tcl script performance profile data.
+debug/profrep	 Generate a report from data collect from the profile command.
+debug/saveprocs	 Save named procs to a file, or all procs.
+files/chgrp	 Change file group.
+files/chmod	 Set file permissions.
+files/chown	 Change file owner and/or group.
+files/copyfile	 Copy the remainder of one open file into another.
+files/dup	 Duplicate an open filehandle.
+files/echo	 Echo one or more strings to stdout, followed by a newline.
+files/fcntl	 Get or set file access options for an open file.
+files/flock	 Lock all or part of a file.
+files/for_file	 Do a foreach-style loop on each line in a file.
+files/for_recursive_glob	 Perform a foreach-style loop for all globbed files and directories.
+files/fstat	 Obtain status information about an open file.
+files/funlock	 Remove a lock from part or all of a file.
+files/lgets	 Read a list for a file, handles embedded newlines.
+files/link	 Create a link to a file.
+files/mkdir	 Create a new directory
+files/pipe	 Create a pipe.
+files/read_file	 Read in a file to a string.
+files/recursive_glob	 Do filename globbing, recursively descending all matched directories.
+files/rmdir	 Remove directories
+files/select	 Synchronous I/O multiplexing.
+files/unlink	 Delete (unlink) files.
+files/write_file	 Write strings out to a file.
+filescan/scancontext	 Manage file scan contexts.
+filescan/scanfile	 Scan a file, executing match code when their patterns are matched.
+filescan/scanmatch	 Specify tcl code to execute when scanfile pattern is matched.
+help	 Tcl shell help facility.
+internation/catclose	 Close a message catalog.
+internation/catgets	 Retrieve a message from a message catalog.
+internation/catopen	 Open a message catalog.
+intro/keyedlists	 Introduction to keyed lists
+keyedlists/keyldel	 Delete a field of a keyed list.
+keyedlists/keylget	 Get the value of a field of a keyed list.
+keyedlists/keylkeys	 Get the keys in a keyed list.
+keyedlists/keylset	 Set the value of a field of a keyed list.
+libraries/autoload	 Autoloading of commands.
+libraries/autoprocs	 List names of autoload and package library procs.
+libraries/buildpackageindex	 Build an index to a package library.
+libraries/convert_lib	 Convert an Ousterhout style tclIndex file to a package library.
+libraries/demand_load	 Force an autoload proc or a package to be loaded.
+libraries/load	 Search the TCLPATH for a file to source.
+libraries/loadlibindex	 Load the index of a package library
+libraries/packagelib	 Tcl shell package libraries.
+libraries/packages	 List all known packages.
+libraries/utilprocs	 Search a path list for a file.
+lists/assign_fields	 Assign successive elements in a list to specified variables.
+lists/intersect	 Return a list containing every element present in both lists.
+lists/intersect3	 Return three lists from an intersection of two lists.
+lists/lempty	 Determine if a list is empty. 
+lists/lrmdups	 Given a list, remove all of the duplicated elements.
+lists/lvarcat	 Concatenate the contents lists or strings into a variable
+lists/lvarpop	 Pop or replace the specified element from a list.
+lists/lvarpush	 Push or insert the an element into a list.
+lists/union	 Return the logical union of two lists.
+math/acos	 Return the arccosine of a number.
+math/asin	 Return the arcsin of a number.
+math/atan	 Return the arctangent of a number..
+math/ceil	 Return the smallest integer not less than a floating point number.
+math/cos	 Return the cosine of a number.
+math/cosh	 Return the hyperbolic cosine of a number.
+math/exp	 Return e to the power of a number.
+math/fabs	 Return the absolute value of the floating point number.
+math/floor	 Return the largest integer not greater than a floating point number.
+math/fmod	 Perform a floating point modulus operation.
+math/log	 Return the natural logarithm of a number.
+math/log10	 Return the logarithm base 10 of a number.
+math/max	 Return the argument that has the highest numeric value.
+math/min	 Return the argument that has the lowest numeric value.
+math/pow	 Return a number to the power of another number.
+math/random	 Return a pseudorandom integer or set the seed.
+math/sin	 Return the sin of a number.
+math/sinh	 Return the hyperbolic sin of a number.
+math/sqrt	 Return the square root of a number.
+math/tan	 Return the tangent of a number.
+math/tanh	 Return the hyperbolic tangent of a number.
+processes/execl	 Perform a process exec, executing a file.
+processes/fork	 Fork the current Tcl process.
+processes/kill	 Send a signal to the specified process.
+processes/system	 Execute command via `system' call.
+processes/wait	 Wait for a child process to terminate.
+signals/signal	 Specify action to take when a signal is received.
+status/dirs	 List the directories in the directory stack.
+status/id	 Access, set or convert process, user and group information.
+status/infox	 Return information about Extended Tcl, or the current application.
+status/popd	 Pop a directory from a stack of directories and cd to it.
+status/pushd	 Push a directory to a stack of directories.
+status/showproc	 List the definition of the named procedure.
+status/showprocs	 List the definition of the named, or all, procedures.
+status/umask	 Get or set the file-creation mode mask.
+strings/cindex	 Return indexed character from string.
+strings/clength	 Return length of specified string.
+strings/crange	 Return range of characters from string.
+strings/csubstr	 Return a substring from within a string.
+strings/ctype	 Determine if a string has various characteristics.
+strings/replicate	 Replicate string a number of times.
+strings/translit	 Translate characters in a string according to patterns.
+tclshell/initialize	 Tcl shell initialization sequence.
+tclshell/intro	 Introduction to the tcl shell.
+tclshell/tclinit	 Tcl shell initialization file.
+tclshell/variables	 Tcl shell variables.
+time/alarm	 Set a process alarm clock.
+time/convertclock	 Parse and convert a date and time string to integer clock value.
+time/fmtclock	 Convert an integer time value to human-readable format.
+time/getclock	 Return current date and time as an integer value.
+time/sleep	 Sleep for the specified number of seconds.
+time/times	 Get process and child execution times.
+variables/for_array_keys	 Do a foreach-style loop on each key in an array.

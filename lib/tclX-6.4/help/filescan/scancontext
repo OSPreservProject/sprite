@@ -1,0 +1,26 @@
+
+
+          scancontext [option]
+               This command manages file scan contexts.  A scan
+               context is a collection of regular expressions and
+               commands to execute when that regular expression
+               matches a line of the file.  A context may also have a
+               single default match, to be applied against lines that
+               do not match any of the regular expressions.  Multiple
+               scan contexts may be defined and they may be reused on
+               multiple files.  A scan context is identified by a
+               context handle.  The scancontext command takes the
+               following forms:
+
+          scancontext create
+               Create a new scan context.  The scanmatch command is
+               used to define patterns in the context.  A
+               contexthandle is returned, which the Tcl programmer
+               uses to refer to the newly created scan context in
+               calls to the Tcl file scanning commands.
+
+          scancontext delete contexthandle
+               Delete the scan context identified by contexthandle,
+               and free all of the match statements and compiled
+               regular expressions associated with the specified
+               context.

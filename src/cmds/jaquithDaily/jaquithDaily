@@ -1,0 +1,135 @@
+#!/usr/bin/perl -w
+
+;#----------------------------------------------------------------------
+;#
+;# jaquithDaily --
+;#
+;#	Perform Sprite daily dump using Jaquith archive server
+;#
+;# Arguments:
+;#      Command line options:
+;#		See optDesc, below.
+;#      Command line arguments:
+;#              List of filesystems that contain lost+found directories
+;#
+;# Results:
+;#	None.
+;#
+;# Side effects:
+;#	Files owned by invoker may be deleted
+;#
+;#----------------------------------------------------------------------
+
+$fileList = "/sprite/admin/dump/jaquithList";
+$logFile = "/sprite/admin/dump/jaquithLog";
+$arch = "default";
+$server = "covet.CS";
+$port = "10001";
+$dumper = "root";
+
+%optDesc = (
+    'server', 'alpha, Name of server where Jaquith is running',
+    'port', 'decint, Port number (dec) where Jaquith is listening',
+    'arch','alpha, Name of logical archive',
+);
+
+;# parse command line stuff in to arrays 'opts' and 'args'
+&ParseOpts(%optDesc);
+
+$arch = $opts{'arch'} if $opts{'arch'};
+$server = $opts{'server'} if $opts{'server'};
+$port = $opts{'port'} if $opts{'port'};
+
+$firstArg = shift(@args);
+if ($firstArg) {
+    $secondArg = shift(@args);
+    die("JaquithDaily: Unknown argument: $secondArg\n") if $secondArg;
+    $started = 0;
+} else {
+    $started = 1;
+    $firstArg = " ";
+}
+
+$userId = `whoami`;
+chop($userId);
+die("JaquithDaily: Need to be $dumper.\n") if ($userId ne $dumper);
+
+open(FILELIST, "<$fileList") ||  die("Can't open file list: $fileList\n");
+
+while (<FILELIST>) {
+    chop($_);
+    $_ =~ s/(^\s*)([^\s]*)(\s*$)/$2/;
+    next if ((m/^#/) || (!$started && $_ ne $firstArg));
+    $started = 1;
+    $cmdLine = "jput -arch $arch -server $server -port $port $_";
+    `echo \`date\`: \"$cmdLine\" >> $logFile`;
+    `echo \`date\`: \"$cmdLine\" >> /dev/syslog`;
+    `$cmdLine`;
+}
+
+;#
+;#
+;#----------------------------------------------------------------------
+;#
+;# ParseOpts --
+;#
+;#	Separate arguments from options and perform
+;#	rudimentary validation on the latter.
+;#
+;# Arguments:
+;#	Descriptor array of options. 
+;#
+;# Results:
+;#	None.
+;#
+;# Side effects:
+;#	Sets the @args and %opts arrays.
+;#
+;#----------------------------------------------------------------------
+;#
+
+sub ParseOpts {
+    local($optDesc) = @_;
+    local($opt);
+    local($val);
+    local($type);
+    local($optHandlers);
+    local($helpMsg);
+
+    %optHandlers = (
+		    'alpha', '[a-zA-Z]',
+		    'decint', '[0-9]',
+		    'hexint', '[a-fA-F0-9]',
+		    'intlist', '\([0-9]+,[0-9]+\)'
+		    );
+    $helpMsg = "Type $0 -help for minor assistance.\n";
+    die("Can't redefine help option.\n") if $optDesc{'help'};
+
+    while (@ARGV) {
+	$opt = shift(@ARGV);
+	if ($opt =~ s/^-//) {
+	    if ($opt eq "help") {
+		select(STDERR);
+		print ("\nOption name\tValue type\t Description\n");
+		foreach $opt (keys(%optDesc)) {
+		    ($type,$phrase) = split(",",$optDesc{$opt});
+		    print "-$opt\t\t$type\t\t$phrase\n";
+		}
+		die "\n";
+	    }
+	    ($type,$phrase) = split(",",$optDesc{$opt});
+	    die "Unknown option '$opt'.\n$helpMsg" unless $type;
+	    die "Duplicate option '$opt'.\n$helpMsg" if $opts{$opt};
+	    if ($type eq "none") {
+		$val = '1';
+	    } else {
+		$val = shift(@ARGV);
+		die "Illegal value for option '$opt': $val.\n$helpMsg"
+		    unless ($val =~ m/$optHandlers{$type}/);
+	    }
+	    $opts{$opt} = $val;
+	} else {
+	    push (@args, $opt);
+	}
+    }
+}

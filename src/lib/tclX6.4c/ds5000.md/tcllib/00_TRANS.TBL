@@ -1,0 +1,5 @@
+L 8QUEENS.TCL;1                     	8queens.tcl	../../dist/tcllib/8queens.tcl
+L BUILDHEL.TCL;1                    	buildhelp.tcl	../../dist/tcllib/buildhelp.tcl
+L BUILDIDX.TCL;1                    	buildidx.tcl	../../dist/tcllib/buildidx.tcl
+L HELP.;1                           	help	../../dist/tcllib/help
+L TCLINIT.TCL;1                     	TclInit.tcl	../../dist/tcllib/TclInit.tcl

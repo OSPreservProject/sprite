@@ -1,0 +1,113 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%Cut with a sharp axe here%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is a very simple LaTeX substyle to set Semitic languages. It is a very 
+% much a hacked HEBREW.TeX distributed with the Hebrew fonts.
+%    Graeme McKinstry,
+%    Computing Services Centre,
+%    University of Otago,
+%    Dunedin,
+%    New Zealand.
+%    E-mail:  graeme%otago.ac.nz@relay.cs.net
+%
+% The fonts were designed by Jacques Goldberg:
+%    E-mail: phr00jg@technion.bitnet  (watch for ZEROES in phr00jg)
+%    S-mail: Prof. Jacques Goldberg, Department of Physics
+%            TECHNION, 32000 Haifa, Israel.
+%    Emergency phone: (972)4-293663
+%     
+% WHAT IT DOES:
+%   * Reverses order of letters in words.
+%   * Reverses order of words on a line (sets right-to-left).
+%
+% Use it as follows:
+% \documentstyle[semitic,...]{...}
+%           .
+%           .
+%           .
+% Normal text here
+% \begin{semitic}     
+% Hebrew text in `natural direction'.  Type Hebrew paragraph as
+% you would any `normal' paragraph in a LaTeX document.
+% \end{semitic}  
+% More text ...
+%           .
+%           .
+%           .
+%
+% NOTES:
+%   * There is now no need to put only 1 hebrew word on a line. Treat the
+%     Hebrew text as `normal' text.                    
+%   * There can be no space between `\end' and `{semitic}' in
+%     `\end{semitic}' (similar to the verbatim environment).
+%   * To keep something together enclose it in braces, e.g., {text together}
+%     This will stop it being broken over a line but the contents
+%     will still be reversed. If more than 1 word then place a ~ between
+%     words to maintain space.
+%   * To keep something together and to STOP IT BEING REVERSED enclose it
+%     in 2 sets of braces, e.g.,
+%        {{$\sin(\theta + \frac{\pi}{2}) = \cos \theta$}}
+%   * The text is processed in LR mode and then formed into lines. Anything
+%     that starts a new paragraph, e.g., displayed maths, will cause problems.
+%     This also mean that no blank lines can appear in the environment.
+%   * A new paragraph is started before and after the semitic environment.
+
+\font\ivrit=redis10
+\hyphenchar\ivrit=-1
+\font\hebbf=redisbx10
+\hyphenchar\hebbf=-1
+\font\hebsl=rediss10
+\hyphenchar\hebsl=-1
+
+% The two lines below are taken from D. Knuth and P. MacKay         
+%     TuGBoat vol.8,#1,page 14.         
+% Use \hebrew{hebrew~text} for short hebrew passages.
+\gdef\hebrew#1\relax{{\ivrit\reflect#1\empty\tcelfer}}
+\gdef\reflect#1#2\tcelfer{\ifx#1\empty\else\reflect#2\tcelfer#1\fi}
+
+\def\ivrconcat#1#2{#1 #2}  
+
+\newbox\ivrbox        % The Semitic box to test full line condition
+\newbox\ivrstrbox     % The box to hold the current Semitic string
+\setbox\ivrbox=\hbox{}
+\setbox\ivrstrbox=\hbox{}
+
+\def\@esemitic{\end{semitic}}  % Used for checking end of environment
+
+\def\semitic{\par\ivrit\let\bf=\hebbf\let\sl=\hebsl
+             \parindent=0pt\@makesemiticline}
+\def\endsemitic{\par}
+
+% \@makesemitic line reads in a word at a time (a word is taken as text
+% terminated by 1 or more spaces).                              
+% It will then take this word and reverse it (using \reflect) and add it
+% to the FRONT of the line being made. If this word makes the line too
+% long (> \linewidth) then the line is broken before this word and this
+% word is added to the next line.
+
+\def\@makesemiticline#1 {\def\@word{#1}\relax
+     \ifx\@word\empty               % removes CR
+        \let\next=\@makesemiticline
+     \else
+        \ifx\@esemitic\@word         % i.e., read in \end{semitic}
+           \let\next=\@esemitic      % will finish off semitic environment
+           \hbox to\hsize{\hfil \unhbox\ivrstrbox \unskip}
+        \else                       % semitic word
+          \ifdim\wd\ivrstrbox=0pt   % i.e., contains nothing therefore
+                                    % at beginning of line
+            \setbox\ivrbox=\hbox{\reflect#1\empty\tcelfer}
+          \else                     % add reversed word to FRONT of line.
+            \setbox\ivrbox=\hbox{\ivrconcat{\reflect#1\empty\tcelfer
+                  }{ \unhcopy\ivrstrbox}}
+          \fi
+          \let\next=\@makesemiticline     % will loop around yet again
+          \ifdim \linewidth < \wd\ivrbox % line now too long
+             \hbox to\linewidth{\hss     % remove \hss to justify
+                    \unhcopy\ivrstrbox}
+             \setbox\ivrstrbox=\hbox{\reflect#1\empty\tcelfer}
+          \else                          % set store string to whole line
+             \setbox\ivrstrbox=\hbox{\unhcopy\ivrbox}\relax
+          \fi                                              
+        \fi
+      \fi\next}
+%%%%%%%%%%%%%%%%%%%%%%%%%%Cut with a sharp axe here%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+

@@ -1,0 +1,64 @@
+.\"	$Source: /afs/athena.mit.edu/astaff/project/zephyr/src.audited/man/man1/RCS/zlocate.1,v $
+.\"	$Author: raeburn $
+.\"	$Header: /afs/athena.mit.edu/astaff/project/zephyr/src.audited/man/man1/RCS/zlocate.1,v 1.8 90/05/17 04:28:14 raeburn Exp $
+.\"
+.\" Copyright 1987,1988 by the Massachusetts Institute of Technology
+.\" All rights reserved.  The file /usr/include/zephyr/mit-copyright.h
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"
+.TH ZLOCATE 1 "April 17, 1990" "MIT Project Athena"
+.ds ]W MIT Project Athena
+.SH NAME
+zlocate \- find a user using Zephyr
+.SH SYNOPSIS
+.B zlocate
+[
+.B -a
+| 
+.B -d
+] user ...
+.SH DESCRIPTION
+.I Zlocate
+uses the
+.I Zephyr(1)
+Notification Service to find where a user is currently logged in.  If
+the user is not logged in, or has set his location information such that
+you do not have access to see it,
+.I zlocate
+prints "Hidden or not logged-in".  Otherwise, each machine that the
+user is currently logged into is printed, along with the time of
+login and location.  The location is usually the X window system display
+name of the user's display, but may be the terminal name if he is not
+using X or for some other reason is only using the terminal interface to
+.I zwgc(1).
+
+By default, all zlocate requests are authenticated using
+.IR Kerberos .
+If you do not have kerberos tickets, or for some other reason do not
+want to authenticate, the
+.B -d
+option will turn off authentication.  The
+.B -a
+option is the default, authentication on.
+
+.SH DIAGNOSTICS
+.I zlocate
+exits with status zero (0) if at least one user was found, and one (1)
+if no users were found.
+.SH SEE ALSO
+zctl(1), zephyr(1), znol(1), zwgc(1), zhm(8), zephyrd(8), X(1)
+.br
+Project Athena Technical Plan Section E.4.1, `Zephyr Notification
+Service'
+.SH AUTHORS
+.PP
+Robert S. French (MIT-Project Athena)
+.br
+Marc Horowitz (MIT-Project Athena)
+.SH RESTRICTIONS
+Copyright (c) 1987,1988 by the Massachusetts Institute of Technology.
+All Rights Reserved.
+.br
+.I zephyr(1)
+specifies the terms and conditions for redistribution.

@@ -1,0 +1,4 @@
+#!/bin/sh
+prefix -U /t/t-arson
+prefix -U /t/t-arson2
+prefix -U /t/t-arson3

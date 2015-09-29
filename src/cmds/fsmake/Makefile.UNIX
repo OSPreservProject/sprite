@@ -1,0 +1,29 @@
+
+CFLAGS=         -g -Bstatic \
+		    -I/usr/include -I. -I../sproot/sprite/lib/include \
+                    -I../sproot/sprite/lib/include/kernel \
+                    -I../sproot/sprite/lib/include/sun3.md \
+                    -I../sproot/sprite/lib/include/kernel/sun3.md
+
+OBJS=           fsmake.o disklabel.o Host_ByID.o Host_ByName.o \
+                Host_End.o Host_Next.o Host_Start.o option.o diskPrint.o \
+                diskHeader.o diskIO.o
+
+
+fsmake:         $(OBJS)
+                $(CC) -g -o fsmake $(OBJS)
+
+fsmake.o:       fsmake.c
+
+disklabel.o:    disklabel.c
+
+Host_ByID.o:    Host_ByID.c
+Host_ByName.o:  Host_ByName.c
+Host_End.o:     Host_End.c
+Host_Next.o:    Host_Next.c
+Host_Start.o:   Host_Start.c
+option.o:       option.c
+diskPrint.o:    diskPrint.c
+diskHeader.o:   diskHeader.c
+diskIO.o:       diskIO.c
+

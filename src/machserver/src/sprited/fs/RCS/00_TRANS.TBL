@@ -1,0 +1,15 @@
+F FS.H_V;1                          	fs.h,v
+F FSATTRIB.C_V;1                    	fsAttributes.c,v
+F FSCOMMAN.C_V;1                    	fsCommand.c,v
+F FSINIT.C_V;1                      	fsInit.c,v
+F FSNAMEOP.C_V;1                    	fsNameOps.c,v
+F FSOPTABL.C_V;1                    	fsOpTable.c,v
+F FSPAGEOP.C_V;1                    	fsPageOps.c,v
+F FSSELECT.C_V;1                    	fsSelect.c,v
+F FSSOCKET.C_N;1                    	fsSocketStubs.c,NOTUSED
+F FSSTAT.H_V;1                      	fsStat.h,v
+F FSSTREAM.C_V;1                    	fsStreamOps.c,v
+F FSSYSCAL.C_V;1                    	fsSysCall.c,v
+F FSTOPMIG.C_V;1                    	fsTopMigrate.c,v
+F FSTOPSTR.C_V;1                    	fsTopStream.c,v
+F FSUNIXST.H_V;1                    	fsUnixStubs.h,v

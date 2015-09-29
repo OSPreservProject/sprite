@@ -1,0 +1,68 @@
+
+
+
+LFSRECOV                  User Commands                  LFSRECOV
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     lfsrecov - Roll lfs disk forward after a crash.
+
+SSYYNNOOPPSSIISS
+     llffssrreeccoovv [_o_p_t_i_o_n_s] ddeevviicceeNNaammee
+
+OOPPTTIIOONNSS
+     --wwrriittee _f_i_l_e    Write changes to disk.
+
+     --mmeemmAAvvaaiill _k_b_y_t_e_s
+                    Kilobytes of memory available to the recovery
+                    program.
+
+     --ssttaattss         Write stats to disk.
+
+     --ssttaattDDiirr _d_i_r_e_c_t_o_r_y
+                    Directory to put stats from recovery.
+
+     Debugging and testing options:
+
+     --sshhoowwLLoogg       Show contents of log being processed.
+
+     --vveerrbboossee       Output progress messages during execution.
+
+     --rreeccrreeaatteeDDiirrEEnnttrriieess
+                    For  testing,  recreate  any  directory  from
+                    checkpoint.
+
+     --tteessttCChheecckk     For testing, check against checkpoint.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     LLffssrreeccoovv is used during system boot to recover  the  changes
+     made  between  the  last checkpoint operation and the system
+     crash.  It assumes that the only problem with the file  sys-
+     tem  is that the checkpoint was not the last operation writ-
+     ten to the log.
+
+KKEEYYWWOORRDDSS
+     lfs, disk, recovery
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 19, 1992                    1
+
+
+

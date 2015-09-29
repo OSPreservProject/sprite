@@ -1,0 +1,132 @@
+
+
+
+RNMAIL                    User Commands                    RNMAIL
+
+
+
+NNAAMMEE
+     Rnmail - a program for replying via mail
+
+SSYYNNOOPPSSIISS
+     RRnnmmaaiill ddeessttiinnaattiioonn__lliisstt
+       or
+     RRnnmmaaiill --hh hheeaaddeerrffiillee [[oollddaarrttiiccllee]]
+       or
+     RRnnmmaaiill
+
+DDEESSCCRRIIPPTTIIOONN
+     Rnmail is a friendly interface for mailing replies to news
+     articles.  It will ask several questions, then allow you to
+     enter your letter, and then mail it off.  If you type h and
+     a carriage return at any point, _R_n_m_a_i_l will tell you what it
+     wants to know.
+
+     The -h form is used when invoked from _r_n.  If your editor
+     can edit multiple files, and you want the article to which
+     you are replying to show up as an alternate file, define the
+     environment variable MAILPOSTER as "Rnmail -h %h %A".  You
+     can also modify the the MAILHEADER environment variable to
+     change the header file that _r_n passes to Rnmail.
+
+EENNVVIIRROONNMMEENNTT
+     DOTDIR  If defined, specifies a place other than your home
+             directory where 'dot' files may be stored.  This is
+             primarily for accounts which are shared by more than
+             one person.
+
+             Default: $HOME
+
+     EDITOR  The editor you want to use, if VISUAL is undefined.
+
+             Default: whatever your news administrator installed,
+             usually vi.
+
+     HOME    Your home directory.
+
+             Default: $LOGDIR
+
+     LOGDIR  Your home directory if HOME is undefined.
+
+     LOGNAME Your login name, if USER is undefined.
+
+             Default: value of "whoami".
+
+     MAILRECORD
+             If defined, contains the name of a file to which the
+             finished message will be appended.
+
+             Default: message not saved
+
+
+
+Sprite v1.0                   LOCAL                             1
+
+
+
+
+
+
+RNMAIL                    User Commands                    RNMAIL
+
+
+
+     ORGANIZATION
+             Either the name of your organization, or the name of
+             a file containing the name of your organization.
+
+             Default: whatever your news administrator chose.
+
+     USER    Your login name.
+
+             Default: $LOGNAME
+
+     VISUAL  The editor you want to use.
+
+             Default: $EDITOR
+
+FFIILLEESS
+     $DOTDIR/.letter
+     ~/dead.letter
+
+SSEEEE AALLSSOO
+     rn(1), Pnews(1), mail(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+BBUUGGSS
+     Uses /bin/mail in the absence of sendmail.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                   LOCAL                             2
+
+
+

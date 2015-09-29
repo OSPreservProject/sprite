@@ -1,0 +1,4 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk
+F MEMPC.S;1                         	memPC.s
+F MEMPC.S_V;1                       	memPC.s,v

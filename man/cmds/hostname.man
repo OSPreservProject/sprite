@@ -1,0 +1,32 @@
+' $Header: /sprite/src/cmds/hostname/RCS/hostname.man,v 1.5 90/04/19 20:02:47 mgbaker Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS HOSTNAME cmds
+.BS
+.SH NAME
+hostname \- Print name or sprite ID of host
+.SH SYNOPSIS
+\fBhostname\fR [\fB\-v\fB] [\fB\-p\fB] [\fB\-i\fB] [\fB\-type\fB]
+.SH OPTIONS
+.IP "\fB\-v\fR"
+Print out information about the virtual host, which is the host on which
+the process is executing if it is not migrated, or the process's
+home node if it is migrated.  This is the default.
+.IP "\fB\-p\fR"  
+Print out information about the physical host, which is the host on which
+the process is physically executing, regardless of whether it is migrated.
+.IP "\fB\-i\fR"
+Print out sprite ID instead of host name.
+.IP "\fB\-type\fR"
+Print out the machine type.
+.BE
+.SH DESCRIPTION
+.LP
+By default, \fBhostname\fR prints out the official name of the host on
+which the process ``appears'' to be executing, 
+as specified in the 
+host description file.  (This is equivalent to the \fB\-v\fR, or virtual host, 
+option.)  Other options may be used to specify that information about the host 
+on which the process is currently physically executing be printed, or that 
+the integer sprite ID of the host is to be printed instead of host name.   
+.SH KEYWORDS
+host, name, migration, physical host, virtual host

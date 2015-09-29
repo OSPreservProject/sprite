@@ -1,0 +1,265 @@
+%!PS-Adobe-2.0
+%%Pages: (atend)
+%%Creator: dvips 5.47 Copyright 1986-91 Radical Eye Software
+%%Title: refbase.dvi
+%%BoundingBox: 0 0 596 843
+%%DocumentFonts: Helvetica-BoldOblique Helvetica-Bold Times-Roman Courier-Bold
+%%+ Helvetica Times-Italic
+%%EndComments
+%%BeginProcSet: tex.pro
+/TeXDict 200 dict def TeXDict begin /N /def load def /B{bind def}N /S /exch
+load def /X{S N}B /TR /translate load N /isls false N /vsize 10 N /@rigin{
+isls{[0 1 -1 0 0 0]concat}if 72 Resolution div 72 VResolution div neg scale
+Resolution VResolution vsize neg mul TR matrix currentmatrix dup dup 4 get
+round 4 exch put dup dup 5 get round 5 exch put setmatrix}N /@letter{/vsize 10
+N}B /@landscape{/isls true N /vsize -1 N}B /@a4{/vsize 10.6929133858 N}B /@a3{
+/vsize 15.5531 N}B /@ledger{/vsize 16 N}B /@legal{/vsize 13 N}B /@manualfeed{
+statusdict /manualfeed true put}B /@copies{/#copies X}B /FMat[1 0 0 -1 0 0]N
+/FBB[0 0 0 0]N /nn 0 N /IE 0 N /ctr 0 N /df-tail{/nn 8 dict N nn begin
+/FontType 3 N /FontMatrix fntrx N /FontBBox FBB N string /base X array
+/BitMaps X /BuildChar{CharBuilder}N /Encoding IE N end dup{/foo setfont}2
+array copy cvx N load 0 nn put /ctr 0 N[}B /df{/sf 1 N /fntrx FMat N df-tail}
+B /dfs{div /sf X /fntrx[sf 0 0 sf neg 0 0]N df-tail}B /E{pop nn dup definefont
+setfont}B /ch-width{ch-data dup length 5 sub get}B /ch-height{ch-data dup
+length 4 sub get}B /ch-xoff{128 ch-data dup length 3 sub get sub}B /ch-yoff{
+ch-data dup length 2 sub get 127 sub}B /ch-dx{ch-data dup length 1 sub get}B
+/ch-image{ch-data dup type /stringtype ne{ctr get /ctr ctr 1 add N}if}B /id 0
+N /rw 0 N /rc 0 N /gp 0 N /cp 0 N /G 0 N /sf 0 N /CharBuilder{save 3 1 roll S
+dup /base get 2 index get S /BitMaps get S get /ch-data X pop /ctr 0 N ch-dx 0
+ch-xoff ch-yoff ch-height sub ch-xoff ch-width add ch-yoff setcachedevice
+ch-width ch-height true[1 0 0 -1 -.1 ch-xoff sub ch-yoff .1 add]{ch-image}
+imagemask restore}B /D{/cc X dup type /stringtype ne{]}if nn /base get cc ctr
+put nn /BitMaps get S ctr S sf 1 ne{dup dup length 1 sub dup 2 index S get sf
+div put}if put /ctr ctr 1 add N}B /I{cc 1 add D}B /bop{userdict /bop-hook
+known{bop-hook}if /SI save N @rigin 0 0 moveto}N /eop{clear SI restore
+showpage userdict /eop-hook known{eop-hook}if}N /@start{userdict /start-hook
+known{start-hook}if /VResolution X /Resolution X 1000 div /DVImag X /IE 256
+array N 0 1 255{IE S 1 string dup 0 3 index put cvn put}for}N /p /show load N
+/RMat[1 0 0 -1 0 0]N /BDot 260 string N /rulex 0 N /ruley 0 N /v{/ruley X
+/rulex X V}B /V statusdict begin /product where{pop product dup length 7 ge{0
+7 getinterval(Display)eq}{pop false}ifelse}{false}ifelse end{{gsave TR -.1 -.1
+TR 1 1 scale rulex ruley false RMat{BDot}imagemask grestore}}{{gsave TR -.1
+-.1 TR rulex ruley scale 1 1 false RMat{BDot}imagemask grestore}}ifelse B /a{
+moveto}B /delta 0 N /tail{dup /delta X 0 rmoveto}B /M{S p delta add tail}B /b{
+S p tail}B /c{-4 M}B /d{-3 M}B /e{-2 M}B /f{-1 M}B /g{0 M}B /h{1 M}B /i{2 M}B
+/j{3 M}B /k{4 M}B /w{0 rmoveto}B /l{p -4 w}B /m{p -3 w}B /n{p -2 w}B /o{p -1 w
+}B /q{p 1 w}B /r{p 2 w}B /s{p 3 w}B /t{p 4 w}B /x{0 S rmoveto}B /y{3 2 roll p
+a}B /bos{/SS save N}B /eos{clear SS restore}B end
+%%EndProcSet
+%%BeginProcSet: texps.pro
+TeXDict begin /rf{655360 div mul Resolution mul 7227 div /PixPerEm X findfont
+dup length 1 add dict /nn X{1 index /FID ne{nn 3 1 roll put}{pop pop}ifelse}
+forall 256 dict begin nn /Encoding get 0 1 255{2 copy get 3 index 2 index get
+1000 mul PixPerEm div def pop}for pop pop nn /Metrics currentdict put end
+/fontname X /nn dup nn definefont[PixPerEm 0 0 PixPerEm neg 0 0]makefont N
+fontname{/foo setfont}2 array copy cvx N fontname load 0 nn put}N
+/ObliqueSlant{dup sin S cos div neg}B /SlantFont{/foo X[1 0 foo 1 0 0]
+TransFont}N /ExtendFont{/foo X 3 2 roll[S{foo div}forall]3 1 roll[foo 0 0 1 0
+0]TransFont}N /TransFont{S findfont S makefont dup length dict /nn X{1 index
+/FID ne{nn 3 1 roll put}{pop pop}ifelse}forall dup nn definefont pop}N end
+%%EndProcSet
+TeXDict begin 1000 300 300 @start /Fa 1 26 df<07FFFE001FFFFF003FFFFF007FFFFE00
+70630000C0C3000080C7000000C6000001C600000186000003860000038F0000038F0000070F00
+00070F00000F0F00000F0780001E0780001E0780000C03000019147F931A>25
+D E /Fb [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 11 15 19 23 23 38 36 15 15 15 23 31 11 15 11
+13 23 23 23 23 23 23 23 23 23 23 15 15 31 31 31 23 42 28 28
+30 33 28 28 33 33 15 20 30 25 38 30 33 28 33 28 23 25 33 28
+38 28 25 25 18 13 18 19 23 15 23 23 20 23 20 13 23 23 13 13
+20 13 33 23 23 23 23 18 18 13 23 20 30 20 20 18 18 13 18 25
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 18 23 23 8 23 23 23 23 10 25 23 15 15 23 23 0 23 23
+23 11 0 24 16 15 25 25 23 41 46 0 23 0 15 15 15 15 15 15 15
+15 0 15 15 0 15 15 15 41 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 41
+0 13 0 0 0 0 25 33 43 14 0 0 0 0 0 30 0 0 0 13 0 0 13 23 30
+23 0 0 0 0 ] /Times-Italic 1000 720896 rf /Fc [ 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 14 20
+23 23 37 30 12 14 14 16 24 12 14 12 12 23 23 23 23 23 23 23
+23 23 23 14 14 24 24 24 25 40 30 30 30 30 28 25 32 30 12 23
+30 25 35 30 32 28 32 30 28 25 30 28 39 28 28 25 14 12 14 24
+23 12 23 25 23 25 23 14 25 25 12 12 23 12 37 25 25 25 25 16
+23 14 25 23 32 23 23 21 16 12 16 24 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 14 23 23 7 23 23
+23 23 10 21 23 14 14 25 25 0 23 23 23 12 0 23 15 12 21 21 23
+42 42 0 25 0 14 14 14 14 14 14 14 14 0 14 14 0 14 14 14 42
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 42 0 15 0 0 0 0 25 32 42 15
+0 0 0 0 0 37 0 0 0 12 0 0 12 25 39 25 0 0 0 0 ] /Helvetica-Bold
+1000 655360 rf /Fd 2 122 df<0003FF0000000FFFC000003E01F00000F8007C0001E0001E00
+038000070007000003800E000001C00C000000C01C000000E03800000070300000003030000000
+30700000003860000000186000000018E00000001CC00000000CC00000000CC00000000CC00000
+000CC00000000CC00000000CC00000000CC00000000CC00000000CE00000001C60000000186000
+00001870000000383000000030300000003038000000701C000000E00C000000C00E000001C007
+00000380038000070001E0001E0000F8007C00003E01F000000FFFC0000003FF0000262B7DA02D
+>13 D<03000780078007800780078007800300030003007B78FFFCFFFC7B780300030007800780
+078007800780078007800780078007800780078007800780078007800780078007800300030003
+0003000300030003000E2A7D9F15>121 D E /Fe [ 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 12 15 23
+23 37 28 9 14 14 16 24 12 14 12 12 23 23 23 23 23 23 23 23
+23 23 12 12 24 24 24 23 42 28 28 30 30 28 25 32 30 12 21 28
+23 35 30 32 28 32 30 28 25 30 28 39 28 28 25 12 12 12 19 23
+9 23 23 21 23 23 12 23 23 9 9 21 9 35 23 23 23 23 14 21 12
+23 21 30 21 21 21 14 11 14 24 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 14 23 23 7 23 23 23 23
+8 14 23 14 14 21 21 0 23 23 23 12 0 22 15 9 14 14 23 42 42
+0 25 0 14 14 14 14 14 14 14 14 0 14 14 0 14 14 14 42 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 42 0 15 0 0 0 0 23 32 42 15 0 0 0
+0 0 37 0 0 0 12 0 0 9 25 39 25 0 0 0 0 ] /Helvetica 1000 655360
+rf /Ff [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 14 17 24 28 28 44 36 14 17 17 19 29 14 17 14
+14 28 28 28 28 28 28 28 28 28 28 17 17 29 29 29 30 49 36 36
+36 36 33 30 39 36 14 28 36 30 41 36 39 33 39 36 33 30 36 33
+47 33 33 30 17 14 17 29 28 14 28 30 28 30 28 17 30 30 14 14
+28 14 44 30 30 30 30 19 28 17 30 28 39 28 28 25 19 14 19 29
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 17 28 28 8 28 28 28 28 12 25 28 17 17 30 30 0 28 28
+28 14 0 28 17 14 25 25 28 50 50 0 30 0 17 17 17 17 17 17 17
+17 0 17 17 0 17 17 17 50 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 50
+0 18 0 0 0 0 30 39 50 18 0 0 0 0 0 44 0 0 0 14 0 0 14 30 47
+30 0 0 0 0 ] /Helvetica-BoldOblique 1000 786432 rf /Fg [ 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 9 12 15 19 19 31 29 12 12 12 19 21 9 12 9 10 19 19 19 19
+19 19 19 19 19 19 10 10 21 21 21 17 34 27 25 25 27 23 21 27
+27 12 15 27 23 33 27 27 21 27 25 21 23 27 27 35 27 27 23 12
+10 12 18 19 12 17 19 17 19 17 12 19 19 10 10 19 10 29 19 19
+19 19 12 15 10 19 19 27 19 19 17 18 7 18 20 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 19 19
+6 19 19 19 19 7 17 19 12 12 21 21 0 19 19 19 9 0 17 13 12 17
+17 19 37 37 0 17 0 12 12 12 12 12 12 12 12 0 12 12 0 12 12
+12 37 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 33 0 10 0 0 0 0 23 27
+33 12 0 0 0 0 0 25 0 0 0 10 0 0 10 19 27 19 0 0 0 0 ] /Times-Roman
+1000 589824 rf /Fh [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 27 27 27 27 27 27 27 27 27 27 27
+27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27
+27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27
+27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27
+27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27 27
+27 27 27 27 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 27 27 27 27 27 27 27 27 27 27 27 27 27
+0 0 0 27 27 27 27 0 27 27 27 27 27 27 27 0 0 27 0 27 27 27
+27 27 27 27 27 0 27 27 0 27 27 27 27 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 27 0 0 0 0 27 27 0 27 0 0 0 0 0 0 0 0 0 27 0
+0 27 27 0 27 0 0 0 0 ] /Courier-Bold 1000 720896 rf /Fi [ 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 11 15 19 23 23 38 36 15 15 15 23 26 11 15 11 13 23 23 23
+23 23 23 23 23 23 23 13 13 26 26 26 20 42 33 30 30 33 28 25
+33 33 15 18 33 28 41 33 33 25 33 30 25 28 33 33 43 33 33 28
+15 13 15 21 23 15 20 23 20 23 20 15 23 23 13 13 23 13 36 23
+23 23 23 15 18 13 23 23 33 23 23 20 22 9 22 25 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 15
+23 23 8 23 23 23 23 8 20 23 15 15 25 25 0 23 23 23 11 0 21
+16 15 20 20 23 46 46 0 20 0 15 15 15 15 15 15 15 15 0 15 15
+0 15 15 15 46 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 41 0 13 0 0 0
+0 28 33 41 14 0 0 0 0 0 30 0 0 0 13 0 0 13 23 33 23 0 0 0 0
+] /Times-Roman 1000 720896 rf /Fj [ 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 13 15 22 25 25 41 33
+13 15 15 18 27 13 15 13 13 25 25 25 25 25 25 25 25 25 25 15
+15 27 27 27 28 45 33 33 33 33 30 28 36 33 13 25 33 28 38 33
+36 30 36 33 30 28 33 30 43 30 30 28 15 13 15 27 25 13 25 28
+25 28 25 15 28 28 13 13 25 13 41 28 28 28 28 18 25 15 28 25
+36 25 25 23 18 13 18 27 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 15 25 25 8 25 25 25 25 11 23
+25 15 15 28 28 0 25 25 25 13 0 25 16 13 23 23 25 46 46 0 28
+0 15 15 15 15 15 15 15 15 0 15 15 0 15 15 15 46 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 46 0 17 0 0 0 0 28 36 46 17 0 0 0 0 0 41
+0 0 0 13 0 0 13 28 43 28 0 0 0 0 ] /Helvetica-Bold 1000 720896
+rf /Fk [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 20 23 33 39 39 63 51 20 23 23 27 41 20 23 20
+20 39 39 39 39 39 39 39 39 39 39 23 23 41 41 41 43 69 51 51
+51 51 47 43 55 51 20 39 51 43 59 51 55 47 55 51 47 43 51 47
+67 47 47 43 23 20 23 41 39 20 39 43 39 43 39 23 43 43 20 20
+39 20 63 43 43 43 43 27 39 23 43 39 55 39 39 35 27 20 27 41
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 23 39 39 12 39 39 39 39 17 35 39 23 23 43 43 0 39 39
+39 20 0 39 25 20 35 35 39 71 71 0 43 0 23 23 23 23 23 23 23
+23 0 23 23 0 23 23 23 71 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 71
+0 26 0 0 0 0 43 55 71 26 0 0 0 0 0 63 0 0 0 20 0 0 20 43 67
+43 0 0 0 0 ] /Helvetica-BoldOblique 1000 1114112 rf end
+%%EndProlog
+%%BeginSetup
+%%Feature: *Resolution 300
+/isoddpage true def
+/orig-showpage /showpage load def
+/showpage {
+        isoddpage not { orig-showpage } if
+        /isoddpage isoddpage not store 
+    } def
+ 
+/bop-hook {
+	/vsize -1.7071067811869999886 def
+        isoddpage 
+	{ 0.70710678118699998862 0.70710678118699998862 scale -57 60 translate }
+        { 0 445 translate}
+	ifelse
+    } def
+ 
+/end-hook{ isoddpage not { orig-showpage } if } def
+TeXDict begin @landscape
+%%EndSetup
+%%Page: ? 1
+%%OldPage: 20
+bop 1369 -101 a Ff(Perl)14 b(Reference)f(Guide)p 361 -89 1512
+3 v 355 -2 a Fk(26.)19 b(The)i(perl)f(debugger)p 355 19 1512
+2 v 354 119 a Fi(The)12 b(perl)f(symbolic)f(debugger)h(is)g(invoked)g(with)f
+Fh(perl)29 b(-d)p Fi(.)354 184 y Fh(h)269 b Fi(Prints)11 b(out)f(a)i(help)f
+(message.)354 249 y Fh(T)269 b Fi(Stack)11 b(trace.)354 314
+y Fh(s)269 b Fi(Single)11 b(steps.)354 378 y Fh(n)269 b Fi(Single)11
+b(steps)f(around)i(subroutine)e(call.)354 443 y Fh(r)269 b
+Fi(Returns)11 b(from)g(the)g(current)h(subroutine.)354 508
+y Fh(c)g Fi([)p Fe(LINE)p Fi(])134 b(Continues)10 b(\(until)h
+Fe(LINE)p Fi(,)g(or)g(another)h(breakpoint)e(or)i(exit\).)p
+354 530 112 2 v 354 585 2 56 v 368 573 a Fe(RET)p 464 585 V
+354 587 112 2 v 199 w Fi(Repeats)g(last)e Fh(s)i Fi(or)g Fh(n)p
+Fi(.)354 637 y Fh(l)g Fi([)p Fe(RANGE)p Fi(])79 b(Lists)10
+b(a)i(range)f(of)h(lines.)f Fe(RANGE)g Fi(may)g(be)g(a)h(number)n(,)g
+(start-end,)650 694 y(start+amount,)e(or)h(a)h(subroutine)e(name.)i(If)g
+(omitted,)e(lists)g(next)h(window)m(.)354 759 y Fh(f)h Fe(FILE)169
+b Fi(Switches)11 b(to)g Fe(FILE)g Fi(and)g(start)g(listing)f(it.)354
+823 y Fh(-)269 b Fi(Lists)10 b(previous)h(window)m(.)354 888
+y Fh(w)269 b Fi(Lists)10 b(window)g(around)i(current)f(line.)354
+953 y Fh(l)h Fe(SUB)171 b Fi(Lists)10 b(the)h(named)g Fe(SUB)p
+Fi(routine.)354 1018 y Fh(/)p Fe(P)m(A)m(TTERN)p Fh(/)54 b
+Fi(Forward)12 b(search)g(for)f Fe(P)m(A)m(TTERN)p Fi(.)354
+1082 y Fh(?)p Fe(P)m(A)m(TTERN)p Fh(?)54 b Fi(Backward)12 b(search)g(for)g
+Fe(P)m(A)m(TTERN)p Fi(.)354 1147 y Fh(L)269 b Fi(Lists)10 b(lines)h(that)f
+(have)i(breakpoints)f(or)g(actions.)354 1212 y Fh(S)269 b Fi(List)10
+b(the)h(names)g(of)h(all)f(subroutines.)354 1277 y Fh(t)269
+b Fi(T)m(oggles)10 b(trace)i(mode.)354 1342 y Fh(b)g Fi([)p
+Fe(LINE)f Fi([)p Fe(CONDITION)p Fi(]])650 1398 y(Sets)g(breakpoint)g(at)g
+Fe(LINE)p Fi(,)g(default:)g(current)h(line.)354 1463 y Fh(b)g
+Fe(SUBNAME)e Fi([)p Fe(CONDITION)p Fi(])650 1519 y(Sets)h(breakpoint)g(at)g
+(the)g(subroutine.)354 1584 y Fh(S)269 b Fi(Lists)10 b(names)h(of)g(all)g
+(subroutines.)354 1649 y Fh(d)h Fi([)p Fe(LINE)p Fi(])134 b(Deletes)11
+b(breakpoint)g(at)g(the)g(given)g(line.)354 1713 y Fh(D)269
+b Fi(Deletes)11 b(all)g(breakpoints.)354 1778 y Fh(a)h Fe(LINE)f(COMMAND)650
+1835 y Fi(Sets)g(an)h(action)f(for)g(line.)354 1899 y Fh(A)269
+b Fi(Deletes)11 b(all)g(line)g(actions.)354 1964 y Fh(<)h Fe(COMMAND)37
+b Fi(Sets)11 b(an)h(action)f(to)g(be)g(executed)h(before)g(every)g(debugger)f
+(prompt.)354 2029 y Fh(>)h Fe(COMMAND)37 b Fi(Sets)11 b(an)h(action)f(to)g
+(be)g(executed)h(before)g(every)g Fh(s)p Fi(,)g Fh(c)g Fi(or)f
+Fh(n)h Fi(command.)354 2094 y Fh(V)g Fi([)p Fe(P)m(ACKAGE)e
+Fi([)p Fe(V)m(ARS)p Fi(])h(])650 2150 y(Lists)f(all)h(variables)g(in)g(a)h
+(package.)g(Default)g(package)g(is)e(main.)354 2215 y Fh(X)i
+Fi([)p Fe(V)m(ARS)p Fi(])116 b(Like)11 b Fh(V)p Fi(,)h(but)f(assumes)f
+(current)i(package.)354 2280 y Fh(!)g Fi([)g([-])p Fe(NUMBER)p
+Fi(])650 2336 y(Redo)f(a)h(debugging)e(command.)h(Default)h(is)e(previous)h
+(command.)354 2401 y Fh(H)h Fi([-)p Fe(NUMBER)p Fi(])31 b(Displays)10
+b(the)h(last)g(-)p Fe(NUMBER)f Fi(commands)h(of)g(more)g(than)g(one)h(letter)
+m(.)354 2466 y Fh(q)269 b Fi(Quits.)10 b(Y)-5 b(ou)12 b(may)f(also)g(use)g
+(your)p 1199 2423 114 2 v 1199 2479 2 57 v 25 w Fe(EOF)p 1311
+2479 V 1199 2481 114 2 v 26 w Fi(character)m(.)354 2530 y Fe(COMMAND)76
+b Fi(Executes)11 b Fe(COMMAND)f Fi(as)i(a)f(perl)h(statement.)354
+2595 y Fh(p)g Fe(EXPR)p Fd(y)122 b Fi(Prints)11 b Fe(EXPR)p
+Fi(.)354 2660 y Fh(=)h Fi([)p Fe(ALIAS)f(V)m(ALUE)p Fi(])650
+2716 y(Sets)g(alias,)h(or)f(lists)f(current)i(aliases.)p 361
+3018 1512 3 v 1818 3065 a Ff(18)p eop
+%%Page: ? 2
+%%OldPage: 21
+bop 361 -101 a Ff(Perl)14 b(Reference)f(Guide)p 361 -89 1512
+3 v 354 -12 a Fi(Perl)f(Reference)i(Guide)d(Revision)g(4.010.1.8)1242
+-13 y(c)1230 -12 y Fd(\015)p Fi(1989,1990,1991)g(Johan)f(V)m(romans)p
+361 3018 V 361 3065 a Ff(19)p eop
+%%Trailer
+end
+userdict /end-hook known{end-hook}if
+%%EOF
+%%Pages: 2

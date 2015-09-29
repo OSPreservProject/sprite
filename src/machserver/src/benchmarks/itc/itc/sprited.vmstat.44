@@ -1,0 +1,31 @@
+MEMORY STATS:
+	Page Size:	4096    
+	Memory Size:	32768   
+	Sync calls:	0       
+PAGER STATS:
+	Full pages reads:	2387    	Partial:	0       
+	Pages zero-filled:	19653   
+	Read request time: 57.844	Avg:	2.62 ms
+		Read copy time: 26.766
+	Pages written:	0       
+		(cleaned:	0       )
+	Write request time: 0.000	Avg:	0.00 ms
+	init: 1964 calls, 0.766 sec (0.39 ms avg.)
+		forced init: 0 calls
+	terminate: 1964 calls, 2.406 sec (1.23 ms avg.)
+	return calls: 0
+	lock complete: 0 calls, 0.000 sec (0.00 ms avg.)
+SEGMENT STATS:
+	Segments created:	1964    	Destroyed:	1964    
+	Queue overflows:	0       
+	Segment lookups:	0       
+	Segments looked at:	0       	Avg per lookup:	0.00    
+	Segments copied: 970     	Pages copied: 12066   
+	Avg. init file: 5.84     pages	Avg. swap file: 0.00     pages
+	Time in Vm_Fork:   0+00:00:49.625    Avg per fork:	102.32   msec
+		vm_region: 1.359 (2.80     msec avg)
+		VmSegByName: 0.078 (0.16     msec avg)
+		VmSegmentCopy: 0.859 (1.77     msec avg)
+		CopyRegion: 44.750 (92.27    msec avg)
+	Source faults during copy: 68 zero 268 swap
+	Target faults during copy: 12066 zero 0 swap

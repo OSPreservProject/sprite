@@ -1,0 +1,475 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sprited:9.2.1 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     92.08.10.17.26.57;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.09.10.18.38.14;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.12.06.21.56.56;  author jhh;  state Exp;
+branches 9.2.1.1;
+next     9.1;
+
+9.1
+date     90.10.08.15.55.53;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.06.21;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.21.15.26.25;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.15.18.43.18;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.30.09.25.16;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.24.34;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.55;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.19.13.15.06;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.14.12.19.07;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.19.04;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.04.15.05.16;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.11.10.09.14;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.2.1.1
+date     91.11.15.16.00.52;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Unnamed pipe definitions.
+@
+
+
+9.4
+log
+@Transparent server recovery now available.
+@
+text
+@/*
+ * fsioPipe.h --
+ *
+ *	Declarations for anonymous pipe access.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioPipe.h,v 9.3 91/09/10 18:38:14 rab Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSIOPIPE
+#define _FSIOPIPE
+
+#include <fsio.h>
+#include <fsrecov.h>
+/*
+ * The I/O descriptor for a local anonymous pipe: FSIO_LCL_PIPE_STREAM.
+ */
+
+typedef struct Fsio_PipeIOHandle {
+    Fs_HandleHeader	hdr;		/* Standard handle header. The 'major'
+					 * field of the fileID is a generation
+					 * number. 'minor' field is unused. */
+    List_Links		clientList;	/* Client use info needed to allow
+					 * remote access after migration. */
+    Fsio_UseCounts		use;		/* Summary reference counts. */
+    int			flags;		/* FSIO_PIPE_READER_GONE, FSIO_PIPE_WRITER_GONE */
+    int			firstByte;	/* Indexes into buffer. */
+    int			lastByte;
+    int			bufSize;	/* Total number of bytes in buffer */
+    Address		buffer;		/* The buffer for the data. */
+    List_Links		readWaitList;	/* For the waiting readers of the pipe*/
+    List_Links		writeWaitList;	/* For the waiting writers on the pipe*/
+} Fsio_PipeIOHandle;			/* 68 BYTES */
+
+#define FSIO_PIPE_READER_GONE	0x1
+#define FSIO_PIPE_WRITER_GONE	0x2
+
+/*
+ * When a client re-opens a pipe it sends the following state to the server.
+ */
+typedef struct Fsio_PipeReopenParams {
+    Fs_FileID	fileID;		/* File ID of pipe to reopen. MUST BE FIRST */
+    Fsio_UseCounts use;		/* Recovery use counts */
+} Fsio_PipeReopenParams;
+
+/*
+ * Recovery testing operations.
+ */
+extern int Fsio_PipeRecovTestUseCount _ARGS_((Fsio_PipeIOHandle *handlePtr));
+
+/*
+ * Fast recov stuff.
+ */
+extern ReturnStatus Fsio_PipeSetupHandle _ARGS_((Fsrecov_HandleState *recovInfoPtr));
+
+
+/*
+ * Stream operations.
+ */
+
+extern ReturnStatus Fsio_PipeRead _ARGS_((Fs_Stream *streamPtr, 
+	Fs_IOParam *readPtr, Sync_RemoteWaiter *waitPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_PipeWrite _ARGS_((Fs_Stream *streamPtr, 
+	Fs_IOParam *writePtr, Sync_RemoteWaiter *waitPtr, 
+	Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_PipeIOControl _ARGS_((Fs_Stream *streamPtr, 
+	Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_PipeSelect _ARGS_((Fs_HandleHeader *hdrPtr, 
+	Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr, 
+	int *exceptPtr));
+extern ReturnStatus Fsio_PipeGetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+	int clientID, register Fs_Attributes *attrPtr));
+extern ReturnStatus Fsio_PipeSetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+	Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fsio_PipeMigClose _ARGS_((Fs_HandleHeader *hdrPtr, 
+	int flags));
+extern ReturnStatus Fsio_PipeMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+	int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+	Address *dataPtr));
+extern ReturnStatus Fsio_PipeMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, 
+	int size, ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus Fsio_PipeReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+	int clientID, ClientData inData, int *outSizePtr, 
+	ClientData *outDataPtr));
+extern void Fsio_PipeClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+extern Boolean Fsio_PipeScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+
+extern ReturnStatus Fsio_PipeClose _ARGS_((Fs_Stream *streamPtr, int clientID,
+	Proc_PID procID, int flags, int dataSize, ClientData closeData));
+
+#endif /* _FSIOPIPE */
+@
+
+
+9.3
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsioPipe.h,v 9.2 90/12/06 21:56:56 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d23 1
+d54 11
+@
+
+
+9.2
+log
+@Added sosp tracing code
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsioPipe.h,v 9.1 90/10/08 15:55:53 mendel Exp Locker: jhh $ SPRITE (Berkeley)
+a84 1
+#ifdef SOSP91 
+a85 4
+	Proc_PID procID, int flags, int dataSize, ClientData closeData,
+	int *offsetPtr, int *rwFlagsPtr));
+#else
+extern ReturnStatus Fsio_PipeClose _ARGS_((Fs_Stream *streamPtr, int clientID,
+a86 2
+#endif
+
+@
+
+
+9.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioPipe.h,v 9.2 90/12/06 21:56:56 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.1
+log
+@Fixed include files to use <> rather than "".
+Added function prototyping.  
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsioPipe.h,v 1.1 90/01/16 17:12:07 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d84 6
+d92 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsioPipe.h,v 8.3 89/08/21 15:26:25 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d19 2
+a20 2
+#ifndef _FSPIPE
+#define _FSPIPE
+d22 1
+a22 1
+#include "fsio.h"
+d33 1
+a33 1
+    Fsutil_UseCounts		use;		/* Summary reference counts. */
+d51 1
+a51 1
+    Fsutil_UseCounts use;		/* Recovery use counts */
+a56 13
+extern ReturnStatus Fsio_PipeRead();
+extern ReturnStatus Fsio_PipeWrite();
+extern ReturnStatus Fsio_PipeIOControl();
+extern ReturnStatus Fsio_PipeSelect();
+extern ReturnStatus Fsio_PipeGetIOAttr();
+extern ReturnStatus Fsio_PipeSetIOAttr();
+extern ReturnStatus Fsio_PipeMigClose();
+extern ReturnStatus Fsio_PipeMigOpen();
+extern ReturnStatus Fsio_PipeMigrate();
+extern ReturnStatus Fsio_PipeReopen();
+extern Boolean	    Fsio_PipeScavenge();
+extern void	    Fsio_PipeClientKill();
+extern ReturnStatus Fsio_PipeClose();
+d58 31
+a88 1
+#endif _FSPIPE
+@
+
+
+8.3
+log
+@Break up fs into many modules.    
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPipe.h,v 8.1 89/01/30 09:25:16 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.2
+log
+@Commented #endif labels.
+@
+text
+@d2 1
+a2 1
+ * fsPipe.h --
+d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPipe.h,v 8.1 89/01/30 09:25:16 brent Exp Locker: rab $ SPRITE (Berkeley)
+d22 1
+d24 1
+a24 1
+ * The I/O descriptor for a local anonymous pipe: FS_LCL_PIPE_STREAM.
+d27 2
+a28 2
+typedef struct FsPipeIOHandle {
+    FsHandleHeader	hdr;		/* Standard handle header. The 'major'
+d33 2
+a34 2
+    FsUseCounts		use;		/* Summary reference counts. */
+    int			flags;		/* PIPE_READER_GONE, PIPE_WRITER_GONE */
+d41 1
+a41 1
+} FsPipeIOHandle;			/* 68 BYTES */
+d43 2
+a44 2
+#define PIPE_READER_GONE	0x1
+#define PIPE_WRITER_GONE	0x2
+d49 1
+a49 1
+typedef struct FsPipeReopenParams {
+d51 2
+a52 2
+    FsUseCounts use;		/* Recovery use counts */
+} FsPipeReopenParams;
+d57 13
+a69 18
+extern ReturnStatus FsPipeRead();
+extern ReturnStatus FsPipeWrite();
+extern ReturnStatus FsPipeIOControl();
+extern ReturnStatus FsPipeSelect();
+extern ReturnStatus FsPipeGetIOAttr();
+extern ReturnStatus FsPipeSetIOAttr();
+extern ReturnStatus FsPipeRelease();
+extern ReturnStatus FsPipeMigEnd();
+extern ReturnStatus FsPipeMigrate();
+extern ReturnStatus FsPipeReopen();
+extern Boolean	    FsPipeScavenge();
+extern void	    FsPipeClientKill();
+extern ReturnStatus FsPipeClose();
+
+extern FsHandleHeader *FsRmtPipeVerify();
+extern ReturnStatus FsRmtPipeMigrate();
+extern ReturnStatus FsRmtPipeReopen();
+extern ReturnStatus FsRmtPipeClose();
+d71 1
+a71 1
+#endif /* _FSPIPE */
+@
+
+
+8.1
+log
+@Changed scavenge routine to a Boolean
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPipe.h,v 8.0 88/11/11 18:24:34 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d75 1
+a75 1
+#endif _FSPIPE
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPipe.h,v 7.0 88/11/07 14:47:55 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d66 1
+a66 1
+extern void	    FsPipeScavenge();
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPipe.h,v 6.2 88/10/19 13:15:06 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.2
+log
+@Changed MigStart routine to Release
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPipe.h,v 6.1 88/10/14 12:19:07 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@FsFileID FsUserID change
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPipe.h,v 6.0 88/08/11 12:19:04 brent Stable $ SPRITE (Berkeley)
+d62 1
+a62 1
+extern ReturnStatus FsPipeMigStart();
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPipe.h,v 1.2 88/08/04 15:05:16 mlgray Exp $ SPRITE (Berkeley)
+d49 1
+a49 1
+    FsFileID	fileID;		/* File ID of pipe to reopen. MUST BE FIRST */
+@
+
+
+1.2
+log
+@merging changes from fs into fs.new
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPipe.h,v 1.1 88/04/11 10:09:14 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPipe.h,v 1.1 88/04/04 10:38:28 brent Exp $ SPRITE (Berkeley)
+d32 1
+@

@@ -1,0 +1,244 @@
+# mxedit.search --
+#	Definitions for the mxedit search/replace entry
+#
+# Copyright (c) 1992 Xerox Corporation.
+# Use and copying of this software and preparation of derivative works based
+# upon this software are permitted. Any distribution of this software or
+# derivative works must comply with all applicable United States export
+# control laws. This software is made available AS IS, and Xerox Corporation
+# makes no warranty about the software, its performance or its conformity to
+# any specification.
+
+# File Globals
+# find - the name of the search/replace entry widget
+# findParent - needed to repack the find widget when making it visible
+#	We assume this is the last child widget of the parent (pack append)
+# searchState - whether or not the search entry is visible
+
+# Imported Globals
+# focus - used to change the focus after a search command
+# paleBackground - color for frame
+
+global searchState
+set searchState noFindTool
+
+# makeFindTool --
+#	This makes the search/replace entries
+
+proc makeFindTool { parent } {
+    global paleBackground
+    global find findParent
+    set find [selfName $parent ".find"]
+    set findParent $parent
+    frame $find -background $paleBackground -relief sunken -borderwidth 2
+    packFindTool
+    labeledEntry $find .target "Search:"  5 { left expand fillx frame w }
+    searchBindings $find.target.entry
+    labeledEntry $find .replace "Replace:"  5 { right expand fillx frame w }
+    replaceBindings $find.replace.entry
+}
+
+# packFindTool --
+proc packFindTool {} {
+    global find findParent
+    pack append $findParent $find { bottom fillx }
+}
+
+# hideFindTool --
+proc hideFindTool { } {
+    global find findParent
+    pack unpack $find
+}
+
+# find --
+#	This ensures that the find window is visible
+#	The find window can be either a popUp or a packed set of entries.
+
+proc find { } {
+    global focus
+    global find
+
+    showFind
+    focus $find.target.entry
+    set focus $find.target.entry
+    $find.target.entry delete 0 end
+}
+proc findClear { } { find }
+
+# searchFocus --
+#	Set the focus on the search entry
+
+proc searchFocus { } {
+    global find
+    if [catch {focus $find.target.entry}] {
+	showFind
+    }
+}
+
+# replaceClear --
+#	Clear the replace entry and move the focus there
+
+proc replaceClear { } {
+    global find
+    showFind
+    focus $find.replace.entry
+    set focus $find.replace.entry
+    $find.replace.entry delete 0 end
+}
+
+# replaceFocus --
+#	Focus on the replace entry
+
+proc replaceFocus { } {
+    global find
+    if [catch {focus $find.replace.entry}] {
+	showFind
+    }
+}
+
+# showFind --
+#	Make sure the find window is visible
+proc showFind { } {
+    global searchState
+    global find 
+    case $searchState in {
+	noFindTool {
+	    set searchState findTool
+	    makeFindTool "."
+	    focus $find.target.entry
+	    return
+	}
+	findToolHidden {
+	    set searchState findTool
+	    packFindTool
+	    focus $find.target.entry
+	    return
+	}
+	noPopUp {
+	    set searchState popUp
+	    makePopUp
+	    focus $find.target.entry
+	    return
+	}
+	popUpHidden {
+	    set searchState popUp
+	    wm deiconify $find
+	    placePopUp $find off
+	    focus $find.target.entry
+	    return
+	}
+	default {
+#		mxeditFocus
+	}
+    }
+}
+
+# hideFind --
+#	Hide the find window
+
+proc hideFind {} {
+    global searchState
+    case $searchState in {
+	popUp {
+	    set searchState popUpHidden
+	    hidePopUp
+	}
+	findTool {
+	    set searchState findToolHidden
+	    hideFindTool
+	}
+    }
+}
+
+# findInner --
+#	This makes calls to the search and replace mxedit functions
+#	Because it is invoked from menus, it also makes sure that
+#	the find window is visible
+
+proc findInner { op }  {
+    global searchState
+    global find
+
+    # If we are not searching for the selection,
+    # then make sure the find tool is visible
+    if { ! [string match {[fb]*Sel} $op] } {
+	showFind
+	set target [$find.target.entry get]
+	if {[llength "$target"] == 0} {
+	    focus $find.target.entry
+	    mxFeedback "Enter search string"
+	    return
+	}
+    }
+    if [string match {repl*} $op] {
+	set replace [$find.replace.entry get]
+	if {[llength "$replace"] == 0} {
+	    focus $find.replace.entry
+	    mxFeedback "Enter replace string"
+	    return
+	}
+    }
+    mxeditFocus
+    catch {
+	case $op in {
+	    forwSel {
+		applyToSelection {search forward}
+	    }
+	    backSel {
+		applyToSelection {search backward}
+	    }
+	    forward {
+		search forward $target
+	    }
+	    backward {
+		search backward $target
+	    }
+	    replace {
+		replace selection $replace
+	    }
+	    replaceSel {
+		replace range sel.left sel.right $target $replace
+	    }
+	    replaceEverywhere {
+		replace range 1.0 [mark eof] $target $replace
+	    }
+	}
+    } msg
+    mxFeedback $msg
+}
+
+# makePopUp --
+#	This creates a search/replace dialog box
+#	(THIS IS UNUSED - it should be moved into a separate
+#	application that can be aimed at any mxedit window)
+
+proc makePopUp { } {
+    global paleBackground
+    global file
+    global find
+
+    set find ".find"
+    toplevel $find -background $paleBackground -relief flat
+    wm title $find "Find in $file"
+    wm transient $find
+
+    buttonFrame $find .buttons
+    packedButton $find.buttons .forward "Forward" 	{ findInner forward }
+    packedButton $find.buttons .backward "Backward" 	{ findInner backward }
+    packedButton $find.buttons .replace "Replace" 	{ findInner replace }
+    packedButton $find.buttons .replaceSel "Rep. in Select." 	{ findInner replaceSel }
+    packedButton $find.buttons .quit "Dismiss" 	{ hidePopUp } right
+    labeledEntry $find .target "Search for:"  42 { top frame w }
+    searchBindings $find.target.entry
+    labeledEntry $find .replace "Replace with:"  40 { bottom frame w }
+    replaceBindings $find.replace.entry
+
+    placePopUp $find off
+}
+proc hidePopUp {} {
+    global searchState
+    global find
+    set searchState popUpHidden
+    wm withdraw $find
+}
+

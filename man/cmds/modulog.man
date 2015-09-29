@@ -1,0 +1,53 @@
+' $Header: /a/newcmds/modulog/RCS/modulog.man,v 1.3 88/12/30 09:59:40 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MODULOG cmds
+.BS
+.SH NAME
+modulog \- Modify the user log
+.SH SYNOPSIS
+\fBmodulog\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit.
+.IP "\fB\-C\fR"
+Clear all login entries for the current host.
+.IP "\fB\-p \fIport\fR"
+Port number to use when recording or invalidating a login.
+.IP "\fB\-i\fR"
+Invalidate the login entry for the current host on the specified port.
+.IP "\fB\-u \fIuser\f"
+User for whom to create a login entry.  (Defaults to current user.)
+.IP "\fB\-l \fIlocation\fR"
+Generate a new login entry, with the user's location specified by this
+argument. 
+.BE
+
+.SH INTRODUCTION
+.PP
+This program allows modification of the user log.  The caller must
+have write-access to the log database files.  \fBModulog\fR is typically
+used at boot time to invalidate old login entries.  It can also be
+used to invalidate particular entries for the host on which it is
+invoked, or create new ones.
+.PP
+If the \fB\-C\fR switch is given, then \fBmodulog\fR will invalidate login
+entries.  Otherwise, if the \fB\-i\fR and \fB\-p\fP switches are given,
+\fBmodulog\fR will invalidate only the entry corresponding to the port
+specified by the \fB\-p\fP switch.   Finally, if the \fB-p\fP,
+and \fB-l\fP switches are used together, a new login
+entry will be recorded, as if \fIuser\fP logged in from \fIlocation\fP
+on /hosts/`hostname`/dev/rlogin\fIport\fP at the time \fBmodulog\fR is run.
+To generate a login record for the console, specify a  \fIport\fP of
+0 and a location of ``''.
+\fIUser\fP defaults to the user invoking the \fBmodulog\fR program.
+.FILES
+.IP /sprite/admin/data/userLog
+The database of current logins on each host.
+.IP /sprite/admin/data/lastLog
+The database of each user's most recent login.
+.IP /hosts/`hostname`/dev/rlogin*
+Pseudo-devices used by Rlogin, corresponding to ports 1 and beyond.
+.SH KEYWORDS
+login, user log, modify
+.SH SEE ALSO
+db, ulog, login, rlogin, rlogind

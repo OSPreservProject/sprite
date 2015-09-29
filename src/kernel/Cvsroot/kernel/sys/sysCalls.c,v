@@ -1,0 +1,3414 @@
+head     9.50;
+branch   ;
+access   ;
+symbols  ds3100:9.50 sun3:9.50 sun4nw:9.43 symm:9.43 spur:9.43 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.50
+date     92.09.21.11.35.01;  author mgbaker;  state Exp;
+branches ;
+next     9.49;
+
+9.49
+date     92.08.10.23.01.49;  author mgbaker;  state Exp;
+branches ;
+next     9.48;
+
+9.48
+date     92.08.03.17.41.51;  author mgbaker;  state Exp;
+branches ;
+next     9.47;
+
+9.47
+date     92.08.03.13.37.11;  author mgbaker;  state Exp;
+branches ;
+next     9.46;
+
+9.46
+date     92.06.15.22.29.22;  author jhh;  state Exp;
+branches ;
+next     9.45;
+
+9.45
+date     92.06.01.14.37.02;  author kupfer;  state Exp;
+branches ;
+next     9.44;
+
+9.44
+date     92.04.14.17.08.19;  author jhh;  state Exp;
+branches ;
+next     9.43;
+
+9.43
+date     91.09.10.18.44.21;  author rab;  state Exp;
+branches ;
+next     9.42;
+
+9.42
+date     91.08.22.13.04.38;  author mendel;  state Exp;
+branches ;
+next     9.41;
+
+9.41
+date     91.06.27.12.13.00;  author mgbaker;  state Exp;
+branches ;
+next     9.40;
+
+9.40
+date     91.06.27.11.24.02;  author mendel;  state Exp;
+branches ;
+next     9.39;
+
+9.39
+date     91.03.30.17.21.55;  author mgbaker;  state Exp;
+branches ;
+next     9.38;
+
+9.38
+date     91.03.04.22.42.05;  author kupfer;  state Exp;
+branches ;
+next     9.37;
+
+9.37
+date     91.02.12.14.16.32;  author jhh;  state Exp;
+branches ;
+next     9.36;
+
+9.36
+date     91.02.01.16.33.45;  author shirriff;  state Exp;
+branches ;
+next     9.35;
+
+9.35
+date     91.01.26.15.36.37;  author mgbaker;  state Exp;
+branches ;
+next     9.34;
+
+9.34
+date     91.01.24.16.29.27;  author mgbaker;  state Exp;
+branches ;
+next     9.33;
+
+9.33
+date     91.01.24.16.21.07;  author mendel;  state Exp;
+branches ;
+next     9.32;
+
+9.32
+date     91.01.08.16.32.57;  author shirriff;  state Exp;
+branches ;
+next     9.31;
+
+9.31
+date     90.12.11.00.47.50;  author mgbaker;  state Exp;
+branches ;
+next     9.30;
+
+9.30
+date     90.12.11.00.43.44;  author mgbaker;  state Exp;
+branches ;
+next     9.29;
+
+9.29
+date     90.12.08.14.35.21;  author mgbaker;  state Exp;
+branches ;
+next     9.28;
+
+9.28
+date     90.12.07.15.15.16;  author mgbaker;  state Exp;
+branches ;
+next     9.27;
+
+9.27
+date     90.12.07.15.11.28;  author mgbaker;  state Exp;
+branches ;
+next     9.26;
+
+9.26
+date     90.12.06.17.38.31;  author shirriff;  state Exp;
+branches ;
+next     9.25;
+
+9.25
+date     90.11.27.12.25.40;  author mgbaker;  state Exp;
+branches ;
+next     9.24;
+
+9.24
+date     90.11.27.12.08.59;  author shirriff;  state Exp;
+branches ;
+next     9.23;
+
+9.23
+date     90.10.09.12.00.54;  author jhh;  state Exp;
+branches ;
+next     9.22;
+
+9.22
+date     90.10.02.16.21.44;  author mgbaker;  state Exp;
+branches ;
+next     9.21;
+
+9.21
+date     90.09.12.13.40.37;  author shirriff;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     90.09.11.10.50.51;  author shirriff;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     90.06.21.15.56.40;  author mgbaker;  state Exp;
+branches 9.19.1.1;
+next     9.18;
+
+9.18
+date     90.06.15.12.48.39;  author douglis;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     90.06.15.12.43.53;  author douglis;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     90.05.30.19.17.16;  author mendel;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     90.04.18.19.26.21;  author mgbaker;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     90.03.26.12.17.00;  author mgbaker;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.01.29.19.31.57;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.01.05.12.05.56;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     89.12.15.12.53.23;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     89.11.27.14.55.30;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     89.11.21.14.37.04;  author douglis;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     89.11.21.14.34.50;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     89.11.07.15.14.12;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     89.11.07.14.49.30;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.10.30.20.36.17;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.10.26.15.24.16;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.23.08.42.12;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.11.16.41.32;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.11.15.55.38;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.45;  author douglis;  state Stable;
+branches ;
+next     8.11;
+
+8.11
+date     89.08.17.17.35.35;  author jhh;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.07.31.17.59.12;  author douglis;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.19.15.19.32;  author ouster;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.07.19.14.22.24;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.04.07.10.32.56;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.04.06.11.51.35;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.17.22.59.32;  author mgbaker;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.19.22.11.53;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.05.15.41.11;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.18.14.03.53;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.13.11.25.15;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.59;  author douglis;  state Stable;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.28.19.06.25;  author mlgray;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.19.13.50.57;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.09.15.09.44;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.09.10.12.28;  author nelson;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.07.11.09.20;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.29.12.31.05;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.48;  author brent;  state Stable;
+branches ;
+next     5.16;
+
+5.16
+date     88.07.29.10.11.22;  author douglis;  state Exp;
+branches ;
+next     5.15;
+
+5.15
+date     88.07.17.23.21.28;  author douglis;  state Exp;
+branches ;
+next     5.14;
+
+5.14
+date     88.06.26.10.18.32;  author ouster;  state Exp;
+branches ;
+next     5.13;
+
+5.13
+date     88.06.17.11.01.05;  author mendel;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.05.05.18.01.19;  author nelson;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.05.04.17.23.41;  author nelson;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.01.22.16.31.39;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     87.12.15.15.26.39;  author nelson;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     87.12.13.18.54.49;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     87.12.12.16.41.48;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.02.15.09.24;  author douglis;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.12.02.10.50.40;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.11.02.13.34.54;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.21.13.06.29;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.29.18.01.08;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.03.18.39.18;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.19;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.19.1.1
+date     90.08.07.18.17.24;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.50
+log
+@New stub for changing recovery parameters.
+@
+text
+@/* 
+ * sysCalls.c --
+ *
+ *	Miscellaneous system calls that are lumped under the Sys_ prefix.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCalls.c,v 9.49 92/08/10 23:01:49 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <mach.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <sysStats.h>
+#include <time.h>
+#include <timer.h>
+#include <vm.h>
+#include <machMon.h>
+#include <proc.h>
+#include <dbg.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsprefix.h>
+#include <rpc.h>
+#include <net.h>
+#include <sched.h>
+#include <dev.h>
+#include <recov.h>
+#include <recovBox.h>
+#include <procMigrate.h>
+#include <string.h>
+#include <stdio.h>
+#include <main.h>
+#ifdef sun4
+#include <vmMach.h>
+#endif
+#ifdef sun4c
+#include <devSCSIC90.h>
+#endif /* sun4c */
+#include <user/sys/param.h>
+#include <fsrecov.h>
+
+Boolean	sys_ErrorShutdown = FALSE;
+Boolean	sys_ShuttingDown = FALSE;
+
+char	sys_HostName[MAXHOSTNAMELEN];
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetTimeOfDay --
+ *
+ *	Returns the current system time to a local user process.
+ *	If any argument is USER_NIL, that value is not returned.
+ *
+ *	The "real" time of day is returned, rather than the software
+ *	time.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_GetTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
+    Time	*timePtr;		/* Buffer to store the UT time. */
+    int		*localOffsetPtr;	/* Buffer to store the number of minutes
+					 * from UT (a negative value means you 
+					 * are west of the Prime Meridian. */
+    Boolean	*DSTPtr;		/* Buffer to store a flag that's TRUE
+					 * if DST is followed. */
+{
+    Time	curTime;
+    int		curLocalOffset;
+    Boolean	curDST;
+
+    Timer_GetRealTimeOfDay(&curTime, &curLocalOffset, &curDST);
+
+    if (timePtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(Time),
+	      (Address) &curTime, (Address) timePtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    if (localOffsetPtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(int),(Address) &curLocalOffset, 
+				(Address) localOffsetPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    if (DSTPtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(Boolean),(Address) &curDST,
+					(Address) DSTPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_SetTimeOfDay --
+ *
+ *	Changes the current system time to the value specified by
+ *	the arguments. The timePtr argument  must be valid.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	The system time is updated to a new value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_SetTimeOfDay(timePtr, localOffset, DST)
+    Time	*timePtr;	/* New value for the UT (GMT) time. */
+    int		localOffset;	/* new value for the offset in minutes 
+				 * from UT.*/
+    Boolean	DST;		/* If TRUE, DST is used at this site. */
+{
+    Time	newTime;
+
+    if (timePtr == USER_NIL || 
+        (Proc_ByteCopy(TRUE, sizeof(Time), (Address) timePtr, 
+			(Address) &newTime) != SUCCESS)) {
+	return(SYS_ARG_NOACCESS);
+    }
+    Timer_SetTimeOfDay(newTime, localOffset, DST);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetHostName --
+ *
+ *	Stub for the Sys_GetHostName system call.
+ *	Returns the name of the host.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_GetHostName(namePtr)
+    char	*namePtr;		/* Buffer to store host name. */
+{
+    int		nameLen;
+
+    nameLen = strlen(sys_HostName);
+    if (Proc_ByteCopy(FALSE, nameLen+1, (Address) sys_HostName, 
+	(Address) namePtr) != SUCCESS) {
+
+	return SYS_ARG_NOACCESS;
+    }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_SetHostName --
+ *
+ *	Stub for the Sys_SetHostName system call.
+ *	Sets the name of the host. Only the root can make this call.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *	SYS_INVALID_ARG		The name was too long.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_SetHostName(namePtr)
+    char	*namePtr;		/* Buffer to store host name. */
+{
+    char		tmp[MAXHOSTNAMELEN+1];
+    int			length;
+    Proc_ControlBlock 	*procPtr;
+
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != 0) {
+	return GEN_NO_PERMISSION;
+    }
+    if (Proc_StringNCopy(MAXHOSTNAMELEN+1, namePtr, tmp, &length) != SUCCESS) {
+	return SYS_ARG_NOACCESS;
+    }
+    /*
+     * Make sure that the name wasn't too long.
+     */
+    if (length == MAXHOSTNAMELEN+1) {
+	return SYS_INVALID_ARG;
+    }
+    strcpy(sys_HostName, tmp);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_DoNothing --
+ *
+ *	This system call simply returns SUCCESS. It does not perform any
+ *	function.
+ *
+ * Results:
+ *	SUCCESS 		This value is always returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_DoNothing()
+{
+    Sched_ContextSwitch(PROC_READY);
+    return(SUCCESS);
+}
+
+
+#define	MAX_WAIT_INTERVALS	3
+Boolean	shutdownDebug = FALSE;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_Shutdown --
+ *
+ *	This system call calls appropriate routines to shutdown
+ *	the system in an orderly fashion.
+ *
+ * Results:
+ *	SUCCESS 	This value is always returned.
+ *	SYS_ARG_NOACESS	The reboot string was inaccessible.	
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_Shutdown(flags, rebootString)
+    int		flags;
+    char	*rebootString;
+{
+    Time		waitTime;
+    int			alive;
+    int			timesWaited;
+    Boolean		userDead = FALSE;
+    char		string[100];
+    int			accLength;
+    int			strLength;
+    ReturnStatus	status;
+    Proc_ControlBlock	*procPtr;
+
+
+    if (flags & SYS_REBOOT) {
+	if (rebootString == (char *) USER_NIL) {
+	    string[0] = '\0';
+	} else {
+	    status = Proc_MakeStringAccessible(100, &rebootString, &accLength,
+						    &strLength);
+	    if (status != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+	    (void) strcpy(string, rebootString);
+	    Proc_MakeUnaccessible(rebootString, accLength);
+	}
+    }
+
+    if (flags & SYS_DEBUG) {
+	sys_ErrorShutdown = TRUE;
+    }
+
+    if (flags & SYS_KILL_PROCESSES) {
+	if (flags & SYS_WRITE_BACK) { 
+	    /*
+	     * Do a few initial syncs.
+	     * These are necessary because the cache isn't getting written
+	     * out properly with the new block cleaner.
+	     */
+	    printf("Doing initial syncs\n");
+	    Fsutil_Sync(-1, 0);
+	    Fsutil_Sync(-1, 0);
+	    Fsutil_Sync(-1, 0);
+	    printf("Done initial syncs\n");
+	}
+	/*
+	 * Turn ourselves into a kernel process since we no longer need
+	 * user process resources.
+	 */
+	procPtr = Proc_GetCurrentProc();
+	Proc_Lock(procPtr);
+#ifdef sun4
+	/*
+	 * Flush the virt addresses cache on the sun4 before turning ourselves
+	 * into a kernel process. If we don't do this we will get cache
+	 * write-back errors from dirty cache blocks of the shutdown program.
+	 */
+	Mach_FlushWindowsToStack();
+	VmMach_FlushCurrentContext();
+#endif
+	procPtr->genFlags &= ~PROC_USER;
+	procPtr->genFlags |= PROC_KERNEL;
+	Proc_Unlock(procPtr);
+	VmMach_ReinitContext(procPtr);
+
+	/*
+	 * Get rid of any migrated processes.
+	 */
+	(void) Proc_EvictForeignProcs();
+	
+	waitTime.seconds = 5;
+	waitTime.microseconds = 0;
+	while (TRUE) {
+	    if (userDead) {
+		sys_ShuttingDown = TRUE;
+	    }
+	    timesWaited = 0;
+	    while (TRUE) {
+		alive = Proc_KillAllProcesses(!userDead);
+		if (alive == 0) {
+		    break;
+		}
+		if (timesWaited >= MAX_WAIT_INTERVALS) {
+		    printf("%d %s processes still alive.\n", alive,
+				userDead ? "kernel" : "user");
+		    break;
+		}
+		timesWaited++;
+		printf("Waiting with %d %s processes still alive\n", alive,
+				userDead ? "kernel" : "user");
+		if (shutdownDebug) {
+		    DBG_CALL;
+		}
+		(void) Sync_WaitTime(waitTime);
+	    }
+	    if (userDead) {
+		break;
+	    }
+	    userDead = TRUE;
+	}
+	/*
+	 * Give this process highest priority so that no other process 
+	 * can interrupt it.
+	 */
+	(void) Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
+    }
+
+    /*
+     * Sync the disks.
+     */
+    if (flags & SYS_WRITE_BACK) {
+	printf("Syncing disks\n");
+	Fsutil_Sync(-1, flags & SYS_KILL_PROCESSES);
+    }
+
+    if (flags & SYS_HALT) {
+	Mach_MonAbort();
+    } else if (flags & SYS_REBOOT) {
+	Mach_MonReboot(string);
+    } else if (flags & SYS_DEBUG) {
+	sys_ShuttingDown = FALSE;
+	sys_ErrorShutdown = FALSE;
+	DBG_CALL;
+    }
+
+    return(SUCCESS);
+}
+
+Boolean	sys_ShouldSyncDisks = TRUE;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_SyncDisks --
+ *
+ *	This routine is called when the system encountered an error and
+ *	the disks should be synced.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ * Exported so we can deny RPC requests as we die.
+ * Otherwise we can hang RPCs if we hang trying to sync our disks.
+ */
+Boolean	sys_ErrorSync = FALSE;
+
+
+void
+Sys_SyncDisks(trapType)
+    int	trapType;
+{
+    char	*SpriteVersion();
+    
+    if (sys_ErrorSync) {
+	printf("Error type %d while syncing disks.\n", trapType);
+	sys_ShouldSyncDisks = FALSE;
+	sys_ErrorSync = FALSE;
+	DBG_CALL;
+	return;
+    }
+    if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
+        !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
+	printf("Syncing disks.  Version: %s\n", SpriteVersion());
+	sys_ErrorSync = TRUE;
+	Fsutil_Sync(-1, TRUE);
+	sys_ErrorSync = FALSE;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetMachineInfo --
+ *
+ *	Returns the machine architecture and type information.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_GetMachineInfo(archPtr, typePtr, clientIDPtr)
+    int	*archPtr;	/* Buffer to hold machine architecture #. */
+    int	*typePtr;	/* Buffer to hold machine type. */
+    int	*clientIDPtr;	/* Buffer to hold client ID. */
+{
+
+    if (archPtr != (int *) USER_NIL) {
+	int arch = Mach_GetMachineArch();
+
+	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &arch, 
+				(Address) archPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    if (typePtr != (int *) USER_NIL) {
+
+	int type = Mach_GetMachineType();
+
+	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &type, 
+				(Address) typePtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+
+    if (clientIDPtr != (int *) USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &rpc_SpriteID, 
+				(Address) clientIDPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    return(SUCCESS);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetMachineInfoNew --
+ *
+ *	Returns the machine information..
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_GetMachineInfoNew(infoSize, infoBufPtr)
+    int			infoSize;	/* Size of the info structure. */
+    Address	 	infoBufPtr;	/* Info structure to fill in */
+{
+    Sys_MachineInfo	info;
+    int			bytesToCopy;
+
+    if (infoSize < sizeof(Sys_MachineInfo)) {
+	bytesToCopy = infoSize;
+    } else {
+	bytesToCopy = sizeof(Sys_MachineInfo);
+    }
+    info.architecture = Mach_GetMachineArch();
+    info.type = Mach_GetMachineType();
+    info.processors = Mach_GetNumProcessors();
+    if (Vm_CopyOut(bytesToCopy, (Address) &info, infoBufPtr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_StatsStub --
+ *
+ *	System call stub for the Statistics hook.
+ *
+ * Results:
+ *	SUCCESS			- the data were returned.
+ *	GEN_INVALID_ARG		- if a bad argument was passed in.
+ *	?			- result from Vm_CopyOut.
+ *	
+ *
+ * Side effects:
+ *	Fill in the requested statistics.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Sys_StatsStub(command, option, argPtr)
+    int command;		/* Specifies what to do */
+    int option;			/* Modifier for command */
+    Address argPtr;		/* Argument for command */
+{
+    /*
+     * These extern decl's are temporary and should be removed when the
+     * START_STATS and END_STATS are removed.
+     */
+    extern void	Dev_StartIOStats();
+    extern void	Dev_StopIOStats();
+    extern void	Sched_StopSchedStats();
+    extern void	Sched_StartSchedStats();
+
+    ReturnStatus status = SUCCESS;
+    
+    switch(command) {
+	case SYS_GET_VERSION_STRING: {
+	    /*
+	     * option is the length of the storage referenced by argPtr.
+	     */
+	    register int length;
+	    register char *version;
+	    version = (char *)SpriteVersion();
+	    length = strlen(version) + 1;
+	    if (option <= 0) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (option < length) {
+		length = option;
+	    }
+	    status = Vm_CopyOut(length, version, argPtr);
+	    break;
+	}
+	case SYS_SYNC_STATS: {
+	    register Sync_Instrument *syncStatPtr;
+
+	    syncStatPtr = (Sync_Instrument *)argPtr;
+	    if (syncStatPtr == (Sync_Instrument *)NIL ||
+		syncStatPtr == (Sync_Instrument *)0 ||
+		syncStatPtr == (Sync_Instrument *)USER_NIL) {
+		
+		Sync_PrintStat();
+	    } else if (option <= 0) {
+		status = GEN_INVALID_ARG;
+		break;
+	    } else {
+		if (option > sizeof(sync_Instrument)) {
+		    option = sizeof(sync_Instrument);
+		}
+		status = Vm_CopyOut(option,
+				  (Address) sync_Instrument,
+				  (Address) syncStatPtr);
+	    }
+	    break;
+	}
+	case SYS_VM_STATS: {
+	    if (argPtr == (Address)NIL ||
+		argPtr == (Address)0 ||
+		argPtr == (Address)USER_NIL) {
+		return(GEN_INVALID_ARG);
+	    } else {
+		status = Vm_CopyOut(sizeof(Vm_Stat), (Address)&vmStat, argPtr);
+	    }
+	    break;
+	}
+	case SYS_SCHED_STATS: {
+	    Sched_Instrument *schedStatPtr;
+	    Time curTime;
+
+	    schedStatPtr = (Sched_Instrument *)argPtr;
+	    if (schedStatPtr == (Sched_Instrument *)NIL ||
+		schedStatPtr == (Sched_Instrument *)0 ||
+		schedStatPtr == (Sched_Instrument *)USER_NIL) {
+		
+		Sched_PrintStat();
+	    } else {
+		register int cpu;
+		for (cpu = 0; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {  
+		    Timer_TicksToTime(sched_Instrument.processor[cpu].
+						noProcessRunning,
+				  &sched_Instrument.processor[cpu].idleTime);
+		}
+		/*
+		 * If no interrupts received, dev_LastConsoleInput will
+		 * be 0, so set it to the current time.  This will happen
+		 * the first time Sched_Stats is called if there were no
+		 * keyboard interrupts already.
+		 *
+		 * Note: dev_LastConsoleInput can't be set during
+		 * initialization because the timer has not yet been
+		 * initialized.
+		 */
+		if (dev_LastConsoleInput.seconds == 0) {
+		    Timer_GetTimeOfDay(&dev_LastConsoleInput,
+				       (int *) NIL, (Boolean *) NIL);
+		}
+		Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
+		Time_Subtract(curTime, dev_LastConsoleInput,
+			      &sched_Instrument.noUserInput);
+		status = Vm_CopyOut(sizeof(Sched_Instrument),
+					  (Address)&sched_Instrument, argPtr);
+	    }
+	    break;
+	}
+	case SYS_RPC_CLT_STATS:
+	case SYS_RPC_SRV_STATS:
+	case SYS_RPC_TRACE_STATS:
+	case SYS_RPC_SERVER_HIST:
+	case SYS_RPC_CLIENT_HIST:
+	case SYS_RPC_SRV_STATE:
+	case SYS_RPC_CLT_STATE:
+	case SYS_RPC_ENABLE_SERVICE:
+	case SYS_RPC_SRV_COUNTS:
+	case SYS_RPC_CALL_COUNTS:
+	case SYS_RPC_SET_MAX:
+	case SYS_RPC_SET_NUM:
+	case SYS_RPC_NEG_ACKS:
+	case SYS_RPC_CHANNEL_NEG_ACKS:
+	case SYS_RPC_NUM_NACK_BUFS:
+	case SYS_RPC_SANITY_CHECK:
+	    status = Rpc_GetStats(command, option, argPtr);
+	    break;
+	case SYS_PROC_MIGRATION: {
+	    switch(option) {
+		/*
+		 * The first two are for backward compatibility.
+		 */
+		case SYS_PROC_MIG_ALLOW: 
+		case SYS_PROC_MIG_REFUSE: {
+		    register Proc_ControlBlock *procPtr;
+		    procPtr = Proc_GetEffectiveProc();
+		    if (procPtr->effectiveUserID != 0) {
+			status = GEN_NO_PERMISSION;
+		    } else {
+			/*
+			 * This part is simplified for now.
+			 */
+			if (option == SYS_PROC_MIG_REFUSE) {
+			    proc_AllowMigrationState &= ~PROC_MIG_IMPORT_ALL;
+			} else {
+			    proc_AllowMigrationState |= PROC_MIG_IMPORT_ALL;
+			}
+		    }
+		}
+		break;
+
+		case SYS_PROC_MIG_SET_STATE: {
+		    register Proc_ControlBlock *procPtr;
+		    int arg;
+
+		    procPtr = Proc_GetEffectiveProc();
+		    if (procPtr->effectiveUserID != 0) {
+			status = GEN_NO_PERMISSION;
+		    } else {
+			status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
+			if (status == SUCCESS) {
+			    proc_AllowMigrationState = arg;
+			}
+		    }
+		}
+		break;
+
+		/*
+		 * Also obsolete, here for backward compatibility for a while.
+		 */
+	        case SYS_PROC_MIG_GET_STATUS: {
+		    if (argPtr != (Address) NIL) {
+			/*
+			 * This part is simplified for now.
+			 */
+			int refuse;
+			if (proc_AllowMigrationState & PROC_MIG_IMPORT_ALL) {
+			    refuse = 0;
+			} else {
+			    refuse = 1;
+			}
+			status = Vm_CopyOut(sizeof(Boolean),
+					    (Address)&refuse,
+					    argPtr);
+		    } else {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
+	        case SYS_PROC_MIG_GET_STATE: {
+		    if (argPtr != (Address) NIL) {
+			status = Vm_CopyOut(sizeof(Boolean),
+					    (Address)&proc_AllowMigrationState,
+					    argPtr);
+		    } else {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
+	        case SYS_PROC_MIG_GET_VERSION: {
+		    if (argPtr != (Address) NIL) {
+			status = Vm_CopyOut(sizeof(int),
+					    (Address)&proc_MigrationVersion,
+					    argPtr);
+		    } else {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
+	        case SYS_PROC_MIG_SET_VERSION: {
+		    register Proc_ControlBlock *procPtr;
+		    int arg;
+
+		    procPtr = Proc_GetEffectiveProc();
+		    if (procPtr->effectiveUserID != 0) {
+			status = GEN_NO_PERMISSION;
+		    } else {
+			status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
+			if (status == SUCCESS && arg >= 0) {
+			    proc_MigrationVersion = arg;
+			} else if (status == SUCCESS) {
+			    status = GEN_INVALID_ARG;
+			}
+		    }
+		}
+		break;
+		case SYS_PROC_MIG_SET_DEBUG: {
+		    int arg;
+		    status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
+		    if (status == SUCCESS && arg >= 0) {
+			proc_MigDebugLevel = arg;
+		    } else if (status == SUCCESS) {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
+
+		case SYS_PROC_MIG_GET_STATS: {
+		    status = Proc_MigGetStats(argPtr);
+		    break;
+		}
+		case SYS_PROC_MIG_RESET_STATS: {
+		    status = Proc_MigResetStats();
+		    break;
+		}
+		default:{
+		    status = GEN_INVALID_ARG;
+		}
+		break;
+	    }
+	    break;
+	}
+	
+	case SYS_PROC_TRACE_STATS: {
+	    switch(option) {
+		case SYS_PROC_TRACING_PRINT:
+		    printf("%s %s\n", "Warning:",
+			    "Printing of proc trace records not implemented.");
+		    break;
+		case SYS_PROC_TRACING_ON:
+		    Proc_MigrateStartTracing();
+		    break;
+		case SYS_PROC_TRACING_OFF:
+		    proc_DoTrace = FALSE;
+		    break;
+		default:
+		    /*
+		     * The default is to copy 'option' trace records.
+		     */
+		    status = Trace_Dump(proc_TraceHdrPtr, option, argPtr);
+		    break;
+	    }
+	    break;
+	}
+	case SYS_FS_PREFIX_STATS: {
+	    status = Fsprefix_Dump(option, argPtr);
+	    break;
+	}
+	case SYS_FS_PREFIX_EXPORT: {
+	    status = Fsprefix_DumpExport(option, argPtr);
+	    break;
+	}
+	case SYS_SYS_CALL_STATS_ENABLE: {
+	    printf ("%s system call profiling; was %s.\n",
+		    option ? "Enabling" : "Disabling",
+		    sys_CallProfiling ? "enabled" : "disabled");
+	    sys_CallProfiling = option;
+	    break;
+	}
+	case SYS_SYS_CALL_TIMES: {
+	    status = Sys_OutputNumCalls(option, argPtr, TRUE);
+	    break;
+	}
+	case SYS_SYS_CALL_STATS: {
+	    status = Sys_OutputNumCalls(option, argPtr, FALSE);
+	    break;
+	}
+	case SYS_NET_GET_ROUTE: {
+	    status = Net_IDToRouteOldStub(option, 
+			    sizeof(Net_RouteInfoOld), argPtr);
+	    break;
+	}
+	case SYS_NET_ETHER_STATS: {
+	    Net_Stats	stats;
+	    status = Net_GetStats(NET_NETWORK_ETHER, &stats);
+	    status = Vm_CopyOut(sizeof(Net_EtherStats),
+				(Address)&stats.ether, (Address)argPtr);
+	    break;
+	}
+	case SYS_DISK_STATS: {
+	    int			count;
+	    Sys_DiskStats	*statArrPtr;
+
+	    if ((option < 0) || (option > 10000)) {
+		status = GEN_INVALID_ARG;
+	    } else { 
+		statArrPtr = (Sys_DiskStats *)
+					malloc(sizeof(Sys_DiskStats) * option);
+		count = Dev_GetDiskStats(statArrPtr, option);
+		status = Vm_CopyOut(sizeof(Sys_DiskStats) * count, 
+				    (Address)statArrPtr, (Address)argPtr);
+		free((Address) statArrPtr);
+	    }
+	    break;
+	}
+	case SYS_LOCK_STATS: {
+	    status = Sync_GetLockStats(option, argPtr);
+	    break;
+	}
+	case SYS_LOCK_RESET_STATS: {
+	    status = Sync_ResetLockStats();
+	    break;
+	}
+	case SYS_INST_COUNTS: {
+#ifdef spur
+	    Mach_InstCountInfo	info[MACH_MAX_INST_COUNT];
+	    Mach_GetInstCountInfo(info);
+	    Vm_CopyOut(sizeof(info), (Address) info, 
+		argPtr);
+	    status = SUCCESS;
+#else
+	    status = GEN_NOT_IMPLEMENTED;
+#endif
+	    break;
+	}
+	case SYS_RESET_INST_COUNTS: {
+#ifdef spur
+	    bzero(mach_InstCount, sizeof(mach_InstCount));
+	    status = SUCCESS;
+#else
+	    status = GEN_NOT_IMPLEMENTED;
+#endif
+	    break;
+	}
+	case SYS_RECOV_STATS: {
+	    status = Recov_GetStats(option, argPtr);
+	    break;
+	}
+	case SYS_RECOV_PRINT: {
+	    Recov_ChangePrintLevel(option);
+	    status = SUCCESS;
+	    break;
+	}
+	case SYS_RECOV_ABS_PINGS: {
+	    recov_AbsoluteIntervals = option;
+	    status = SUCCESS;
+	    break;
+	}
+	case SYS_FS_RECOV_INFO: {
+	    int		length;
+	    Address	resultPtr;
+	    int		lengthNeeded;
+
+	    resultPtr = argPtr;
+	    /* option is actually an in/out param */
+	    status = Vm_CopyIn(sizeof (int), (Address) option,
+		    (Address) &length);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (length != 0 && (resultPtr == (Address) NIL || resultPtr ==
+		    (Address) 0 || resultPtr == (Address) USER_NIL)) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (length > 0) {
+		resultPtr = (Address) malloc(length);
+	    } else {
+		resultPtr = (Address) NIL;
+	    }
+	    status = Fsutil_FsRecovInfo(length,
+		    (Fsutil_FsRecovNamedStats *) resultPtr, &lengthNeeded);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(length, resultPtr, argPtr);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(sizeof (int), (Address) &lengthNeeded,
+		    (Address) option);
+	    if (resultPtr != (Address) NIL) {
+		free(resultPtr);
+	    }
+	    break;
+	}
+	case SYS_RECOV_CLIENT_INFO: {
+	    int		length;
+	    Address	resultPtr;
+	    int		lengthNeeded;
+
+	    resultPtr = argPtr;
+	    /* option is actually an in/out param */
+	    status = Vm_CopyIn(sizeof (int), (Address) option,
+		    (Address) &length);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (length != 0 && (resultPtr == (Address) NIL || resultPtr ==
+		    (Address) 0 || resultPtr == (Address) USER_NIL)) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (length > 0) {
+		resultPtr = (Address) malloc(length);
+	    } else {
+		resultPtr = (Address) NIL;
+	    }
+	    status = Recov_DumpClientRecovInfo(length, resultPtr,
+		    &lengthNeeded);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(length, resultPtr, argPtr);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(sizeof (int), (Address) &lengthNeeded,
+		    (Address) option);
+	    if (resultPtr != (Address) NIL) {
+		free(resultPtr);
+	    }
+	    break;
+	}
+	case SYS_RPC_SERVER_TRACE:
+	    if (option == TRUE) {
+		Rpc_OkayToTrace(TRUE);
+	    } else  {
+		Rpc_OkayToTrace(FALSE);
+	    }
+	    status = SUCCESS;
+		
+	    break;
+	case SYS_RPC_SERVER_FREE:
+	    Rpc_FreeTraces();
+	    status = SUCCESS;
+
+	    break;
+	case SYS_RPC_SERVER_INFO: {
+	    int		length;
+	    Address	resultPtr;
+	    int		lengthNeeded;
+
+	    resultPtr = argPtr;
+	    /* option is actually an in/out param */
+	    status = Vm_CopyIn(sizeof (int), (Address) option,
+		    (Address) &length);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (length != 0 && (resultPtr == (Address) NIL || resultPtr ==
+		    (Address) 0 || resultPtr == (Address) USER_NIL)) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (length > 0) {
+		resultPtr = (Address) malloc(length);
+	    } else {
+		resultPtr = (Address) NIL;
+	    }
+	    status = Rpc_DumpServerTraces(length,
+		    (RpcServerUserStateInfo *)resultPtr, &lengthNeeded);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(length, resultPtr, argPtr);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(sizeof (int), (Address) &lengthNeeded,
+		    (Address) option);
+	    if (resultPtr != (Address) NIL) {
+		free(resultPtr);
+	    }
+	    break;
+	}
+	case SYS_START_STATS: {
+	    /* schedule the stuff */
+	    Dev_StartIOStats();
+	    Sched_StartSchedStats();
+	    status = SUCCESS;
+	    break;
+	}
+	case SYS_END_STATS: {
+	    /* deschedule the stuff */
+	    Dev_StopIOStats();
+	    Sched_StopSchedStats();
+	    status = SUCCESS;
+	    break;
+	}
+#ifdef sun4c
+	case SYS_FAST_RESTART: {
+	    if (option == -1) {
+		/* Do a fast reboot -- Turn off interrupts. */
+		DISABLE_INTR();
+		/* restart */
+		Mach_FastBoot();
+	    } else {
+		/* Set debug level. */
+		printf("Setting fsrecov_DebugLevel to %d, was %d.\n",
+			option, fsrecov_DebugLevel);
+		fsrecov_DebugLevel = option;
+		status = SUCCESS;
+	    }
+	    break;
+	}
+        case SYS_DEV_CHANGE_SCSI_DEBUG: {
+	    Dev_ChangeScsiDebugLevel(option);
+	    status = SUCCESS;
+	    break;
+	}
+        case SYS_MACH_PRINT_DEV_TREE: {
+	    Mach_MonTraverseAndPrintDevTree();
+	    status = SUCCESS;
+	    break;
+	}
+#endif /* sun4c */
+	case SYS_PROC_ADD_SERVERS: {
+	    if (option < 0) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		int	numCreated;
+		numCreated = Proc_ServerProcCreate(option);
+		printf("Adding %d Proc_Servers to kernel\n", numCreated);
+		status = SUCCESS;
+	    }
+	    break;
+	}
+	case SYS_RECOV_BOX: {
+	    switch(option) {
+	    case RECOV_PRINT_REBOOT_TIMES:
+	    case RECOV_TEST_ADD_DELETE:
+	    case RECOV_TEST_ADD: {
+		status = Fsrecov_TestCmd(option, argPtr);
+		break;
+	    }
+	    default:
+		status = Recov_Cmd(option, argPtr);
+		break;
+	    }
+	    break;
+	}
+        case SYS_DONT_PRINT: {
+            if (option != 0) {
+                /* Make it so we can't print. */
+                sys_DontPrint = TRUE;
+            } else {
+                sys_DontPrint = FALSE;
+            }
+            status = SUCCESS;
+            break;
+        }
+	case SYS_RECOV_PARAMS: {
+	    status = Recov_Cmd(option, argPtr);
+	    break;
+	}
+        default:
+            status = GEN_INVALID_ARG;
+            break;
+    }
+
+    return(status);
+}
+@
+
+
+9.49
+log
+@Changes for transparent server recovery.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCalls.c,v 9.48 92/08/03 17:41:51 mgbaker Exp $ SPRITE (Berkeley)";
+d1148 4
+@
+
+
+9.48
+log
+@Added variable to turn off printing to console -- useful for making booting
+go faster.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCalls.c,v 9.47 92/08/03 13:37:11 mgbaker Exp $ SPRITE (Berkeley)";
+d34 1
+d46 1
+d1087 15
+d1121 14
+@
+
+
+9.47
+log
+@For call to print sparcstation device info.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCalls.c,v 9.46 92/06/15 22:29:22 jhh Exp $ SPRITE (Berkeley)";
+d1107 13
+a1119 3
+	default:
+	    status = GEN_INVALID_ARG;
+	    break;
+d1121 1
+@
+
+
+9.46
+log
+@Added Sys_GetHostName and Sys_SetHostName system calls.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCalls.c,v 9.45 92/06/01 14:37:02 kupfer Exp $ SPRITE (Berkeley)";
+d1087 5
+@
+
+
+9.45
+log
+@Add support for system call timing.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCalls.c,v 9.44 92/04/14 17:08:19 jhh Exp $ SPRITE (Berkeley)";
+d44 1
+d49 1
+d144 77
+@
+
+
+9.44
+log
+@Added Net_GetRoutes and Net_DeleteRoute.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCalls.c,v 9.43 91/09/10 18:44:21 rab Exp $ SPRITE (Berkeley)";
+d759 11
+d771 1
+a771 1
+	    status = Sys_OutputNumCalls(option, argPtr);
+@
+
+
+9.43
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.42 91/08/22 13:04:38 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d764 2
+a765 1
+	    status = Net_IDToRouteStub(option, sizeof(Net_RouteInfo), argPtr);
+@
+
+
+9.42
+log
+@Added SYS_PROC_ADD_SERVERS called to increase the number of
+server processes.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.41 91/06/27 12:13:00 mgbaker Exp $ SPRITE (Berkeley)";
+a21 1
+#include <traceLog.h>
+d43 1
+a43 6
+#endif sun4c
+#ifdef SOSP91
+#include <fsStat.h>
+#include <sospRecord.h>
+#include <fscache.h>
+#endif SOSP91
+a47 9
+#ifdef SOSP91
+TraceLog_Header *SOSP91TracePtr = NULL;
+extern Boolean traceLog_Disable;
+
+/* Ken's statistics. */
+extern Timer_Ticks nameTime[], totalNameTime;
+extern int SOSPLookupNum, SOSPLookupComponent, SOSPLookupPrefixComponent;
+#endif
+
+a546 109
+#ifdef SOSP91
+	case SYS_SCHED_MORE_STATS: {
+	    Sys_SchedOverallTimes *schedOverallPtr;
+	    Sys_SchedOverallTimes schedOverall;
+
+	    schedOverallPtr = (Sys_SchedOverallTimes *)argPtr;
+	    if (schedOverallPtr == (Sys_SchedOverallTimes *)NIL ||
+		    schedOverallPtr == (Sys_SchedOverallTimes *)0 ||
+		    schedOverallPtr == (Sys_SchedOverallTimes *)USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Sys_SchedOverallTimes)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		Timer_TicksToTime(sched_OverallTimesPerProcessor[0].kernelTime,
+		    &schedOverall.kernelTime);
+		Timer_TicksToTime(sched_OverallTimesPerProcessor[0].userTime,
+		        &schedOverall.userTime);
+		Timer_TicksToTime(
+			sched_OverallTimesPerProcessor[0].userTimeMigrated,
+			&schedOverall.userTimeMigrated);
+		status = Vm_CopyOut(sizeof(Sys_SchedOverallTimes),
+			(Address)&schedOverall, argPtr);
+	    }
+	    break;
+	}
+	case SYS_FS_SOSP_MIG_STATS: {
+	    Fs_SospMigStats	*statsPtr;
+
+	    statsPtr = (Fs_SospMigStats *) argPtr;
+	    if (statsPtr == (Fs_SospMigStats *)NIL ||
+		    statsPtr == (Fs_SospMigStats *) 0 ||
+		    statsPtr == (Fs_SospMigStats *) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Fs_SospMigStats)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		status = Vm_CopyOut(sizeof (Fs_SospMigStats),
+			(Address) &fs_SospMigStats, argPtr);
+	    }
+	    break;
+	}
+	case SYS_FS_EXTRA_STATS: {
+	    Fs_NewStats		*statsPtr;
+
+	    statsPtr = (Fs_NewStats *) argPtr;
+	    if (statsPtr == (Fs_NewStats *)NIL ||
+		    statsPtr == (Fs_NewStats *) 0 ||
+		    statsPtr == (Fs_NewStats *) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Fs_NewStats)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		status = Vm_CopyOut(sizeof (Fs_NewStats),
+			(Address) &fs_MoreStats, argPtr);
+		/*
+		 * This is a hack so that the getcounters program will
+		 * be able to tell the difference in kernel versions.
+		 */
+		if (status == SUCCESS) {
+		    status = sizeof (fs_MoreStats);
+		}
+	    }
+	    break;
+	}
+
+	case SYS_FSCACHE_EXTRA_STATS: {
+	    Fscache_ExtraStats	*statsPtr;
+
+	    statsPtr = (Fscache_ExtraStats *) argPtr;
+	    if (statsPtr == (Fscache_ExtraStats *)NIL ||
+		    statsPtr == (Fscache_ExtraStats *) 0 ||
+		    statsPtr == (Fscache_ExtraStats *) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Fscache_ExtraStats)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		status = Vm_CopyOut(sizeof (Fscache_ExtraStats),
+			(Address) &fscache_ExtraStats, argPtr);
+	    }
+	    break;
+	}
+        case SYS_FS_SOSP_NAME_STATS: {
+	    Sys_SospNameStats	stats;
+
+	    if (argPtr == (Address)NIL ||
+		    argPtr == (Address) 0 ||
+		    argPtr == (Address) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Sys_SospNameStats)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		Time timeVal;
+		Timer_TicksToTime(totalNameTime,&timeVal);
+		stats.totalNameTime = timeVal;
+		Timer_TicksToTime(nameTime[1],&timeVal);
+		stats.nameTime = timeVal;
+		Timer_TicksToTime(nameTime[2],&timeVal);
+		stats.prefixTime = timeVal;
+		Timer_TicksToTime(nameTime[0],&timeVal);
+		stats.miscTime = timeVal;
+		stats.numPrefixLookups = SOSPLookupNum;
+		stats.numComponents = SOSPLookupComponent;
+		stats.numPrefixComponents = SOSPLookupPrefixComponent;
+		status = Vm_CopyOut(sizeof (Sys_SospNameStats),
+			(Address) &stats, argPtr);
+	    }
+	    break;
+	}
+#endif SOSP91
+a992 43
+#ifdef SOSP91
+	case SYS_TRACELOG_STATS: { /* Tracing for SOSP91 */
+	    if (option == SYS_TRACELOG_ON) {
+		int args[2]; /* NumBuffers, BufSize */
+		status = Vm_CopyIn(2*sizeof (int), (Address) argPtr,
+			(Address)args);
+		if (status != SUCCESS) {
+		    break;
+		}
+		if (SOSP91TracePtr == NULL) {
+		    SOSP91TracePtr = (TraceLog_Header *)
+			    malloc(sizeof(TraceLog_Header));
+		    if (args[0]<0) {
+			/*
+			 * Negative # of buffers is the magic indicator
+			 * that we don't want to buffer data.
+			 */
+			TraceLog_Init(SOSP91TracePtr, -args[0], args[1],
+				TRACELOG_NO_BUF, VERSIONLETTER);
+		    } else {
+			TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0,
+				VERSIONLETTER);
+		    }
+		}
+		traceLog_Disable = FALSE;
+	    } else if (option == SYS_TRACELOG_OFF) {
+		TraceLog_Header *tmpPtr;
+		tmpPtr = SOSP91TracePtr;
+		SOSP91TracePtr = NULL;
+		TraceLog_Finish(tmpPtr);
+		traceLog_Disable = TRUE;
+	    } else if (option == SYS_TRACELOG_RESET) {
+		if (SOSP91TracePtr != NULL) {
+		    TraceLog_Reset(SOSP91TracePtr);
+		}
+	    } else if (option == SYS_TRACELOG_DUMP) {
+		TraceLog_Dump(SOSP91TracePtr, argPtr+
+			sizeof(Sys_TracelogHeaderKern), argPtr);
+	    }
+	    status = SUCCESS;
+	    break;
+	}
+#endif
+d999 1
+a999 1
+#endif sun4c
+@
+
+
+9.41
+log
+@New return code for different-sized stats.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.40 91/06/27 11:24:02 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d1167 11
+@
+
+
+9.40
+log
+@Fixed GetDiskStats not to use Vm_CopyOut so we wont get page faults
+while under MASTER_LOCKS().
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.39 91/03/30 17:21:55 mgbaker Exp $ SPRITE (Berkeley)";
+d616 7
+@
+
+
+9.39
+log
+@More sosp stat stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.38 91/03/04 22:42:05 kupfer Exp $ SPRITE (Berkeley)";
+d892 1
+a892 1
+	    int			bytesAcc;
+d895 9
+a903 11
+	    Vm_MakeAccessible(VM_OVERWRITE_ACCESS,
+			      sizeof(Sys_DiskStats) * option,
+			      (Address)argPtr, &bytesAcc,
+			      (Address *) &statArrPtr);
+	    if (statArrPtr == (Sys_DiskStats *)NIL) {
+		status = SYS_ARG_NOACCESS;
+	    } else {
+		(void) Dev_GetDiskStats(statArrPtr,
+					bytesAcc / sizeof(Sys_DiskStats));
+		Vm_MakeUnaccessible((Address)statArrPtr, bytesAcc);
+		status = SUCCESS;
+@
+
+
+9.38
+log
+@Delete SYS_RPC_EXTRA_SRV_STATS (the "extra" stats were merged into the
+regular stats some time ago).
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.37 91/02/12 14:16:32 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+d603 17
+@
+
+
+9.37
+log
+@added RPC sanity checking flag
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.36 91/02/01 16:33:45 shirriff Exp $ SPRITE (Berkeley)";
+a700 1
+	case SYS_RPC_EXTRA_SRV_STATS:
+@
+
+
+9.36
+log
+@Fixed my bug in prefix counter.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.35 91/01/26 15:36:37 mgbaker Exp $ SPRITE (Berkeley)";
+d702 1
+@
+
+
+9.35
+log
+@Sosp stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.34 91/01/24 16:29:27 mgbaker Exp $ SPRITE (Berkeley)";
+d640 1
+a640 1
+		stats.numPrefixComponents = SOSPLookupComponent;
+@
+
+
+9.34
+log
+@New sosp entry.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.33 91/01/24 16:21:07 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d48 1
+@
+
+
+9.33
+log
+@Make initial syncs optional.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.32 91/01/08 16:32:57 shirriff Exp $ SPRITE (Berkeley)";
+d599 16
+@
+
+
+9.32
+log
+@Added statistucs.  Added version letter logging to trace.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.31 90/12/11 00:47:50 mgbaker Exp $ SPRITE (Berkeley)";
+d238 12
+a249 10
+	/*
+	 * Do a few initial syncs.
+	 * These are necessary because the cache isn't getting written
+	 * out properly with the new block cleaner.
+	 */
+	printf("Doing initial syncs\n");
+	Fsutil_Sync(-1, 0);
+	Fsutil_Sync(-1, 0);
+	Fsutil_Sync(-1, 0);
+	printf("Done initial syncs\n");
+@
+
+
+9.31
+log
+@typos
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.30 90/12/11 00:43:44 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d47 1
+d239 10
+d600 27
+d1094 1
+a1094 1
+				TRACELOG_NO_BUF);
+d1096 2
+a1097 1
+			TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0);
+a1113 25
+	    } else if (option == 1999) {
+		/*
+		 * I'll just sneak some random stats in here.
+		 * --Ken
+		 */
+		Time timeVal;
+		Timer_TicksToTime(totalNameTime,&timeVal);
+		printf("totalNameTime: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		Timer_TicksToTime(nameTime[1],&timeVal);
+		printf("name: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		Timer_TicksToTime(nameTime[2],&timeVal);
+		printf("prefix: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		Timer_TicksToTime(nameTime[0],&timeVal);
+		printf("misc: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		printf("Number of prefix lookups: %d\n", SOSPLookupNum);
+		printf("Total components: %d, avg: %d\n",
+			SOSPLookupComponent,
+			SOSPLookupComponent/SOSPLookupNum);
+		printf("Total prefix components: %d, avg: %d\n",
+			SOSPLookupPrefixComponent,
+			SOSPLookupPrefixComponent/SOSPLookupNum);
+@
+
+
+9.30
+log
+@Sosp counters
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.29 90/12/08 14:35:21 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d45 3
+d574 2
+d581 1
+a581 1
+	    } else if (option < sizeof (Fs_SospMigStats) {
+@
+
+
+9.29
+log
+@sosp counters
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.28 90/12/07 15:15:16 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d555 2
+d567 14
+@
+
+
+9.28
+log
+@bug fix.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.27 90/12/07 15:11:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d545 1
+d547 2
+a548 1
+	    Sched_OverallTimes *schedOverallPtr;
+d550 4
+a553 4
+	    schedOverallPtr = (Sched_OverallTimes *)argPtr;
+	    if (schedOverallPtr == (Sched_OverallTimes *)NIL ||
+		    schedOverallPtr == (Sched_OverallTimes *)0 ||
+		    schedOverallPtr == (Sched_OverallTimes *)USER_NIL) {
+d556 9
+a564 2
+		status = Vm_CopyOut(sizeof(Sched_OverallTimes),
+			(Address)&sched_OverallTimesPerProcessor[0], argPtr);
+d568 1
+@
+
+
+9.27
+log
+@Added more counters.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.26 90/12/06 17:38:31 shirriff Exp $ SPRITE (Berkeley)";
+d555 1
+a555 1
+			(Address)&sched_OverallTimes, argPtr);
+@
+
+
+9.26
+log
+@Added some statistics for prefix names.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.25 90/11/27 12:25:40 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d542 14
+@
+
+
+9.25
+log
+@Added scsi debug flag.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.24 90/11/27 12:08:59 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a38 1
+#include <net.h>
+d52 4
+d1005 10
+a1014 1
+		    TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0);
+d1028 27
+a1054 2
+		TraceLog_Dump(SOSP91TracePtr, argPtr+sizeof(Sys_TracelogHeader),
+			argPtr);
+@
+
+
+9.24
+log
+@Mary checking in Ken's sosp trace stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.23 90/10/09 12:00:54 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d43 3
+d1023 7
+@
+
+
+9.23
+log
+@new net module
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.22 90/10/02 16:21:44 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d22 1
+d29 1
+d40 3
+d47 5
+d849 2
+a850 1
+	    status = Fsutil_FsRecovInfo(length, resultPtr, &lengthNeeded);
+d951 2
+a952 1
+	    status = Rpc_DumpServerTraces(length, resultPtr, &lengthNeeded);
+d987 33
+@
+
+
+9.22
+log
+@Fixed the name of an imported routine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.21 90/09/12 13:40:37 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d37 1
+d746 1
+a746 1
+	    status = Net_IDToRouteStub(option, argPtr);
+d749 3
+a751 1
+	case SYS_NET_ETHER_STATS:
+d753 1
+a753 1
+				(Address)&net_EtherStats, (Address)argPtr);
+d755 1
+@
+
+
+9.21
+log
+@Changed includes to angle brackets.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.20 90/09/11 10:50:51 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d229 2
+a230 2
+	MachFlushWindowsToStack();
+	VmMachFlushCurrentContext();
+@
+
+
+9.20
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys.ken/RCS/sysCalls.c,v 9.19 90/06/21 15:56:40 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)";
+d15 22
+a36 22
+#include "sprite.h"
+#include "mach.h"
+#include "sys.h"
+#include "sysInt.h"
+#include "sysStats.h"
+#include "time.h"
+#include "timer.h"
+#include "vm.h"
+#include "machMon.h"
+#include "proc.h"
+#include "dbg.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "rpc.h"
+#include "net.h"
+#include "sched.h"
+#include "dev.h"
+#include "recov.h"
+#include "procMigrate.h"
+#include "string.h"
+#include "stdio.h"
+#include "main.h"
+@
+
+
+9.19
+log
+@I/O & cpu stat stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.16 90/05/30 19:17:16 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d18 1
+d35 2
+a39 1
+extern	Boolean	sysPanicing;
+a300 34
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SysErrorShutdown --
+ *
+ *	This routine is called when the system encountered an error and
+ *	needs to be shut down.  [Actually, apparently not used, since the
+ *	system goes into the debugger instead.]
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+SysErrorShutdown(trapType)
+    int		trapType;
+{
+    if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
+        !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
+	sys_ErrorShutdown = TRUE;
+	(void) Sys_Shutdown(SYS_KILL_PROCESSES, "");
+    }
+    if (sys_ShouldSyncDisks && sys_ShuttingDown) {
+	printf("Error type %d while shutting down system. Exiting ...\n",
+		   trapType);
+	Proc_Exit(trapType);
+    }
+}
+@
+
+
+9.19.1.1
+log
+@Contains asplos statistics-gathering code.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.19 90/06/21 15:56:40 mgbaker Exp $ SPRITE (Berkeley)";
+a38 16
+/*
+ * Temporary statistics for asplos paper.
+ */
+typedef	struct	Sched_OverallTimes {
+    Timer_Ticks	kernelTime;
+    Timer_Ticks	userTime;
+} Sched_OverallTimes;
+
+extern	Sched_OverallTimes	overallTimesPerProcessor[];
+
+struct	UserSchedStats {
+    Time	kernelTime;
+    Time	userTime;
+} userSchedStats[MACH_MAX_NUM_PROCESSORS];
+
+
+a1000 45
+	    break;
+	}
+	case SYS_MACH_STATS: {
+	    int		length;
+	    extern	void	Mach_GetStats();
+
+	    /*
+	     * option is the length of the storage referenced by argPtr.
+	     */
+	    length = sizeof (Mach_Stats);
+	    if (option <= 0) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (option < length) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    Mach_GetStats();
+	    status = Vm_CopyOut(length, &mach_Stats, argPtr);
+	    break;
+	}
+	case SYS_SCHED_MORE_STATS: {
+	    struct UserSchedStats *schedStatPtr;
+	    Time 	curTime;
+
+	    schedStatPtr = (struct UserSchedStats *)argPtr;
+	    if (schedStatPtr == (struct UserSchedStats *)NIL ||
+		schedStatPtr == (struct UserSchedStats *)0 ||
+		schedStatPtr == (struct UserSchedStats *)USER_NIL) {
+
+		break;
+	    } else {
+		register int cpu;
+		for (cpu = 0; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {  
+		    Timer_TicksToTime(
+			    overallTimesPerProcessor[cpu].kernelTime,
+			    &(userSchedStats[cpu].kernelTime));
+		    Timer_TicksToTime(
+			    overallTimesPerProcessor[cpu].userTime,
+			    &(userSchedStats[cpu].userTime));
+		}
+		status = Vm_CopyOut(sizeof(userSchedStats),
+					  (Address)&userSchedStats, argPtr);
+	    }
+@
+
+
+9.18
+log
+@disallow imports while shutting down.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.18 90/06/15 12:47:16 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d236 1
+a236 1
+	 * Disallow future migrations, and get rid of any migrated processes.
+a237 1
+	proc_AllowMigrationState &= ~PROC_MIG_IMPORT_ALL;
+d498 9
+d987 14
+@
+
+
+9.17
+log
+@this is fred checking in for mary.  looks like she added some options
+for RPC stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.16 90/05/30 19:17:16 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d236 1
+a236 1
+	 * Get rid of any migrated processes.
+d238 1
+@
+
+
+9.16
+log
+@Added flush so sun4 wont get cache writeback errors during Sys_Shutdown()
+call.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.15 90/04/18 19:26:21 mgbaker Exp $ SPRITE (Berkeley)";
+d604 2
+a607 1
+
+@
+
+
+9.15
+log
+@Added hook for recovery print messages.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.14 90/03/26 12:17:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d221 9
+@
+
+
+9.14
+log
+@Added more Sys_Stat commands.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.13 90/01/29 19:31:57 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d814 5
+@
+
+
+9.13
+log
+@Added call to new Sys_Stat command.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.12 90/01/05 12:05:56 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d31 1
+d591 4
+d814 5
+@
+
+
+9.12
+log
+@Added new recovery info-gathering hook.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.11 89/12/15 12:53:23 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d878 57
+@
+
+
+9.11
+log
+@Added check to avoid malloc(0), although it didn't seem to break anything.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.10 89/11/27 14:55:30 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d835 47
+d886 3
+d893 3
+@
+
+
+9.10
+log
+@Adding recovery stats syscall stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.9 89/11/21 14:37:04 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d828 5
+a832 1
+	    resultPtr = (Address) malloc(length);
+@
+
+
+9.9
+log
+@removed some lint.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.8 89/11/21 14:34:50 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+a811 29
+	    int 		length;
+	    Fsutil_FsRecovStats	stats;
+	    Address		resultPtr;
+	   
+	    length = sizeof (stats);
+	    if (option <= 0) {
+		/* or print it instead? */
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (option < length) {
+		length = option;
+	    }
+	    resultPtr = argPtr;
+	    if (resultPtr == (Address) NIL ||
+		    resultPtr == (Address) 0 ||
+		    resultPtr == (Address) USER_NIL) {
+		/* or print it instead? */
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    status = Fsutil_FsRecovInfo(length, &stats);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    status = Vm_CopyOut(length, (Address) &stats, argPtr);
+	    break;
+	}
+	case SYS_FS_RECOV_NAMED_INFO: {
+d829 1
+a829 1
+	    status = Fsutil_FsRecovNamedInfo(length, resultPtr, &lengthNeeded);
+@
+
+
+9.8
+log
+@Adding new statistics for recovery.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.7 89/11/07 15:14:12 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d837 1
+a837 1
+	    status = Vm_CopyOut(length, &stats, argPtr);
+@
+
+
+9.7
+log
+@Ifdef'd SYS_TEST_CMAP so it's only on sun4.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.6 89/11/07 14:49:30 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)";
+d840 4
+a843 3
+#ifdef sun4
+	case SYS_TEST_CMAP: {
+	    Address	addr;
+d845 23
+a867 3
+	    addr = (Address) option;
+	    printf("address is 0x%x, seg is 0x%x, pte is 0x%x\n",
+		    addr, VmMachGetSegMap(addr), VmMachGetPageMap(addr));
+a869 1
+#endif
+@
+
+
+9.6
+log
+@Added SYS_TEST_CMAP
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.5 89/10/30 20:36:17 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d840 1
+d849 1
+@
+
+
+9.5
+log
+@Adding new stat routine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.4 89/10/26 15:24:16 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d341 5
+a345 2
+
+static	Boolean	errorSync = FALSE;
+d354 1
+a354 1
+    if (errorSync) {
+d357 1
+a357 1
+	errorSync = FALSE;
+d364 1
+a364 1
+	errorSync = TRUE;
+d366 1
+a366 1
+	errorSync = FALSE;
+d812 3
+a814 2
+	    int 	length;
+	    char	results[1000];
+d816 1
+a816 1
+	    length = sizeof (results);
+d818 1
+d825 9
+a833 1
+	    status = Fsutil_FsRecovInfo(length, results);
+d837 9
+a845 1
+	    status = Vm_CopyOut(length, results, argPtr);
+@
+
+
+9.4
+log
+@removed some lint
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.3 89/10/23 08:42:12 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d806 19
+@
+
+
+9.3
+log
+@Update calls to new FS modules
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.2 89/10/11 16:41:32 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d26 1
+d296 2
+a297 1
+ *	needs to be shut down.
+d315 1
+a315 1
+	(void) Sys_Shutdown(SYS_KILL_PROCESSES);
+d441 1
+a441 1
+    Address	 	*infoBufPtr;	/* Info structure to fill in */
+d763 2
+a764 1
+			      (Address)argPtr, &bytesAcc, &statArrPtr);
+d768 2
+a769 1
+		Dev_GetDiskStats(statArrPtr, bytesAcc / sizeof(Sys_DiskStats));
+@
+
+
+9.2
+log
+@evict prior to killing processes.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 9.1 89/10/11 15:55:38 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d271 1
+a271 1
+	Fs_Sync(-1, flags & SYS_KILL_PROCESSES);
+d360 1
+a360 1
+	Fs_Sync(-1, TRUE);
+d736 1
+a736 1
+	    status = Fs_PrefixDump(option, argPtr);
+d740 1
+a740 1
+	    status = Fs_PrefixDumpExport(option, argPtr);
+@
+
+
+9.1
+log
+@Added SYS_RECOV_STATS
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.11 89/08/17 17:35:35 jhh Exp $ SPRITE (Berkeley)";
+d224 5
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.11 89/08/17 17:35:35 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d793 4
+@
+
+
+8.11
+log
+@Changed arguments to Sys_GetMachineInfo
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.10 89/07/31 17:59:12 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+8.10
+log
+@migration statistics
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.9 89/07/19 15:19:32 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d414 16
+d431 22
+d508 3
+d512 5
+a516 2
+		status = Vm_CopyOut(sizeof(Sync_Instrument),
+				  (Address)&sync_Instrument,
+d772 21
+@
+
+
+8.9
+log
+@Change to use dev_LastConsoleInput instead of dev_KbdInstrument.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.8 89/07/19 14:22:24 jhh Exp Locker: ouster $ SPRITE (Berkeley)";
+d621 17
+d649 8
+@
+
+
+8.8
+log
+@added SYS_LOCK_RESET_STATS
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.7 89/04/07 10:32:56 douglis Exp $ SPRITE (Berkeley)";
+d505 1
+a505 1
+		 * If no interrupts received, mostRecentInterrupt will
+d510 1
+a510 1
+		 * Note: mostRecentInterrupt can't be set during dev_Kbd
+d514 2
+a515 2
+		if (dev_KbdInstrument.mostRecentInterrupt.seconds == 0) {
+		    Timer_GetTimeOfDay(&dev_KbdInstrument.mostRecentInterrupt,
+d519 1
+a519 1
+		Time_Subtract(curTime, dev_KbdInstrument.mostRecentInterrupt,
+@
+
+
+8.7
+log
+@fixed bug in SYS_PROC_MIG_{ALLOW,REFUSE}; added SET/GET_STATE
+for more control from user level.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.6 89/04/06 11:51:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d534 2
+d699 4
+@
+
+
+8.6
+log
+@changed to use proc_AllowMigrationState, which replaced
+proc_RefuseMigrations.  simplified initially; needs to handle 
+the greater flexibility.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.5 89/03/17 22:59:32 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d539 3
+d553 1
+a553 1
+			    proc_AllowMigrationState = PROC_MIG_IMPORT_NEVER;
+d555 17
+a571 1
+			    proc_AllowMigrationState = PROC_MIG_IMPORT_ALL;
+d577 3
+d593 10
+@
+
+
+8.5
+log
+@Removed double include of proc.h
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.4 89/02/19 22:11:53 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d546 8
+a553 2
+			proc_RefuseMigrations =
+				(option == SYS_PROC_MIG_REFUSE);
+d560 9
+d570 1
+a570 1
+					    (Address)&proc_RefuseMigrations,
+@
+
+
+8.4
+log
+@Changes due to lock registration
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.3 89/01/05 15:41:11 mendel Exp $ SPRITE (Berkeley)";
+a25 1
+#include "proc.h"
+@
+
+
+8.3
+log
+@Modified to used new sched_Instrument structure.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.2 88/11/18 14:03:53 douglis Exp $ SPRITE (Berkeley)";
+d647 4
+@
+
+
+8.2
+log
+@added ability to get migration level via SYS_PROC_MIG_GET_VERSION param
+to Sys_Stats.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 8.1 88/11/13 11:25:15 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d499 6
+a504 5
+		/*
+		 * UNIPROCESSOR code.
+		 */
+		Timer_TicksToTime(sched_Instrument.noProcessRunning[0],
+				  &sched_Instrument.idleTime[0]);
+@
+
+
+8.1
+log
+@Fixed SYS_SCHED_STATS so that it uses the correct form the
+fo  sched_Instrument struct.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 6.6 88/10/28 19:06:25 mlgray Exp $ SPRITE (Berkeley)";
+d556 10
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 6.6 88/10/28 19:06:25 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d499 5
+a503 2
+		Timer_TicksToTime(sched_Instrument.noProcessRunning,
+				  &sched_Instrument.idleTime);
+@
+
+
+6.6
+log
+@Conversion to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCalls.c,v 6.5 88/10/19 13:50:57 douglis Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.5
+log
+@fixed bug with order of arguments when setting proc_MigDebugLevel.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 6.4 88/09/09 15:09:44 brent Exp $ SPRITE (Berkeley)";
+d204 1
+a204 1
+	    (void) String_Copy(rebootString, string);
+d238 1
+a238 1
+		    Sys_Printf("%d %s processes still alive.\n", alive,
+d243 1
+a243 1
+		Sys_Printf("Waiting with %d %s processes still alive\n", alive,
+d266 1
+a266 1
+	Sys_Printf("Syncing disks\n");
+d312 1
+a312 1
+	Sys_Printf("Error type %d while shutting down system. Exiting ...\n",
+d346 1
+a346 1
+	Sys_Printf("Error type %d while syncing disks.\n", trapType);
+d354 1
+a354 1
+	Sys_Printf("Syncing disks.  Version: %s\n", SpriteVersion());
+d451 1
+a451 1
+	    length = String_Length(version) + 1;
+d581 2
+a582 2
+		    Sys_Panic(SYS_WARNING,
+		      "Printing of proc trace records not implemented.\n");
+a640 1
+
+@
+
+
+6.4
+log
+@Added SYS_FS_PREFIX_EXPORT
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 6.2 88/09/07 11:09:20 nelson Exp $ SPRITE (Berkeley)";
+d561 1
+a561 1
+		    status = Vm_CopyIn(sizeof(int), (Address)&arg, argPtr);
+d563 1
+a563 1
+			proc_MigDebugLevel = option;
+@
+
+
+6.3
+log
+@Fixed call to Fs_Sync
+@
+text
+@d603 4
+@
+
+
+6.2
+log
+@Added call to retrieve disk stats.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 6.1 88/08/29 12:31:05 mlgray Exp $ SPRITE (Berkeley)";
+d267 1
+a267 1
+	Fs_Sync(-1, flags & SYS_KILL_PROCESSES, TRUE);
+d356 1
+a356 1
+	Fs_Sync(-1, TRUE, TRUE);
+@
+
+
+6.1
+log
+@fixed lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 6.0 88/08/11 12:27:48 brent Stable $ SPRITE (Berkeley)";
+d615 16
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.16 88/07/29 10:11:22 douglis Exp $ SPRITE (Berkeley)";
+d204 1
+a204 1
+	    String_Copy(rebootString, string);
+d259 1
+a259 1
+	Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
+d309 1
+a309 1
+	Sys_Shutdown(SYS_KILL_PROCESSES);
+d473 2
+a474 1
+				  (Address)&sync_Instrument, syncStatPtr);
+@
+
+
+5.16
+log
+@changed allow/refuse migration to return GEN_NO_PERMISSION
+instead of GEN_INVALID_ARG if the caller isn't root.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.15 88/07/17 23:21:28 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.15
+log
+@changed the Sys_Stats call's handling of process migration stuff.
+Sys_Stats really should be Sys_Command or something like that, given
+the way it has developed...
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.14 88/06/26 10:18:32 ouster Exp $ SPRITE (Berkeley)";
+d540 1
+a540 1
+			status = GEN_INVALID_ARG;
+@
+
+
+5.14
+log
+@Proc_GetCurrentProc doesn't take an argument.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.13 88/06/17 11:01:05 mendel Exp $ SPRITE (Berkeley)";
+d533 44
+d578 17
+a594 21
+	    if (option <= 0) {
+		proc_MigDebugLevel = -option;
+	    } else {
+		switch(option) {
+		    case SYS_PROC_TRACING_PRINT:
+		        Sys_Panic(SYS_WARNING,
+			  "Printing of proc trace records not implemented.\n");
+			break;
+		    case SYS_PROC_TRACING_ON:
+			Proc_MigrateStartTracing();
+			break;
+		    case SYS_PROC_TRACING_OFF:
+			proc_DoTrace = FALSE;
+			break;
+		    default:
+			/*
+			 * The default is to copy 'option' trace records.
+			 */
+			status = Trace_Dump(proc_TraceHdrPtr, option, argPtr);
+			break;
+		}
+@
+
+
+5.13
+log
+@Removed machine dependent code from SysGetMachineInfo.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.12 88/05/05 18:01:19 nelson Exp $ SPRITE (Berkeley)";
+d218 1
+a218 1
+	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+@
+
+
+5.12
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.11 88/05/04 17:23:41 nelson Exp $ SPRITE (Berkeley)";
+a21 1
+#include "vmSunConst.h"
+d387 1
+a387 3
+#       ifdef SUN2
+	int arch = SYS_SUN2;
+#       endif SUN2
+a388 9
+#       ifdef SUN3
+	int arch = SYS_SUN3;
+#       endif SUN3
+
+#       ifdef SPUR
+	int arch = SYS_SPUR;
+#       endif SPUR
+
+
+a396 1
+#if defined(SUN2) || defined(SUN3)
+a397 3
+#else
+	int type = 0;
+#endif
+@
+
+
+5.11
+log
+@Changed to handle new structure of mach module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.10 88/01/22 16:31:39 nelson Exp $ SPRITE (Berkeley)";
+d16 1
+d23 1
+a23 1
+#include "sunMon.h"
+d272 1
+a272 1
+	Mon_Abort();
+d274 1
+a274 1
+	Mon_Reboot(string);
+d307 1
+a307 1
+    if (sys_ShouldSyncDisks && !sys_AtInterruptLevel && !sys_ShuttingDown &&
+d353 1
+a353 1
+    if (sys_ShouldSyncDisks && !sys_AtInterruptLevel && !sys_ShuttingDown &&
+@
+
+
+5.10
+log
+@Made Fs_Sync be synchronous.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.9 87/12/15 15:26:39 nelson Exp $ SPRITE (Berkeley)";
+d307 1
+a307 1
+        !dbg_BeingDebugged && (trapType != EXC_BRKPT_TRAP || sysPanicing)) {
+d353 1
+a353 1
+        !dbg_BeingDebugged && (trapType != EXC_BRKPT_TRAP || sysPanicing)) {
+@
+
+
+5.9
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.8 87/12/13 18:54:49 nelson Exp $ SPRITE (Berkeley)";
+d267 1
+a267 1
+	Fs_Sync(-1, flags & SYS_KILL_PROCESSES);
+d356 1
+a356 1
+	Fs_Sync(-1, TRUE);
+@
+
+
+5.8
+log
+@Turned syncing disks back on.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.7 87/12/12 16:41:48 nelson Exp $ SPRITE (Berkeley)";
+d32 1
+d343 2
+@
+
+
+5.7
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.6 87/12/02 15:09:24 douglis Exp $ SPRITE (Berkeley)";
+d282 1
+a282 1
+Boolean	sys_ShouldSyncDisks = FALSE;
+@
+
+
+5.6
+log
+@Changed returning of sched stats to initialize the idle time value if
+it hasn't been already.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.5 87/12/02 10:50:40 nelson Exp $ SPRITE (Berkeley)";
+d191 1
+d213 11
+a246 1
+		Vm_SetKernelContext(VM_KERN_CONTEXT);
+d282 1
+a282 1
+Boolean	sys_ShouldSyncDisks = TRUE;
+@
+
+
+5.5
+log
+@Made Sys_DoNothing relinquish the CPU w/ a Sched_ContextSwitch(PROC_READY).
+[MNN]  Fixed bug in not copying out null byte in version [FD].  Notes
+by FD.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.3 87/10/21 13:06:29 nelson Exp $ SPRITE (Berkeley)";
+d501 14
+@
+
+
+5.4
+log
+@Added SYS_GET_VERSION_STRING
+@
+text
+@d152 1
+d452 1
+a452 1
+	    length = String_Length(version);
+@
+
+
+5.3
+log
+@Can shutdown system without syncing disks.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.2 87/09/29 18:01:08 brent Exp $ SPRITE (Berkeley)";
+d444 18
+d566 1
+@
+
+
+5.2
+log
+@Added hook to start up RPC system
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.1 87/09/03 18:39:18 nelson Exp $ SPRITE (Berkeley)";
+d252 4
+a255 3
+
+    Sys_Printf("Syncing disks\n");
+    Fs_Sync(-1, flags != 0);
+@
+
+
+5.1
+log
+@Pauses longer when waiting for user processes to die to allow swap file
+removes to complete.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 5.0 87/08/11 10:51:19 sprite Exp $ SPRITE (Berkeley)";
+d496 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCalls.c,v 4.9 87/08/05 20:29:40 andrew Exp $ SPRITE (Berkeley)";
+d184 1
+a184 1
+    int			timesWaited = 0;
+d211 1
+a211 1
+	waitTime.seconds = 2;
+d217 1
+@

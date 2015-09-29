@@ -1,0 +1,300 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.06.21.16.50.41;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.31;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Forgot to eliminate io.h usage.
+@
+text
+@/* 
+ * id.c --
+ *
+ *	Procedure to map from Unix *id system calls to Sprite.  Note that
+ *	procedures dealing with group ID's (as opposed to user ID's and
+ *	process ID's) are contained in groupId.c.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: id.c,v 1.1 88/06/19 14:31:31 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <proc.h>
+
+#include "compatInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getuid --
+ *
+ *	Procedure to map from Unix getuid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the real user ID of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getuid()
+{
+    ReturnStatus status;	/* result returned by Proc_GetIDs */
+    int userId;			/* real user ID of current process */
+
+    status = Proc_GetIDs((Proc_PID *) NULL, (Proc_PID *) NULL,
+		         &userId, (Proc_PID *) NULL);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(userId);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * geteuid --
+ *
+ *	Procedure to map from Unix geteuid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the effective user ID of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+geteuid()
+{
+    ReturnStatus status;	/* result returned by Proc_GetIDs */
+    int userId;			/* effective user ID of current process */
+
+    status = Proc_GetIDs((Proc_PID *) NULL, (Proc_PID *) NULL,
+            (Proc_PID *) NULL, &userId);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(userId);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getpid --
+ *
+ *	Procedure to map from Unix getpid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the process ID of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getpid()
+{
+    ReturnStatus status;	/* result returned by Proc_GetIDs */
+    int pid;			/* ID of current process */
+
+    status = Proc_GetIDs(&pid, (Proc_PID *) NULL,
+			 (Proc_PID *) NULL, (Proc_PID *) NULL);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(pid);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getppid --
+ *
+ *	Procedure to map from Unix getppid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the ID of the parent of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getppid()
+{
+    ReturnStatus status;	/* result returned by Proc_GetIDs */
+    int parentPid;		/* ID of parent of current process */
+
+    status = Proc_GetIDs((Proc_PID *) NULL, &parentPid,
+            (Proc_PID *) NULL, (Proc_PID *) NULL);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(parentPid);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setreuid --
+ *
+ *	Procedure to map from Unix setreuid system call to Sprite Proc_SetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	The real and effective user ID's of the process are modified as
+ *	specified, if the user is privileged to do so.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setreuid(ruid, euid)
+    int	ruid, euid;
+{
+    ReturnStatus status;	/* result returned by Proc_SetIDs */
+
+    if (ruid == -1) {
+	ruid = PROC_NO_ID;
+    }
+    if (euid == -1) {
+	euid = PROC_NO_ID;
+    }
+    status = Proc_SetIDs(ruid, euid);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setregid --
+ *
+ *	Procedure to map from Unix setregid system call to Sprite Proc_SetIDs.
+ *	Sprite doesn't have the notion of real and effective groud IDs;
+ *	instead, both gid arguments become the set of Sprite group IDs for
+ *	current process.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The previous group IDs are deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setregid(rgid, egid)
+    int	rgid, egid;
+{
+    ReturnStatus status = SUCCESS;
+    int array[2];
+    int num = 0;
+
+    /*
+     * Make the rgid and egid the group IDs for the process. If a gid is
+     * -1, it is ignored.
+     */
+
+    if (rgid != -1) {
+	array[0] = rgid;
+	num = 1;
+	if (egid != rgid && egid != -1) {
+	    array[1] = egid;
+	    num++;
+	}
+    } else if (egid != -1) {
+	array[0] = egid;
+	num++;
+    }
+    if (num > 0) {
+	status = Proc_SetGroupIDs(num, array);
+    }
+
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: id.c,v 1.4 87/07/20 11:13:32 andrew Exp $ SPRITE (Berkeley)";
+d16 2
+a17 3
+#include "sprite.h"
+#include "proc.h"
+#include "io.h"
+@

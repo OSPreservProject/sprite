@@ -1,0 +1,50 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.06.04.17.13.44;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.06.04.17.10.33;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@uses tk now
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+LIBS		= -ltk -ltcl -lX11 -lm
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+LIBS		= -lsx_g -lX11
+@

@@ -1,0 +1,7 @@
+
+
+          execl prog [arglist]
+               Do an execl, replacing the current program (either
+               Extended Tcl or an application with Extended Tcl
+               embedded into it) with prog and passing the arguments
+               in the list arglist.

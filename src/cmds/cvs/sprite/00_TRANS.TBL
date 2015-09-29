@@ -1,0 +1,14 @@
+F ADD.C;1                           	add.c
+F BUILD_EN.C;1                      	build_entry.c
+F CHECKIN.CSH;1                     	checkin.csh
+F COLLECT_.C;1                      	collect_sets.c
+F COMMIT.C;1                        	commit.c
+F CVS.H;1                           	cvs.h
+F CVS.MAN;1                         	cvs.man
+F INFO.C;1                          	info.c
+F MAIN.C;1                          	main.c
+D RCS                               	RCS
+D SAVE                              	save
+F SUBR.C;1                          	subr.c
+F UPDATE.C;1                        	update.c
+F UPDATE.SAV;1                      	update.save

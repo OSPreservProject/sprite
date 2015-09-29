@@ -1,0 +1,464 @@
+
+
+
+PFS                          Devices                          PFS
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Pseudo-file-systems - File systems implemented by user-level
+     server processes.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     A pseudo-file-system is a part of the distributed file  sys-
+     tem  that  is  implemented by a user-level server process as
+     opposed to parts of the file system that correspond to  real
+     disks  (local  or remote) controlled by Sprite kernels.  The
+     pseudo-file-system has its own prefix and  is  transparently
+     integrated  in  to  the  global  file hierarchy.  Files in a
+     pseudo-file-system are named and accessed with the same sys-
+     tem calls as regular files (or devices).
+
+     This document describes the raw  kernel  interface  used  by
+     pseudo-file-system  servers.  The interface is a superset of
+     the pseudo-device interface that is described  in  the  ppddeevv
+     devices  man page.  There is also a PPffss library package that
+     takes care of most of the details of the interface and  pro-
+     vides an easy-to-use call-back interface.
+
+RREEQQUUEESSTT--RREESSPPOONNSSEE SSTTRREEAAMMSS
+     The operating system  forwards  operations  on  the  pseudo-
+     file-system  up  to  the user-level server process using the
+     pseudo-device request response protocol.  This  protocol  is
+     described  in  detail in the ppddeevv man page.  When the server
+     starts up it gets a _n_a_m_i_n_g _s_t_r_e_a_m that is  used  to  forward
+     naming  operations like ooppeenn, rreemmoovvee, mmkkddiirr, and rreennaammee.  In
+     response to an ooppeenn the server  can  create  a  new  _s_e_r_v_i_c_e
+     _s_t_r_e_a_m  to  handle  subsequent   I/O  operations on the open
+     file.  This service stream is exactly like  a  pseudo-device
+     service   stream,  except  for  two  additional  operations,
+     PDEV_GET_ATTR (for ffssttaatt) and PDEV_SET_ATTR (for ffcchhoowwnn  and
+     ffcchhmmoodd).   Thus  the  server  ultimately has several request
+     response streams.  One naming  stream  and  several  service
+     streams, one for each open file.
+
+SSEERRVVEERR IINNIITTIIAALLIIZZAATTIIOONN
+     The pseudo-file-system is activated by  opening  its  prefix
+     with the O_MASTER flag.  There must be a remote link for the
+     prefix or the open will fail.  (Use llnn  --rr  to  make  remote
+     links.)  The  prefix  can  be nested arbitrarily in the file
+     system.  The result of the open is a streamID for the naming
+     stream.   The IOC_PDEV_SET_BUF I/O Control has to be made on
+     this stream before the  request  response  protocol  can  be
+     used.   After this is done the naming stream is used exactly
+     like a pseudo-device service stream, except  that  different
+     (naming) operations appear in the request buffer.
+
+
+
+
+Sprite v.1.0       Printed:  December 8, 1989                   1
+
+
+
+
+
+
+PFS                          Devices                          PFS
+
+
+
+     Only one server  per  prefix  is  allowed.   If  the  prefix
+     corresponds  to  a regular part of the file system, or there
+     is already a user-level server for it, or there is no remote
+     link, then the open will fail.
+
+     The prefix is exported throughout the  network,  unless  the
+     O_EXCLUSIVE  flag  is passed to ooppeenn.  The kernel takes care
+     of exporting the prefix; the server has to take  no  special
+     action.   The  existence  of  the  corresponding remote link
+     means that the kernel's name lookup algorithm will automati-
+     cally  find the prefix for the pseudo-file-system and locate
+     the server.
+
+NNAAMMIINNGG OOPPEERRAATTIIOONNSS
+     The request messages in the  naming  stream  have  the  same
+     header  as  pseudo-device  requests, but different operation
+     codes and  operation-specific  parameters.   Note  that  the
+     magic number in the request header is PFS_REQUEST_MAGIC.
+
+
+          typedef struct {
+              unsigned int magic;       /* PDEV_REQUEST_MAGIC or PFS_REQUEST_MAGIC */
+              Pdev_Op operation;        /* What action is requested. */
+              int messageSize;          /* The complete size of the request header
+                                         * plus data, plus padding for alignment */
+              int requestSize;          /* Size of data following this header */
+              int replySize;            /* Max size of the reply data expected. */
+              int dataOffset;           /* Offset of data from start of header */
+          } Pdev_RequestHdr;
+
+          typedef struct {
+              Pdev_RequestHdr hdr;      /* with PFS_REQUEST_MAGIC */
+              union {                   /* Additional parameters to the operation. */
+                  FsOpenArgs            open;
+                  FsOpenArgs            getAttr;
+                  FsOpenArgs            setAttr;
+                  FsMakeDeviceArgs      makeDevice;
+                  FsOpenArgs            makeDir;
+                  FsLookupArgs          remove;
+                  FsLookupArgs          removeDir;
+                  Fs2PathParams         rename;
+                  Fs2PathParams         hardLink;
+                  FsOpenArgs            symLink;
+              } param;
+              /*
+               * Data follows
+               */
+          } Pfs_Request;
+
+
+               The operation specific parameters are
+               described below along with the operations they are used with.
+
+
+
+Sprite v.1.0       Printed:  December 8, 1989                   2
+
+
+
+
+
+
+PFS                          Devices                          PFS
+
+
+
+               These are defined in <dev/pfs.h>.
+               All the operation-specific parameters include
+               a pprreeffiixxIIDD that is a fileID for the starting point of the pathname
+               involved in the naming operation.  This corresponds to the
+               pseudo-file-system prefix if the original pathname was absolute,
+               or it corresponds to the process's current working directory
+               if the original pathname was relative.  In either case the
+               pathname given to the server is relative.
+               The fileID for the pseudo-file-system prefix has all zero fields,
+               unless it has been reset with the IOC_PFS_SET_ID call.
+               The fileID for the current directory is set when the
+               current directory is opened by the process.
+               This is described
+               in the section below on opening files.
+
+               In the request-response protocol some data may follow each request
+               message header and operation-specific parameters.
+               This data is simply the pathname for the
+               following pseudo-file-system operations:
+               PFS_OPEN, PFS_GET_ATTR, PFS_MAKE_DEVICE, PFS_MAKE_DIR, PFS_REMOVE,
+               and PFS_REMOVE_DIR.  The other operations,
+               PFS_SET_ATTR, PFS_RENAME, and PFS_HARD_LINK have their
+               data areas described below.
+
+               For all the operations the exact location and size of the data
+               is specified by the ddaattaaOOffffsseett and rreeqquueessttSSiizzee
+               fields in the request message header.
+
+RREEPPLLYYIINNGG TTOO RREEQQUUEESSTTSS
+     Naming requests are replied to  just  like  regular  pseudo-
+     device  requests using IOC_PDEV_REPLY.  However, with naming
+     operations there is the possiblity of _p_a_t_h_n_a_m_e  _r_e_d_i_r_e_c_t_i_o_n.
+     If  the  pathname leaves the part of the file hierarchy con-
+     trolled by the pseudo-file-system server then it cannot com-
+     plete  the  naming  operation.   Instead, it must return the
+     remaining pathname as the reply data along with the  special
+     reply  status FS_LOOKUP_REDIRECT.  There are two formats for
+     the returned pathname:
+
+          typedef struct FsRedirectInfo {
+              int                       prefixLength;/* The length of the prefix embedded in
+                                         * fileName.  This is used when a server hits
+                                         * a remote link and has to return a new file
+                                         * name plus an indication of a new prefix.
+                                         * Zero means no embedded prefix. */
+              char fileName[FS_MAX_PATH_NAME_LENGTH];
+                                        /* A new file name.  Returned
+                                         * from the server when its lookup is about
+                                         * to leave its domain. */
+          } FsRedirectInfo;
+
+          typedef struct Fs2PathRedirectInfo {
+
+
+
+Sprite v.1.0       Printed:  December 8, 1989                   3
+
+
+
+
+
+
+PFS                          Devices                          PFS
+
+
+
+              int name1ErrorP;          /* TRUE if redirection applies
+                                         * to the first pathname, FALSE if the error
+                                         * applies to second pathname, or no error */
+              int                       prefixLength;
+              char fileName[FS_MAX_PATH_NAME_LENGTH];
+          } Fs2PathRedirectInfo;
+
+     Pathname redirection can occur in three  cases:  a  symbolic
+     link  to  an absolute pathname is encountered, a remote link
+     is encountered, a ``..'' pathname component  is  encountered
+     that  would  take  the  pathname  out the top of the pseudo-
+     file-system.  If an absolute symbolic link or a remote  link
+     is  encountered  the  server should expand the link and then
+     return the new absolute pathname.  If it was a  remote  link
+     then the link contents identify a prefix.  Its length should
+     be set in the pprreeffiixxLLeennggtthh field.  If it  is  not  a  remote
+     link  then  the  pprreeffiixxLLeennggtthh field should be set to zero to
+     indicate no  prefix  information.   If  a  ``..''  component
+     corresponds  to  a  directory outside the pseudo-file-system
+     then the remaining pathname, including the offending  ``..''
+     component,  should  be  returned.   The  pprreeffiixxLLeennggtthh  field
+     should again be zero.
+
+     The  PFS_RENAME  and  PFS_HARD_LINK  operations   may   have
+     redirection  occur  on either pathname.  FFss22PPaatthhRReeddiirreeccttIInnffoo
+     contains a field nnaammee11EErrrroorrPP that is used to  indicate  what
+     pathname  caused  a redirection.  Also, these operations may
+     be invoked even if the second pathname is not  part  of  the
+     pseudo-file-system.   This  situation  is  indicated  in the
+     operation-specific parameters by a pprreeffiixxIIDD22..ttyyppee  value  of
+     -1.   The  pseudo-file-system server is invoked in this case
+     to see if the  first  pathname  will  redirect  out  of  the
+     pseudo-file-system  and  perhaps end up with the same server
+     as the second pathname.  If redirection of  the  first  name
+     does  not  occur  and  the  second  pathname  is  not in the
+     pseudo-file-system then the  operation  cannot  succeed  and
+     FS_CROSS_DOMAIN_OPERATION should be returned.
+
+PPFFSS__OOPPEENN
+          typedef struct FsOpenArgs {
+              Fs_FileID prefixID;       /* File ID from prefix handle */
+              Fs_FileID rootID;         /* File ID of root.
+                                         * Used to trap ".." past the root. */
+              int useFlags;             /* Flags defined in fs.h */
+              int permissions;          /* Permission bits for created files.  Already
+                                         * reflects per-process permission mask */
+              int type;                 /* Used to contrain open to a specific type */
+              int clientID;             /* Host ID of client doing the open */
+              Fs_UserIDs id;            /* User and group IDs */
+          } FsOpenArgs;
+
+     The PFS_OPEN operation  is  used  to  open  a  file  in  the
+
+
+
+Sprite v.1.0       Printed:  December 8, 1989                   4
+
+
+
+
+
+
+PFS                          Devices                          PFS
+
+
+
+     pseudo-file-system.   The pprreeffiixxIIDD has been explained above.
+     The rroooottIIDD is unused for pseudo-file-systems.  The  uusseeFFllaaggss
+     are  those  passed to the ooppeenn system call.  The ppeerrmmiissssiioonnss
+     are used when creating new files and they already reflect  a
+     per-process  mode  mask.   The  ttyyppee is used to contrain the
+     open to succeed only for certain types of  files.   Possible
+     values  are  FS_FILE,  which  means  any type is acceptable,
+     FS_DIRECTORY, and FS_SYMBOLIC_LINK.   The  cclliieennttIIDD  is  the
+     Sprite hostID of the host the opening process is running on.
+     The iidd structure contains the user  and  group  IDs  of  the
+     opening process.
+
+     When a file in the pseudo-file-system is opened  the  server
+     can  either  handle  all subsequent operations itself, or it
+     can open a regular file and pass this open file off  to  the
+     opening  process.  Both of these operations are done _i_n_s_t_e_a_d
+     of replying with IOC_PDEV_REPLY, which should only  be  used
+     for error replies.
+
+     IOC_PFS_OPEN is used to create a new  pseudo-device  connec-
+     tion  for  the  file  being opened.  The input parameters of
+     this call are the  FsFileID  for  the  connection,  and  the
+     return  parametmer  of  the call is the open file descriptor
+     for the service stream.  The new service stream  is  exactly
+     like  a pseudo-device service stream, and all I/O operations
+     on the open file will be forwarded to the server using  this
+     service  stream.  The FsFileID is kept with the kernel state
+     for the open file.  If the open file is a process's  current
+     directory, then the FsFileID will be passed to the server as
+     the prefixID part of the naming parameters.
+
+     IOC_PFS_PASS_STREAM is used to pass  an  already  open  file
+     back  to the opening process.  If this is done then the ker-
+     nel handles all subsequent operations on the open file.  The
+     pseudo-device  server  is  only  notified  when  the file is
+     closed (maybe, if that seems implementable.)
+
+PPFFSS__GGEETT__AATTTTRR
+     The PFS_GET_ATTR operation is used to get the attributes  of
+     a file in the pseudo-file-system given its name.  It has the
+     same operation specific parameters as PFS_OPEN.   The  reply
+     data for this call should be an Fs_Attributes structure.
+
+PPFFSS__SSEETT__AATTTTRR
+          typedef struct {
+              Fs_Attributes             attr;/* Attribute values */
+              int                       flags;/* Indicates which attributes to set */
+              int                       nameLength;/* Number of bytes in name */
+              char                      name[4];/* Actually larger */
+          } Pfs_SetAttrData;
+
+     The PFS_SET_ATTR operation is used to set certain attributes
+
+
+
+Sprite v.1.0       Printed:  December 8, 1989                   5
+
+
+
+
+
+
+PFS                          Devices                          PFS
+
+
+
+     of  a  file  in  the pseudo-file-system given its name.  The
+     operation specific parameters are the same as those for  the
+     PFS_OPEN   operation,   except  that  there  are  additional
+     paramaters passed as data following this header.  The format
+     of  the data is defined above as type PPffss__SSeettAAttttrrDDaattaa.  This
+     includes the new attributes for the file, and a flags  field
+     that  indicates which attributes to set.  The value of ffllaaggss
+     is  an  or'd  combination  of   FFSS__SSEETT__TTIIMMEESS,   FFSS__SSEETT__MMOODDEE,
+     FFSS__SSEETT__OOWWNNEERR, FFSS__SSEETT__FFIILLEE__TTYYPPEE, FFSS__SSEETT__DDEEVVIICCEE.
+
+PPFFSS__MMAAKKEE__DDEEVVIICCEE
+          typedef struct FsMakeDeviceArgs {
+              Fs_FileID prefixID;       /* FileID of the prefix */
+              Fs_FileID rootID;         /* FileID of the root */
+              Fs_Device device;         /* Identifies the device */
+              int permissions;          /* Permissions already reflect per-process mask */
+              Fs_UserIDs id;
+              int clientID;
+          } FsMakeDeviceArgs;
+
+     The PFS_MAKE_DEVICE operation is used to  create  a  special
+     device file in the pseudo-file-system.  The FFssMMaakkeeDDeevviicceeAArrggss
+     are similar to the FFssOOppeennAArrggss with some addition information
+     about the device.
+
+PPFFSS__MMAAKKEE__DDIIRR
+     The PFS_MAKE_DIR operation is used to create a directory  in
+     the pseudo-file-system.  It uses the same operation specific
+     parameters as the PFS_OPEN operation.
+
+PPFFSS__RREEMMOOVVEE
+          typedef struct FsLookupArgs {
+              Fs_FileID prefixID;       /* FileID of the prefix */
+              Fs_FileID rootID;         /* FileID of the root */
+              int useFlags;             /* not used */
+              Fs_UserIDs id;            /* User and group IDs */
+              int clientID;             /* Needed to expand $MACHINE */
+          } FsLookupArgs;
+
+     The PFS_REMOVE operation is used to remove a file  from  the
+     pseudo-file-system.  Its operation specific parameters are a
+     simplified version of the parameters used for PFS_OPEN.
+
+PPFFSS__RREEMMOOVVEE__DDIIRR
+     The PFS_REMOVE_DIR operation is used to remove  a  directory
+     from   the  pseudo-file-system.   The  server  should  guard
+     against removing non-empty directories.
+
+PPFFSS__RREENNAAMMEE
+          typedef struct Fs2PathParams {
+              FsLookupArgs              lookup;/* Standard lookup arguments */
+              Fs_FileID                 prefixID2;/* Prefix ID of second pathname */
+
+
+
+Sprite v.1.0       Printed:  December 8, 1989                   6
+
+
+
+
+
+
+PFS                          Devices                          PFS
+
+
+
+          } Fs2PathParams;
+
+     The PFS_RENAME operation is used to change  the  name  of  a
+     file  in  the  pseudo-file-system.   The  operation-specific
+     parameters include the prefixID  for  the  second  pathname.
+     The  data  following the header contains two null-terminated
+     relative pathnames in the following format:
+
+          typedef struct Fs2PathData {
+              char                      path1[FS_MAX_PATH_NAME_LENGTH];
+              char                      path2[FS_MAX_PATH_NAME_LENGTH];
+          } Fs2PathData;
+
+PPFFSS__HHAARRDD__LLIINNKK
+     The PFS_HARD_LINK operation is used to create  another  name
+     for  a  existing file in the pseudo-file-system.  It has the
+     same operation-specifc parameters and  data  format  as  the
+     PFS_RENAME command.
+
+PPFFSS__SSYYMM__LLIINNKK
+     The PFS_SYM_LINK operation is used to create either a  symb-
+     lic  link  or  a remote link in the pseudo-file-system.  The
+     operation specific parameters are the same as for  PFS_OPEN,
+     and  the  data  contains  two  pathnames  in the FFss22PPaatthhDDaattaa
+     structure.  The first name is the name of the link file, and
+     the  second  name  is the name for the link value.  The ttyyppee
+     field in the FFssOOppeennAArrggss structure determines if it should be
+     a remote link or a regular symbolic link.
+
+NNOOTTIICCEESS
+     IOC_PFS_PASS_STREAM is unimplemented, yet.
+
+     PFS_SYM_LINK is unimplemented, yet.  Instead, symbolic links
+     are  created  by using PFS_OPEN and then PDEV_WRITE to write
+     the link value.
+
+     A new operation, PFS_FS_INFO, will be added to  return  file
+     system information like free space.
+
+SSEEEE AALLSSOO
+     Pfs, Pdev, pdev
+
+KKEEYYWWOORRDDSS
+     server, pseudo-device
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 8, 1989                   7
+
+
+

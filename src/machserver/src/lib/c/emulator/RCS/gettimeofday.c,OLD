@@ -1,0 +1,145 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.03.12.19.22.34;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.04.12.04.46;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.02.19.14.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Add sigPending parameter to Sprite calls.
+@
+text
+@/* 
+ * gettimeofday.c --
+ *
+ *	Procedure to map from Unix gettimeofday system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/gettimeofday.c,v 1.2 91/10/04 12:04:46 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+#include <mach.h>
+
+#include "compatInt.h"
+#include <sys/time.h>
+#include <spriteTime.h>
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * gettimeofday --
+ *
+ *	Procedure to map from Unix gettimeofday system call to 
+ *	Sprite Sys_GetTimeOfDay.
+ *
+ * Results:
+ *	UNIX_SUCCESS 	- the call was successful.
+ *	UNIX_ERROR 	- the call was not successful. 
+ *			  The actual error code stored in errno.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+gettimeofday(tp, tzp)
+    struct timeval *tp;
+    struct timezone *tzp;
+{
+    ReturnStatus status;	/* result returned by Sys_GetTimeOfDay */
+    kern_return_t kernStatus;
+    int		localOffset;	/* offset in minutes from UTC */
+    Boolean	DST;		/* TRUE if Daylight Savings Time is observed */
+    Boolean	sigPending;
+
+    kernStatus = Sys_GetTimeOfDayStub(SpriteEmu_ServerPort(),
+				      (Time *) tp, &localOffset, &DST,
+				      &status, &sigPending);
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	if (tzp != (struct timezone *) NULL) {
+	    /*
+	     * Unix negates the local offset from UTC to make it positive
+	     * for locations west of the prime meridian. 
+	     */
+	    tzp->tz_minuteswest 	= -localOffset;
+	    tzp->tz_dsttime 		= DST;
+	}
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.2
+log
+@Convert for use with Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/gettimeofday.c,v 1.1 91/10/02 19:14:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d53 1
+d57 4
+a60 1
+				      &status);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: gettimeofday.c,v 1.3 88/07/29 17:55:56 ouster Exp $ SPRITE (Berkeley)";
+d14 4
+a17 1
+#include "sprite.h"
+d50 1
+d54 6
+a59 1
+    status = Sys_GetTimeOfDay((Time *) tp, &localOffset, &DST);
+@

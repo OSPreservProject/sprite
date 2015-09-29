@@ -1,0 +1,55 @@
+.\"
+.\" MathErr.man
+.\"
+.\" Extended Tcl binary file search command.
+.\"----------------------------------------------------------------------------
+.\" Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+.\"
+.\" Permission to use, copy, modify, and distribute this software and its
+.\" documentation for any purpose and without fee is hereby granted, provided
+.\" that the above copyright notice appear in all copies.  Karl Lehenbauer and
+.\" Mark Diekhans make no representations about the suitability of this
+.\" software for any purpose.  It is provided "as is" without express or
+.\" implied warranty.
+.\"----------------------------------------------------------------------------
+.\" $Id: MathErr.man,v 2.0 1992/10/16 04:49:09 markd Rel $
+.\"----------------------------------------------------------------------------
+.\"
+.TH Tcl_MathError TCL "" "Tcl"
+.ad b
+.SH NAME
+Tcl_MathError - Floating point math error trap handler for Tcl.
+.SH SYNOPSIS
+.nf
+.ft CW
+#include "tclExtend.h"
+
+int
+Tcl_MathError (char *functionName,
+               int   errorType);
+.ft R
+.fi
+'
+.SH DESCRIPTION
+.PP
+Tcl math error handler, should be called by an application `matherr'
+routine to determine if an error was caused by Tcl code or by other
+code in the application.  If the error occured in Tcl code, flags will
+be set so that a standard Tcl interpreter error can be returned.
+.PP
+Paramenters:
+.RS 2
+\fBo functionName (I) - The name of the function that got the error.  From
+the exception structure supplied to matherr.
+.br
+\fBo errorType (I) - The type of error that occured.  From the exception 
+structure supplied to matherr.
+.RE
+.PP
+Returns:
+.RS 2
+TRUE if the error was in Tcl code, in which case the matherr routine calling
+this function should return non-zero so no error message will be generated.
+FALSE if the error was not in Tcl code, in which case the matherr routine can
+handle the error in any manner it choses.
+.RE

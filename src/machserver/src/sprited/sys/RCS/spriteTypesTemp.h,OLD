@@ -1,0 +1,103 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     91.10.04.11.37.48;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.15.14.21.18;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.22.12.39.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@C type definitions for the Sprite server that weren't needed in the
+native version.
+@
+
+
+1.3
+log
+@Snapshot.  fork/exec work.
+@
+text
+@/* 
+ * spriteTypesTemp.h --
+ *
+ *	C type definitions for the Sprite server.  This file is temporary, 
+ *	until its contents get merged into the standard header files.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteTypesTmp.h,v 1.2 91/08/15 14:21:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _SPRITETYPESTEMP
+#define _SPRITETYPESTEMP
+
+#include <user/fs.h>
+
+/* XXX Shouldn't these go in per-module include files? */
+
+typedef char Test_MessageBuffer[1024];
+typedef char Fs_PathName[FS_MAX_PATH_NAME_LENGTH];
+
+#endif /* _SPRITETYPESTEMP */
+@
+
+
+1.2
+log
+@Snapshot.
+@
+text
+@d2 1
+a2 1
+ * spriteTypes.h --
+d4 2
+a5 1
+ *	C type definitions for the Sprite server.
+d16 1
+a16 1
+ * $Header: /user6/kupfer/spriteserver/include/RCS/spriteTypes.h,v 1.1 91/07/22 12:39:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d19 2
+a20 2
+#ifndef _SPRITETYPES
+#define _SPRITETYPES
+d29 1
+a29 1
+#endif /* _SPRITETYPES */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d21 6
+a26 1
+typedef char MessageBuffer[1024];
+@

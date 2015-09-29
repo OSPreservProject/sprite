@@ -1,0 +1,15 @@
+F CFBPMAX.H;1                       	cfbpmax.h
+F CFBPMAXC.C;1                      	cfbpmaxcolor.c
+F CFBPMAXC.H;1                      	cfbpmaxcolor.h
+F CFBPMAX_.C;1                      	cfbpmax_io.c
+F CHANGES.;1                        	CHANGES
+D DS3100_M                          	ds3100.md
+F INIT.C;1                          	init.c
+F KEYNAMES.H;1                      	keynames.h
+F LK201.C;1                         	lk201.c
+F LOCAL.MK;1                        	local.mk
+L MACHINE.;1                        	machine	../Xmfbpmax/machine
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+L SYS.;1                            	sys	../Xmfbpmax/sys
+F TMP.;1                            	tmp

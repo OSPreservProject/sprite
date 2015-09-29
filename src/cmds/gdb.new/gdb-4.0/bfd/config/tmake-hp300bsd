@@ -1,0 +1,2 @@
+TDEFINES = -DDEFAULT_VECTOR=host_aout_big_vec
+TDEPFILES= host-aout.o trad-core.o

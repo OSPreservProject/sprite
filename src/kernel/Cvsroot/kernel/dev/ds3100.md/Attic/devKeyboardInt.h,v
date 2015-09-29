@@ -1,0 +1,70 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.01.34;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.10.19.52.00;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First code from DECWRL.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * devKeyboardInt.h --
+ *
+ * 	Internal types and procedure headers for the keyboard driver.
+ * 	Corresponds to the file in the sun machine-dependent directory,
+ *	but it may be possible to eliminate this file entirely.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.  
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devKeyboardInt.h,v 1.1 89/07/10 19:52:00 nelson Exp Locker: douglis $ SPRITE (DECWRL)
+ */
+
+#ifndef _DEVKEYBOARDINT
+#define _DEVKEYBOARDINT
+
+#include "sync.h"
+/*
+ * Master lock for keyboard/mouse driver.
+ */
+
+extern Sync_Semaphore	devKbdMutex;
+
+#endif _DEVKEYBOARDINT
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: devKeyboardInt.h,v 1.2 89/06/29 09:49:30 mnelson Exp $ SPRITE (DECWRL)
+@

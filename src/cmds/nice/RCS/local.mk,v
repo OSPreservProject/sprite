@@ -1,0 +1,43 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    stolcke:1.1; strict;
+comment  @@;
+
+
+1.1
+date     91.03.18.14.32.46;  author stolcke;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+MANPAGES	+= nohup.man
+
+#include	<$(SYSMAKEFILE)>
+
+nohup.man:	nice.man
+		ln -s $(.OODATE) $(.TARGET)
+
+install::	$(TMINSTALLDIR)/nohup
+
+$(TMINSTALLDIR)/nohup:	nohup.sh
+		$(UPDATE) -l -m 555 $(INSTALLFLAGS) $(.OODATE) $(.TARGET)
+@

@@ -1,0 +1,250 @@
+head     8.2;
+branch   ;
+access   ;
+symbols  sun4nw:8.2 symm:8.2 spur:8.2 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.2
+date     90.06.21.12.39.39;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     90.03.30.11.37.11;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.16.12;  author douglis;  state Stable;
+branches ;
+next     1.4;
+
+1.4
+date     88.10.29.21.25.36;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.07.14.54.30;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.06.14.20.49;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.09.05.15.56.22;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.2
+log
+@*** empty log message ***
+@
+text
+@/*
+ * devInit.c --
+ *
+ *	This has a weak form of autoconfiguration for mapping in various
+ *	devices and calling their initialization routines.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty. 
+ * 
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devInit.c,v 1.4 88/10/29 21:25:36 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "sys.h"
+#include "sysStats.h"
+#include "devCC.h"
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dev_Init --
+ *
+ *	Device initialization routines are called
+ *	later by Dev_Config.
+ *
+ * Results:
+ *     none
+ *
+ * Side effects:
+ *     Some devices are initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Dev_Init()
+{
+    bzero(devCounterMode, sizeof(devCounterMode));
+    bzero(devCounterLastMode, sizeof(devCounterLastMode));
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_Config --
+ *
+ *	Call the initialization routines for various controllers and
+ *	devices based on configuration tables.  This should be called
+ *	after the regular memory allocater is set up so the drivers
+ *	can use it to configure themselves.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Call the controller and device initialization routines.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_Config()
+{
+}
+
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d25 1
+d47 2
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devInit.c,v 1.4 88/10/29 21:25:36 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+a71 46
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_GatherDiskStats --
+ *
+ *	Determine which disks are idle.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_GatherDiskStats()
+{
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_GetDiskStats --
+ *
+ *	Return statistics about the different disks.
+ *
+ * Results:
+ *	Number of statistics entries returned.
+ *
+ * Side effects:
+ *	Entries in *diskStatPtr filled in.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+Dev_GetDiskStats(diskStatArr, numEntries)
+    register Sys_DiskStats *diskStatArr;	/* Where to store the disk 
+						 * stats. */
+    int			   numEntries;		/* The number of elements in 
+						 * diskStatArr. */
+{
+}
+@
+
+
+1.4
+log
+@checking this in for mendel
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: devInit.c,v 1.3 88/09/07 14:54:30 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+1.3
+log
+@Fixed stupid syntax error.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: devInit.c,v 1.2 88/09/06 14:20:49 nelson Exp $ SPRITE (Berkeley)";
+a22 1
+#include "devTimer.h"
+d31 1
+a31 1
+ *	Initialize the timer.  Device initialization routines are called
+a45 3
+    Dev_CounterInit();
+    Dev_TimerInit(DEV_CALLBACK_TIMER);
+    Dev_TimerStart(DEV_CALLBACK_TIMER);
+@
+
+
+1.2
+log
+@Added dummy procs for getting disk stats.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: devInit.c,v 5.3 88/05/05 17:49:44 nelson Exp $ SPRITE (Berkeley)";
+d24 2
+a25 1
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d74 47
+@

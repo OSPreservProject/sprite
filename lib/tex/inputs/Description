@@ -1,0 +1,419 @@
+This file describes most of the TeX style files stored in the Software
+Warehouse (/usr/sww/lib/tex/inputs).  Most of the style files on the
+SWW come from the TeX style archive server at Clarkson U.
+(sun.soe.clarkson.edu).  This file is a lightly edited concatenation
+of the "Description" files found in the style directories there.
+
+There are four sections that reflect the organization of the Clarkson
+archive.  The sections describe the styles for LaTeX, TeX, AmsTeX, and
+BibTeX, in that order.
+
+****************
+* LaTeX Styles *
+****************
+
+File                    Description
+====			===========
+
+a4.sty                  Set page size to A4
+
+a4wide.sty              Set page size to A4 with narrow margins
+
+a5.sty                  sets A5 page size (use only with 10pt)
+
+a5comb.sty              sets A5 page style but for spirally-bound documents
+                        (bigger inner margins)
+
+aaai.sty                Style file for AAAI conference 1988
+aaai-doc.tex            (BibTeX style in bibtex-style and bibtex-style-0.98)
+
+agugrl.sty              AGU Geophysical Research Letters style
+agugrl-sample.tex       
+
+agujgr.sty              AGU Journal of Geophysical Research style
+agujgr-sample.tex
+
+aip.sty                 for American Institute of Physics journals
+
+album                   Style for printing cassette labels
+
+alleqno.sty             makes all displayed equations numbered by default
+
+alltt.sty               Like verbatim, but permits other commands inside
+
+amssymbols.sty          Load AMS font
+
+apalike.sty             for American Psychological Association. 
+                        (BibTeX style in bibtex-style)
+
+apl.sty                 for typesetting APL
+
+apsabstract.sty         for American Physical Society meetings
+
+asaetr                  Transactions of the ASAE (American Society for 
+                        Agricultural Engineers)
+
+biihead.sty             Underlined heading
+
+boxedminipage.sty       puts a box round a minipage
+
+breakcites.sty          allows citations to break across lines
+
+bsf.sty                 Provide access to bold san serif fonts in LaTeX
+
+captcont.sty            captions in continuations of floats
+
+catmac.sty              Commutative diagram macros
+catmac-doc.tex
+
+cd.sty                  More commutative diagram macros
+cd-doc.tex
+
+changebar.sty           changebars for LaTeX
+
+chapterbib.sty          Allow LaTeX & BibTeX to produce separate
+                        bibliographies for each chapter.
+
+cite.sty                Compress lists of numbers in citations to ranges, and
+                        allow linebreaks with difficulty
+
+cup.sty                 a document style for books in the Cambridge 
+                        University Press, British Computer Society
+                        Workshop series.
+
+cyrillic.sty            Load Cyrillic font
+
+deproc.sty              DECUS proceedings style and
+deproc-doc.tex          documentation
+deproc.readme
+
+doublespace.sty         Double spacing in text
+
+draft.sty               Draft option for documents for "debugging"
+
+drafthead.sty           Prints DRAFT in heading
+
+drop.sty                Style for making large dropped initials for
+                        starting paragraphs
+
+ecl                     draw graphs and trees
+
+eepic                   A picture environment that used tpic specials
+
+env.sty                 style files to print on envelopes
+
+
+epic                    an extended picture environment
+
+equations.sty           marcros to to aid in constructing displayed 
+                        equations in LaTeX
+
+espo.sty                Style file for Esperanto
+
+fancyheadings.sty       modify the headers and footers
+
+farticle.sty            French version of article.sty
+
+fixup.sty               Fixup Plain's \bigl, etc. to track LaTeX size changes
+
+flowchart.sty           macros to write flow charts
+
+fnpara.sty              sets footnotes as parapraphs
+
+fontsel                 Mittelbach/Sch\"opf font selection scheme for 
+                        LaTeX---replaces lfonts.tex
+
+format.sty              Print FP numbers in fixed format
+
+frenchponct.sty         french punctuation
+
+frontiers.sty           for Frontiers '88 symposium and other IEEE conferences
+
+fullpage.sty            Get more out of a page
+
+geophysics.sty          Geophysics journal style
+
+german.sty              Style file for German
+
+hackalloc.sty           make allocation local for LaTeX
+
+headerfooter.sty        adds the capability of underlining the heading, ala 
+                        the LaTeX manual
+
+icassp.sty              This is a document style option, for cammera-ready copy
+                        for the ICASSP '89 conference (and other IEEE
+                        conferences???), to be used with the article document
+                        style and the proc document style option.
+
+ijcai89.sty             Conference Style for IJCAI-89
+ijcai89.tex
+
+insertplot.sty          Macros for inserting PostScript in files printed with
+insertplot.readme       Arbortext's DVIPS.
+
+iso.sty                 for use by those writing ISO standards
+iso9.sty                
+iso-doc.tex             
+
+ist21.sty               IST21 document style option for cover page
+
+jbs.sty                 for the Journal of Business Strategies
+
+jeep.sty                usefull modifications of the article style
+jeep.tex
+
+jmb.sty                 Journal of Molecular Biology
+
+layout.tex              Prints nice diagram showing page parameters
+layout.readme           of LaTeX
+
+lablst.sty              For printing label definitions at the end of
+                        the document
+
+lcustom.tex             Useful macros and definitions for LaTeX
+
+lfonts_ams.tex          Use AMS symbols in LaTeX
+lfonts_ams.readme       
+
+local-suppl.tex         Supplement to local guide that describes 
+                        lcustom.tex sfwmac.sty tgrind.sty trademarks.sty
+                        xxxcustom.tex xxxslides.sty
+
+ltugbot.sty             for articles to tugboat
+
+manual                  Like ``book'' but for manuals
+                        Need to look at ``book'' for documentation
+
+memo.sty                Memo and memo for the record style option
+mfr.sty                 
+
+merge.sty               Form letter option to LaTeX letter style
+
+mf.sty                  make Metafont logo's at all sizes
+
+mitpress.sty            a simple MIT Press format
+
+mitthesis.sty           Massachusetts Institute of Technology thesis format
+mitthesis-sample.tex    
+
+multibox.sty            provides multiple boxes in pictures
+
+named.sty               for use with named.bst
+
+nar.sty                 Nucleic Acids Research
+
+natsci.sty              natural sciences stle style
+                        (BibTeX file in bibtex-style-0.98)
+
+nl.sty                  style file customized for Dutch
+
+nofm.sty                for "n of M" style pagination
+
+nopagenumbers.sty       remove page numbers
+
+overcite.sty            Give superscript numbers for citations, compressing
+                        lists to ranges, and move past punctuation
+
+oxford.sty              Oxford University Press
+
+pagefoots.sty           puts footnotes at the bottom of each page
+
+parskip.sty             sets parindent to 0 and puts some glue into
+                        parskip to aid page breaks
+
+portland.sty            environments to switch between portrait mode
+                        and landscape mode
+
+pslatex                 Macros for a LaTeX that uses printer
+                        resident PostScript fonts. Requires dvi2ps that
+                        understands PostScript fonts.
+
+refman.sty              document style for reference manuals similar to
+                        the PostScript manual
+
+remark.sty              Like newtheorem but no \it
+
+res.sty                 a format for doing resumes by Michael DeCorte
+res-sample.tex
+
+resume.sty              a format for doing resumes by Stephen Gildea
+resume-sample.tex
+
+romanneg.sty            roman-numbered pages get negative page numbers (useful
+                        when selecting only part of a document to be printed)
+
+rotate.sty              Rotation of TeX output with TeXtures 
+                        (and maybe? other PostScript drivers)
+
+sc21.sty                ISO/TC97/SC21 document style option for cover page
+sc21-wg1.sty            
+
+schedule.sty            Style for generating schedule sheets
+
+screen.sty              helps create a document suitable for screen previewing
+
+semitic.sty             used to set Semitic languages
+
+sfwmac.sty              Useful macros for Unix documentation
+
+shadow.sty              put a box with a shadow around text
+
+showlabels.sty          Shows labels and references to them
+
+siam                    SIAM style
+                        (BibTeX style in bibtex-style)
+
+slem.sty                Change \sl to \em
+
+spacecites.sty          Modified to give spacing between citations
+
+subeqn.sty              allows related equations to be numbered with the same
+                        number but is further qualified by a,b,c etc.
+
+subeqnarray.sty         allows related eqnarrays to be numbered with the same
+                        number but is further qualified by a,b,c etc.
+
+subfigure.sty           allows related figures to be numbered with the same
+                        number but is further qualified by a,b,c etc.
+
+supertab.sty            allows multipage tabulars
+
+suthesis.sty            Stanford U thesis style
+
+svma.sty                Style for Springer-Verlag reports, multi-author
+svsa.sty                ditto for single author
+svma-doc.tex            
+
+tables.sty              Ruled and unruled tables made easy
+tables-doc.tex          
+
+tabls.sty               Simulate minimum-lineskip glue in tablar environments
+
+tape                    Files to setup tape libraries
+
+texnames.sty            Define a couple more TeX names
+
+tgrind.sty              Tgrind macros for LaTeX instead of TeX
+
+threepart.sty           Three part page headers
+
+trademarks.sty          Definitions of common trademarks
+
+twoup.sty               change the page sizes so that 2 pages can fit
+                        onto one with the help of dvidvi
+
+ucthesis                U of California thesis style
+
+ukdate.sty              Changes the \today command to UK style
+
+ulem.sty                Use underlining for \em-phasis
+
+usenix.sty              For Usenix conference proceedings
+
+vdm.sty                 Vienna Development Method LaTeX style
+vdm-doc.tex             Documentation on above
+
+verbatimfiles.sty       include a file in a verbatim mode
+
+xxxcustom.tex           Supplementary macros for xxx-tex, for some xxx
+
+xxxslides.sty           Supplementary macros for SliTeX, includes slides.sty
+
+**************
+* TeX Styles *
+**************
+
+File			Description
+====			===========
+
+cell                    Macros to allow for both vertical and horizontal
+                        spans within a ruled table and take steps to
+                        prevent `nubs' and `gaps' when rules are used.
+
+dayofweek.tex		Macros to compute day of week and phase of moon
+			Examples of how to use TeX arithmetic capabilities
+
+declare.tex             macros to allocate local registers
+
+epigram.tex		print text either centered or in a displayed paragraph
+
+figplace.tex            TeX macros to handle floating insertion
+
+fnpara.tex		sets footnotes as parapraphs
+
+hyphen-nederlands.tex   hyphen.tex for dutch
+
+ithyphen.tex            hyphen.tex for Italian
+
+mssymb.tex              the definitions for the symbols in the two
+                        "extra symbols" fonts created at the American
+                        Math. Society.
+
+phone.tex               prints phone lists
+
+phonebook.tex           prints phone and address books
+
+scorecard.tex           prints a baseball scorecard for one team
+
+select.tex		selectively print pages in a TeX document
+
+texinfo.tex		TeX macros to handle Gnu texinfo files
+
+texpictex.tex           tpic \special changes to PiCTeX
+
+*****************
+* AmsTeX Styles *
+*****************
+
+File			Description
+====			===========
+
+amstexsiam.sty		AMSTeX style file for SIAM
+amstexsiam-doc.tex	documentation for above
+amstexsiam-sample.tex	sample for above
+
+imappt.sty 		AMSTeX style file for reports and preprints on 8.5 by
+			11 inch paper.  It is presently used by the Institute 
+			of Mathematics and its Applications in Minneapolis 
+imappt-doc.tex 		documentation for above
+imappt-sample.tex	sample for above
+
+mssymb.sty              the definitions for the symbols in the two
+                        "extra symbols" fonts created at the AMS.
+*****************
+* BibTeX Styles *
+*****************
+
+File                    Description
+====			===========
+
+aaai-named.bst          AAAI conference
+
+acm.bst                 ACM 
+
+apalike.bst             American Psychological Assocition
+                        (LaTeX style file in latex-style)
+
+asaetr                  Transactions of the ASAE (American Society for 
+                        Agricultural Engineers)
+
+cpp.el                  A C preprocessor written for GnuEmacs for use in 
+                        generating BibTeX style files from a master file.
+
+ieeetr.bst              IEEE Transactions 
+
+jmb.bst                 Journal of Theoretical Biology
+
+makebst.sh              A shell script to make bibtex style files from a 
+                        master bst file
+
+named.bst               for use with ijcai89.sty
+
+nar.bst                 Nucleic Acids Research
+
+physics.btx             various physics journals, must be run through
+                        cpp.el or makebst.sh
+
+siam.bst                SIAM  (LaTeX style in latex-style)
+
+

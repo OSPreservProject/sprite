@@ -1,0 +1,42 @@
+   Most of X11R3 is now available. In particular I compiled servers for
+the sun4s and the sun3s. No new servers for ds3100s, but the ultrix Xmfb.new
+server is now integrated into the rest of the world.
+Note that all servers now use pseudo-devices. This should relieve ds3100
+users who usually wait 2 minutes for X to start... (color ds3100 still
+have a problem with the rgb database).
+
+   Essentially all of the X11R3 clients I could gather are also compiled.
+Please look in /X11R3/status for your favorite programs. If anything is
+missing, just let me know. I'm still having problems with: xload and
+xkill (note that a new f.kill function is available in uwm). I am NOT
+planning on supporting x1tox11 or xterm!
+
+   I would like to encourage everyone to swith to X11R3 so that X11R2 can
+be phased out. OK, if you do the following, you'll be up and running R3:
+
+1. place /X11R3/cmds.$MACHINE in your path before /sprite/cmds.$MACHINE
+   and remove /X/cmds.$MACHINE
+2. make sure you have no file called .xserverrc in your home directory (you
+   probably haven't).
+3. restructure the way you start-up X. Copy the shell script which fires-up
+   all your clients into .xsetup and copy /mic/newuser/.xinitrc into your
+   home directory. .xinitrc initializes the server before any window pops
+   up and ends in starting the window manager and your login window. The
+   login window will execute your .xsetup script to bring up all other
+   clients.
+4. to start X, simply type 'xinit'. That's IT!.
+5. Let me know what goes wrong.
+
+Thanks,
+	-Thorsten
+
+NB: which servers are we using?
+	on sun3s:	the standard MIT distribution augmented with Sprite
+			pseudo-device code.
+	on sun4s:	the standard MIT distribution augmented with Sprite
+			pseudo-device code.
+	on ds3100:	for b/w machines the DEC server augmented with
+			Sprite pseudo-device code. On color machines the
+			DEC server without pseudo-device code. We have NO
+			source code for any of the DEC servers!
+	-Thorsten

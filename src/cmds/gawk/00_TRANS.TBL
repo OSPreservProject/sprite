@@ -1,0 +1,37 @@
+L ARRAY.C;1                         	array.c	dist/array.c
+L AWK.H;1                           	awk.h	sprite/awk.h
+L AWK.Y;1                           	awk.y	dist/awk.y
+L BUILTIN.C;1                       	builtin.c	dist/builtin.c
+L CHANGES.;1                        	CHANGES	dist/CHANGES
+L COPYING.;1                        	COPYING	dist/COPYING
+L DEBUG.C;1                         	debug.c	dist/debug.c
+D DIST                              	dist
+D DS3100_M                          	ds3100.md
+L EVAL.C;1                          	eval.c	dist/eval.c
+L FIELD.C;1                         	field.c	dist/field.c
+L FUTURES.;1                        	FUTURES	dist/FUTURES
+F GAWK.DVI;1                        	gawk.dvi
+F GAWK.LOG;1                        	gawk.log
+L GAWK.MAN;1                        	gawk.man	dist/gawk.1
+L GAWK.TEX;1                        	gawk.texinfo	dist/gawk.texinfo
+L IO.C;1                            	io.c	dist/io.c
+F LOCAL.MK;1                        	local.mk
+L MAIN.C;1                          	main.c	dist/main.c
+F MAKEFILE.;1                       	Makefile
+L MISSING.C;1                       	missing.c	dist/missing.c
+L MSG.C;1                           	msg.c	dist/msg.c
+L NODE.C;1                          	node.c	dist/node.c
+L PATCHLEV.H;1                      	patchlevel.h	dist/patchlevel.h
+L PROBLEMS.;1                       	PROBLEMS	dist/PROBLEMS
+D RCS                               	RCS
+L README.;1                         	README	dist/README
+L REGEX.C;1                         	regex.c	dist/regex.c
+L REGEX.H;1                         	regex.h	dist/regex.h
+D SPRITE                            	sprite
+D SUN3_MD                           	sun3.md
+D SUN4_MC                           	sun4.mc
+D SUN4_MD                           	sun4.md
+L TEXINFO.;1                        	texinfo	dist/support
+L TEXINFO.TEX;1                     	texinfo.tex	texinfo/texinfo.tex
+F VERSION.C;1                       	version.c
+L VERSION.SH;1                      	version.sh	dist/version.sh

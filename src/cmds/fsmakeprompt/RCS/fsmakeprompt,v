@@ -1,0 +1,460 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.2; strict;
+comment  @# @;
+
+
+1.2
+date     91.05.30.12.12.25;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.07.02.22.27.52;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@added ds5000
+@
+text
+@#!/bin/csh -f
+#
+#  This is an interactive front-end to the fsmake program.
+#
+# $Header: /sprite/src/admin/fsmakeprompt/RCS/fsmakeprompt,v 1.1 90/07/02 22:27:52 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+onintr cleanup
+while ($#argv)
+    switch ($1)
+	case "-x":
+	    set echo
+	    breaksw
+	case "-d":
+	    set debugFlag
+	    breaksw
+	default:
+	    echo "Usage: $0 [-x]"
+	    exit 1
+	    breaksw
+    endsw
+    shift
+end
+
+set fsmake="/sprite/admin.$MACHINE/fsmake"
+set device = 
+set handsOff="y"
+set scsi="y"
+set inventGeometry="n"
+set disktabGeometry="n"
+set disktabPartition="n"
+set repartition="n"
+set autoAssign="y"
+set disktabFile="/etc/disktab"
+set numSystems=1
+set diskType=""
+set hostID=""
+set doCopy="n"
+set write="n"
+set copyName = ( "" "" "" "")
+set parts = ( "" "" "" "" "" "" "" "")
+
+if ($?debugFlag) then
+    set echo
+endif
+startQuestions:
+    echo ""
+    echo "Please answer the following questions."
+    echo "Default answers are surrounded by ()'s."
+    echo "Multiple choices are surrounded by []'s"
+
+    while(1)
+	echo ""
+	echo -n "Prefix of disk devices, eg rsd00 ($device): "
+	set answer = $<
+	if ("$answer" != "") then
+	    break
+	else
+	    echo "You must specify a prefix"
+	endif
+    end
+    set device = "$answer"
+    set rawDevice="$device"
+    while (1)
+	echo ""
+	echo -n "Does the disk contain any filesystems" \
+	    "you wish to keep? [yn] ($handsOff): "
+	set answer = $<
+	if ("$answer" == "" || "$answer" =~ [yn]) break
+	echo "Please answer with y or n"
+    end
+    if ("$answer" != "") set handsOff = "$answer"
+
+    while (1)
+	echo ""
+	echo -n "How many new filesystems do you want to make?" \
+	    "[1234] ($numSystems): "
+	set answer = $<
+	if ("$answer" == "" || "$answer" =~ [1234]) break
+	echo "Please answer with 1,2,3 or 4"
+    end
+    if ("$answer" != "") set numSystems = "$answer"
+    if ($handsOff == "n") then
+	switch($numSystems)
+	    case "1" 
+		set parts = ( 'c' )
+		set size = ( 100 )
+		breaksw
+	    case "2"
+		set parts = ( 'a' 'g')
+		set size = ( 25 75 )
+		breaksw
+	    case "3"
+		set parts = ( 'a' 'd' 'e')
+		set size = ( 34 33 33 )
+		breaksw
+	    case "4"
+		set parts = ( 'a' 'd' 'e' 'f' )
+		set size = ( 25 25 25 25 )
+		breaksw
+	endsw
+	echo ""
+	echo "The filesystems will be made in partitions <$parts>"
+	while (1)
+	    echo -n "Is this OK? [yn] ($autoAssign): "
+	    set answer = $<
+	    if ("$answer" == "" || "$answer" =~ [yn]) break
+	    echo "Please answer with y or n"
+	end
+	if ("$answer" != "") set autoAssign="$answer"
+    else
+	set autoAssign="n"
+    endif
+    if ($autoAssign == "n") then
+	set i=1
+	while ($i <= $numSystems)
+	    while(1)
+		echo ""
+		echo -n "Which partition should filesystem" \
+		    "$i be made in? [abcdefg] ($parts[$i]): "
+		set answer = $<
+	    if ("$answer" == "" || "$answer" =~ [abcdefg]) break
+		echo "Please answer with one of [abcdefg]"
+	    end
+	    if ("$answer" != "") set parts[$i] = "$answer"
+	    @@ i += 1
+	end
+    endif
+    while (1)
+	echo ""
+	echo -n "Is the disk a SCSI device? [yn] ($scsi): "
+	set answer = $<
+	if ("$answer" == "" || "$answer" =~ [yn]) break
+	echo "Please answer with \"y\" or \"n\""
+    end
+    if ("$answer" != "") set scsi = "$answer"
+
+    if ($handsOff == "n") then
+	if ($?SPRITE_OS && $scsi == "y") then
+	    while (1)
+		echo ""
+		echo "It is possible to change the disk geometry to maximize"
+		echo "disk utilization. This may change the filesystem's idea"
+		echo "of the number of heads, sectors, etc. so that they no"
+		echo "longer reflect the physical disk geometry. This shouldn't"
+		echo "affect performance but may reduce wasted disk space."
+		echo -n "Do you want to do this? [yn] ($inventGeometry): "
+		set answer = $<
+		if ("$answer" == "" || "$answer" =~ [yn]) break
+		echo "Please answer with \"y\" or \"n\""
+	    end
+	    if ("$answer" != "") set inventGeometry = "$answer"
+	endif
+	if ($inventGeometry == "n") then
+	    while (1)
+		echo ""
+		echo -n "Do you want the disk geometry set from the disktab" \
+		    "file? [yn] ($disktabGeometry): "
+		set answer = $<
+		if ("$answer" == "" || "$answer" =~ [yn]) break
+		echo "Please answer with \"y\" or \"n\""
+	    end
+	    if ("$answer" != "") set disktabGeometry = "$answer"
+	    if ($disktabGeometry == "y") then
+		set repartition = "y"
+	    endif
+	else
+	    set repartition = "y"
+	endif
+	if ($repartition != "y") then
+	    while (1)
+		echo ""
+		echo -n "Do want to change the disk partitioning? [yn]" \
+		    "($repartition): "
+		set answer = $<
+		if ("$answer" == "" || "$answer" =~ [yn]) break
+		echo "Please answer with \"y\" or \"n\""
+	    end
+	    if ("$answer" != "") set repartition = "$answer"
+	else
+	    echo ""
+	    echo "If you change the configuration you have to change" \
+		 "the partitioning."
+	endif
+	if ($repartition == "y") then
+
+	    while (1)
+		echo ""
+		echo -n "Do you want to use the partition information in the" \
+		    "disktab file? [yn] ($disktabPartition): "
+		set answer = $<
+		if ("$answer" == "" || "$answer" =~ [yn]) break
+		echo "Please answer with \"y\" or \"n\""
+	    end
+	    if ("$answer" != "") set disktabPartition = "$answer"
+
+	    if ($disktabPartition == "n") then
+		while (1)
+		    echo ""
+		    echo "Please enter the size of each file system as a" \
+			"percentage."
+		    set total = 0
+		    set i=1
+		    set sizeString=""
+		    while ($i <= $numSystems)
+			while (1) 
+			    echo ""
+			    echo -n "Size of file system $i "
+			    echo -n "in partition $parts[$i] ($size[$i]): "
+			    set answer = $<
+			    if ("$answer" == "" ||  \
+				"$answer" =~ [0-9] ||  \
+				"$answer" =~ [0-9][0-9] ||  \
+				"$answer" =~ [0-9][0-9][0-9]) break 
+			    echo "Please answer with a number"
+			end
+			if ("$answer" != "") set size[$i] = "$answer"
+			@@ total += $size[$i]
+			if ($sizeString != "") then
+			    set sizeString = ($sizeString',')
+			endif
+			set sizeString=($sizeString$parts[$i]':'$size[$i])
+			@@ i += 1
+		    end
+		    if ($total < 100) then
+			while (1)
+			    set answer="n"
+			    echo ""
+			    echo "Warning: the filesystems only use $total" \
+				"percent of the disk."
+			    echo -n "Is this OK? [yn] ($answer): "
+			    set answer = $<
+			    if ("$answer" == "" || "$answer" =~ [yn]) break
+			    echo "Please answer with y or n"
+			end
+			if ("$answer" == "y") then
+			    break
+			endif
+		    else if ($total == 100) then
+			break
+		    else
+			echo "Sum of sizes cannot be larger than 100"
+		    endif
+		end
+	    endif
+	endif
+    endif
+    if ($disktabGeometry == "y" || $disktabPartition == "y") then
+	while (1)
+	    echo ""
+	    echo -n "Enter the name of the disktab file ($disktabFile): "
+	    set answer = $<
+	    if ("$answer" != "") set disktabFile = "$answer"
+	    if (-e $disktabFile) break
+	    echo "$disktabFile does not exist."
+	end
+	while (1)
+	    echo ""
+	    echo "Enter the type of disk, eg rz55"
+	    echo -n "This is used to find the info in the disktab ($diskType): "
+	    set answer = $<
+	    if ("$answer" != "") set diskType = "$answer"
+	    if ("$diskType" != "") break
+	    echo "You must enter a type"
+	end
+	set diskType = "$answer"
+    endif
+    if ($disktabGeometry == "y" || $inventGeometry == "y" || \
+	$repartition == "y") then
+
+	echo ""
+	echo -n "Name of raw device, eg rsd00 ($rawDevice): "
+	set answer = $<
+	if ("$answer" != "") set rawDevice = "$answer"
+    endif
+    if (! $?SPRITE_OS) then
+	while (1)
+	    echo ""
+	    echo -n "Do you wish to copy files to the new filesystems? " \
+		"[yn] ($doCopy) : "
+	    set answer = $<
+	    if ("$answer" == "" || "$answer" =~ [yn]) break
+	    echo "Please answer with y or n"
+	end
+	if ("$answer" != "") set doCopy = "$answer"
+    endif
+    if ($doCopy == "y") then
+	set i=1
+	while ($i <= $numSystems)
+	    echo ""
+	    echo -n "Name of the directory to copy into partition " \
+		"$parts[$i] : "
+	    set answer = $<
+	    if ("$answer" != "") set copyName[$i] = "$answer"
+	    @@ i++
+	end
+    endif
+    while (1)
+	set answer="n"
+	echo ""
+	echo "Is the disk going to be installed on a different host"
+	echo -n "from the one that is running this script? [yn] ($answer): "
+	set answer = $<
+	if ("$answer" == "" || "$answer" =~ [yn]) break
+	echo "Please answer with y or n"
+    end
+    if ("$answer" == "y") then
+	echo ""
+	echo -n "Enter the name or host id of that host: "
+	set answer = $<
+	if ("$answer" != "") set hostID="$answer"
+	set hostID="$answer"
+	while (1)
+	    echo ""
+	    echo -n "Enter the type of machine [sun3,sun4,sun4c,ds3100]: "
+	    set answer = $<
+	    switch("$answer")
+		case "sun3"
+		case "sun4"
+		case "sun4c"
+		case "ds3100"
+		    break
+		    breaksw
+		case ""
+		    echo "You must enter a machine type"
+		    breaksw
+		default
+		    echo "Unknown machine type $answer"
+		    breaksw
+	    endsw
+	end
+	set machine="$answer"
+    else
+	set machine=$MACHINE
+    endif
+    if ($machine =~ sun*) then
+	set labeltype="sun"
+    else if ($machine =~ ds*) then
+	set labeltype="dec"
+    else
+	echo "Unknown machine type $machine"
+	exit 1
+    endif
+    while (1)
+	echo ""
+	echo -n "Are you positively sure you want to" \
+	        "overwrite the disk? [yn] ($write): "
+	set answer = $<
+	if ("$answer" == "" || "$answer" =~ [yn]) break
+	echo "Please answer with y or n"
+    end
+    if ("$answer" != "") set write=$answer
+    set i=1
+    while ($i <= $numSystems)
+	set command="$fsmake"
+	set command=($command -devDir /dev)
+	set command=($command -dev $device -part $parts[$i])
+	set command=($command -labeltype $labeltype)
+	if ("$copyName[$i]" != "") then
+	    set command=($command -dir $copyName[$i])
+	endif
+	if ($scsi == "n") then
+	    set command=($command -noscsi)
+	else
+	    set command=($command -scsi)
+	endif
+	if ("$hostID" != "") then
+	    set command=($command -host $hostID)
+	endif
+	if ("$diskType" != "") then
+	    set command=($command -disktype $diskType)
+	endif
+	if ("$write" != "n") then
+	    set command=($command -write)
+	endif
+	if ($i == 1 && "$rawDevice" != "") then
+	    set command=($command -rawdev $rawDevice)
+	endif
+	if ($i == 1 && $repartition == "y") then
+	    set command=($command -repartition)
+	    if ($disktabPartition == "y") then
+		set command=($command -partdisktab)
+		set command=($command -disktabName $disktabFile)
+	    else
+		set command=($command -sizes $sizeString)
+	    endif
+	endif
+	if ($i == 1 && (($inventGeometry == "y") || \
+	    ($disktabGeometry == "y"))) then
+	    set command=($command -reconfig)
+	    if ($disktabGeometry == "y") then
+		set command=($command -configdisktab)
+		set command=($command -disktabName $disktabFile)
+	    endif
+	endif
+	echo ""
+	echo $command
+	if (! $?debugFlag) then
+	    eval $command
+	    if ($status != 0) then
+		echo $fsmake failed
+		goto cleanup
+	    endif
+	endif
+	@@ i++
+    end
+
+cleanup:
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 1
+a5 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.10 90/03/07 11:06:42 jhh Exp $ SPRITE (Berkeley)
+d347 1
+a347 1
+    else if ($machine == "ds3100") then
+@

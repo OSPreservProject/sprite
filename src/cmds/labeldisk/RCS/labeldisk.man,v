@@ -1,0 +1,278 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.7
+date     91.09.26.21.08.59;  author voelker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.14.13.55.17;  author voelker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.14.13.42.30;  author voelker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.02.16.16.10.57;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.01.23.28.03;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.09.37.09;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.15.21.36;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@extended to check for lfs too...
+
+@
+text
+@' $Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.man,v 1.6 91/09/14 13:55:17 voelker Exp Locker: voelker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS LABELDISK cmds
+.BS
+.SH NAME
+labeldisk \- read and write a disk's label
+.SH SYNOPSIS
+.IP \fBlabeldisk 10
+[\fB\-from fromDevice\fR]
+[\fB\-w\fR]
+[\fB\-q\fR]
+[\fB\-sun\fR]
+[\fB\-dec\fR]
+[\fB\-new\fR]
+\fIdevice\fP
+.SH OPTIONS
+.IP \fB\-from\ fromDevice\fP
+Read the label from this device.
+.IP \fB\-w\fP
+Write a new label.
+.IP \fB\-q\fP
+Write a new label quickly, without prompting for partition information.
+.IP \fB\-sun\fP
+Write out a Sun label.  The default is to write whatever type of label was
+read.
+.IP \fB\-dec\fP
+Write out a Dec label.
+.IP \fB\-new\fP
+Ignore any old label.
+.IP \fIdevice\fP
+The device file with the disk label.  Without \fB-from\fP it is the
+device that the label is read from and written to, otherwise it is
+the device that is written to.
+.BE
+
+.SH DESCRIPTION
+.LP
+This reads the disk label and verifies its checksum.  If the
+\fB-from fromDevice\fP option is present then the disk label is
+read from the \fBfromDevice\fP, and the \fBdevice\fP argument
+becomes the device to which the label is written to.
+.LP
+If the \fB\-w\fP
+option is present labeldisk interactively prompts for partition information.
+After this the user is presented with the new label and given
+the opportunity to commit the change or abort it.  The user is also
+given the chance to write the label to all of the valid partitions
+found on the device.  ``valid'' means that the partition has a positive
+number of cylinders associated with it, and that a file system
+exists on the partition.  If a partition on the
+disk is not ``valid'', then it is skipped.  An attempt is made to
+write the label to the raw disk in the improbable case that no
+valid partition starts on cylinder 0.  If labeldisk was not
+able to write the label to the raw disk or to a partition that
+begins at cylinder 0, then a warning is issued to that effect.
+.LP
+The \fB-q\fP option turns off the prompting for partition information
+only.  This is useful for copying a label from one partition
+on one device to other partitions on the same or different device
+if the user knows that the label on the from device has the
+correct information.  Overrides the \fB-w\fP option.
+.LP
+The \fB-dec\fP option converts the label being written to a dec label.
+.LP
+The \fB-sun\fP option converts the label being written to a dec label.
+.LP
+The \fB-new\fP option ignores any label read, and creates a new one
+instead.  If either the \fB-dec\fP or the \fB-sun\fP option is specified
+then the new label created is of the specified type.
+.LP
+Each disk is divided into 8 partitions, named ``ai'' thru ``gi''.
+Each partition is specified with a starting cylinder number and the
+number of cylinders it contains.  Unused partitions
+are indicated with a zero size.  Partitions can overlap, but
+overlapping partitions should never be used simultaneously!
+Traditionally partition ``ai'' is a small partition suitable for the root
+or a small /tmp.  Partition ``bi'' is a slightly larger system
+suitable for a single machine's swap directory.
+Partition ``ci'' is a single large partition that specifies the whole disk.
+Partitions ``di'' and ``ei'' are often used as large partitions
+beyond ``ai'' and ``bi''.
+Partition ``gi'' is usually set up as all the space after ``ai'' and ``bi''.
+Partitions ``fi'' and ``hi'' usually aren't used, but they can be.
+.LP
+Partitions are useful to quarantine different sets of users from
+one another, although they are a pain to change once a filesystem
+has been created on them.  Changing them requires recreating any affected
+filesystems. 
+.SH KEYWORDS
+disk, label
+@
+
+
+1.6
+log
+@fixed a typo
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.man,v 1.5 91/09/14 13:42:30 voelker Exp Locker: voelker $ SPRITE (Berkeley)
+d49 2
+a50 2
+number of cylinders associated with it, and that a OFS domain header
+can be successfully read from the partition.  If a partition on the
+@
+
+
+1.5
+log
+@cleaned up the man page to describe the current options available
+
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.man,v 1.4 90/02/16 16:10:57 shirriff Exp Locker: voelker $ SPRITE (Berkeley)
+d68 1
+a68 1
+instead.  If either the \fB-dec\fP or the \fB-sun\P option is specified
+@
+
+
+1.4
+log
+@Documented dec label function.
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.man,v 1.3 89/08/01 23:28:03 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d8 8
+a15 1
+\fBlabeldisk [\fB\-w\fR] \fIdevice\fP
+d17 2
+d21 2
+a25 2
+.IP \fB\-sprite\fP
+Write out a Sprite label.
+d28 6
+a33 2
+.IP \fIdevice\fP 14
+The device file with the disk label.  Generally the ``a'' partition.
+d38 7
+a44 2
+This reads the disk label and verifies its checksum.  If the \fB\-w\fP
+option is present this interactively prompts for partition information.
+d46 24
+a69 1
+the opportunity to commit the change or abort it.  The disk label 
+@
+
+
+1.3
+log
+@Now does Sprite labels
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/labeldisk/RCS/labeldisk.man,v 1.2 88/12/30 09:37:09 ouster Exp Locker: jhh $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBlabeldisk -d \fIdevice\fP [\fB\-w\fR]
+a9 2
+.IP \fB\-d \fIdevice\fP 14
+The device file with the disk label.  Generally the ``a'' partition.
+d16 5
+a20 2
+Write out a Sprite label. The default is to write whatever type of label was
+read.
+a47 2
+.SH BUGS
+Disk has to have a label already.
+@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/labeldisk/RCS/labeldisk.man,v 1.1 88/12/21 15:21:36 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d14 6
+d47 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/labeldisk/RCS/labeldisk.man,v 1.1 88/12/21 15:21:01 ouster Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBlabeldisk -d \fIdevice\fP [\fB-w\fR]
+d10 3
+a12 3
+.IP \fB-d \fIdevice\fP 14
+The device file with the disk label.  Generally the "a" partition.
+.IP \fB-w\fP
+d18 1
+a18 1
+This reads the disk label and verifies its checksum.  If the \fB-w\fP
+d23 1
+a23 1
+Each disk is divided into 8 partitions, named 'a' thru 'g'.
+d28 2
+a29 2
+Traditionally partition 'a' is a small partition suitable for the root
+or a small /tmp.  Partition 'b' is a slightly larger system
+d31 5
+a35 5
+Partition 'c' is a single large partition that specifies the whole disk.
+Partitions 'd' and 'e' are often used as large partitions
+beyond 'a' and 'b'.
+Partition 'g' is usually set up as all the space after 'a' and 'b'.
+Partitions 'f' and 'h' usually aren't used, but they can be.
+@

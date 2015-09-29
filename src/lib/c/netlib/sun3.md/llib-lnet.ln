@@ -1,0 +1,251 @@
+512
+llib-lnet:Net_AddrNetMask.c 2
+2
+1 45 46 0 0
+Net_InetAddrNetMask
+14 0 0
+16
+0 57 14 0 0
+Net_InetAddrNetMask
+512
+llib-lnet:Net_AddrNetNum.c 2
+2
+1 45 46 0 0
+Net_InetAddrNetNum
+14 0 0
+16
+0 55 14 0 0
+Net_InetAddrNetNum
+512
+llib-lnet:Net_EtherAddrToString.c 2
+2
+2 46 98 0 0
+Net_EtherAddrToString
+24 64 -32768
+18 0 0
+16
+0 57 18 0 0
+Net_EtherAddrToString
+512
+llib-lnet:Net_HostToNetInt.c 2
+2
+1 44 46 0 0
+Net_HostToNetInt
+14 0 0
+512
+llib-lnet:Net_HostToNetInt.c
+16
+0 62 14 0 0
+Net_HostToNetInt
+512
+llib-lnet:Net_HostToNetShort.c 2
+2
+1 44 45 0 0
+Net_HostToNetShort
+14 0 0
+512
+llib-lnet:Net_HostToNetShort.c
+16
+0 60 13 0 0
+Net_HostToNetShort
+512
+llib-lnet:Net_InetAddrHostNum.c 2
+2
+1 45 46 0 0
+Net_InetAddrHostNum
+14 0 0
+16
+0 55 14 0 0
+Net_InetAddrHostNum
+512
+llib-lnet:Net_InetHdrChecksum.c 2
+2
+3 51 45 0 0
+Net_InetChecksum2
+4 0 0
+18 0 0
+24 96 -32768
+16
+0 148 13 0 0
+Net_InetChecksum2
+512
+llib-lnet:Net_MakeInetAddr.c 2
+2
+2 45 46 0 0
+Net_MakeInetAddr
+14 0 0
+14 0 0
+16
+0 59 14 0 0
+Net_MakeInetAddr
+512
+llib-lnet:Net_NetToHostInt.c 2
+2
+1 43 46 0 0
+Net_NetToHostInt
+14 0 0
+512
+llib-lnet:Net_NetToHostInt.c
+16
+0 61 14 0 0
+Net_NetToHostInt
+512
+llib-lnet:Net_NetToHostShort.c 2
+2
+1 43 45 0 0
+Net_NetToHostShort
+14 0 0
+512
+llib-lnet:Net_NetToHostShort.c
+16
+0 59 13 0 0
+Net_NetToHostShort
+512
+llib-lnet:Net_StringToEtherAddr.c 2
+2
+2 47 32 0 0
+Net_StringToEtherAddr
+18 0 0
+24 64 -32768
+512
+llib-lnet:Net_StringToInetAddr.c 2
+2
+1 50 46 0 0
+Net_StringToInetAddr
+18 0 0
+16
+0 140 14 0 0
+Net_StringToInetAddr
+512
+llib-lnet:Net_StringToNetNum.c 2
+2
+1 46 46 0 0
+Net_StringToNetNum
+18 0 0
+16
+0 106 14 0 0
+Net_StringToNetNum
+512
+llib-lnet:Net_AddrCmp.c 2
+2
+2 45 36 0 0
+Net_AddrCmp
+24 96 5090
+24 96 5090
+16
+0 65 4 0 0
+Net_AddrCmp
+512
+llib-lnet:Net_AddrToString.c 2
+2
+2 48 98 0 0
+Net_AddrToStringNew
+24 96 5090
+18 0 0
+16
+0 97 18 0 0
+Net_AddrToStringNew
+2
+4 125 98 0 0
+Net_AddrToString
+25 64 23507
+4 0 0
+4 0 0
+18 0 0
+16
+0 157 18 0 0
+Net_AddrToString
+512
+llib-lnet:Net_InetAddrToString.c 2
+2
+2 48 98 0 0
+Net_InetAddrToString
+14 0 0
+18 0 0
+16
+0 57 18 0 0
+Net_InetAddrToString
+512
+llib-lnet:Net_InetChecksum.c 2
+2
+2 49 45 0 0
+Net_InetChecksum
+4 0 0
+18 0 0
+16
+0 156 13 0 0
+Net_InetChecksum
+512
+llib-lnet:Net_SetAddress.c 2
+2
+3 46 36 0 0
+Net_SetAddress
+4 0 0
+18 0 0
+24 96 5090
+16
+0 72 4 0 0
+Net_SetAddress
+2
+2 94 36 0 0
+Net_GetAddress
+24 96 5090
+18 0 0
+16
+0 116 4 0 0
+Net_GetAddress
+512
+llib-lnet:Net_StringToAddr.c 2
+2
+3 53 36 0 0
+Net_StringToAddrNew
+18 0 0
+4 0 0
+24 96 5090
+16
+0 79 4 0 0
+Net_StringToAddrNew
+2
+4 105 36 0 0
+Net_StringToAddr
+18 0 0
+4 0 0
+4 0 0
+25 64 23507
+16
+0 139 4 0 0
+Net_StringToAddr
+512
+llib-lnet:Net_FDDIAddrToString.c 2
+2
+2 46 98 0 0
+Net_FDDIAddrToString
+24 64 -32768
+18 0 0
+16
+0 57 18 0 0
+Net_FDDIAddrToString
+512
+llib-lnet:Net_StringToFDDIAddr.c 2
+2
+2 47 32 0 0
+Net_StringToFDDIAddr
+18 0 0
+24 64 -32768
+512
+llib-lnet:Net_StringToUltraAddr.c 2
+2
+2 47 32 0 0
+Net_StringToUltraAddr
+18 0 0
+24 64 21318
+512
+llib-lnet:Net_UltraAddrToString.c 2
+2
+2 46 98 0 0
+Net_UltraAddrToString
+24 64 21318
+18 0 0
+16
+0 53 18 0 0
+Net_UltraAddrToString

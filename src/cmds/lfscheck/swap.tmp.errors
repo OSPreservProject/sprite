@@ -1,0 +1,110 @@
+/dev/rvj00c:DescMap: Bad alloc count; is 3249 should be 3262
+/dev/rvj00c:UsageArray: FreeBlocks wrong; is 314316 should be 313666
+/dev/rvj00c:CheckFile:file 21447 block 0 duplicate usage of block 165815 Previous use at <6,0,0>
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 161 is wrong; is 246528 should be 276736
+/dev/rvj00c:Clean segment 387 with activeBytes 8192
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 403 is wrong; is 263040 should be 258944
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 499 is wrong; is 253952 should be 249856
+File 11116 is unreferenced
+File 11117 is unreferenced
+File 11120 is unreferenced
+File 11121 is unreferenced
+File 11122 is unreferenced
+File 11127 is unreferenced
+File 21387 is unreferenced
+File 21391 is unreferenced
+File 21394 is unreferenced
+File 21398 is unreferenced
+File 21399 is unreferenced
+File 21403 is unreferenced
+File 21404 is unreferenced
+File 21405 is unreferenced
+File 21408 is unreferenced
+File 21413 is unreferenced
+File 21420 is unreferenced
+File 21421 is unreferenced
+File 21422 is unreferenced
+File 21423 is unreferenced
+File 21425 is unreferenced
+File 21447 is unreferenced
+File 21450 is unreferenced
+File 21453 is unreferenced
+File 21454 is unreferenced
+File 21460 is unreferenced
+File 21483 is unreferenced
+File 21484 is unreferenced
+File 21485 is unreferenced
+File 21498 is unreferenced
+File 21499 is unreferenced
+File 21500 is unreferenced
+File 21501 is unreferenced
+File 21503 is unreferenced
+File 21508 is unreferenced
+File 21509 is unreferenced
+File 21511 is unreferenced
+File 21514 is unreferenced
+File 21524 is unreferenced
+File 21528 is unreferenced
+File 21529 is unreferenced
+File 21533 is unreferenced
+File 21535 is unreferenced
+File 21536 is unreferenced
+File 21539 is unreferenced
+File 21543 is unreferenced
+File 33699 is unreferenced
+File 33704 is unreferenced
+48 unreferenced files
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165816 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165816 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165816 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165816 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165817 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165817 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165817 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165817 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165818 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165818 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165818 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 165818 overlaps <1,21447,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 9 of file 12772 in use at 397299, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 9 of file 12772 in use at 397300, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 9 of file 12772 in use at 397301, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 9 of file 12772 in use at 397302, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397291, used by <1,10892,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397292, used by <1,10892,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397293, used by <1,10892,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397294, used by <1,10892,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397295, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397296, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397297, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 2 of file 12772 in use at 397298, used by <1,10892,1>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 0 of file 12772 in use at 397287, used by <1,10892,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 0 of file 12772 in use at 397288, used by <1,10892,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 0 of file 12772 in use at 397289, used by <1,10892,0>
+/dev/rvj00c:CheckFileLayoutSummary: Dead block 0 of file 12772 in use at 397290, used by <1,10892,0>
+/dev/rvj00c:No summary region for block at 165964 own by <1,21485,109>
+/dev/rvj00c:No summary region for block at 165965 own by <1,21485,109>
+/dev/rvj00c:No summary region for block at 165966 own by <1,21485,109>
+/dev/rvj00c:No summary region for block at 397287 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397288 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397289 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397290 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397291 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397292 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397293 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397294 own by <1,10892,0>
+/dev/rvj00c:No summary region for block at 397295 own by <1,10892,1>
+/dev/rvj00c:No summary region for block at 397296 own by <1,10892,1>
+/dev/rvj00c:No summary region for block at 397297 own by <1,10892,1>
+/dev/rvj00c:No summary region for block at 397298 own by <1,10892,1>
+/dev/rvj00c:No summary region for block at 397299 own by <1,10892,1>
+/dev/rvj00c:No summary region for block at 397300 own by <1,10892,1>
+/dev/rvj00c:No summary region for block at 397301 own by <1,10892,1>
+/dev/rvj00c:No summary region for block at 397302 own by <1,10892,1>
+17:00:54.950:Read LFS checkpoint from /dev/rvj00c
+17:01:00.720:Checking files
+17:03:16.650:Checking usage array
+17:03:16.660:Checking directory tree
+17:03:37.150:Checking summary regions
+17:04:58.800:Reporting errors
+/dev/rvj00c: 51 major errors 3 minor errors

@@ -1,0 +1,13 @@
+vmstat.c:
+vmstat.c(218): warning: numCalls set but not used in function PrintWide
+vmTotals.c:
+Vm_Cmd, arg. 3 used inconsistently	llib-lc:syscalls.c 2(577)  ::  vmstat.c(199)
+Vm_Cmd, arg. 3 used inconsistently	llib-lc:syscalls.c 2(577)  ::  vmstat.c(268)
+sleep value declared inconsistently	llib-lc:sleepTmp.c 2(29)  ::  vmstat.c(152)
+exit value declared inconsistently	llib-lc:exit.c 2(57)  ::  vmstat.c(155)
+faultThreshold defined( vmstat.c(40) ), but never used
+pageOutThreshold defined( vmstat.c(42) ), but never used
+printMod defined( vmstat.c(47) ), but never used
+fflush returns value which is always ignored
+fprintf returns value which is always ignored
+printf returns value which is always ignored

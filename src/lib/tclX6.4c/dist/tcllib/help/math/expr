@@ -1,0 +1,4 @@
+          expr arg
+               Calls the expression processor  to  evaluate  arg,  and
+               returns  the  result  as  a  string.   See  the section
+               EXPRESSIONS above.

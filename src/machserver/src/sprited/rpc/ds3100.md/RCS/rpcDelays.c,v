@@ -1,0 +1,104 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.11.14.10.14.42;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.25.20.57.09;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Snapshot.  net, rpc, recov modules added.
+@
+text
+@/* 
+ * rpcDelay.c --
+ *
+ *	Get preferred machine dependent inter-packet delays for rpcs.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/rpc/ds3100.md/RCS/rpcDelays.c,v 1.1 91/10/25 20:57:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <sys.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcGetMachineDelay --
+ *
+ *	Get preferred inter-fragment delay for input and output packets.
+ *	This is approximately a microsecond value for how long this
+ *	machine-type takes to turn a packet around.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RpcGetMachineDelay(myDelayPtr, outputRatePtr)
+	unsigned short	*myDelayPtr;	/* Preferred delay in microseconds
+					 * between successive input packets.
+					 */
+	unsigned short	*outputRatePtr;	/* Delay in microseconds between
+					 * successive output packets.
+					 */
+{
+    *myDelayPtr = 500;			/* Same as sun3 value */
+    *outputRatePtr = 500;
+    return;
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+ *	Get perferred machine dependent inter-packet delays for rpcs.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/sun4.md/rpcDelays.c,v 1.1 89/06/05 10:35:01 brent Exp $ SPRITE (Berkeley)";
+d21 2
+a22 3
+#include "sprite.h"
+#include "mach.h"
+#include "sys.h"
+@

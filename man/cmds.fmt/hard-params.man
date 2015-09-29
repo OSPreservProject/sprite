@@ -1,0 +1,68 @@
+
+
+
+PROGNAME                  User Commands                  PROGNAME
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     hard-params - Describe the hardware being run on
+
+SSYYNNOOPPSSIISS
+     hhaarrdd--ppaarraammss  [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --ll             Print a series  of  #define's  for  the  ANSI
+                    standard  lliimmiittss..hh  include  file,  excluding
+                    MMBB__MMAAXX__CCHHAARR.
+
+     --ff             Print a series  of  #define's  for  the  ANSI
+                    standard ffllooaatt..hh include file.
+
+     --vv             Print a  verbose  prose  description  of  the
+                    machine.   When  combined  with either of the
+                    other two options, the prose is embedded in C
+                    comments.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     hhaarrdd--ppaarraammss determines characteristics about the machine  it
+     is  run  on, such as the number of bytes in an iinntt, the byte
+     order, and the floating  point  format.   It  displays  them
+     either as English text or as C code.
+
+     hhaarrdd--ppaarraammss also checks for bugs in pprriinnttff and ssccaannff, and it
+     checks for compiler bugs like botched casts.
+
+
+KKEEYYWWOORRDDSS
+     characteristics, hardware, header, ANSI, tests
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 17, 1990                   1
+
+
+

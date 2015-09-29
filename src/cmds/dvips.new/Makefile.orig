@@ -1,0 +1,204 @@
+#
+#   Makefile for dvips
+#
+
+# If you are compiling dvips for suid or other privileges, you will
+# definitely want to define the following symbol; else don't.
+# SECURE = -DSECURE
+
+# If you want EMTEX specials, define the following.
+EMTEX = -DEMTEX
+
+# for SYSV (and friends which use <string.h> instead of <strings.h>)
+# define the c-compiler flag
+# add -D_POSIX_SOURCE if you are POSIX (also define SYSV) (only relevant
+# for subdir searching)
+# SYS = -DSYSV
+
+# where the installed binary goes
+# BINDIR = /usr/bin
+BINDIR = /usr/bin
+
+# where the TFM files go
+# TFMDIR = /usr/lib/tex/fonts/tfm
+TFMDIR = /usr/lib/tex/fonts/tfm
+
+# the default path to search for TFM files 
+# (this usually is identical to TeX's defaultfontpath, which omits `.')
+# (private fonts are given an explicit directory, which overrides the path)
+# TFMPATH = /LocalLibrary/Fonts/TeXFonts/tfm:$(TFMDIR)
+TFMPATH = /LocalLibrary/Fonts/TeXFonts/tfm:$(TFMDIR)
+
+# where the PK files go.
+# PKDIR = /usr/lib/tex/fonts/pk
+PKDIR = /usr/lib/tex/fonts/pk
+
+# the default path to search for PK files (usually omits `.')
+# Don't forget to add the directory that
+# MakeTeXPK puts the files!  (In this case, /LocalLibrary/Fonts...)
+# PKPATH = /LocalLibrary/Fonts/TeXFonts/pk:$(PKDIR)
+PKPATH = /LocalLibrary/Fonts/TeXFonts/pk:$(PKDIR)
+
+# where the VF files go
+# VFDIR = /usr/lib/tex/fonts/vf
+VFDIR = /usr/lib/tex/fonts/vf
+
+# the default path to search for VF files (usually omits `.')
+# VFPATH = /LocalLibrary/Fonts/TeXFonts/vf:$(VFDIR)
+VFPATH = /LocalLibrary/Fonts/TeXFonts/vf:$(VFDIR)
+
+# additional directories in which to search for subdirectories to find
+# both tfm and pk files
+FONTSUBDIRPATH = 
+
+# where the config files go
+# CONFIGDIR = /usr/lib/tex/ps
+CONFIGDIR = /usr/lib/tex/ps
+
+# the default path to search for config files
+# CONFIGPATH = .:$(CONFIGDIR)
+CONFIGPATH = .:$(CONFIGDIR)
+
+# the name of your config file
+# CONFIGFILE = config.ps
+CONFIGFILE = config.ps
+
+# where the header PS files go
+# HEADERDIR = /usr/lib/tex/ps
+HEADERDIR = /usr/lib/tex/ps
+
+# the default path to search for header files
+# HEADERPATH = .:$(HEADERDIR)
+HEADERPATH = .:$(HEADERDIR)
+
+# where epsf.tex and rotate.tex go (usually the TeX macros directory)
+# TEXMACRODIR = /usr/lib/tex/inputs
+TEXMACRODIR = /usr/lib/tex/inputs
+
+# the default path to search for epsf and psfiles
+# (usually the same as TeX's defaultinputpath)
+# FIGPATH = .:..:/usr/lib/tex/inputs
+FIGPATH = .:..:/usr/lib/tex/inputs
+
+# where the manual page goes
+# MANDIR = /usr/local/text/man/man1
+MANEXT = 1
+MANDIR = /usr/local/text/man/man$(MANEXT)
+
+# add -DDEBUG to turn on debugging capability
+# add -DTPIC for tpic support
+# if the default resolution is not 300 dpi,
+# add -DDEFRES=400 or whatever is required
+# add -DFONTLIB to search font libraries
+# add -DSEARCH_SUBDIRECTORIES to search the FONTSUBDIRPATH.
+# add -DHAVE_GETCWD if you have getcwd (relevant only for subdir searching)
+DEFS= -DTPIC -DDEBUG -DDEFRES=400
+
+# either use
+# OPT = -g -Wall
+# or
+OPT = -O -s -Wall
+
+# libraries to include (-lm -lc on most systems)
+#FLIBS= -lNeXT_s -lsys_s
+FLIBS= -lNeXT_s -lsys_s
+
+PATHS = -DTFMPATH=\"$(TFMPATH)\" \
+	-DPKPATH=\"$(PKPATH)\" \
+	-DVFPATH=\"$(VFPATH)\" \
+	-DHEADERPATH=\"$(HEADERPATH)\" \
+	-DCONFIGPATH=\"$(CONFIGPATH)\" \
+        -DCONFIGFILE=\"$(CONFIGFILE)\" \
+	-DFONTSUBDIRPATH=\"$(FONTSUBDIRPATH)\" \
+	-DFIGPATH=\"$(FIGPATH)\"
+
+CFLAGS = $(DEFS) $(PATHS) $(OPT) $(SYS) $(SECURE) $(EMTEX)
+
+SRC = dospecial.c dviinput.c fontdef.c loadfont.c dvips.c tfmload.c \
+	download.c prescan.c scanpage.c skippage.c output.c scalewidth.c \
+	dosection.c dopage.c resident.c search.c unpack.c drawPS.c \
+	header.c makefont.c repack.c virtualfont.c dpicheck.c finclude.c \
+	flib.c
+
+OBJ = dospecial.o dviinput.o fontdef.o loadfont.o dvips.o tfmload.o \
+	download.o prescan.o scanpage.o skippage.o output.o scalewidth.o \
+	dosection.o dopage.o resident.o search.o unpack.o drawPS.o \
+	header.o makefont.o repack.o virtualfont.o dpicheck.o finclude.o \
+	flib.o
+
+# files required to make a distribution
+CONFIGFILES = config.ps psfonts.map
+HEADERFILES = tex.lpro texc.script texps.lpro special.lpro finclude.lpro
+FILES = $(CONFIGFILES) $(HEADERFILES) $(SRC) \
+	Makefile INSTALLATION README rotsample.tex AGaramond-Demo.pfb \
+	MakeTeXPK ../afm/Makefile epsf.tex epsf.sty rotate.tex rotate.sty \
+        dvips.1 paths.h debug.h structures.h squeeze.c afm2tfm.c afm2tfm.1
+
+all : afm2tfm dvips tex.pro texps.pro texc.pro special.pro finclude.pro
+
+dvips : $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) $(LIBS) $(FLIBS) -o dvips
+
+afm2tfm: afm2tfm.c
+	$(CC) $(CFLAGS) -o afm2tfm afm2tfm.c $(LIBS) $(FLIBS)
+
+$(OBJ) : structures.h debug.h Makefile
+flib.o resident.o dvips.o loadfont.o tfmload.o : paths.h
+
+squeeze : squeeze.o
+	$(CC) $(CFLAGS) squeeze.o -o squeeze $(LIBS) $(FLIBS)
+
+tex.pro : tex.lpro squeeze
+	./squeeze <tex.lpro > tex.pro
+
+texc.pro: texc.lpro squeeze
+	./squeeze <texc.lpro >texc.pro
+
+texc.lpro: texc.script tex.lpro
+	./texc.script tex.lpro texc.lpro
+
+texps.pro : texps.lpro squeeze
+	./squeeze <texps.lpro >texps.pro
+
+special.pro : special.lpro squeeze
+	./squeeze <special.lpro >special.pro
+
+finclude.pro : finclude.lpro squeeze
+	./squeeze <finclude.lpro >finclude.pro
+
+install : afm2tfm dvips MakeTeXPK \
+	tex.pro texc.pro texps.pro special.pro finclude.pro \
+	config.ps psfonts.map epsf.tex epsf.sty rotate.tex rotate.sty \
+	dvips.1 afm2tfm.1
+	- mkdir $(BINDIR)
+	- mkdir $(HEADERDIR)
+	- mkdir $(CONFIGDIR)
+	- mkdir $(MANDIR)
+	- mkdir $(TEXMACRODIR)
+	install -c -m 755 afm2tfm $(BINDIR)/afm2tfm
+	install -c -m 755 dvips $(BINDIR)/dvips
+	install -c -m 755 MakeTeXPK $(BINDIR)/MakeTeXPK
+	install -c -m 644 tex.pro $(HEADERDIR)
+	install -c -m 644 texc.pro $(HEADERDIR)
+	install -c -m 644 texps.pro $(HEADERDIR)
+	install -c -m 644 special.pro $(HEADERDIR)
+	install -c -m 644 finclude.pro $(HEADERDIR)
+	install -c -m 644 config.ps $(CONFIGDIR)/$(CONFIGFILE)
+	install -c -m 644 psfonts.map $(CONFIGDIR)
+	install -c -m 644 epsf.tex $(TEXMACRODIR)
+	install -c -m 644 epsf.sty $(TEXMACRODIR)
+	install -c -m 644 rotate.tex $(TEXMACRODIR)
+	install -c -m 644 rotate.sty $(TEXMACRODIR)
+	-install -c -m 644 dvips.1 $(MANDIR)/dvips.$(MANEXT)
+	-install -c -m 644 afm2tfm.1 $(MANDIR)/afm2tfm.$(MANEXT)
+
+veryclean :
+	rm -f *.o dvips squeeze afm2tfm texc.lpro *.pro *~ *.log *.dvi
+
+clean :
+	rm -f *.o squeeze afm2tfm *~ *.log *.dvi
+
+lint :
+	lint $(DEFS) $(PATHS) $(SRC)
+	lint $(DEFS) squeeze.c
+	lint $(DEFS) afm2tfm.c

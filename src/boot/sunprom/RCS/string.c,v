@@ -1,0 +1,367 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     87.05.11.11.07.34;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.09.33.50;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Slimline boot version of Sprite c library string.c
+@
+
+
+1.2
+log
+@Commented out String_Length
+Commented out String_Copy
+@
+text
+@/* 
+ * string.c --
+ *
+ *	This file implements a whole bunch of routines for manipulating
+ *	strings, including copying, comparison, and searching.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: string.c,v 1.1 86/07/18 09:33:50 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "string.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_Copy  --
+ *
+ *	Copies a string from one location to another.
+ *
+ * Results:
+ *	The return value is a pointer to the new copy of the string.
+ *
+ * Side effects:
+ *	Dst is modified to hold a copy of src.  It is the caller's
+ *	responsibility to make sure that dst has enough space to
+ *	hold the copy.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+char *
+String_Copy(src, dst)
+    register char *src;		/* Place from which to copy. */
+    char *dst;			/* Place to store copy. */
+{
+    register char *copy = dst;
+
+    do {
+    } while ((*copy++ = *src++) != 0);
+    return dst;
+}
+#endif notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_NCopy --
+ *
+ *	Copies exactly n characters from src to dst.  If src doesn't
+ *	contain exactly n characters, then the last characters are
+ *	ignored (if src is too long) or filled with zeros (if src
+ *	is too short).  In the case of truncation, dstmay not be
+ *	null-terminated.
+ *
+ * Results:
+ *	The result is a pointer to the new string.
+ *
+ * Side effects:
+ *	Memory at *dst is modified.  The caller must ensure that the
+ *	destination is large enough to hold n characters.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+char *
+String_NCopy(n, src, dst)
+    register int n;		/* How many characters to place at dst. */
+    register char *src;		/* Source string. */
+    char *dst;			/* Destination area. */
+{
+    register char *copy = dst;
+
+    if (n == 0) {
+	return dst;
+    }
+    do {
+	if ((*copy++ = *src) != 0) {
+	    src += 1;
+	}
+    } while (--n > 0);
+    return dst;
+}
+#endif notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_Cat --
+ *
+ *	Copy one string onto the end of another.
+ *
+ * Results:
+ *	The return value is a pointer to the concatenated result
+ *	(dst).
+ *
+ * Side effects:
+ *	The destination string is modified to hold the concatenation
+ *	of itself and the source string.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+char *
+String_Cat(src, dst)
+    register char *src;		/* Source string. */
+    char *dst;			/* Destination string:  *srcPtr gets added
+				 * onto the end of this.
+				 */
+{
+    register char *copy = dst;
+
+    do {
+    } while (*copy++ != 0);
+    copy -= 1;
+    do {
+    } while ((*copy++ = *src++) != 0);
+    return dst;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_NCat --
+ *
+ *	Copy one string onto the end of another, with a limit on
+ *	how many bytes to copy.
+ *
+ * Results:
+ *	The return value is a pointer to the concatenated result
+ *	(dst).
+ *
+ * Side effects:
+ *	The destination string is modified to hold the concatenation
+ *	of itself and the source string.  If the source contains
+ *	more than n bytes, only the first n are copied.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+char *
+String_NCat(n, src, dst)
+    register int n;		/* Maximum number of chars to copy. */
+    register char *src;		/* Source string. */
+    char *dst;			/* Destination string:  the source gets added
+				 * onto the end of this.
+				 */
+{
+    register char *copy = dst;
+
+    if (n == 0) {
+	return dst;
+    }
+
+    do {
+    } while (*copy++ != 0);
+    copy -= 1;
+
+    do {
+	if ((*copy++ = *src++) == 0) {
+	    return dst;
+	}
+    } while (--n > 0);
+    *copy = 0;
+    return dst;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_Compare --
+ *
+ *	Compares two strings lexicographically.
+ *
+ * Results:
+ *	The return value is 0 if the strings are identical, 1
+ *	if the first string is greater than the second, and 
+ *	-1 if the second string is less than the first.  If one
+ *	string is a prefix of the other then it is considered
+ *	to be less (the terminating zero byte participates in the
+ *	comparison).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+String_Compare(s1, s2)
+    register char *s1, *s2;		/* Strings to compare. */
+{
+    while (TRUE) {
+	if (*s1 != *s2) {
+	    if (*s1 > *s2) {
+		return 1;
+	    } else {
+		return -1;
+	    }
+	}
+	if (*s1++ == 0) {
+	    return 0;
+	}
+	s2 += 1;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_NCompare --
+ *
+ *	Compares two strings lexicographically.
+ *
+ * Results:
+ *	This procedure is identical to String_Compare, except
+ *	that it returns 0 as long as the two strings do not
+ *	differ in their first numChars characters.  If either
+ *	string is shorter than numChars characters then this
+ *	procedure is identical to String_Compare.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+int
+String_NCompare(numChars, s1, s2)
+    register int numChars;		/* Max number of chars to compare. */
+    register char *s1, *s2;		/* Strings to compare. */
+{
+    for ( ; numChars > 0; numChars -= 1) {
+	if (*s1 != *s2) {
+	    if (*s1 > *s2) {
+		return 1;
+	    } else {
+		return -1;
+	    }
+	}
+	if (*s1++ == 0) {
+	    return 0;
+	}
+	s2 += 1;
+    }
+    return 0;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_Length --
+ *
+ *	Computes the number of characters in a string.
+ *
+ * Results:
+ *	The return value is the number of characters in the
+ *	string, not including the terminating zero byte.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+int
+String_Length(string)
+    register char *string;		/* String whose length is wanted. */
+{
+    register int result = -1;
+
+    do {
+	result += 1;
+    } while (*string++ != 0);
+    return result;
+}
+#endif notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * String_NLength --
+ *
+ *	This is identical to String_Length except that it will return N
+ *	if the string length reaches N.
+ *
+ * Results:
+ *	The return value is the number of characters in the
+ *	string, not including the terminating zero byte.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+int
+String_NLength(numChars, string)
+    int		   numChars;		/* Maximum number of chars to check. */
+    register char *string;		/* String whose length is wanted. */
+{
+    register int result = -1;
+
+    do {
+	result += 1;
+    } while (result < numChars && *string++ != 0);
+    return result;
+}
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: string.c,v 1.4 86/04/24 11:03:41 nelson Exp $ SPRITE (Berkeley)";
+d37 1
+a37 1
+
+d49 1
+d274 1
+a274 1
+
+d286 1
+@

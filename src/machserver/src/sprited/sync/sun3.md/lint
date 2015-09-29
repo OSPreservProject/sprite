@@ -1,0 +1,4 @@
+syncLock.c:
+syncSleep.c:
+syncSleep.c 2(71): static variable msleep unused
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  syncLock.c(163)

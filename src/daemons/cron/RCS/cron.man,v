@@ -1,0 +1,149 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     89.12.14.15.44.19;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.12.14.15.42.10;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@man page for cron
+@
+
+
+1.2
+log
+@updated to sprite names
+@
+text
+@.\"	@@(#)cron.8	6.5 (Berkeley) 5/16/86
+.\"
+.TH CRON 8 "May 16, 1986"
+.AT 3
+.SH NAME
+cron \- clock daemon
+.SH SYNOPSIS
+.B /sprite/daemons/cron
+.SH DESCRIPTION
+.I Cron
+executes commands at specified dates and times
+according to the instructions in the files
+/sprite/lib/crontab and /hosts/<host>/crontab.
+None, either one, or both of these files may be present.
+Since
+.I cron
+never exits,
+it should only be executed once.
+This is best done by running
+.I cron
+from the initialization
+process through the file
+/boot/bootcmds;
+see
+.IR bootcmds (admin).
+.PP
+The
+crontab files
+consist of lines of seven fields each.
+The fields are separated by spaces or tabs.
+The first five are integer patterns to specify:
+.in +2m
+.TP 2m
+\(bu
+minute (0-59)
+.nr .0 \n()Pu
+.nr )P 0
+.TP 2m
+\(bu
+hour (0-23)
+.TP 2m
+\(bu
+day of the month (1-31)
+.TP 2m
+\(bu
+month of the year (1-12)
+.TP 2m
+\(bu
+day of the week (1-7 with 1 = Monday)
+.nr )P \n(.0u
+.in -2m
+.LP
+Each of these patterns may contain:
+.in +2m
+.TP 2m
+\(bu
+a number in the range above
+.nr .0 \n()Pu
+.nr )P 0
+.TP 2m
+\(bu
+two numbers separated by a minus
+meaning a range inclusive
+.TP 2m
+\(bu
+a list of numbers separated by
+commas meaning any of the numbers
+.TP 2m
+\(bu
+an asterisk meaning all legal values
+.nr )P \n(.0u
+.in -2m
+.LP
+The sixth field is a user name: the
+command will be run with that user's uid and permissions.
+The seventh field consists of all the text
+on a line following the sixth field,
+including spaces and tabs;
+this text is treated as a command
+which is executed by the Shell at the
+specified times.
+A percent character (``%'')
+in this field is translated to a new-line
+character.
+.PP
+Both
+crontab files are checked by
+.I cron
+every minute, on the minute.
+.SH FILES
+/sprite/lib/crontab
+.br
+/hosts/<host>/crontab
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+.B /etc/cron
+d13 1
+a13 1
+/usr/lib/crontab and /usr/lib/crontab.local.
+d23 1
+a23 1
+/etc/rc;
+d25 1
+a25 1
+.IR init (8).
+d91 1
+a91 1
+/usr/lib/crontab
+d93 1
+a93 1
+/usr/lib/crontab.local
+@

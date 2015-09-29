@@ -1,0 +1,418 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.17
+date     92.06.10.13.04.43;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     91.04.11.12.55.34;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.10.09.21.28.28;  author rab;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.08.18.11.21.46;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.08.17.11.16.07;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.12.31.14.45.22;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.11.27.16.28.48;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.12.16.08.24;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.12.14.37.37;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.07.20.14.47.30;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.07.13.10.18.04;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.07.02.14.34.16;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.17.08.56.07;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.05.14.04.42;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.05.11.38.40;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.28.17.41.41;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.25.09.27.22;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.17
+log
+@make sure all makefiles include TYPE
+@
+text
+@#
+# Prototype makefile for libraries with multiple source directories
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @@(TEMPLATE)
+# @@(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.biglib,v 1.16 91/04/11 12:55:34 kupfer Exp $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+ALLSRCS		= @@(ALLSRCS)
+LINTSRCS	= @@(LINTSRCS)
+MACHINES	= @@(MACHINES)
+MAKEFILE	= @@(MAKEFILE)
+MANPAGES	= @@(MANPAGES)
+NAME		= @@(NAME)
+PUBHDRS		= @@(PUBHDRS)
+SUBDIR		= @@(SUBDIR)
+SYSMAKEFILE	= biglib.mk
+TYPE		= @@(TYPE)
+DISTDIR         ?= @@(DISTDIR)
+#include	<settm.mk>
+
+
+#if exists($(TM).md/md.mk)
+#include	"$(TM).md/md.mk"
+#endif
+
+#if exists(local.mk)
+#include 	"local.mk"
+#else
+#include	<$(SYSMAKEFILE)>
+#endif
+
+#if exists($(DEPFILE))
+#include	"$(DEPFILE)"
+#endif
+@
+
+
+1.16
+log
+@Flush DEFTARGET: the default target is now determined by a pmake
+library file.
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/lib/mkmf/RCS/Makefile.biglib,v 1.15 89/10/09 21:28:28 rab Exp Locker: kupfer $ SPRITE (Berkeley)
+d24 1
+a24 1
+#include	<settm.mk>
+d27 1
+a28 1
+SYSMAKEFILE	= biglib.mk
+@
+
+
+1.15
+log
+@Modifications for distribution.
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/lib/mkmf/RCS/Makefile.biglib,v 1.14 89/08/18 11:21:46 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d24 1
+a24 1
+TM     	        ?= @@(DEFTARGET)
+@
+
+
+1.14
+log
+@another change for TM -- use single machine if it exists, else \ds3100
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/lib/mkmf/RCS/Makefile.biglib,v 1.12 88/12/31 14:45:22 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d26 1
+@
+
+
+1.13
+log
+@removed DEFTARGET -- we use $MACHINE now
+@
+text
+@d24 1
+a24 1
+TM     	        ?= $(MACHINE)
+@
+
+
+1.12
+log
+@Use TYPE instead of INSTALLDIR, INSTALLMAN, etc.
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/lib/mkmf/RCS/Makefile.biglib,v 1.11 88/11/27 16:28:48 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d24 1
+a24 1
+TM     	        ?= @@(DEFTARGET)
+@
+
+
+1.11
+log
+@Various changes to replace old C library entirely with new C library.
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/lib/mkmf/RCS/Makefile.biglib,v 1.10 88/08/12 16:08:24 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+a16 2
+INCLUDEDIR	= @@(INCLUDEDIR)
+INSTALLMAN	= @@(INSTALLMAN)
+d25 1
+@
+
+
+1.10
+log
+@Default is now no debugging info.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.biglib,v 1.9 88/08/12 14:37:37 ouster Exp $ SPRITE (Berkeley)
+a15 4
+LIBRARY		= @@(LIBRARY)
+SUBDIR		= @@(SUBDIR)
+MACHINES	= @@(MACHINES)
+TM     	        ?= @@(DEFTARGET)
+d17 2
+a18 5
+SRCS		=
+HDRS		=
+OBJS		=
+CLEANOBJS	=
+PUBHDRS		= @@(PUBHDRS)
+d20 1
+d22 5
+a26 5
+
+CC		= gcc
+CFLAGS		= -O
+CTFLAGS		= -wt
+INCLUDEDIR	= @@(INCLUDEDIR)
+@
+
+
+1.9
+log
+@Minor comment change.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.biglib,v 1.8 88/07/20 14:47:30 ouster Exp $ SPRITE (Berkeley)
+d30 1
+a30 1
+CFLAGS		= -g -O
+@
+
+
+1.8
+log
+@Add -O to gcc compiles.
+@
+text
+@d2 1
+a2 1
+# Prototype makefile for libraries.
+d12 1
+a12 1
+# $Header: Makefile.biglib,v 1.7 88/07/13 10:18:04 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.7
+log
+@Eliminate "define_targets";  not needed anymore.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.biglib,v 1.6 88/07/02 14:34:16 ouster Exp $ SPRITE (Berkeley)
+d30 1
+a30 1
+CFLAGS		= -g
+@
+
+
+1.6
+log
+@Better support for lint, and for dummy lint files (*.lint).
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.biglib,v 1.5 88/06/17 08:56:07 ouster Exp $ SPRITE (Berkeley)
+a32 2
+
+define_targets	= yes, please
+@
+
+
+1.5
+log
+@Add ALLSRC, switch name to "biglib".
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.libc.srcDir,v 1.4 88/06/05 14:04:42 ouster Exp $ SPRITE (Berkeley)
+d17 1
+d26 1
+a29 1
+LINTFLAGS	= -u
+@
+
+
+1.4
+log
+@Make gcc the default C compiler.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.libc.srcDir,v 1.3 88/06/05 11:38:40 ouster Exp $ SPRITE (Berkeley)
+d19 1
+d35 1
+a35 1
+SYSMAKEFILE	= libc.srcDir.mk
+@
+
+
+1.3
+log
+@Various revisions to generate Makefiles for multi-directory
+libraries with multiple target machines.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.libc.srcDir,v 1.2 88/04/28 17:41:41 ouster Exp $ SPRITE (Berkeley)
+d26 1
+@
+
+
+1.2
+log
+@New mkmf stuff for new library area.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.libc.srcDir,v 1.1 88/04/25 09:27:22 ouster Exp $ SPRITE (Berkeley)
+d17 6
+a22 4
+OBJS		= @@(OBJS)
+CLEANOBJS	= @@(CLEANOBJS)
+SRCS		= @@(SRCS)
+HDRS		= @@(HDRS)
+d27 1
+a27 1
+CFLAGS		=
+a28 1
+LINTDIR		= @@(LINTDIR)
+a29 2
+MACHINE		?= sun3
+MDDIR		= ../$(MACHINE).md
+a32 1
+DEPFILE		= dependencies.mk
+d35 4
+d45 3
+a47 4
+tags		: $(SRCS) $(HDRS)
+	$(CTAGS) $(CTFLAGS) $(.ALLSRC)
+
+#include	"dependencies.mk"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.library,v 1.2 88/04/04 22:56:37 deboor Exp $ SPRITE (Berkeley)
+a33 4
+# The label below is used as a special trigger for Makefile.sed scripts
+# to use to add extra stuff to the Makefile:
+# @@(SPECIALS)
+
+d35 1
+a35 1
+#include	<libc.srcDir.mk>
+d37 5
+a41 3
+# Another label, for triggering Makefile.sed commands AFTER command.mk
+# is included:
+# @@(POSTINCLUDE)
+@

@@ -1,0 +1,868 @@
+512
+llib-lzephyr:ZAsyncLocate.c
+2
+4 26 36 0 0
+ZRequestLocations
+18 0 0
+24 160 1233
+10 0 0
+148 0 0
+16
+0 60 4 0 0
+ZRequestLocations
+2
+4 67 36 0 0
+ZParseLocations
+24 1152 11828
+24 160 1233
+20 0 0
+82 0 0
+16
+0 152 4 0 0
+ZParseLocations
+2
+2 157 36 0 0
+ZCompareALDPred
+24 1152 11828
+18 0 0
+16
+0 160 4 0 0
+ZCompareALDPred
+2
+1 164 32 0 0
+ZFreeALD
+24 160 1233
+512
+llib-lzephyr:ZCheckAuthentication.c
+2
+2 34 36 0 0
+ZCheckAuthentication
+24 1152 11828
+24 128 5171
+16
+0 96 4 0 0
+ZCheckAuthentication
+512
+llib-lzephyr:ZCheckIfNotice.c
+2
+4 26 36 0 0
+ZCheckIfNotice
+24 1152 11828
+24 128 5171
+148 0 0
+18 0 0
+16
+0 59 4 0 0
+ZCheckIfNotice
+512
+llib-lzephyr:ZClosePort.c
+2
+0 24 36 0 0
+ZClosePort
+16
+0 32 4 0 0
+ZClosePort
+512
+llib-lzephyr:ZCompareUID.c
+2
+2 25 36 0 0
+ZCompareUID
+24 96 3003
+24 96 3003
+16
+0 27 4 0 0
+ZCompareUID
+512
+llib-lzephyr:ZCompareUIDPred.c
+2
+2 26 36 0 0
+ZCompareUIDPred
+24 1152 11828
+24 96 3003
+16
+0 28 4 0 0
+ZCompareUIDPred
+2
+2 33 36 0 0
+ZCompareMultiUIDPred
+24 1152 11828
+24 96 3003
+16
+0 35 4 0 0
+ZCompareMultiUIDPred
+512
+llib-lzephyr:ZFlushLocations.c
+2
+0 24 36 0 0
+ZFlushLocations
+16
+0 42 4 0 0
+ZFlushLocations
+512
+llib-lzephyr:ZFlushSubscriptions.c
+2
+0 22 36 0 0
+ZFlushSubscriptions
+16
+0 40 4 0 0
+ZFlushSubscriptions
+512
+llib-lzephyr:ZFormatNotice.c
+2
+4 26 36 0 0
+ZFormatNotice
+24 1152 11828
+82 0 0
+20 0 0
+148 0 0
+16
+0 45 4 0 0
+ZFormatNotice
+512
+llib-lzephyr:ZFormatNoticeList.c
+2
+6 30 36 0 0
+ZFormatNoticeList
+24 1152 11828
+82 0 0
+4 0 0
+82 0 0
+20 0 0
+148 0 0
+16
+0 62 4 0 0
+ZFormatNoticeList
+512
+llib-lzephyr:ZFormatRNList.c
+2
+5 29 36 0 0
+ZFormatRawNoticeList
+24 1152 11828
+82 0 0
+4 0 0
+82 0 0
+20 0 0
+16
+0 59 4 0 0
+ZFormatRawNoticeList
+512
+llib-lzephyr:ZFormatRawNotice.c
+2
+3 25 36 0 0
+ZFormatRawNotice
+24 1152 11828
+82 0 0
+20 0 0
+16
+0 44 4 0 0
+ZFormatRawNotice
+512
+llib-lzephyr:ZFormatSRNList.c
+2
+5 29 36 0 0
+ZFormatSmallRawNoticeList
+24 1152 11828
+82 0 0
+4 0 0
+18 0 0
+20 0 0
+16
+0 56 4 0 0
+ZFormatSmallRawNoticeList
+512
+llib-lzephyr:ZFormatSmallRawNotice.c
+2
+3 27 36 0 0
+ZFormatSmallRawNotice
+24 1152 11828
+18 0 0
+20 0 0
+16
+0 43 4 0 0
+ZFormatSmallRawNotice
+512
+llib-lzephyr:ZFreeNotice.c
+2
+1 25 36 0 0
+ZFreeNotice
+24 1152 11828
+16
+0 28 4 0 0
+ZFreeNotice
+512
+llib-lzephyr:ZGetLocations.c
+2
+2 28 36 0 0
+ZGetLocations
+24 96 22896
+20 0 0
+16
+0 46 4 0 0
+ZGetLocations
+512
+llib-lzephyr:ZGetSender.c
+2
+0 29 98 0 0
+ZGetSender
+16
+0 62 18 0 0
+ZGetSender
+512
+llib-lzephyr:ZGetSubscriptions.c
+2
+2 28 36 0 0
+ZGetSubscriptions
+24 96 14382
+20 0 0
+16
+0 46 4 0 0
+ZGetSubscriptions
+512
+llib-lzephyr:ZGetWGPort.c
+2
+0 27 36 0 0
+ZGetWGPort
+16
+0 47 4 0 0
+ZGetWGPort
+512
+llib-lzephyr:ZIfNotice.c
+2
+4 28 36 0 0
+ZIfNotice
+24 1152 11828
+24 128 5171
+148 0 0
+18 0 0
+16
+0 66 4 0 0
+ZIfNotice
+512
+llib-lzephyr:ZInitialize.c
+2
+0 31 36 0 0
+ZInitialize
+16
+0 83 4 0 0
+ZInitialize
+512
+llib-lzephyr:ZLocations.c
+2
+1 35 36 0 0
+ZSetLocation
+18 0 0
+16
+0 38 4 0 0
+ZSetLocation
+2
+0 41 36 0 0
+ZUnsetLocation
+16
+0 44 4 0 0
+ZUnsetLocation
+2
+0 47 36 0 0
+ZFlushMyLocations
+16
+0 49 4 0 0
+ZFlushMyLocations
+2
+4 59 36 0 0
+Z_SendLocation
+18 0 0
+18 0 0
+148 0 0
+18 0 0
+16
+0 173 4 0 0
+Z_SendLocation
+512
+llib-lzephyr:ZMakeAscii.c
+2
+4 26 36 0 0
+ZMakeAscii
+18 0 0
+4 0 0
+28 0 0
+4 0 0
+16
+0 53 4 0 0
+ZMakeAscii
+512
+llib-lzephyr:ZMakeAuthentication.c
+2
+0 26 36 0 0
+ZResetAuthentication
+16
+0 31 4 0 0
+ZResetAuthentication
+2
+4 38 36 0 0
+ZMakeAuthentication
+24 1152 11828
+18 0 0
+4 0 0
+20 0 0
+16
+0 82 4 0 0
+ZMakeAuthentication
+512
+llib-lzephyr:ZNewLocateUser.c
+2
+3 26 36 0 0
+ZLocateUser
+18 0 0
+20 0 0
+148 0 0
+16
+0 51 4 0 0
+ZLocateUser
+512
+llib-lzephyr:ZOpenPort.c
+2
+1 26 36 0 0
+ZOpenPort
+29 0 0
+16
+0 66 4 0 0
+ZOpenPort
+512
+llib-lzephyr:ZParseNotice.c
+2
+3 78 36 0 0
+ZParseNotice
+18 0 0
+4 0 0
+24 1152 11828
+16
+0 320 4 0 0
+ZParseNotice
+512
+llib-lzephyr:ZPeekIfNotice.c
+2
+4 28 36 0 0
+ZPeekIfNotice
+24 1152 11828
+24 128 5171
+148 0 0
+18 0 0
+16
+0 61 4 0 0
+ZPeekIfNotice
+512
+llib-lzephyr:ZPeekNotice.c
+2
+2 26 36 0 0
+ZPeekNotice
+24 1152 11828
+24 128 5171
+16
+0 35 4 0 0
+ZPeekNotice
+512
+llib-lzephyr:ZPeekPacket.c
+2
+3 27 36 0 0
+ZPeekPacket
+82 0 0
+20 0 0
+24 128 5171
+16
+0 47 4 0 0
+ZPeekPacket
+512
+llib-lzephyr:ZPending.c
+2
+0 24 36 0 0
+ZPending
+16
+0 38 4 0 0
+ZPending
+512
+llib-lzephyr:ZReadAscii.c
+2
+4 50 36 0 0
+ZReadAscii
+18 0 0
+4 0 0
+28 0 0
+4 0 0
+16
+0 85 4 0 0
+ZReadAscii
+512
+llib-lzephyr:ZReceiveNotice.c
+2
+2 26 36 0 0
+ZReceiveNotice
+24 1152 11828
+24 128 5171
+16
+0 50 4 0 0
+ZReceiveNotice
+512
+llib-lzephyr:ZReceivePacket.c
+2
+3 27 36 0 0
+ZReceivePacket
+18 0 0
+20 0 0
+24 128 5171
+16
+0 48 4 0 0
+ZReceivePacket
+512
+llib-lzephyr:ZRetrieveSubscriptions.c
+2
+2 28 36 0 0
+ZRetrieveSubscriptions
+14 0 0
+20 0 0
+16
+0 47 4 0 0
+ZRetrieveSubscriptions
+2
+1 51 36 0 0
+ZRetrieveDefaultSubscriptions
+20 0 0
+16
+0 61 4 0 0
+ZRetrieveDefaultSubscriptions
+512
+llib-lzephyr:ZSendList.c
+2
+4 28 36 0 0
+ZSendList
+24 1152 11828
+82 0 0
+4 0 0
+148 0 0
+16
+0 30 4 0 0
+ZSendList
+2
+5 38 36 0 0
+ZSrvSendList
+24 1152 11828
+82 0 0
+4 0 0
+148 0 0
+148 0 0
+16
+0 56 4 0 0
+ZSrvSendList
+512
+llib-lzephyr:ZSendNotice.c
+2
+2 26 36 0 0
+ZSendNotice
+24 1152 11828
+148 0 0
+16
+0 28 4 0 0
+ZSendNotice
+2
+3 34 36 0 0
+ZSrvSendNotice
+24 1152 11828
+148 0 0
+148 0 0
+16
+0 52 4 0 0
+ZSrvSendNotice
+512
+llib-lzephyr:ZSendPacket.c
+2
+3 31 36 0 0
+ZSendPacket
+18 0 0
+4 0 0
+4 0 0
+16
+0 65 4 0 0
+ZSendPacket
+512
+llib-lzephyr:ZSendRawList.c
+2
+3 27 36 0 0
+ZSendRawList
+24 1152 11828
+82 0 0
+4 0 0
+16
+0 29 4 0 0
+ZSendRawList
+2
+4 36 36 0 0
+ZSrvSendRawList
+24 1152 11828
+82 0 0
+4 0 0
+148 0 0
+16
+0 54 4 0 0
+ZSrvSendRawList
+512
+llib-lzephyr:ZSendRawNotice.c
+2
+1 25 36 0 0
+ZSendRawNotice
+24 1152 11828
+16
+0 43 4 0 0
+ZSendRawNotice
+512
+llib-lzephyr:ZSetDestAddr.c
+2
+1 25 36 0 0
+ZSetDestAddr
+24 128 5171
+16
+0 31 4 0 0
+ZSetDestAddr
+512
+llib-lzephyr:ZSetFD.c
+2
+1 25 36 0 0
+ZSetFD
+4 0 0
+16
+0 32 4 0 0
+ZSetFD
+512
+llib-lzephyr:ZSetServerState.c
+2
+1 25 36 0 0
+ZSetServerState
+4 0 0
+16
+0 29 4 0 0
+ZSetServerState
+512
+llib-lzephyr:ZSubscriptions.c
+2
+3 26 36 0 0
+ZSubscribeTo
+24 96 14382
+4 0 0
+14 0 0
+16
+0 28 4 0 0
+ZSubscribeTo
+2
+3 34 36 0 0
+ZSubscribeToSansDefaults
+24 96 14382
+4 0 0
+14 0 0
+16
+0 37 4 0 0
+ZSubscribeToSansDefaults
+2
+3 43 36 0 0
+ZUnsubscribeTo
+24 96 14382
+4 0 0
+14 0 0
+16
+0 45 4 0 0
+ZUnsubscribeTo
+2
+1 49 36 0 0
+ZCancelSubscriptions
+14 0 0
+16
+0 52 4 0 0
+ZCancelSubscriptions
+2
+5 68 36 0 0
+Z_Subscriptions
+24 96 14382
+4 0 0
+14 0 0
+18 0 0
+4 0 0
+16
+0 162 4 0 0
+Z_Subscriptions
+512
+llib-lzephyr:ZVariables.c
+2
+1 36 98 0 0
+ZGetVariable
+18 0 0
+16
+0 47 18 0 0
+ZGetVariable
+2
+2 52 36 0 0
+ZSetVariable
+18 0 0
+18 0 0
+16
+0 87 4 0 0
+ZSetVariable
+2
+1 91 36 0 0
+ZUnsetVariable
+18 0 0
+16
+0 117 4 0 0
+ZUnsetVariable
+512
+llib-lzephyr:ZWaitForNotice.c
+2
+4 33 36 0 0
+Z_WaitForNotice
+24 1152 11828
+148 0 0
+24 96 3003
+4 0 0
+16
+0 75 4 0 0
+Z_WaitForNotice
+512
+llib-lzephyr:Zinternal.c
+2
+0 38 4 0 0
+__Zephyr_fd
+2
+0 39 4 0 0
+__Zephyr_open
+2
+0 40 4 0 0
+__Zephyr_port
+2
+0 41 4 0 0
+__My_length
+2
+0 42 18 0 0
+__My_addr
+2
+0 43 4 0 0
+__Q_CompleteLength
+2
+0 44 4 0 0
+__Q_Size
+2
+0 45 24 608 14595
+__Q_Head
+2
+0 45 24 608 14595
+__Q_Tail
+2
+0 46 8 128 5171
+__HM_addr
+2
+0 47 8 128 5171
+__HM_addr_real
+2
+0 48 4 0 0
+__HM_set
+2
+0 53 4 0 0
+__Zephyr_server
+2
+0 54 24 96 22896
+__locate_list
+2
+0 55 4 0 0
+__locate_num
+2
+0 56 4 0 0
+__locate_next
+2
+0 57 24 96 14382
+__subscriptions_list
+2
+0 58 4 0 0
+__subscriptions_num
+2
+0 59 4 0 0
+__subscriptions_next
+2
+0 69 36 0 0
+Z_GetMyAddr
+16
+0 93 4 0 0
+Z_GetMyAddr
+2
+0 99 36 0 0
+Z_PacketWaiting
+16
+0 106 4 0 0
+Z_PacketWaiting
+2
+0 112 36 0 0
+Z_WaitForComplete
+16
+0 123 4 0 0
+Z_WaitForComplete
+2
+0 129 36 0 0
+Z_ReadEnqueue
+16
+0 140 4 0 0
+Z_ReadEnqueue
+2
+2 151 104 608 14595
+Z_SearchQueue
+24 96 3003
+10 0 0
+16
+0 169 24 608 14595
+Z_SearchQueue
+2
+0 181 36 0 0
+Z_ReadWait
+16
+0 426 4 0 0
+Z_ReadWait
+2
+3 435 36 0 0
+Z_AddNoticeToEntry
+24 608 14595
+24 1152 11828
+4 0 0
+16
+0 535 4 0 0
+Z_AddNoticeToEntry
+2
+5 543 36 0 0
+Z_FormatHeader
+24 1152 11828
+18 0 0
+4 0 0
+20 0 0
+148 0 0
+16
+0 578 4 0 0
+Z_FormatHeader
+2
+5 586 36 0 0
+Z_FormatRawHeader
+24 1152 11828
+18 0 0
+4 0 0
+20 0 0
+82 0 0
+16
+0 708 4 0 0
+Z_FormatRawHeader
+2
+3 712 36 0 0
+Z_AddField
+82 0 0
+18 0 0
+18 0 0
+16
+0 726 4 0 0
+Z_AddField
+2
+0 729 104 608 14595
+Z_GetFirstComplete
+16
+0 741 24 608 14595
+Z_GetFirstComplete
+2
+1 745 104 608 14595
+Z_GetNextComplete
+24 608 14595
+16
+0 754 24 608 14595
+Z_GetNextComplete
+2
+1 758 32 0 0
+Z_RemQueue
+24 608 14595
+2
+3 809 36 0 0
+Z_SendFragmentedNotice
+24 1152 11828
+4 0 0
+148 0 0
+16
+0 858 4 0 0
+Z_SendFragmentedNotice
+2
+4 866 36 0 0
+Z_XmitFragment
+24 1152 11828
+18 0 0
+4 0 0
+4 0 0
+16
+0 868 4 0 0
+Z_XmitFragment
+512
+llib-lzephyr:acl_files.c
+2
+2 71 36 0 0
+acl_canonicalize_principal
+18 0 0
+18 0 0
+2
+2 242 36 0 0
+acl_initialize
+18 0 0
+4 0 0
+16
+0 258 4 0 0
+acl_initialize
+2
+1 383 36 0 0
+acl_load
+18 0 0
+16
+0 433 4 0 0
+acl_load
+2
+0 440 36 0 0
+acl_cache_reset
+2
+2 459 36 0 0
+acl_exact_match
+18 0 0
+18 0 0
+16
+0 464 4 0 0
+acl_exact_match
+2
+2 472 36 0 0
+acl_check
+18 0 0
+18 0 0
+16
+0 494 4 0 0
+acl_check
+2
+2 501 36 0 0
+acl_add
+18 0 0
+18 0 0
+16
+0 528 4 0 0
+acl_add
+2
+2 535 36 0 0
+acl_delete
+18 0 0
+18 0 0
+16
+0 558 4 0 0
+acl_delete
+512
+llib-lzephyr:krb_err.c
+2
+0 113 32 0 0
+initialize_krb_error_table
+512
+llib-lzephyr:smwgc.c
+2
+0 7 36 0 0
+main
+512
+llib-lzephyr:zephyr_err.c
+2
+0 54 32 0 0
+initialize_zeph_error_table

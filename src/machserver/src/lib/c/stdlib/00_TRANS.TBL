@@ -1,0 +1,43 @@
+F ABORT.C;1                         	abort.c
+L ABS.C;1                           	abs.c	../../c.orig/stdlib/abs.c
+F ATEXIT.C;1                        	atexit.c
+L ATOF.C;1                          	atof.c	../../c.orig/stdlib/atof.c
+L ATOI.C;1                          	atoi.c	../../c.orig/stdlib/atoi.c
+L ATOL.C;1                          	atol.c	../../c.orig/stdlib/atol.c
+L BSEARCH.C;1                       	bsearch.c	../../c.orig/stdlib/bsearch.c
+L CALLOC.C;1                        	calloc.c	../../c.orig/stdlib/calloc.c
+L CFREE.C;1                         	cfree.c	../../c.orig/stdlib/cfree.c
+L DIV.C;1                           	div.c	../../c.orig/stdlib/div.c
+D DS3100_M                          	ds3100.md
+F EXIT.C;1                          	exit.c
+F FREE.C;1                          	free.c
+L GETENV.C;1                        	getenv.c	../../c.orig/stdlib/getenv.c
+L LABS.C;1                          	labs.c	../../c.orig/stdlib/labs.c
+L LDIV.C;1                          	ldiv.c	../../c.orig/stdlib/ldiv.c
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F MAKEFILE.;1                       	Makefile
+F MALLOC.C;1                        	malloc.c
+F MEMCHUNK.C;1                      	MemChunkAlloc.c
+F MEMDATA.C;1                       	MemData.c
+F MEMDOTRA.C;1                      	MemDoTrace.c
+F MEMINIT.C;1                       	MemInit.c
+F MEMINT.H;1                        	memInt.h
+F MEM_BIN.C;1                       	Mem_Bin.c
+F MEM_DUMP.C;1                      	Mem_DumpTrace.c
+F MEM_PRI0.C;1                      	Mem_PrintConfig.c
+F MEM_PRI1.C;1                      	Mem_PrintInUse.c
+F MEM_PRI2.C;1                      	Mem_PrintStats.c
+F MEM_SETP.C;1                      	Mem_SetPrintProc.c
+F MEM_SETT.C;1                      	Mem_SetTraceSizes.c
+F MEM_SIZE.C;1                      	Mem_Size.c
+L QSORT.C;1                         	qsort.c	../../c.orig/stdlib/qsort.c
+F RAND.C;1                          	rand.c
+D RCS                               	RCS
+L REALLOC.C;1                       	realloc.c	../../c.orig/stdlib/realloc.c
+F SETENV.C;1                        	setenv.c
+L STRTOD.C;1                        	strtod.c	../../c.orig/stdlib/strtod.c
+L STRTOL.C;1                        	strtol.c	../../c.orig/stdlib/strtol.c
+F STRTOUL.C;1                       	strtoul.c
+D SUN3_MD                           	sun3.md
+L SYSTEM.C;1                        	system.c	../../c.orig/stdlib/system.c
+L UNSETENV.C;1                      	unsetenv.c	../../c.orig/stdlib/unsetenv.c

@@ -1,0 +1,354 @@
+/*
+ *  sysPrintf --
+ *
+ *      Perform all formatted printing to the console.  This is like the 
+ *      libc routines, except (a) it has special provisions to avoid, e.g., 
+ *      recursive panics; and (b) it has routines to satisfy stdio 
+ *      references from the Mach libc.  (We don't want a Mach stream to get 
+ *      passed to a Sprite routine; bad things will undoubtedly occur.)
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sysPrintf.c,v 1.7 92/05/27 21:24:54 kupfer Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <cthreads.h>
+#include <mach.h>
+#include <stdio.h>
+#include <string.h>
+#include <varargs.h>
+
+#include <dbg.h>
+#include <dev.h>
+#include <devSyslog.h>
+#include <sync.h>
+#include <sys.h>
+
+/*
+ * Calls to panic and printf are protected.
+ */
+Sync_Semaphore	sysPrintMutex = Sync_SemInitStatic("sysPrintMutex");
+
+/*
+ * Set during a panic to prevent recursion.
+ */
+Boolean	sysPanicing = FALSE;
+
+/*
+ * Used to keep track of bytes written.
+ */
+static int bytesWritten;
+
+static void WriteProc _ARGS_((FILE *stream, Boolean flush));
+
+/*
+ * vprintf buffer.
+ */
+#define	STREAM_BUFFER_SIZE	512
+static unsigned char streamBuffer[STREAM_BUFFER_SIZE];
+
+/* 
+ * Hack to avoid getting routines from the Mach libc that we don't want.
+ */
+int _iob;
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * WriteProc --
+ *
+ *      Stream writeProc - flushes data to the console. 
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+WriteProc(stream, flush)
+    FILE *stream;
+    Boolean flush;
+{
+    int numBytes;		/* number of bytes to write */
+
+    numBytes = stream->lastAccess + 1 - stream->buffer;
+
+    if (numBytes > 0) { 
+	bytesWritten += Dev_ConsoleWrite(numBytes, (Address)stream->buffer);
+	stream->lastAccess = stream->buffer - 1;
+	stream->writeCount = stream->bufSize;
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * vprintf --
+ *
+ *	Printing routine that is called from varargs procedures.  The
+ *	caller should use to varargs macros to extract the format
+ *	string and the va_list structure.  This also checks for
+ *	recursion that can result from a panic and initializes
+ *	the stream data structure needed by the standard vfprintf.
+ *
+ * Results:
+ *      Number of characters printed.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+int vprintf(format)
+    char *format;
+{
+    /*
+     * Lint complains about unused variables...  This is all #ifdef'ed lint.
+     * It's silly and can probably be cut down a bit....
+     */
+    char foo;
+    Sync_Semaphore *barPtr;
+    barPtr = &sysPrintMutex;
+    sysPrintMutex = *barPtr;
+    WriteProc((FILE *) NULL, 0);
+    streamBuffer[0] = '\0';
+    foo = streamBuffer[0];
+    streamBuffer[0] = foo;
+}
+#else
+/*VARARGS1*/
+int
+vprintf(format, args)
+    _CONST char	*format;
+    va_list	args;
+{
+    static Boolean	initialized = FALSE;
+    static FILE		stream;
+    static int	recursiveCallP = 0;	/* prevent recursive calls
+					 * that could occur if vprintf
+					 * fails, etc.  */
+
+    if (recursiveCallP != 0) {
+	return 0;
+    }
+    recursiveCallP = 1;
+    MASTER_LOCK(&sysPrintMutex);
+    if (!initialized) {
+	Stdio_Setup(&stream, 0, 1, streamBuffer, STREAM_BUFFER_SIZE,
+		(void (*)()) 0, WriteProc,  (int (*)()) 0, (ClientData) 0);
+	initialized = TRUE;
+    }
+
+    bytesWritten = 0;
+    vfprintf(&stream, format, args);
+    fflush(&stream);
+    MASTER_UNLOCK(&sysPrintMutex);
+    recursiveCallP = 0;
+    return (bytesWritten);
+
+}
+#endif
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * panic --
+ *
+ *	Print an error message and enter the debugger. This entry is 
+ *	provided for libc.a routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The kernel dies, entering the debugger if possible.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void panic(format)
+    char *format;
+{}
+#else
+void
+panic(va_alist)
+    va_dcl			/* char *format, then any number of additional
+				 * values to be printed under the control of
+				 * format.  This is all just the same as you'd
+				 * pass to printf. */
+{
+    char *format;
+    va_list args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+
+#ifdef SPRITED_GRAPHICS
+    Dev_VidEnable(TRUE);	/* unblank the screen */
+#endif
+    Dev_SyslogDebug(TRUE);	/* divert /dev/syslog output to the screen */
+    if (!sysPanicing) {
+	printf("%s: Fatal Error: ", cthread_name(cthread_self()));
+	(void) vprintf(format, args);
+	va_end(args);
+    }
+    sysPanicing = TRUE;
+    DBG_CALL;
+    Dev_SyslogDebug(FALSE);
+}
+#endif /* lint */
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * printf --
+ *
+ *      Perform a C style printf.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void printf(format)
+    char *format;
+{}
+#else
+void
+printf(va_alist)
+    va_dcl
+{
+    char *format;
+    va_list	args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+
+    (void) vprintf(format, args);
+    va_end(args);
+}
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_Fprintf --
+ *
+ *	Compatibility routine for libc code that wants to do printf's.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void Sys_Fprintf(file, format)
+    FILE *file;			/* unused dummy argument */
+    char *format;
+{}
+#else
+void
+Sys_Fprintf(file, va_alist)
+    FILE *file;			/* unused */
+    va_dcl
+{
+    char *format;
+    va_list	args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+    (void) vprintf(format, args);
+    va_end(args);
+}
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _cleanup --
+ *
+ *	Fake _cleanup routine to avoid getting the Mach one.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+_cleanup()
+{
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * perror --
+ *
+ *	Print an user message with a UNIX status message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+perror(msg)
+    _CONST char *msg;			/* user's message */
+{
+    extern int errno;
+
+    if ((msg != 0) && (*msg != 0)) {
+	printf("%s: ", msg);
+    }
+    printf("%s\n", strerror(errno));
+}

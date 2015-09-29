@@ -1,0 +1,16 @@
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F PRINTFIE.;1                       	printFields
+F RAWFS.C;1                         	rawfs.c
+F RAWMIG.C;1                        	rawmig.c
+F RAWPROC.C;1                       	rawproc.c
+F RAWRECOV.C;1                      	rawrecov.c
+F RAWRPC.C;1                        	rawrpc.c
+F RAWSTAT.C;1                       	rawstat.c
+F RAWSTAT.MAN;1                     	rawstat.man
+F RAWVM.C;1                         	rawvm.c
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	TAGS

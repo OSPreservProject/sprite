@@ -1,0 +1,289 @@
+.TH DED 1 "Utah 4/27/84"
+.SH NAME
+ded \- directory editor
+.SH SYNOPSIS
+.B ded
+.nf
+[ \-[s|r][fnsrwd] ] [ \-w[f|h|Number] ] [ \-xPattern ] [ dir-name|file-list ]
+.fi
+.SH DESCRIPTION
+Ded displays a long-form ls directory listing on the screen of a display
+terminal and allows you to 'edit' and peruse that listing by moving up and
+down it, deleting, editing, and displaying entries.  Normally the index is
+displayed in one window and file perusal done in the other.  With no
+string argument, the connected directory is used.  With one string argument,
+the argument is interpreted as a directory and it is used.  With multiple
+string arguments, they are interpreted as filenames.
+.PP
+Options, which are inherited by recursive invocations of ded:
+.TP
+.B \-[sr][f|n|s|r|w|d]
+Sort or reverse sort by Filename, filename as Number, Size, Read date,
+Write date, or directory order (no sort) respectively.
+"Normal sort" is the order you are most likely to desire, so is largest first
+for size, and most recent for read and write date sorts.  Default is to
+sort by filename.
+.TP
+.B \-w[f|h|Number]
+Use 
+.B Number
+lines for the directory index window, reserving the other half for quick
+file display.
+.B f
+means use the full screen for the index.
+.B h
+means use half of the screen for the index, and is the default.
+.TP
+.B \-xPattern
+.B Pattern
+is contiguous to the
+.B \-x
+option and signifies the file suffixes to be eXcluded from the display.
+Separate the suffixes by the
+.B |
+character.  For example, ded "\-x.o|.mo"
+will exclude all .o and .mo files from ded's display.  It is wise
+to surround this option by quotes to prevent the shell from interpreting it.
+.PP
+From left the index fields
+are: file mode, link count, owner, size, write date and name.
+Executable files are tagged with a '*', directories with a '/',
+symbolic links to non-directories with a '@', and symlinks to
+directories with a '>'.
+The bottom
+half of the screen is used for displaying files via the 't'ype command
+and for short command execution.
+If there are too many files to all fit on one window, more windows
+are allocated. The 'f' and 'b' commands can be used for stepping forward
+and backward windows.
+.PP
+.B Command list
+.sp
+.B Motion Commands:
+.TP 5
+.RB <cr>
+.br
+.ns
+.TP 5
+.RB <lf>
+.br
+.ns
+.TP 5
+.RB j
+.br
+.ns
+.TP 5
+.RB ^N
+steps to the next file.
+.TP 5
+.RB -
+.br
+.ns
+.TP 5
+.RB <backspace>
+.br
+.ns
+.TP 5
+.RB k
+.br
+.ns
+.TP 5
+.RB ^P
+steps to previous file.
+.TP 5
+.RB ^F
+.br
+.ns
+.TP 5
+.RB ^V
+.br
+.ns
+.TP 5
+.RB f
+goes forward a window, leaving a one line overlap.
+.TP 5
+.RB ^B
+.br
+.ns
+.TP 5
+.RB Meta-V
+.br
+.ns
+.TP 5
+.RB b
+goes backward a window, leaving a one line overlap.  Meta-V only works at
+Utah.
+.TP 5
+.RB 1
+goes to the first entry of the first screen.
+.TP 5
+.RB G
+goes to the last entry of the last screen.
+.TP 5
+.RB /
+does a forward regular-expression search of the filenames starting
+with the current entry, and positions the cursor on that entry.
+If nothing is entered to
+the prompt, the last regular expression is used, and the search starts at the
+.I next
+entry.
+.TP 5
+.RB ?
+does a reverse regular expression search.
+.sp
+.RE
+.B General Control:
+.TP 5
+.RB Q
+.br
+.ns
+.TP 5
+.RB q
+exits the program, displaying files marked for deletion and requiring
+confirmation before deleting them.  If no confirmation is given
+(typing anything other than y), ded goes back to its display.
+When many files are to be deleted, ded does the deletions asyncronously
+unless it is top-level and can be ^Z'ed and backgrounded by the user.
+.TP 5
+.RB x
+aborts completely out of ded. No deletions are done.
+.TP 5
+.RB ^Z
+stops ded.
+.TP 5
+.RB h
+displays a help file.
+.TP 5
+.RB !
+.br
+.ns
+.TP 5
+.RB %
+prompts for a system command to invoke.
+Unless escaped via '\\',
+all
+.B %
+characters in the command itself are replaced with the relative
+pathname of the current entry, all
+.B #
+chars are replaced with just the trailing filename component
+(what you see on the screen), and all
+.B @
+characters are replaced with the relative name of the directory
+whose index is currently being displayed.
+"Relative" means relative to your current working directory, which does
+not change as you descend a hierarchy.
+When invoked via '!' the command is executed in the other window, if it
+exists, and can result in garbaging of the display if it has much output.
+This is designed for "action" commands, e.g. "mv".
+When invoked via '%' the screen is cleared before execution and
+re-displayed afterwards.
+.TP 5
+.RB .
+Repeats the previous
+.B !
+or
+.B %
+shell command, substituting from the current entry for any special chars (%#@)
+in the original command.
+.sp
+.RE
+.B Index Display
+.TP 5
+.RB l
+re-stats the current entry and redisplays that line.  If the file has
+disappeared, a '-' sign appears next to the file name.
+.TP 5
+.RB L
+all the entries
+on the current screen are re-stat'ed and redisplayed.
+.TP 5
+.RB ^L
+refreshes the screen.
+.TP 5
+.RB r
+.br
+.ns
+.TP 5
+.RB s
+sorts the file list by various fields: filename, filename treated
+as a number, read date, size, write
+date.  Only the first letter (e.g. f, n, r, s, or w) is required after
+giving the r and s commands. s sorts in increasing alphabetic, decreasing
+size, newest to oldest dates. r reverses the sense of s. For the
+f, n, s, and w orders, the date field is the write date. For
+the r subcommand, the date field is the read date. Whenever a sort
+is done, you are positioned at the top of the list afterwards.
+A proposed sort can be aborted via ^G.
+.sp
+.RE
+.B Actions on current entry
+.TP 5
+.RB d
+marks the current entry for deletion. Upon exit and confirmation,
+this entry will be deleted.  WARNING: this includes directories!
+If it is a directory, everything in it and underneath it will be
+removed.  For symbolic links, only the link is removed, not its target.
+.TP 5
+.RB u
+undeletes the current entry, if it was previously marked for deletion.
+.TP 5
+.RB t
+.br
+.ns
+.TP 5
+.RB T
+types the file out to the terminal.  Little 't' specifies that
+in two-window mode, the bottom window be used, pausing after
+each screenful, and wrapping long lines.
+The type-out may be interrupted by the "Interrupt" character
+(^C),
+or by 'q' when the file is displayed in the
+bottom window.
+Capital 'T' says to use the full screen; essentially just a "cat" of
+the file.
+.TP 5
+.RB m
+runs the local pager
+upon the current file.  As distributed, the default is Berkeley's
+.B more
+program.
+.TP 5
+.RB e
+runs the editor defined in your EDITOR environment variable
+upon the current file.  If EDITOR is not defined, "vi"
+("little emacs" at Utah) is used.
+However, if the current
+file is a directory or a symlink to a directory
+it is not edited, but rather, a recursive ded
+is done upon that directory.  In this manner, you can
+examine the contents of that directory and thus move down
+the directory hierarchy.
+.TP 5
+.RB p
+.br
+.ns
+.TP 5
+.RB P
+prints the current file on the line-printer.
+At Utah, 'p' prints in small font (pr2) while 'P' gets normal font size.
+.SH FILES
+/usr/local/lib/ded.hlp    help file for ? and h
+.SH SEE ALSO
+ls(1)
+.SH DIAGNOSTICS
+The error messages are basically self-explanatory.
+.SH AUTHORS
+Stuart Mclure Cracraft
+.br
+Jay Lepreau
+.SH BUGS
+Should use curses!
+.PP
+Needs a command to move the current entry to the top of the screen.
+.PP
+Would be nice to be able to change file modes by editing the mode
+field directly. 
+.PP
+When tabs are in a line displayed via the 't' command, the
+line may wrap one character early.

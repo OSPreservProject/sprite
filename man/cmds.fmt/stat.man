@@ -1,0 +1,68 @@
+
+
+
+STAT                      User Commands                      STAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     stat - get file attributes
+
+SSYYNNOOPPSSIISS
+     ssttaatt [--ss --ll --dd --tt] [--nn _n_u_m] _f_i_l_e _f_i_l_e ...
+
+OOPPTTIIOONNSS
+     --ss            Produce short, one line output for each file.
+
+     --ll            Get the attributes of the link,  not  what  it
+                   references.
+
+     --dd            Include day of week in dates.
+
+     --tt            Time a series of Fs_GetAttributes calls.
+
+     --nn _n_u_m        Number of repetitions for the --tt option.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Stat is used to print out attributes of files.   Its  output
+     is  self-explainitory  and is a super-set of the output from
+     the llss --ll command, which can also be obtained  with  the  --ss
+     option.   The  extra  attributes  presented are the internal
+     version number of the file that is incremented each time the
+     file is re-written, the user-defined file type, the creation
+     date, the file server ID, the file domain  (disk),  and  the
+     file  number.   For  devices this also prints out the device
+     serverID, type, and unit.  A device serverID of -1 indicates
+     that  it  is  a common device found on all hosts.  Opening a
+     common device attaches you to the  instance  of  the  device
+     connected to the current host.
+
+BBUUGGSS
+     User IDs and hostIDs are given in numerical form,  not  nice
+     string names.
+
+SSEEEE AALLSSOO
+     ls, prefix
+
+KKEEYYWWOORRDDSS
+     attributes, version, create, device, file type, serverID
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 24, 1989                  1
+
+
+

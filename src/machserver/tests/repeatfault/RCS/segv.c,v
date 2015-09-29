@@ -1,0 +1,57 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv021:1.1 srv018:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv004:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.12.20.51.45;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Test program that causes an exception and the signal handler just
+returns.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * Check what happens if the handler for SIGSEGV doesn't try to correct for 
+ * whatever caused the signal.
+ *
+ * $Header$
+ */
+
+#include <signal.h>
+
+int ntimes = 0;
+
+handler()
+{
+    Test_PutMessage("ding\n");
+    ++ntimes;
+    if (ntimes > 5) {
+	exit(1);
+    }
+}
+
+main()
+{
+    int *bogusPtr = (int *)0x98765433;
+    int i;
+
+    signal(SIGSEGV, handler);
+    i = *bogusPtr;
+    printf("i = 0x%x\n", i);
+    exit(0);
+}
+@

@@ -1,0 +1,172 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 sprited:9.2.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     91.05.17.10.37.38;  author kupfer;  state Exp;
+branches 9.2.1.1;
+next     9.1;
+
+9.1
+date     90.09.11.14.11.30;  author kupfer;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.21.49;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.21.27.29;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.40.57;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.34;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.48;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.2.1.1
+date     91.10.22.15.55.43;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@Add DUMP_LINES_PER_SCREEN.
+@
+text
+@/*
+ * dump.h --
+ *
+ *	Declarations of external routines for the ``dump'' utility.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/utils/RCS/dump.h,v 9.1 90/09/11 14:11:30 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _DUMP
+#define _DUMP
+
+/* 
+ * For L1 routines that want to print a header line every screenful, 
+ * this #define gives a common definition for how big a screen is.  A 
+ * few extra lines are provided so that, e.g., syslog output is less 
+ * likely to make the header scroll off the screen.
+ */
+#define DUMP_LINES_PER_SCREEN	20
+
+extern void	Dump_Init _ARGS_((void));
+
+#endif /* _DUMP */
+@
+
+
+9.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dump.h,v 9.2 91/05/17 10:37:38 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+9.1
+log
+@Use function prototypes. Lint.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dump.h,v 9.0 89/09/12 15:21:49 douglis Stable Locker: kupfer $ SPRITE (Berkeley)
+d15 8
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dump.h,v 8.1 89/08/15 21:27:29 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d16 1
+a16 4
+extern void		Dump_Init();
+extern void		Dump_ProcessTable();
+extern void		Dump_ReadyQueue();
+extern void		Dump_TimerQueue();
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dump.h,v 8.0 88/11/11 18:40:57 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dump.h,v 6.0 88/08/11 12:28:34 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d21 1
+a21 1
+#endif _DUMP
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: dump.h,v 5.0 87/08/11 10:51:48 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: dump.h,v 1.1 87/02/11 11:24:31 douglis Exp $ SPRITE (Berkeley)
+@

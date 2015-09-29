@@ -1,0 +1,179 @@
+' $Header: /sprite/src/cmds/update/RCS/update.man,v 1.9 92/12/17 14:38:20 jhh Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS UPDATE cmds
+.BS
+.SH NAME
+update \- A copy program that recursively updates directory trees
+.SH SYNOPSIS
+\fBupdate\fR [\fIoptions\fR] \fIsrc1 ... srcN targetDir\fR
+.br
+\fBupdate\fR [\fIoptions\fR] \fIsrc target\fR
+.SH OPTIONS
+.IP "\fB\-b \fIdirectory\fR" 15
+Before updating a target, save a backup copy of the file in
+\fIdirectory\fR.
+.IP "\fB\-B \fIdays\fR" 15
+Only save the target as a backup copy if no backup exists or if the
+target is \fIdays\fR days old.  
+.IP "\fB\-f\fR" 15
+Force:  always update targets regardless of last-modified times.
+.IP "\fB\-g \fIgroup\fR" 15
+Change the group of any updated files to \fIgroup\fR.  Targets that aren't
+updated do not have their groups changed.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit without updating
+any targets.
+.IP "\fB\-l\fR" 15
+If a source file is a symbolic link then \fBupdate\fR normally creates an
+identical symbolic link at the destination.  If the \fB\-l\fR switch
+is specified, then \fBupdate\fR copies the file referenced by the source link,
+rather than the link itself.
+.IP "\fB\-L\fR" 15
+Creates symbolic links to non-directory source files, rather than copying them.
+Directories
+are copied in the normal manner. This flag is useful for creating shadow
+trees of source directories. If either the source or the destination 
+start with '/' the link will be absolute, otherwise it's relative.
+.IP "\fB\-m \fImode\fR" 15
+When updating a target, set its protection bits to \fImode\fR.  Targets
+that aren't updated do not have their protection changed.  \fIMode\fR
+must be specified in octal.
+.IP "\fB\-n\fR" 15
+Be nice about problems with file types not matching (i.e. don't return
+an error).
+.IP "\fB\-M\fR" 15
+When updating a target, do it by moving the source instead of by
+copying.  This may be useful when disk space is tight.
+.IP "\fB\-o \fIowner\fR" 15
+Perform all updates as user \fIowner\fR, so that newly-created targets
+will be owned by \fIowner\fR.  Any targets that are not updated will
+not have their \fIowner\fR changed.
+.IP "\fB\-O\fR" 15
+This option preserves ownership on newly created files.  Only root or
+wheel group members can use this option.
+.VS
+.IP "\fB\-p \fIpruneExpr\fR" 15
+Prune subtress whose name matches the given regular expression.
+.VE
+.IP "\fB\-q\fR" 15
+Quiet.  Don't print anything except for error messages.  \fBUpdate\fR normally
+prints a message for each file copied.
+.IP "\fB\-s\fR" 15
+Strip.  Source files are all expected to be executable binaries.  When
+copying, strip all of the symbol and relocation information from the
+updated target.
+.IP "\fB\-t\fR" 15
+Instead of setting the last-accessed and last-modified times of each
+target to match those of its source, leave them alone, so that they are
+set to the current time.
+.IP "\fB\-v\fR" 15
+Verify.  Don't actually modify any files, but print information about
+which files would have been modified.
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBupdate\fR command is used to replace out-of-date copies of files with
+more recent versions.  It operates on one or more source files.  For
+each source, \fBupdate\fR locates a corresponding target;  if the target
+doesn't exist, or if the last-modified
+time of the source is later than the last-modified time
+of the target, or if the \fB\-f\fR option
+is specified, then \fBupdate\fR makes a copy of the source at the target.
+The target's last-modified time and permissions will be set identical
+to those of the source.
+.PP
+In the simplest case, two file names are given, both of which are
+regular files.  In this case the first file name is the source and
+the second is the target.  If the last file name refers to
+a directory, then all the other file names (of which there may be
+more than one) are sources.
+Each source file will be updated to the corresponding file
+\fIwithin\fR the target directory.  For example, in the command
+.DS
+\fBupdate /a/b c d foo\fR
+.DE
+the target for \fB/a/b\fR will be \fBfoo/b\fR, the target for \fBc\fR
+will be \fB/foo/c\fR, and the target for \fBd\fR will be \fBfoo/d\fR.
+.PP
+If any of the source files is a directory, then its entire subtree will
+be updated to the corresponding target, maintaining the subtree
+structure of the
+source.  In the special case where only two file names are given
+and both are directories, then the source is updated \fIto\fR
+the target directory rather than \fIwithin\fR it.  Thus, in the command
+.DS
+\fBupdate a b\fR
+.DE
+where \fBa\fR and \fBb\fR are both directories and
+\fBa\fR contains one subdirectory \fBc\fR which in turn
+contains one file \fBd\fR, the target corresponding
+to \fBa/c/d\fR will be \fBb/c/d\fR.  \fBUpdate\fR will create the
+directory \fBb/c\fR if it doesn't already exist.
+.PP
+\fBUpdate\fR will also copy symbolic links.  Normally it creates matching
+symbolic links at the targets, but it will copy the files pointed to
+by the links if the \fB\-l\fR switch is given.
+.PP
+If the target for a source already exists but has a type different from
+the source (e.g. the target is a directory and the source is a regular
+file), then \fBupdate\fR will not modify the target.  If the target's last-modified
+time is more recent than the source's, then again \fBupdate\fR will not modify
+the target.
+
+.SH "USER AND GROUP CHANGES"
+.PP
+There are several restrictions on usage of the \fB\-O\fR, \fB\-o\fR and \fB\-g\fR
+switches.
+You may specify \fB\-O\fR only if you are root or in the wheel group.
+You may specify \fB\-g \fIgroup\fR as long as you are a member
+of \fIgroup\fR.
+You may specify \fB\-o \fIowner\fR if either
+.IP [1]
+You are \fIowner\fR (which isn't very interesting).
+.IP [2]
+\fIOwner\fR is \fBroot\fR, and you are a member of the \fBwheel\fR group.
+.IP [3]
+There is a group with the same name as \fIowner\fR and you are a member
+of that group.
+
+.SH "SET-USER_ID"
+.PP
+If you haven't specified the \fB\-m\fR switch, then \fBupdate\fR attempts
+to preserve set-user-id bits.  It also attempts to preserve set-user-id
+bits when making backup copies, even if the \fB\-m\fR switch was given.
+However, set-user-id bits are not preserved unless the owner of the
+target file is the same as the owner of the source file (this condition
+is always true if the \fB\-O\fR switch is given).
+
+.SH "BACKUP FILES"
+.PP
+If the \fB\-b\fR switch is specified, then \fBupdate\fR attempts to
+ensure that a backup copy of the target is saved, if the target
+already exists.  If a backup already exists, then the backup is
+overwritten only if the target is relatively old (a parameter that
+defaults to files two weeks old and may be overridden by the \fB-B\fR
+switch, specifying the requisite age in days).  If the \fB-B\fR switch
+specifies an age of 0, then the most 
+recent target will always be backed up.  Normally, the default of 14
+(two weeks) is used to guarantee that an unstable file does not
+overwrite a stable backup.
+
+.VS
+.SH "PRUNING SUB-TREES"
+.PP
+The \fB\-p\fR option can be used to prune unwanted sub-trees from the source
+files. The argument is a regular expression that is matched against all source
+files before updating them.  If the expression matches then the source is
+not updated.  The expression is matched against only the tail of the source
+path name, so using an expression of "foo/bar" will not do what you think
+it will. If the argument contains any magic characters such as "*" then you
+better put it inside of quotes otherwise csh will glob it first.  Multiple
+\fB\-p\fR options can be specified and will be compared against the source files
+one at a time. 
+.VE
+.SH KEYWORDS
+copy, up-to-date
+
+.SH "SEE ALSO"
+cp, mv, tar

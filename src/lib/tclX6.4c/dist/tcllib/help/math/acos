@@ -1,0 +1,4 @@
+
+
+          acos expr
+               Returns the arccosine of expr.  expr is in radians.

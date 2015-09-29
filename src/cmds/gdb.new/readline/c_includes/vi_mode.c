@@ -1,0 +1,1 @@
+../../dist/readline/vi_mode.c

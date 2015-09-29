@@ -1,0 +1,11 @@
+F CON.PH;1                          	con.ph
+F CONSTANT.PH;1                     	constants.ph
+F FSMOUNT.;1                        	fsmount
+F FSMOUNT.BU;1                      	fsmount.bu
+F FSMOUNT.MAN;1                     	fsmount.man
+F MAKEFILE.;1                       	Makefile
+F MYFSCHEC.;1                       	myfscheck
+F OPTION.PL;1                       	option.pl
+F PREDEL.;1                         	predel
+F PREUN.;1                          	preun
+D RCS                               	RCS

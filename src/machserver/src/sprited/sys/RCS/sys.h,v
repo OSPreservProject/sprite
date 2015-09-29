@@ -1,0 +1,319 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  srv030:1.11 srv028:1.11 srv027:1.10 srv026:1.10 srv024:1.10 srv022:1.10 srv021:1.10 srv019:1.10 srv018:1.10 srv016:1.10 srv015:1.10 srv014:1.10 srv012:1.10 srv011:1.10 srv010:1.10 srv008:1.10 srv007:1.10 srv006:1.10 srv005:1.10 srv004:1.10 srv003:1.10 srv002:1.10 srv001:1.10;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.07.13.21.12.56;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.04.16.11.32.53;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.04.02.21.00.02;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.03.23.14.26.38;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.12.01.21.57.58;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.11.14.10.02.01;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.10.18.18.07.12;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.04.11.37.44;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.26.12.12.16;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.23.14.20.01;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.01.21.06.59;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.11
+log
+@Instrument Vm_Copy{In,Out}, with times broken down according to Sprite
+call.
+@
+text
+@/*
+ * sys.h --
+ *
+ *     Routines and types for the sys module.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.10 92/04/16 11:32:53 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _SYS
+#define _SYS
+
+#include <sprite.h>
+#include <spriteTime.h>
+#include <cfuncproto.h>
+#include <list.h>
+#include <mach.h>
+#include <mig_errors.h>
+
+/* 
+ * This type defines the buffers that are used to store MIG messages.  
+ * We could theoretically have two types, one for request messages and 
+ * one for reply messages, but there's not enough difference between 
+ * the two types to justify the extra complexity.  Unused buffers are 
+ * kept on a linked list.
+ * 
+ * In order to page-align buffers (for the expected performance win), 
+ * we allocate the actual buffer that Mach sees separately and keep a 
+ * pointer to the memory.  Note that the Mach message header actually 
+ * resides at the beginning of the buffer.
+ */
+    
+#define SYS_MAX_REQUEST_SIZE	8192 /* bytes in a buffer */
+
+typedef struct {
+    List_Links		links;	/* for the free list; unused if not on free 
+				 * list */
+    mig_reply_header_t	*bufPtr; /* actual message buffer */
+} Sys_MsgBuffer;
+
+/* 
+ * Instrumentation information, per system call.
+ */
+typedef struct {
+    int numCalls;		/* number of invocations of the call */
+    Time timeSpent;		/* total time spent doing the call */
+    Time copyInTime;		/* time spent in copyin */
+    Time copyOutTime;		/* time spent in copyout */
+} Sys_CallCount;
+
+#ifdef SPRITED
+/* 
+ * Declarations that might conflict with user declarations.
+ */
+
+extern	mach_port_t sys_RequestPort;
+
+extern	Boolean	sys_ShuttingDown;	/* Set when halting */
+extern	Boolean	sys_ErrorShutdown;	/* Set after a bad trap or error */
+
+extern	mach_port_t sys_PrivHostPort;	/* we use this port to make privileged 
+					 * requests */ 
+extern	mach_port_t sys_PrivProcSetPort;
+
+extern Sys_CallCount sys_CallCounts[];
+extern Boolean sys_CallProfiling;
+
+extern void	printf _ARGS_(());
+extern void	Sys_Fprintf _ARGS_(());
+extern int	Sys_GetHostId _ARGS_((void));
+extern int	Sys_GetMachineArch _ARGS_((void));
+extern int	Sys_GetMachineType _ARGS_((void));
+extern int	Sys_GetNumProcessors _ARGS_((void));
+extern void	Sys_Init _ARGS_((void));
+extern void	Sys_HostPrint _ARGS_((int spriteID, char *string));
+extern void	Sys_ReplyAndFree _ARGS_((Sys_MsgBuffer *requestPtr,
+					Sys_MsgBuffer *replyPtr));
+extern void	Sys_ServerLoop _ARGS_((void));
+extern void	Sys_Shutdown _ARGS_((int flags));
+#endif /* SPRITED */
+
+#endif /* _SYS */
+@
+
+
+1.10
+log
+@Add instrumentation.
+@
+text
+@d9 1
+a9 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.9 92/04/02 21:00:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d50 2
+@
+
+
+1.9
+log
+@Hide all function declarations inside #ifdef SPRITED.  Add
+Sys_GetMachineArch, Sys_GetMachineType, and Sys_GetNumProcessors.
+@
+text
+@d9 1
+a9 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.8 92/03/23 14:26:38 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d17 1
+d44 12
+d64 1
+d66 2
+a67 4
+#ifdef SPRITED
+/* 
+ * Declarations that might conflict with user declarations.
+ */
+@
+
+
+1.8
+log
+@Use the Sprite stdio package instead of Mach's.
+@
+text
+@d9 1
+a9 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.7 91/12/01 21:57:58 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d17 1
+d52 5
+d60 3
+a67 5
+
+#ifdef SPRITED
+/* 
+ * Declarations that might conflict with user declarations.
+ */
+d69 1
+a69 1
+#endif
+@
+
+
+1.7
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d9 1
+a9 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.6 91/11/14 10:02:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d51 1
+a51 8
+/* 
+ * Our declaration for printf conflicts with the Mach stdio 
+ * declaration, so don't declare it if stdio has already been included.
+ */
+#ifndef FILE
+extern void printf _ARGS_(());
+#endif
+
+@
+
+
+1.6
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d9 1
+a9 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.5 91/10/18 18:07:12 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d48 2
+d66 5
+d72 1
+@
+
+
+1.5
+log
+@Add Sys_Fprintf.
+@
+text
+@d9 1
+a9 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.4 91/10/04 11:37:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d60 1
+@
+
+
+1.4
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d9 1
+a9 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.3 91/09/26 12:12:16 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d57 1
+@
+
+
+1.3
+log
+@Append "Stub" to procedure names, so that user code can call routines
+with the clean names and not know anything about Mach.
+@
+text
+@d9 1
+a9 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.2 91/09/23 14:20:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d62 1
+a62 2
+
+extern kern_return_t Sys_ShutdownStub _ARGS_((mach_port_t port, int flags));
+@
+
+
+1.2
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d9 1
+a9 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sys.h,v 1.1 91/09/01 21:06:59 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d63 1
+a63 1
+extern kern_return_t Sys_Shutdown _ARGS_((mach_port_t port, int flags));
+@
+
+
+1.1
+log
+@Snapshot.  Full VM support.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.9 91/07/26 17:00:48 shirriff Exp $ SPRITE (Berkeley)
+d17 3
+d21 36
+d58 6
+@

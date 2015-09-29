@@ -1,0 +1,97 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     91.05.27.15.01.24;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.12.12.16.07.24;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.04.11.16.55.34;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Manual page for kgcore.
+@
+
+
+1.3
+log
+@Changed synopsis to specify kgcore rather than kmsg at the request
+of Mary.
+@
+text
+@' $Header: /sprite/src/cmds/kgcore/RCS/kgcore.man,v 1.2 90/12/12 16:07:24 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS KGCORE cmds
+.BS
+.SH NAME
+kgcore \-  Generate a core dump of a remote Sprite kernel
+.SH SYNOPSIS
+\fBkgcore\fR \fIoption machine\fR
+.SH OPTIONS
+.IP "\fB\-o\fI filename\fR" 15
+Write the core image to filename rather than the file vmcore.
+.IP "\fB\-c\fR" 15
+Include the file system block cache in the core dump.
+.IP "\fB\-v\fR" 15
+Output progress info.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBkgcore\fR command is used to make a copy of the kernel memory image of
+a Sprite machine. The memory image may be used with \fBkgdb\fR 
+to examine the machine's state. 
+\fIMachine\fR is the name of a machine
+running Sprite. The machine must be in the kernel debugger 
+for \fBkgcore\fR to work (see the -d option
+of the \fBkmsg\fR command.)
+\fBKgcore\fR writes the kernel memory image to the file vmcore unless 
+another file name is specified with the \fB\-o\fR option. This file may be
+specified as a core image to \fBkgdb\fR.
+
+.SH KEYWORDS
+debug, kernel, core, kgdb
+@
+
+
+1.2
+log
+@Updated to work with sun4.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/kgcore/RCS/kgcore.man,v 1.1 89/04/11 16:55:34 mendel Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBkmsg\fR \fIoption machine\fR
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/kmsg/RCS/kmsg.man,v 1.2 88/12/30 09:35:17 ouster Exp $ SPRITE (Berkeley)
+d14 2
+a15 2
+.IP "\fB\-d\fR" 15
+Output debugging info.
+@

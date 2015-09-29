@@ -1,0 +1,10 @@
+D DOC                               	doc
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F SCVS.;1                           	scvs
+F SCVS.MAN;1                        	scvs.man
+F SCVS.MAR;1                        	scvs.mary
+F SCVS.NEW;1                        	scvs.new
+F SCVS.TES;1                        	scvs.test
+F SCVSLOG.;1                        	scvslog

@@ -1,0 +1,17 @@
+L COREDEP.C;1                       	coredep.c	../dist/gdb/coredep.c
+F DEPENDEN.MK;1                     	dependencies.mk
+L EXEC.C;1                          	exec.c	../dist/gdb/exec.c
+L INFPTRAC.C;1                      	infptrace.c	../dist/gdb/infptrace.c
+F INITIALI.C;1                      	initialized_all_files.c
+F MD.MK;1                           	md.mk
+D MIPS                              	mips
+L MIPSREAD.C;1                      	mipsread.c	../dist/gdb/mipsread.c
+L MIPS_PIN.C;1                      	mips-pinsn.c	../dist/gdb/mips-pinsn.c
+L MIPS_TDE.C;1                      	mips-tdep.c	../sprite/gdb/mips-tdep.c
+L MIPS_XDE.C;1                      	mips-xdep.c	../dist/gdb/mips-xdep.c
+F O.;1                              	o
+L PTRACEMI.C;1                      	ptraceMips.c	../sprite/gdb/ptraceMips.c
+L TM.H;1                            	tm.h	tm-mips.h
+L TM_MIPS.H;1                       	tm-mips.h	../sprite/gdb/tm-mips.h
+L XM.H;1                            	xm.h	xm-mips.h
+L XM_MIPS.H;1                       	xm-mips.h	../dist/gdb/xm-mips.h

@@ -1,0 +1,23 @@
+#!/bin/csh -f
+if ($#argv < 1) then
+    set machine=cayenne
+else
+    set machine=$1
+endif
+echo debugging $machine
+kdbx -p -c ~/.kdbxinit -h $machine \
+    -I .\
+    -I ../dbg/sun2.md \
+    -I ../vm/sun2.md \
+    -I ../sync/sun2.md \
+    -I ../sys/sun2.md \
+    -I ../sun/sun2.md \
+    -I ../proc/sun2.md \
+    -I ../fs/sun2.md \
+    -I ../sig/sun2.md \
+    -I ../dev/sun2.md \
+    -I ../rpc/sun2.md \
+    -I ../mem/sun2.md \
+    -I ../net/sun2.md \
+    -I /sprite/src/lib/libc \
+    sun3

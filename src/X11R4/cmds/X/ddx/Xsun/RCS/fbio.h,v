@@ -1,0 +1,224 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.07.24.18.01.15;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.07.11.13.46.00;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.03.19.16.16.48;  author tve;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.03.04.07.24.30;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.19.16.04.42;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Header file for /dev/fb ioctls - first cut.
+@
+
+
+1.5
+log
+@Works on treason.
+@
+text
+@/*
+ * fb.h --
+ *
+ *	Information about "frame buffer" devices, which provide
+ *	configuration info, mapping into user address spaces and
+ *	colormap access.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /X11/R4/src/cmds/X/ddx/Xsun/RCS/fbio.h,v 1.4 90/07/11 13:46:00 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+ */
+
+#ifndef _FB
+#define _FB
+
+#ifdef NOTDEF
+/* in sys/fb.h */
+
+/*
+ * Frame buffer descriptor.
+ * Returned by FBIOGTYPE ioctl on frame buffer devices.
+ */
+typedef struct {
+	int	fb_type;		/* as defined below */
+	int	fb_height;		/* in pixels */
+	int	fb_width;		/* in pixels */
+	int	fb_depth;		/* bits per pixel (w/o overlay planes)*/
+	int	fb_cmsize;		/* size of color map (#entries) */
+					/* (without any overlay planes) */
+	int	fb_size;		/* total size in bytes */
+					/* includes non-visible bits */
+} fbtype;
+
+
+#define FBIOGTYPE _IOR(F, 0, fbtype)
+#endif NOTDEF
+
+/*
+ * Frame buffer mapping.
+ * Returned by FBIOMAP ioctl on frame buffer devices.
+ */
+typedef struct {
+	void	*fb_buffer;		/* frame buffer */
+	void	*fb_overlay;		/* b/w overlay plane */
+	void	*fb_enable;		/* overlay plane enable */
+} fbaddr;
+
+#ifdef NOTDEF
+#define FBIOMAP		_IOR(F, 1, Fb_Addr);
+#endif NOTDEF
+
+/*
+ * Color map I/O
+ */
+typedef struct {
+	int		index;		/* first element (0 origin) */
+	int		count;		/* number of elements */
+	unsigned char	*red;		/* red color map elements */
+	unsigned char	*green;		/* green color map elements */
+	unsigned char	*blue;		/* blue color map elements */
+} Fb_Cmap;
+
+#ifdef NOTDEF
+#define FBIOPUTCMAP _IOW(F, 2, Fb_Cmap)
+#define FBIOGETCMAP _IOW(F, 3, Fb_Cmap)
+#endif NOTDEF
+
+/* 
+ * Video control 
+ * (the unused bits are reserved for future use)
+ */
+#define FBVIDEO_OFF     0
+#define FBVIDEO_ON      1
+
+#ifdef NOTDEF
+#define FBIOSVIDEO      _IOW(F, 4, int)
+#define FBIOGVIDEO      _IOR(F, 5, int)
+
+/* frame buffer type codes */
+#define FBTYPE_SUN_BW2		0	/* noremal res */
+#define FBTYPE_SUN_BW2H		1	/* hi res */
+#define FBTYPE_SUN_CG4		2
+#define FBTYPE_SUN_CG6		3
+#define FBTYPE_DS3100_BW	4
+#define FBTYPE_DS3100_COL	5
+#define FBTYPE_SUN_CG3		6
+
+#define FBTYPE_LASTPLUSONE      7      /* max number of fbs (change as add) */
+#endif NOTDEF
+
+#endif /* _FB */
+@
+
+
+1.4
+log
+@Mary checking this in for Mendel before adding /dev/fb.
+@
+text
+@d17 1
+a17 1
+ * $Header: /X11/R4/src/cmds/X/ddx/sprite/RCS/fbio.h,v 1.2 90/03/04 07:24:30 tve Exp $ SPRITE (Berkeley)
+d23 3
+d39 2
+a40 1
+} Fb_Type;
+d42 2
+a43 1
+#define FBIOGTYPE _IOR(F, 0, Fb_Type)
+d53 1
+a53 1
+} Fb_Addr;
+d55 1
+d57 1
+d70 1
+d73 1
+d82 1
+d96 1
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d83 1
+d85 1
+a85 1
+#define FBTYPE_LASTPLUSONE      6      /* max number of fbs (change as add) */
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+ * $Header: /X11/R4/src/cmds/X/ddx/sprite/RCS/fbio.h,v 1.1 90/02/19 16:04:42 tve Exp Locker: tve $ SPRITE (Berkeley)
+d58 3
+a60 3
+	unsigned short	*red;		/* red color map elements */
+	unsigned short	*green;		/* green color map elements */
+	unsigned short	*blue;		/* blue color map elements */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header$ SPRITE (Berkeley)
+d31 3
+a33 2
+	int	fb_depth;		/* bits per pixel */
+	int	fb_cmsize;		/* size of color map (entries) */
+d35 1
+d77 6
+a82 5
+#define FBTYPE_SUN_BW2		0
+#define FBTYPE_SUN_CG4		1
+#define FBTYPE_SUN_CG6		2
+#define FBTYPE_DS3100_BW	3
+#define FBTYPE_DS3100_COL	4
+d84 1
+a84 1
+#define FBTYPE_LASTPLUSONE      5      /* max number of fbs (change as add) */
+@

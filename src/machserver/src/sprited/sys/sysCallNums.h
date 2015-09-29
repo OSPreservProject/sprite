@@ -1,0 +1,98 @@
+/*
+ * sysCallNums.h --
+ *
+ *	Indices into per-system-call counters.
+ *	XXX Should be machine-generated from spriteSrv.defs?
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sysCallNums.h,v 1.3 92/07/17 16:36:05 kupfer Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _SYSCALLNUMS
+#define _SYSCALLNUMS
+
+/* 
+ * Base number that MIG will use for generating procedure numbers.
+ */
+#define SYS_CALL_BASE		37000
+
+#define TEST_PUT_DECIMAL_STUB		0
+#define TEST_PUT_HEX_STUB		1
+#define TEST_PUT_OCTAL_STUB		2
+#define TEST_PUT_MESSAGE_STUB		3
+#define	TEST_PUT_STRING_STUB		4
+#define TEST_GET_STRING_STUB		5
+#define SYS_SHUTDOWN_STUB		6
+#define SYS_GET_TIME_OF_DAY_STUB	7
+#define SYS_STATS_STUB			8
+#define SYS_GET_MACHINE_INFO_STUB	9
+#define VM_MAP_FILE_STUB		15
+#define VM_CREATE_VA_STUB		16
+#define VM_CMD_STUB			17
+#define VM_CMD_INBAND_STUB		18
+#define FS_ACCESS_STUB			29
+#define FS_ATTACH_DISK_STUB		30
+#define FS_CHANGE_DIR_STUB		31
+#define FS_GET_ATTRIBUTES_STUB		32
+#define FS_HARD_LINK_STUB		33
+#define FS_MAKE_DEVICE_STUB		34
+#define FS_MAKE_DIR_STUB		35
+#define FS_OPEN_STUB			36
+#define FS_READ_LINK_STUB		37
+#define FS_REMOVE_DIR_STUB		38
+#define FS_REMOVE_STUB			39
+#define FS_RENAME_STUB			40
+#define FS_SET_ATTR_STUB		41
+#define FS_SYMLINK_STUB			42
+#define FS_CLOSE_STUB			43
+#define FS_CREATE_PIPE_STUB		44
+#define FS_GET_ATTRIBUTES_ID_STUB	45
+#define FS_GET_NEW_ID_STUB		46
+#define FS_IO_CONTROL_STUB		47
+#define FS_READ_STUB			48
+#define FS_SET_ATTRID_STUB		49
+#define FS_WRITE_STUB			50
+#define FS_COMMAND_STUB			51
+#define FS_SET_DEF_PERM_STUB		52
+#define FS_SELECT_STUB			53
+#define FS_FILE_WRITE_BACK_STUB		54
+#define NET_INSTALL_ROUTE_STUB		59
+#define PROC_FORK_STUB			61
+#define PROC_GET_IDS_STUB		62
+#define PROC_OLD_EXEC_ENV_STUB		63
+#define PROC_RAW_EXIT_STUB		64
+#define PROC_WAIT_STUB			65
+#define PROC_DETACH_STUB		66
+#define PROC_GET_FAMILY_ID_STUB		67
+#define PROC_GET_GROUP_IDS_STUB		68
+#define PROC_GET_PCB_INFO_STUB		69
+#define PROC_SET_FAMILY_ID_STUB		70
+#define PROC_SET_GROUP_IDS_STUB		71
+#define PROC_SET_IDS_STUB		72
+#define PROC_GET_INTERVAL_TIMER_STUB	73
+#define PROC_SET_INTERVAL_TIMER_STUB	74
+#define PROC_GET_HOST_IDS_STUB		75
+#define PROC_EXEC_ENV_STUB		76
+#define SIG_PAUSE_STUB			85
+#define SIG_SEND_STUB			86
+#define SIG_SET_ACTION_STUB		87
+#define SIG_SET_HOLDMASK_STUB		88
+#define SIG_RETURN_STUB			89
+#define SIG_GET_SIGNAL_STUB		90
+#define TEST_PUT_TIME_STUB		91
+#define TEST_MEM_CHECK_STUB		92
+#define TEST_RETURN1_STUB		93
+#define TEST_RETURN2_STUB		94
+#define TEST_RPC_STUB			96
+
+#define SYS_NUM_CALLS		100
+
+#endif /* _SYSCALLNUMS */

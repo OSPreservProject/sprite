@@ -1,0 +1,56 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     90.10.10.15.16.15;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.02.11.57.05;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@local.mk file for the netBoot boot program.
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@#if !empty(TM:Msun4c)
+INSTALL_PROG  = /sprite/cmds/update -s
+#endif
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 3
+a3 5
+#
+# Local makefile for the Sprite Sun3 PROM-monitor network boot program
+#
+# Include the system makefile
+#
+a5 5
+
+$(TM).md/assym.h : Genassym/genassym
+	$(RM) -f assym.h
+	Genassym/genassym > assym.h
+
+@

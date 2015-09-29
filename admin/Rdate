@@ -1,0 +1,6 @@
+#!/sprite/cmds/csh -f
+if (`hostname` =~ allspice*) exit
+#set id=`hostname -i`
+#@ id *= 5
+#sleep $id
+rdate allspice

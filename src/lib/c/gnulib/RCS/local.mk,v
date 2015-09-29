@@ -1,0 +1,53 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     90.06.26.18.59.49;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.03.09.11.14.36;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Use gcc on the ds3100.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+# No man pages defined; make installman be a no-op.
+MANPAGES = NONE
+
+#if !empty(TM:Mds3100)
+CC=	gcc
+#endif
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 4
+@

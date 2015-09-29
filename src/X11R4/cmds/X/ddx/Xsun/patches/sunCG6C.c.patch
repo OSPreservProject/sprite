@@ -1,0 +1,224 @@
+*** /tmp/,RCSt1594232	Mon Nov  4 17:41:16 1991
+--- sunCG6C.c	Tue Jan  8 23:00:51 1991
+***************
+*** 40,55 ****
+  #endif
+  
+  #include    "sun.h"
+  
+- #ifdef FBTYPE_SUNFAST_COLOR
+  #include    <sys/mman.h>
+  #include    <pixrect/memreg.h>
+  #include    <sundev/cg6reg.h>
+  #include    "colormap.h"
+  #include    "colormapst.h"
+  #include    "resource.h"
+- #include    <struct.h>
+  
+  #define	CG6_HEIGHT	900
+  #define	CG6_WIDTH	1152
+  
+--- 40,62 ----
+  #endif
+  
+  #include    "sun.h"
++ #include    <sys/types.h>
++ #include "sys/fb.h"
++ #include "sys/ioctl.h"
++ #include "kernel/vmMach.h"
++ #undef	MAP_NEW
+  
+  #include    <sys/mman.h>
++ #ifndef	sprite
+  #include    <pixrect/memreg.h>
+  #include    <sundev/cg6reg.h>
++ #include    <struct.h>
++ #endif	sprite
+  #include    "colormap.h"
+  #include    "colormapst.h"
+  #include    "resource.h"
+  
++ #ifndef	sprite
+  #define	CG6_HEIGHT	900
+  #define	CG6_WIDTH	1152
+  
+***************
+*** 61,66 ****
+--- 68,74 ----
+  #define CG6_IMAGE(fb)	    ((caddr_t)(&(fb)->cpixel))
+  #define CG6_IMAGEOFF	    ((off_t)0x0)
+  #define CG6_IMAGELEN	    (((CG6_HEIGHT*CG6_WIDTH + 8191)/8192)*8192)
++ #endif	sprite
+  
+  static int  sunCG6CScreenIndex;
+  
+***************
+*** 75,81 ****
+      int		index, count;
+      u_char	*rmap, *gmap, *bmap;
+  {
+!     struct fbcmap sunCmap;
+  
+      sunCmap.index = index;
+      sunCmap.count = count;
+--- 83,89 ----
+      int		index, count;
+      u_char	*rmap, *gmap, *bmap;
+  {
+!     fbcmap	sunCmap;
+  
+      sunCmap.index = index;
+      sunCmap.count = count;
+***************
+*** 123,133 ****
+  {
+      int		state = on;
+  
+!     if (on != SCREEN_SAVER_ON) {
+  	SetTimeSinceLastInputEvent();
+  	state = 1;
+!     } else {
+  	state = 0;
+      }
+      (void) ioctl(sunFbs[pScreen->myNum].fd, FBIOSVIDEO, &state);
+      return( TRUE );
+--- 131,148 ----
+  {
+      int		state = on;
+  
+!     switch (on) {
+!     case SCREEN_SAVER_FORCER:
+  	SetTimeSinceLastInputEvent();
+  	state = 1;
+! 	break;
+!     case SCREEN_SAVER_OFF:
+! 	state = 1;
+! 	break;
+!     case SCREEN_SAVER_ON:
+!     default:
+  	state = 0;
++ 	break;
+      }
+      (void) ioctl(sunFbs[pScreen->myNum].fd, FBIOSVIDEO, &state);
+      return( TRUE );
+***************
+*** 153,161 ****
+--- 168,182 ----
+      ScreenPtr	pScreen;
+  {
+      Bool    ret;
++     u_char rmap[256], gmap[256], bmap[256];
+  
+      pScreen->CloseScreen = (Bool (*)()) pScreen->devPrivates[sunCG6CScreenIndex].ptr;
+      ret = (*pScreen->CloseScreen) (i, pScreen);
++ 
++     /* the following 2 lines are to fix rr clear_colormap bug */
++     rmap[255] = gmap[255] = bmap[255] = 0;
++     sunCG6CUpdateColormap(pScreen, 255, 1, rmap, gmap, bmap);
++ 
+      sunCG6CInstalledMap = NULL;
+      (void) (*pScreen->SaveScreen) (pScreen, SCREEN_SAVER_OFF);
+      return ret;
+***************
+*** 404,409 ****
+--- 425,433 ----
+      int		imagelen;
+      caddr_t	mapaddr;
+      caddr_t	addr;
++ #ifdef sprite
++     int		sizeToUse;
++ #endif /* sprite */
+  
+      if ((fd = sunOpenFrameBuffer(FBTYPE_SUNFAST_COLOR, &fbType, index, fbNum,
+  				 argc, argv)) < 0)
+***************
+*** 415,420 ****
+--- 439,445 ----
+      addr = 0;
+  
+  #ifndef	_MAP_NEW
++ #ifndef sprite
+      addr = (caddr_t) valloc(mapsize);
+      if (addr == (caddr_t) NULL) {
+  	ErrorF("Could not allocate room for frame buffer.\n");
+***************
+*** 421,428 ****
+--- 446,468 ----
+  	(void) close (fd);
+  	return FALSE;
+      }
++ #endif /* sprite */
+  #endif	_MAP_NEW
+  
++ #ifdef sprite
++     sizeToUse = ((mapsize + VMMACH_SEG_SIZE) & ~(VMMACH_SEG_SIZE-1))
++ 	    + VMMACH_SEG_SIZE;
++     addr = (caddr_t) malloc(sizeToUse);
++     if (addr == (caddr_t) NULL) {
++ 	ErrorF("Could not allocate room for frame buffer.\n");
++ 	return FALSE;
++     }
++     addr = (caddr_t) mmap((caddr_t) addr,
++ 	     mapsize,
++ 	     PROT_READ | PROT_WRITE,
++ 	     MAP_SHARED, fd, 0);
++     if (addr == (caddr_t) NULL) {
++ #else
+      mapaddr = (caddr_t) mmap((caddr_t) addr,
+  	     mapsize,
+  	     PROT_READ | PROT_WRITE,
+***************
+*** 430,448 ****
+  
+  
+      if (mapaddr == (caddr_t) -1) {
+  	Error("Mapping cg6c");
+  	(void) close(fd);
+  	return FALSE;
+      }
+  
+      if (mapaddr == 0)
+          mapaddr = addr;
+  
+-     sunFbs[index].fd = fd;
+      sunFbs[index].info = fbType;
+!     sunFbs[index].fb = (pointer) mapaddr;
+      sunFbs[index].EnterLeave = sunCG6CSwitch;
+      sunSupportsDepth8 = TRUE;
+      return TRUE;
+  }
+  
+--- 470,495 ----
+  
+  
+      if (mapaddr == (caddr_t) -1) {
++ #endif /* sprite */
+  	Error("Mapping cg6c");
+  	(void) close(fd);
+  	return FALSE;
+      }
+  
++ #ifndef sprite
+      if (mapaddr == 0)
+          mapaddr = addr;
++ #endif /* sprite */
+  
+      sunFbs[index].info = fbType;
+! #ifndef sprite
+!     sunFbs[index].fb = (pointer) fba.fb_buffer;
+! #else
+!     sunFbs[index].fb = (pointer) addr;
+! #endif /* sprite */
+      sunFbs[index].EnterLeave = sunCG6CSwitch;
+      sunSupportsDepth8 = TRUE;
++     sunFbs[index].fd = fd;
+      return TRUE;
+  }
+  
+***************
+*** 466,469 ****
+  	return TRUE;
+      return FALSE;
+  }
+- #endif /* FBTYPE_SUNFAST_COLOR */
+--- 513,515 ----

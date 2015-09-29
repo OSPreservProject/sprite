@@ -1,0 +1,38 @@
+#include <Server.tmpl>
+
+SRCS =  mivaltree.c mipolyseg.c mipolyrect.c \
+	mipoly.c mipolycon.c mipolygen.c mipolyutil.c \
+	mifillrct.c miwideline.c mispans.c \
+ 	miarc.c mizerarc.c mifillarc.c \
+	miwindow.c micursor.c miregion.c \
+	mipolytext.c mibitblt.c mipolypnt.c mipushpxl.c\
+	miexpose.c miglblt.c mizerline.c mifpolycon.c \
+	midash.c mibstore.c miinitext.c \
+	mipointer.c misprite.c midispcur.c
+
+OBJS =	mivaltree.o mipolyseg.o mipolyrect.o \
+	mipoly.o mipolycon.o mipolygen.o mipolyutil.o \
+	mifillrct.o miwideline.o mispans.o \
+	miarc.o mizerarc.o mifillarc.o \
+	miwindow.o micursor.o miregion.o \
+	mipolytext.o mibitblt.o mipolypnt.o mipushpxl.o\
+	miexpose.o miglblt.o mizerline.o mifpolycon.o \
+	midash.o mibstore.o miinitext.o \
+	mipointer.o misprite.o midispcur.o
+
+INCLUDES = -I. -I../../include -I$(INCLUDESRC)
+LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(mi,$(OBJS))
+LintLibraryTarget(mi,$(SRCS))
+NormalLintTarget($(SRCS))
+
+SpecialObjectRule(miinitext.o, $(ICONFIGFILES), $(EXT_DEFINES))
+
+#if HasSaberC
+saber_src:
+	/**/#load $(CFLAGS) $(EXT_DEFINES) $(SRCS)
+#endif
+
+DependTarget()

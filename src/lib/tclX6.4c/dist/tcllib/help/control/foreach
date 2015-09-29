@@ -1,0 +1,11 @@
+          foreach varname list body
+               In this command, varname is the  name  of  a  variable,
+               list is a list of values to assign to varname, and body
+               is a collection of Tcl commands.   For  each  field  in
+               list (in order from left to right), foreach assigns the
+               contents of the field to  varname  (as  if  the  lindex
+               command had been used to extract the field), then calls
+               the Tcl interpreter to execute  body.   The  break  and
+               continue  statements  may  be invoked inside body, with
+               the same effect as in  the  for  command.   Foreach  an
+               empty string.

@@ -1,0 +1,58 @@
+%
+%  (c) 1986 John Coker
+%  University of California, Berkeley
+%
+%  pspicture.tex - example TeX document with a PostScript illustration
+%
+\magnification=\magstep1
+\baselineskip=14pt plus1pt
+\parskip=5pt plus2pt
+\nopagenumbers
+
+\def\pspicture#1#2{\indent\vskip#2\special{#1}}
+\def\pscaption#1{\hbox to \hsize{\hss{#1}\hss}}
+
+\def\\{\char92 }
+\def\{{\char123 }
+\def\}{\char125 }
+
+\font\sc=amr8
+\def\PostScript{P{\sc OST}S{\sc CRIPT}}
+
+This is a demonstration of a {\PostScript} picture inside \TeX.  We've
+done all this neatly with a simple {\TeX} macro that imbeds a
+{\tt \\special} command containing the name of a {\PostScript}
+file that is to be used as the picture itself.  Of course, this
+depends on the printer {\tt dvi} driver knowing that arguments to
+{\tt \\special}s are names of {\PostScript} files.
+
+And now, of course, it's time for an example.
+The picture of the tank below was set into this text with the 
+simple set of commands:
+
+\settabs8\columns
+\begingroup\baselineskip=12pt
+\+&\tt\\midinsert\cr
+\+&\tt\\pspicture\{tank.ps\}\{2in\}\cr
+\+&\tt\\pscaption\{\\bf A PostScript Picture\}\cr
+\+&\tt\\endinsert\cr
+\endgroup
+
+\noindent And here is the picture:
+
+\midinsert
+\pspicture{/d/texp/john/src/postscript/gr2ps/tank.ps}{2in}
+\pscaption{\bf A PostScript Picture}
+\endinsert
+
+\noindent And here is text immediately following the picture.  Note
+that these macros depend on the user correctly specifying the picture
+height.  Unfortunately there is no way for {\TeX} and {\PostScript} to
+interact on a level where {\TeX} could automatically know the height
+of a {\PostScript} picture.
+
+\medskip
+\+&&&&John Coker\cr
+\+&&&&August 1, 1986\cr
+
+\bye

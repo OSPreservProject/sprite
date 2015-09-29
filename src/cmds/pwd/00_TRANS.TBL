@@ -1,0 +1,5 @@
+D DS3100_M                          	ds3100.md
+F MAKEFILE.;1                       	Makefile
+F PWD.C;1                           	pwd.c
+D RCS                               	RCS
+D SUN4_MD                           	sun4.md

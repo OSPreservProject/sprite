@@ -1,0 +1,479 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     90.10.09.11.47.08;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.21.15.51.36;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.15.04.53;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.02.20.14.34.07;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.01.29.17.58.18;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.23.19.02.44;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.54.35;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.15.18.28.36;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.11.17.55.55;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original source from DECWRL.
+@
+
+
+9.6
+log
+@fixed problem with field names in mach_MonFuncs
+@
+text
+@/*
+ * machMon.h --
+ *
+ *	Structures, constants and defines for access to the pmax prom.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 9.5 90/09/21 15:51:36 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHMON
+#define _MACHMON
+
+/*
+ * The prom routines use the following structure to hold strings.
+ */
+typedef struct {
+	char	*argPtr[16];	/* Pointers to the strings. */
+	char	strings[256];		/* Buffer for the strings. */
+	char	*end;		/* Pointer to end of used buf. */
+	int 	num;		/* Number of strings used. */
+} MachStringTable;
+
+MachStringTable	MachMonBootParam;	/* Boot command line. */
+
+/*
+ * The prom has a jump table at the beginning of it to get to its
+ * functions.
+ */
+#define MACH_MON_JUMP_TABLE_ADDR	0xBFC00000
+
+/*
+ * Default reboot string.
+ */
+#define DEFAULT_REBOOT	"tftp()ds3100"
+
+/*
+ * The jump table.
+ */
+typedef struct Mach_MonFuncs {
+    int		(*reset)();
+    int		(*exec)();
+    int		(*restart)();
+    int		(*reinit)();
+    int		(*reboot)();
+    int		(*autoboot)();
+    int		(*open)();
+    int		(*read)();
+    int		(*write)();
+    int		(*ioctl)();
+    int		(*close)();
+    int		(*lseek)();
+    int		(*mgetchar)();
+    int		(*mputchar)();
+    int		(*showchar)();
+    int		(*gets)();
+    int		(*puts)();
+    int		(*printf)();
+    int		(*mem1)();
+    int		(*mem2)();
+    int		(*save_regs)();
+    int		(*load_regs)();
+    int		(*jump_s8)();
+    char *	(*getenv2)();
+    int		(*setenv2)();
+    int		(*atonum)();
+    int		(*strcmp)();
+    int		(*strlen)();
+    char *	(*strcpy)();
+    char *	(*strcat)();
+    int		(*get_cmd)();
+    int		(*get_nums)();
+    int 	(*argparse)();
+    int		(*help)();
+    int		(*dump)();
+    int		(*setenv)();
+    int		(*unsetenv)();
+    int		(*printenv)();
+    int		(*jump2_s8)();
+    int		(*enable)();
+    int		(*disable)();
+    int		(*zero_buf)();
+} Mach_MonFuncs;
+
+/*
+ * Each entry in the jump table is 8 bytes - 4 for the jump and 4 for a nop.
+ */
+#define MACH_MON_FUNC_ADDR(funcNum)	(MACH_MON_JUMP_TABLE_ADDR+((funcNum)*8))
+
+/*
+ * The functions:
+ *
+ *	MACH_MON_RESET		Run diags, check bootmode, reinit.
+ *	MACH_MON_EXEC		Load new program image.
+ *	MACH_MON_RESTART	Re-enter monitor command loop.
+ *	MACH_MON_REINIT		Re-init monitor, then cmd loop.
+ *	MACH_MON_REBOOT		Check bootmode, no config.
+ *	MACH_MON_AUTOBOOT	Autoboot the system.
+ *
+ * The following routines access PROM saio routines and may be used by
+ * standalone programs that would like to use PROM I/O:
+ *
+ *	MACH_MON_OPEN		Open a file.
+ *	MACH_MON_READ		Read from a file.
+ *	MACH_MON_WRITE		Write to a file.
+ *	MACH_MON_IOCTL		Iocontrol on a file.
+ *	MACH_MON_CLOSE		Close a file.
+ *	MACH_MON_LSEEK		Seek on a file.
+ *	MACH_MON_GETCHAR	Get character from console.
+ *	MACH_MON_PUTCHAR	Put character on console.
+ *	MACH_MON_SHOWCHAR	Show a char visibly.
+ *	MACH_MON_GETS		gets with editing.
+ *	MACH_MON_PUTS		Put string to console.
+ *	MACH_MON_PRINTF		Kernel style printf to console.
+ *
+ * The following are other prom routines:
+ *	MACH_MON_MEM1		Do something in memory.
+ *	MACH_MON_MEM2		Do something else in memory.
+ *	MACH_MON_SAVEREGS	Save registers in a buffer.
+ *	MACH_MON_LOADREGS	Get register back from buffer.
+ *	MACH_MON_JUMPS8		Jump to address in s8.
+ *	MACH_MON_GETENV2	Gets a string from system environment.
+ *	MACH_MON_SETENV2	Sets a string in system environment.
+ *	MACH_MON_ATONUM		Converts ascii string to number.
+ *	MACH_MON_STRCMP		Compares strings (strcmp).
+ *	MACH_MON_STRLEN		Length of string (strlen).
+ *	MACH_MON_STRCPY		Copies string (strcpy).
+ *	MACH_MON_STRCAT		Appends string (strcat).
+ *	MACH_MON_GETCMD		Gets a command.
+ *	MACH_MON_GETNUMS	Gets numbers.
+ *	MACH_MON_ARGPARSE	Parses string to argc,argv.
+ *	MACH_MON_HELP		Help on prom commands.
+ *	MACH_MON_DUMP		Dumps memory.
+ *	MACH_MON_SETENV		Sets a string in system environment.
+ *	MACH_MON_UNSETENV	Unsets a string in system environment
+ *	MACH_MON_PRINTENV	Prints system environment
+ *	MACH_MON_JUMP2S8	Jumps to s8
+ *	MACH_MON_ENABLE		Performs prom enable command.
+ *	MACH_MON_DISABLE	Performs prom disable command.
+ *	MACH_MON_ZEROB		Zeros a system buffer.
+ */
+#define MACH_MON_RESET		MACH_MON_FUNC_ADDR(0)
+#define MACH_MON_EXEC		MACH_MON_FUNC_ADDR(1)
+#define MACH_MON_RESTART	MACH_MON_FUNC_ADDR(2)
+#define MACH_MON_REINIT		MACH_MON_FUNC_ADDR(3)
+#define MACH_MON_REBOOT		MACH_MON_FUNC_ADDR(4)
+#define MACH_MON_AUTOBOOT	MACH_MON_FUNC_ADDR(5)
+#define MACH_MON_OPEN		MACH_MON_FUNC_ADDR(6)
+#define MACH_MON_READ		MACH_MON_FUNC_ADDR(7)
+#define MACH_MON_WRITE		MACH_MON_FUNC_ADDR(8)
+#define MACH_MON_IOCTL		MACH_MON_FUNC_ADDR(9)
+#define MACH_MON_CLOSE		MACH_MON_FUNC_ADDR(10)
+#define MACH_MON_LSEEK		MACH_MON_FUNC_ADDR(11)
+#define MACH_MON_GETCHAR	MACH_MON_FUNC_ADDR(12)
+#define MACH_MON_PUTCHAR	MACH_MON_FUNC_ADDR(13)
+#define MACH_MON_SHOWCHAR	MACH_MON_FUNC_ADDR(14)
+#define MACH_MON_GETS		MACH_MON_FUNC_ADDR(15)
+#define MACH_MON_PUTS		MACH_MON_FUNC_ADDR(16)
+#define MACH_MON_PRINTF		MACH_MON_FUNC_ADDR(17)
+#define MACH_MON_MEM1		MACH_MON_FUNC_ADDR(28)
+#define MACH_MON_MEM2		MACH_MON_FUNC_ADDR(29)
+#define MACH_MON_SAVEREGS	MACH_MON_FUNC_ADDR(30)
+#define MACH_MON_LOADREGS	MACH_MON_FUNC_ADDR(31)
+#define MACH_MON_JUMPS8		MACH_MON_FUNC_ADDR(32)
+#define MACH_MON_GETENV2	MACH_MON_FUNC_ADDR(33)
+#define MACH_MON_SETENV2	MACH_MON_FUNC_ADDR(34)
+#define MACH_MON_ATONUM		MACH_MON_FUNC_ADDR(35)
+#define MACH_MON_STRCMP		MACH_MON_FUNC_ADDR(36)
+#define MACH_MON_STRLEN		MACH_MON_FUNC_ADDR(37)
+#define MACH_MON_STRCPY		MACH_MON_FUNC_ADDR(38)
+#define MACH_MON_STRCAT		MACH_MON_FUNC_ADDR(39)
+#define MACH_MON_GETCMD		MACH_MON_FUNC_ADDR(40)
+#define MACH_MON_GETNUMS	MACH_MON_FUNC_ADDR(41)
+#define MACH_MON_ARGPARSE	MACH_MON_FUNC_ADDR(42)
+#define MACH_MON_HELP		MACH_MON_FUNC_ADDR(43)
+#define MACH_MON_DUMP		MACH_MON_FUNC_ADDR(44)
+#define MACH_MON_SETENV		MACH_MON_FUNC_ADDR(45)
+#define MACH_MON_UNSETENV	MACH_MON_FUNC_ADDR(46)
+#define MACH_MON_PRINTENV	MACH_MON_FUNC_ADDR(47)
+#define MACH_MON_JUMP2S8	MACH_MON_FUNC_ADDR(48)
+#define MACH_MON_ENABLE		MACH_MON_FUNC_ADDR(49)
+#define MACH_MON_DISABLE	MACH_MON_FUNC_ADDR(50)
+#define MACH_MON_ZEROB		MACH_MON_FUNC_ADDR(51)
+
+#ifdef _MONFUNCS
+Mach_MonFuncs mach_MonFuncs = {
+    (int (*)()) MACH_MON_RESET,
+    (int (*)()) MACH_MON_EXEC,
+    (int (*)()) MACH_MON_RESTART,
+    (int (*)()) MACH_MON_REINIT,
+    (int (*)()) MACH_MON_REBOOT,
+    (int (*)()) MACH_MON_AUTOBOOT,
+    (int (*)()) MACH_MON_OPEN,
+    (int (*)()) MACH_MON_READ,
+    (int (*)()) MACH_MON_WRITE,
+    (int (*)()) MACH_MON_IOCTL,
+    (int (*)()) MACH_MON_CLOSE,
+    (int (*)()) MACH_MON_LSEEK,
+    (int (*)()) MACH_MON_GETCHAR,
+    (int (*)()) MACH_MON_PUTCHAR,
+    (int (*)()) MACH_MON_SHOWCHAR,
+    (int (*)()) MACH_MON_GETS,
+    (int (*)()) MACH_MON_PUTS,
+    (int (*)()) MACH_MON_PRINTF,
+    (int (*)()) MACH_MON_MEM1,
+    (int (*)()) MACH_MON_MEM2,
+    (int (*)()) MACH_MON_SAVEREGS,
+    (int (*)()) MACH_MON_LOADREGS,
+    (int (*)()) MACH_MON_JUMPS8,
+    (char *(*)()) MACH_MON_GETENV2,
+    (int (*)()) MACH_MON_SETENV2,
+    (int (*)()) MACH_MON_ATONUM,
+    (int (*)()) MACH_MON_STRCMP,
+    (int (*)()) MACH_MON_STRLEN,
+    (char *(*)()) MACH_MON_STRCPY,
+    (char *(*)()) MACH_MON_STRCAT,
+    (int (*)()) MACH_MON_GETCMD,
+    (int (*)()) MACH_MON_GETNUMS,
+    (int (*)()) MACH_MON_ARGPARSE,
+    (int (*)()) MACH_MON_HELP,
+    (int (*)()) MACH_MON_DUMP,
+    (int (*)()) MACH_MON_SETENV,
+    (int (*)()) MACH_MON_UNSETENV,
+    (int (*)()) MACH_MON_PRINTENV,
+    (int (*)()) MACH_MON_JUMP2S8,
+    (int (*)()) MACH_MON_ENABLE,
+    (int (*)()) MACH_MON_DISABLE,
+    (int (*)()) MACH_MON_ZEROB,
+};
+#else
+extern	Mach_MonFuncs	mach_MonFuncs;
+#endif
+
+/*
+ * Functions and defines to access the monitor.
+ */
+
+extern void Mach_MonAbort _ARGS_((void));
+extern int Mach_MonPutChar _ARGS_((int ch));
+extern void Mach_MonReboot _ARGS_((char *rebootString));
+#define Mach_MonMayPut Mach_MonPutChar
+
+
+#define Mach_MonGetChar			(mach_MonFuncs.mgetchar)
+#define Mach_MonGetNextChar		(mach_MonFuncs.mgetchar)
+#define Mach_MonGetLine			(mach_MonFuncs.gets)
+#define Mach_ArgParse(string,table)	(mach_MonFuncs.argparse)(string,table)
+#define Mach_MonPrintf			(mach_MonFuncs.printf)
+#define Mach_MonOpen(name,flags)	(mach_MonFuncs.open)(name,flags)
+#define Mach_MonRead(fd,buf,len)	(mach_MonFuncs.read)(fd,buf,len)
+#define Mach_MonClose(fd)		(mach_MonFuncs.close)(fd)
+#define Mach_MonLseek(fd,offset,mode)	(mach_MonFuncs.lseek)(fd,offset,mode)
+
+/*
+ * The nonvolatile ram has a flag to indicate it is usable.
+ */
+#define MACH_USE_NON_VOLATILE 	((char *)0xbd0000c0)
+#define MACH_NON_VOLATILE_FLAG	0x02
+
+#endif /* _MACHPROM */
+@
+
+
+9.5
+log
+@prototyping.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 9.4 90/09/11 15:04:53 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d250 2
+a251 2
+#define Mach_MonGetChar			(mach_MonFuncs.getchar)
+#define Mach_MonGetNextChar		(mach_MonFuncs.getchar)
+@
+
+
+9.4
+log
+@Fixed lint problems due to prototypes
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 9.3 90/02/20 14:34:07 shirriff Exp $ SPRITE (Berkeley)
+d244 3
+a246 1
+extern	int 	Mach_MonPutChar ();
+d248 1
+a248 2
+extern	void	Mach_MonReboot();
+extern	void	Mach_MonAbort();
+@
+
+
+9.3
+log
+@Moved around declarations of Dec prom routines.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 9.2 90/01/29 17:58:18 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d59 2
+a60 2
+    int		(*getchar)();
+    int		(*putchar)();
+@
+
+
+9.2
+log
+@Added string table structure.  Updated types of a few prom routines.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 9.1 90/01/23 19:02:44 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+a89 1
+extern	Mach_MonFuncs	mach_MonFuncs;
+a91 5
+ * The nonvolatile ram has a flag to indicate it is usable.
+ */
+#define MACH_USE_NON_VOLATILE 	((char *)0xbd0000c0)
+#define MACH_NON_VOLATILE_FLAG	0x02
+/*
+d191 49
+a243 1
+#define Mach_MonPrintf (mach_MonFuncs.printf)
+d246 1
+d248 10
+a257 1
+extern	void	Mach_MonReboot();
+d259 5
+a263 3
+#define Mach_MonGetChar (mach_MonFuncs.getchar)
+#define Mach_MonGetNextChar (mach_MonFuncs.getchar)
+#define Mach_MonGetLine (mach_MonFuncs.gets)
+@
+
+
+9.1
+log
+@Added more prom functions.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 1.2 89/08/15 18:28:36 rab Exp $ SPRITE (Berkeley)
+d21 12
+d39 5
+d70 1
+a70 1
+    int		(*getenv2)();
+d75 2
+a76 2
+    int		(*strcpy)();
+    int		(*strcat)();
+d79 1
+a79 1
+    int		(*argparse)();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 1.2 89/08/15 18:28:36 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d48 24
+d76 5
+d110 26
+d155 24
+@
+
+
+1.2
+log
+@Commented #endif labels.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.h,v 1.1 89/07/11 17:55:55 nelson Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+ *	provided that the above copyright notice appears in all copies.  
+d14 1
+a14 1
+ * $Header: machMon.h,v 1.5 89/06/29 10:04:37 mnelson Exp $ SPRITE (Berkeley)
+d58 1
+a58 1
+ *	
+d115 1
+a115 1
+#endif _MACHPROM
+@

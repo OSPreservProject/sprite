@@ -1,0 +1,134 @@
+
+
+
+PREFIX                    User Commands                    PREFIX
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     prefix - Manipulate the file system prefix table
+
+SSYYNNOOPPSSIISS
+     pprreeffiixx [--pp [--xx _p_r_e_f_i_x]]
+     pprreeffiixx --MM _d_e_v_i_c_e [[--rrLL]] [[--ff]] --ll _p_r_e_f_i_x
+     pprreeffiixx --[[ccddUU]] _p_r_e_f_i_x
+     pprreeffiixx --aa _p_r_e_f_i_x [--ss _s_e_r_v_e_r]
+     pprreeffiixx --xx _p_r_e_f_i_x --[[hhHH]] _h_o_s_t
+     pprreeffiixx --xx _p_r_e_f_i_x --ll _l_o_c_a_l_N_a_m_e
+
+OOPPTTIIOONNSS
+     --pp            (The default.) Print  out  the  prefix  table.
+                   With --xx, print the export list of a prefix.
+
+     --xx _p_r_e_f_i_x     Export a local directory given by --ll under the
+                   name  _p_r_e_f_i_x,  or  use  with --hh (--HH) to export
+                   (not export) the prefix to a particular host.
+
+     --MM _d_e_v_i_c_e     Mount the device under the local name given by
+                   the --ll option.  The local name is exported.
+
+     --LL            Use with --MM to prevent exporting the prefix.
+
+     --rr            Mount read-only.  Use with --MM.
+
+     --UU _p_r_e_f_i_x     Unmount the file system with the given prefix.
+
+     --ff            Force the installation  of  the  prefix,  i.e.
+                   don't do a stat to make sure the link exists.
+
+     --ll _d_i_r_N_a_m_e    Specifies local name.  Used with --MM (mount) or
+                   --xx (export).
+
+     --hh _h_o_s_t       Add _h_o_s_t to the export  list  associated  with
+                   the  prefix  given by the --xx option.  _H_o_s_t can
+                   either be the name of the server or its Sprite
+                   ID.
+
+     --HH _h_o_s_t       Remove _h_o_s_t from the  export  list  associated
+                   with  the prefix given by the --xx option.  _H_o_s_t
+                   can either be the name of the  server  or  its
+                   Sprite ID.
+
+     --aa _p_r_e_f_i_x     Add _p_r_e_f_i_x to the  prefix  table.  If  the  --ss
+                   option  is  not given a broadcast will be done
+                   to find the server.
+
+     --ss _s_e_r_v_e_r     Specify the server for the prefix given by the
+                   --aa  option.   _S_e_r_v_e_r can either be the name of
+
+
+
+Sprite v.1.0         Printed:  July 11, 1992                    1
+
+
+
+
+
+
+PREFIX                    User Commands                    PREFIX
+
+
+
+                   the server or its Sprite ID.  If _s_e_r_v_e_r is 0 a
+                   broadcast will be done to find the server.
+
+     --cc _p_r_e_f_i_x     Clear  the  server  binding  for  _p_r_e_f_i_x,  but
+                   retain the prefix in the prefix table.
+
+     --dd _p_r_e_f_i_x     Delete _p_r_e_f_i_x  from  the  prefix  table  alto-
+                   gether.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Prefix tables are cached mappings from file name prefixes to
+     the  servers that keep files under that prefix.   Under nor-
+     mal operation the prefix table is updated automatically as a
+     side-effect  of pathname lookup.  The pprreeffiixx command is used
+     to display the file system's prefix table, and to manipulate
+     its  individual  entries.   If  no options are given, prefix
+     prints out the contents of the prefix table (just as if  the
+     --pp  switch had been given).  If options are given, then they
+     control what happens, as described above.
+
+PPRREEFFIIXXEESS AANNDD SSPPRRIITTEE
+     The presense of a prefix is indicated by remote links in the
+     file system.  A remote link is a circular symbolic link with
+     a special type.   They are created via the "ln -r"  command.
+     When  a  server  encounters  a remote link during lookup, it
+     returns the prefix indicated  by  the  remote  link  to  the
+     client that initiated the lookup.  The client loads the pre-
+     fix (if it isn't already loaded), broadcasts for the  server
+     of  the prefix (if it doesn't already know who that is), and
+     then sends the lookup operation to the new server.  Thus the
+     root server is bypassed after prefixes are loaded.  Prefixes
+     can be nested arbitrarily; remote links  can  occur  in  any
+     directory.
+
+     Servers mount local disks under a prefix that gets  exported
+     to other Sprite hosts using the -M option.  Servers can con-
+     trol what hosts have access to a prefix by adding entries to
+     an  export  list using the -h option.  If the export list is
+     empty the prefix is exported to all  hosts,  so  adding  one
+     exportee effectivly prevents access to all other hosts.
+
+KKEEYYWWOORRDDSS
+     prefix table, mount
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 11, 1992                    2
+
+
+

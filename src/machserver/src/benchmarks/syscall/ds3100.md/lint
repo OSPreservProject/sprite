@@ -1,0 +1,4 @@
+syscall.c:
+gettimeofday returns value which is always ignored
+fflush returns value which is always ignored
+printf returns value which is always ignored

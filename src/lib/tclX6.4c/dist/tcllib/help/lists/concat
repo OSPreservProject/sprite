@@ -1,0 +1,11 @@
+          concat arg ?arg ...?
+               This  command  treats  each  argument  as  a  list  and
+               concatenates  them  into a single list.  It permits any
+               number of arguments.  For example, the command
+
+                    concat a b {c d e} {f {g h}}
+
+               will return
+
+                    a b c d e f {g h}
+               as its result.

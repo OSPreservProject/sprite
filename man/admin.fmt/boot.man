@@ -1,0 +1,332 @@
+
+
+
+BOOT                 Administrative Commands                 BOOT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     boot - Description of Sprite boot options and behavior
+
+OOPPTTIIOONNSS
+     There are a number of boot  options  that  can  be  used  to
+     change  the  boot  behavior.  If you are unfamiliar with the
+     booting process you  should  read  the  subsequent  sections
+     before this one.
+
+     --cc             Causes a fileserver to ignore  the  existence
+                    of  /bootTmp/boot  and to boot as a dependent
+                    fileserver.  This  is  useful   for   booting
+                    fileservers with trashed disks.
+
+     --ff             Causes a fileserver to boot without  checking
+                    its  disks.  This can lead to corrupted disks
+                    if the disks are not consistent  before  they
+                    are  attached.  The  --ff  option should not be
+                    used if the system halted abnormally.
+
+     --ss             The --ss option causes the machine to  boot  in
+                    single-user  mode.   A  login shell is run by
+                    initsprite before both diskcmds and bootcmds.
+                    Initsprite will continue when the login shell
+                    exits.
+
+     --xx             If the machine is a fileserver  it  will  run
+                    /boot/rootcmds  after running /boot/diskcmds.
+                    This option allows a non-root  fileserver  to
+                    serve  as root.  Only the root fileserver has
+                    the correct mount table for exporting "/"  --
+                    the rootcmds file contains the necessary com-
+                    mands for allowing a non-root  fileserver  to
+                    export "/".
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     The first couple sections of this  man  page  are  a  user's
+     guide  to  booting  Sprite.   Note  that  these  are general
+     instructions; each file  server  should  have  its  specific
+     booting instructions posted near its console.
+
+     The rest of the man page goes into  more  detail  about  the
+     boot  process and is probably of interest only to people who
+     hack Sprite.
+
+BBOOOOTTIINNGG SSUUNNSS
+     For all Suns except SPARCstation 2's the boot command  typed
+     at the PROM has the format
+
+          bb _x_x((_a,_b,_c))_k_e_r_n_e_l [_o_p_t_i_o_n_s]
+
+
+
+Sprite v.1.0       Printed:  October 28, 1991                   1
+
+
+
+
+
+
+BOOT                 Administrative Commands                 BOOT
+
+
+
+     For machines that are booted off of the network _x_x  is  usu-
+     ally iiee or llee, depending on whether the machine has an Intel
+     or Lance ethernet chip.  For machines that  boot  off  their
+     disk,  _x_x is usually ssdd.  For SPARCstation 2's the boot com-
+     mand is
+
+          bb [_d_e_v_i_c_e] _k_e_r_n_e_l [_o_p_t_i_o_n_s]
+
+     where _d_e_v_i_c_e is usually nneett or ddiisskk.  (For SPARCstation  2's
+     running  Sprite  at  Berkeley,  _d_e_v_i_c_e  normally defaults to
+     nneett.)
+
+     The magic  numbers  _a,  _b,  _c  in  parentheses  are  usually
+     optional.  They specify information about the host that sup-
+     plies the kernel (for booting off the net), disk  partition,
+     etc.   For  network  booting,  the middle number is the last
+     four digits of the IP address of the server.  You only  need
+     to  specify  this  number  if the default doesn't work.  For
+     example, to ensure that Murder boots  off  of  Allspice  (IP
+     address 128.32.150.27), use
+
+          bb llee((00,,996611bb))ssuunn33..mmdd//sspprriittee
+
+     and to boot off of Ginger (IP address 128.32.150.28), use
+
+          bb llee((00,,996611cc))ssuunn33..mmdd//sspprriittee
+
+     The string _k_e_r_n_e_l tells which kernel to load and boot.  When
+     booting  off  a disk, _k_e_r_n_e_l is usually just the name of the
+     kernel, e.g., ``new'' or ``sprite''.  When booting  off  the
+     net,  you  must also specify the machine-dependent directory
+     that the kernel is found  in,  e.g.,  ``sun3.md/new''.   Use
+     ssuunn33..mmdd  for  Sun 3's, ssuunn44..mmdd for Sun 4's, and ssuunn44cc..mmdd for
+     SPARCstation 1's and 2's.
+
+BBOOOOTTIINNGG DDSS33110000''ss
+     The basic boot command for a DECstation 3100 is
+
+          bboooott --ff _p_r_o_t_o(())_k_e_r_n_e_l [_o_p_t_i_o_n_s]
+
+     where _p_r_o_t_o is either ttffttpp or mmoopp.  Generally  mmoopp  is  pre-
+     ferred,  since  it  is  faster  and  more  reliable.  Unfor-
+     tunately, it provides no feedback until  the  kernel  starts
+     running,  so  you  have  to put up with a 10-30 second pause
+     before there's any sign of life.
+
+     The _k_e_r_n_e_l string depends on whether  the  DECstation  knows
+     what  server  to  use.   The simplest rule is to always type
+     iinniitt to the PROM before booting, and  use  only  the  kernel
+     name (e.g., ``sprite'' or ``new'') for _k_e_r_n_e_l.
+
+
+
+
+
+Sprite v.1.0       Printed:  October 28, 1991                   2
+
+
+
+
+
+
+BOOT                 Administrative Commands                 BOOT
+
+
+
+BBOOOOTTIINNGG DDSS55000000''ss
+     The boot command for a DECstation 5000 looks like
+
+           bboooott _s_l_o_t//_x_x_x//_k_e_r_n_e_l [_o_p_t_i_o_n_s]
+
+     The _s_l_o_t string is the slot  number  for  the  device  being
+     booted  from.   You can use the PROM's ccnnffgg command to get a
+     list of what devices are installed at  what  slots.   Sprite
+     DECstations  typically  have  two  ethernets  installed; you
+     should boot from the lower-numbered ethernet.
+
+     The _x_x_x string is the protocol type when  booting  from  the
+     net.   Use  mmoopp.   It  is the disk name (e.g., ``rz0'') when
+     booting from the disk.
+
+     The _k_e_r_n_e_l string is just the  name  of  the  kernel  (e.g.,
+     ``new'').
+
+WWHHEERREE KKEERRNNEELLSS LLIIVVEE
+     Machines that boot off of their own disk  typically  have  a
+     small boot partition, such as /allspiceA or /lustA.  In this
+     case the kernel nneeww would be installed as /allspiceA/new.
+
+     Kernels  that  are  downloaded  from  a  Sprite  server  are
+     installed in /sprite/boot (e.g., /sprite/boot/sun3.md/new).
+
+     As a last resort kernels can also be downloaded from Ginger.
+     Those    kernels   are   installed   in   /tftpboot   (e.g.,
+     /tftpboot/sun3.md/new).  Suns that boot off of  Ginger  must
+     have  a  link  in  /tftpboot to their boot program.  See the
+     documentation for bboooott(8S) on Ginger.
+
+BBOOOOTT SSEEQQUUEENNCCEE
+     WWAARRNNIINNGG:: This section is rather dated and is probably  inac-
+     curate in spots.
+
+     This section outlines the sequence of events that occur dur-
+     ing  the boot process. The command typed at the prom is used
+     to start the downloader, then download the kernel  from  the
+     server  and  start  execution. The early part of the boot is
+     the same on all machines. Kernel data structures are set  up
+     and  kernel processes started.  Late in the boot the machine
+     checks for the presence of a disk, and it starts  the  first
+     user  process _i_n_i_t_s_p_r_i_t_e.  The actions initsprite takes vary
+     depending on the configuration of the  machine.   There  are
+     three standard machine configurations.  _C_l_i_e_n_t_s are diskless
+     workstations.  They are dependent on the root fileserver  to
+     complete  the  boot process.  Machines with disks must check
+     them during boot for inconsistencies.   Checking  the  disks
+     requires the _f_s_c_h_e_c_k and _f_s_a_t_t_a_c_h programs, and related data
+     files.  _S_t_a_n_d_a_l_o_n_e _f_i_l_e_s_e_r_v_e_r_s have these utilities on their
+     own  disk,  and  are  therefore  able  to  check their disks
+
+
+
+Sprite v.1.0       Printed:  October 28, 1991                   3
+
+
+
+
+
+
+BOOT                 Administrative Commands                 BOOT
+
+
+
+     without the root fileserver.  _D_e_p_e_n_d_e_n_t _f_i_l_e_s_e_r_v_e_r_s  have  a
+     disk,  but  it does not contain the needed files.  Dependent
+     fileservers must get these files from the root file server.
+
+     Clients
+          /boot/initsprite is exec'ed as the first user  process.
+          If  "/"  is unavailable the workstation will wait inde-
+          finitely, checking  for  "/"  at  1  minute  intervals.
+          Initsprite  will  run  /hosts/_h_o_s_t_n_a_m_e/bootcmds  if  it
+          exists and /boot/bootcmds otherwise.
+
+     Dependent fileservers
+          Fileservers will detect the  presence  of  a  disk  and
+          attach  it  as "/bootTmp".  This prefix is local to the
+          machine  and  is  not  exported.   If   the   directory
+          /bootTmp/boot is not found, then the fileserver assumes
+          it is  a  dependent  fileserver.   /boot/initsprite  is
+          exec'ed as the first user process.  Initsprite will run
+          /boot/diskcmds to verify that the disks  are  not  cor-
+          rupted.   The table used to mount the disks is found in
+          /hosts/$HOST/mount.  Upon completion the  machine  will
+          try  to  find a server of "/".  If no server for "/" is
+          found the workstation will retry at 1 minute intervals.
+          Once  a  server  is  found, /hosts/_h_o_s_t_n_a_m_e/bootcmds or
+          /boot/bootcmds is  run.   Initsprite  will  delete  the
+          "/bootTmp" prefix prior to exiting.
+
+     Standalone fileservers
+          A  standalone  fileserver  will  attach  its  disk   as
+          /bootTmp  and  then  check  for  /bootTmp/boot.  Having
+          found this directory it will create a  new  prefix  "/"
+          using  the  /bootTmp  prefix.  These  prefixes  are now
+          synonyms and are local to the machine.  The  standalone
+          fileserver  can  then proceed with the boot in the same
+          manner as a dependent  fileserver.   /boot/diskcmds  is
+          run.  Unlike  a dependent fileserver, /boot/diskcmds is
+          on the machine's own disk.  The mount table is found in
+          /hosts/$HOST/mount, also on the machine's own disk.  At
+          some point in the boot the machine has  to  stop  being
+          its  own  server  of  "/" and look for the real server.
+          This happens after diskcmds has been run.  The  machine
+          will delete the "/" prefix and try to open "/".  If the
+          open fails the machine  will  try  again  at  1  minute
+          intervals.   Once "/" is found the appropriate bootcmds
+          is run.  Initsprite will delete the  "/bootTmp"  prefix
+          prior to exiting.
+
+FFIILLEESS
+     /boot
+          /boot is a directory that contains all of the files and
+          utilities  needed to boot a Sprite machine.  Standalone
+          fileservers each have a /boot directory on their  local
+
+
+
+Sprite v.1.0       Printed:  October 28, 1991                   4
+
+
+
+
+
+
+BOOT                 Administrative Commands                 BOOT
+
+
+
+          disk and will use it during the boot process.
+
+     /boot/cmds
+          Contains utility programs needed during boot.
+
+     /boot/diskcmds
+          Run by fileservers to  check  their  disks.  Note  that
+          dependent  fileservers  run  the  diskcmds found on the
+          root fileserver.
+
+     /hosts/_h_o_s_t_n_a_m_e/mount
+          The mount table read  by  fileserver  _h_o_s_t_n_a_m_e.   Stan-
+          dalone  fileservers  should  have a copy of their mount
+          table in /hosts/_h_o_s_t_n_a_m_e/mount on both the  local  disk
+          and the root fileserver.
+
+     /boot/serverInfo
+          Provides machine name and  type  information  to  stan-
+          dalone   fileservers.   Standalone  fileservers  cannot
+          depend upon the root fileserver being able  to  provide
+          /etc/spritehosts  (the  usual place this information is
+          found) so they need their own file.   The  file  should
+          consist of the appropriate line from /etc/spritehosts.
+
+     /boot/bootcmds
+          This file is unique to  the  whole  system.  Standalone
+          fileservers  DO  NOT look in their local /boot for this
+          file. bootcmds contains commands for  starting  various
+          user-level  servers and other system configuration com-
+          mands.
+
+     /hosts/_h_o_s_t_n_a_m_e/bootcmds
+          If  this   file   exists   it   is   run   instead   of
+          /boot/bootcmds.
+
+     /boot/rootcmds
+          This file contains the commands necessary for a  backup
+          root  server  to  actually  export root.  In the normal
+          case the file will contain the single line "prefix -x /
+          -l /bootTmp".
+
+KKEEYYWWOORRDDSS
+     boot, bootcmds, diskcmds, rootcmds
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 28, 1991                   5
+
+
+

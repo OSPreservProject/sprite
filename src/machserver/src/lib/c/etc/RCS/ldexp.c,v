@@ -1,0 +1,103 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.12.21.25.33;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.02.21.51.43;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Fix header comment.
+@
+text
+@/*
+ * ldexp.c --
+ *
+ *      Source code for the ldexp library function.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = 
+    "$Header: /r3/kupfer/spriteserver/src/lib/c/etc/RCS/ldexp.c,v 1.1 91/12/02 21:51:43 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+     
+#include <stdio.h>
+#include <errno.h>
+
+/* Largest signed long int power of 2 */
+#define MAXSHIFT        (8 * sizeof(long) - 2)   
+
+#define	MAXFLOAT	1.7e308
+
+double ldexp(value, exp)
+     double value;
+     int    exp; 
+{
+
+
+	extern double frexp();
+	int	old_exp;
+
+        if (exp == 0 || value == 0.0) /* nothing to do for zero */
+                return (value);
+        (void) frexp(value, &old_exp);
+        if (exp > 0) {
+                if (exp + old_exp > 1023) { /* overflow */
+                        errno = ERANGE;
+                        return (value < 0 ? -MAXFLOAT : MAXFLOAT);
+                }
+                for ( ; exp > MAXSHIFT; exp -= MAXSHIFT)
+                        value *= (1L << MAXSHIFT);
+                return (value * (1L << exp));
+        }
+        if (exp + old_exp < -1023) { /* underflow */
+                errno = ERANGE;
+                return (0.0);
+        }
+        for ( ; exp < -MAXSHIFT; exp += MAXSHIFT)
+                value *= 1.0/(1L << MAXSHIFT); /* mult faster than div */
+        return (value / (1L << -exp));
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * modf.c --
+d18 1
+a18 1
+    "$Header: ldexp.c,v 1.1 88/09/10 16:39:34 mendel Exp $ SPRITE (Berkeley)";
+d22 2
+a23 1
+#include "errno.h"
+@

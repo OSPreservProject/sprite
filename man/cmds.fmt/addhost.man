@@ -1,0 +1,200 @@
+
+
+
+ADDHOST                   User Commands                   ADDHOST
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     addhost - Add a new host to the system
+
+SSYYNNOOPPSSIISS
+     aaddddhhoosstt [_o_p_t_i_o_n_s] [--nn _n_a_m_e  --ii  _i_n_t_e_r_n_e_t  --aa  _n_e_t_A_d_d_r_e_s_s  --mm
+     _m_a_c_h_i_n_e_T_y_p_e --ss _s_w_a_p_D_i_r]
+
+OOPPTTIIOONNSS
+     --aa _a_d_d_r_e_s_s     The --aa flag is required, and is used  to  set
+                    the  local network address of the host.  Usu-
+                    ally _a_d_d_r_e_s_s is an Ethernet address,  and  is
+                    of the form "a:b:c:d:e:f".
+
+
+     --dd _d_o_m_a_i_n      Used to set  the  local  domain.  The  _d_o_m_a_i_n
+                    string  is  appended  to the name provided by
+                    the --nn flag to produce the full name  of  the
+                    machine.   The default is to parse the domain
+                    name from the _s_p_r_i_t_e_h_o_s_t_s file.  If the  file
+                    is empty then the --dd flag must be given.
+
+
+     --hh, --hheellpp, --??  These options cause  a  help  listing  to  be
+                    printed.
+
+
+     --ii _i_n_t_e_r_n_e_t    _I_n_t_e_r_n_e_t is the internet address of the host.
+                    The  address  is in the form "a.b.c.d".  This
+                    flag is required.
+
+
+     --II _s_p_r_i_t_e_I_D    The --II flag is used to assign a Sprite ID  to
+                    the  host.   Care must be taken that _s_p_r_i_t_e_I_D
+                    does not conflict with the id of an  existing
+                    host.  If the --II flag is omitted aaddddhhoosstt will
+                    use a Sprite ID that is one greater than  the
+                    largest id found in the _s_p_r_i_t_e_h_o_s_t_s file.
+
+
+     --mm _m_a_c_h_i_n_e_T_y_p_e This flag sets the machine type of  the  host
+                    to  be  added.  This flag must be used.  Sup-
+                    ported machine types are _s_u_n_3,  _s_u_n_4,  _s_u_n_4_c,
+                    and _d_s_3_1_0_0.
+
+
+     --nn _n_a_m_e        _N_a_m_e is the name of the host.  This  flag  is
+                    required.
+
+
+     --ss _s_w_a_p_D_i_r     The --ss defines _s_w_a_p_D_i_r to be the directory in
+
+
+
+Sprite v.1.0       Printed:  February 20, 1990                  1
+
+
+
+
+
+
+ADDHOST                   User Commands                   ADDHOST
+
+
+
+                    which  to  create  the swap directory for the
+                    new host.  The default is /swap.  If  a  dif-
+                    ferent  directory  is  specified  then a link
+                    will be make in /swap.
+
+
+     --tt _n_e_t_T_y_p_e     The --tt flag is used to set the  type  of  the
+                    network   associated   with  the  host.   The
+                    default is _e_t_h_e_r, indicating that the host is
+                    connected  to the system via an Ethernet, and
+                    the the argument to the --aa flag is the Ether-
+                    net address of the host.  The only other sup-
+                    ported value  for  the  _n_e_t_T_y_p_e  argument  is
+                    _i_n_e_t,   indicating   that  a  gateway  exists
+                    between the host and the  root  file  server.
+                    In  this  case the argument to the --aa flag is
+                    the Ethernet address of the gateway machine.
+
+
+     --RR             AAddddhhoosstt will not allow a host to be added  if
+                    the  name  of the new host conflicts with the
+                    name of an existing host.  If the --RR flag  is
+                    specified  than the existing host information
+                    is replaced with the information for the  new
+                    host.   If  you  are upgrading a machine from
+                    one machine type to another but retaining the
+                    name then the --RR flag should be used.
+
+
+     --rr _r_o_o_t        The --rr flag is used to specify that the  root
+                    of  the  Sprite filesystem is something other
+                    than "/".
+
+_________________________________________________________________
+
+
+     --oo _o_w_n_e_r       Used to specify the owner or primary user  of
+                    the  machine.   This  information is added to
+                    /sprite/admin/hosts.
+
+
+     --ll _l_o_c_a_t_i_o_n    Used to specify the location of the  machine.
+                    This      information     is     added     to
+                    /sprite/admin/hosts.
+
+
+     --TT _m_a_c_h_i_n_e _d_e_s_c_r_i_p_t_i_o_n
+                    The --TT flag  is  used  to  specify  the  full
+                    machine   description.    Examples  might  be
+                    "sun3/75" or "sun4/260".  This information is
+                    added to /sprite/admin/hosts.
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 20, 1990                  2
+
+
+
+
+
+
+ADDHOST                   User Commands                   ADDHOST
+
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The aaddddhhoosstt command is used to add a new host to the system.
+     It  should  only  be run by the super-user (root).  Invoking
+     aaddddhhoosstt without any options will  cause  it  to  run  in  an
+     interactive  mode  where  you  will be prompted for the host
+     name, type, etc.  These  parameters  can  also  be  set  via
+     options  on the command line.  The use of any options causes
+     aaddddhhoosstt to not run interactively.  In this  case  a  minimum
+     set  of  options  must  be used.  The --aa, --ii, --nn, --mm, and --ss
+     flags must be used to indicate the local  address,  Internet
+     address,  host  name, host machine type, and swap directory,
+     respectively.  The options are described in more  detail  in
+     the section above.
+
+     As the aaddddhhoosstt script runs it will print out information  on
+     the  actions  it is taking.  Once the script is complete you
+     should  look  in  /sprite/admin/howto/addNewHost   for   any
+     remaining steps in the installation procedure.
+
+
+FFIILLEESS
+     The following files are edited by aaddddhhoosstt: /etc/spritehosts,
+     /etc/hosts.equiv, /sprite/admin/hosts
+
+
+KKEEYYWWOORRDDSS
+     spritehosts, new, host, hosts, hosts.equiv
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 20, 1990                  3
+
+
+

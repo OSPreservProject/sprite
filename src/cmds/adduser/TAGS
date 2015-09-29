@@ -1,0 +1,36 @@
+
+adduser.c,448
+add2MailingList(430,11911
+cleanup(1167,28849
+copy(1133,28050
+createHomeDirectory(588,15683
+getHomeDir(981,25033
+getPasswdEntryFromDataBase(833,21185
+getPasswdEntryFromUser(808,20714
+getPasswdEntryInteractive(918,23270
+insertPasswdEntry(705,18508
+main(118,3877
+makeLinktoHomeDir(395,11215
+parseGecos(255,7972
+parsePasswdEntry(1060,26465
+printPasswdEntry(285,8433
+pwskip(1047,26339
+sed(511,14029
+sendmsg(340,9833
+xmalloc(1120,27872
+
+common.c,234
+SecurityCheck(458,9098
+checkNumber(304,6023
+getNumber(288,5789
+getPasswd(154,3034
+getShell(216,4561
+getString(124,2433
+mail(248,5014
+makedb(336,6573
+raw_getchar(62,1525
+rcsCheckIn(413,8156
+rcsCheckOut(371,7308
+yes(94,2130
+
+common.h,0

@@ -1,0 +1,187 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.03.30.17.21.39;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.12.06.17.37.55;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.10.52.53;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.36;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.21.47.23;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.48;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.40;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.31.19.00.43;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@Added Sys_TestPrintWhatever routine for the sun4's too.
+@
+text
+@/*
+ * sysTestCall.h --
+ *
+ *     The test system calls for debugging.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/sys/RCS/sysTestCall.h,v 9.2 90/12/06 17:37:55 shirriff Exp Locker: mendel $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _SYSTESTCALL
+#define _SYSTESTCALL
+
+#include <sprite.h>
+#include <sys.h>
+
+extern	int 	Test_PrintOut _ARGS_((int arg0, int arg1, int arg2, int arg3, 
+				      int arg4, int arg5, int arg6, int arg7, 
+				      int arg8, int arg9));
+extern	int	Test_GetLine _ARGS_((char *string, int length));
+extern	int	Test_GetChar _ARGS_((char *charPtr));
+
+#endif /* _SYSTESTCALL */
+@
+
+
+9.2
+log
+@Put Test_PrintOut back, since it was almost, but not quite, obsolete.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysTestCall.h,v 9.0 89/09/12 15:20:36 douglis Stable $ SPRITE (Berkeley)
+d19 3
+a21 5
+struct test_args {
+    int argArray[SYS_MAX_ARGS];
+};
+
+extern	int	Test_PrintOut _ARGS_((struct test_args args));
+@
+
+
+9.1
+log
+@Removed sysTestCall.c, sysTestCall.h
+@
+text
+@d1 27
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@a0 20
+/*
+ * sysTestCall.h --
+ *
+ *     The test system calls for debugging.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/sys/RCS/sysTestCall.h,v 8.1 89/08/15 21:47:23 rab Exp Locker: douglis $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _SYSTESTCALL
+#define _SYSTESTCALL
+
+extern	int	Test_PrintOut();
+extern	int	Test_GetLine();
+extern	int	Test_GetChar();
+
+#endif /* _SYSTESTCALL */
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysTestCall.h,v 8.0 88/11/11 18:38:48 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysTestCall.h,v 6.0 88/08/11 12:27:40 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d20 1
+a20 1
+#endif _SYSTESTCALL
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: sysTestCall.h,v 5.0 87/08/31 19:00:43 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+ * $Header: sysTestCall.h,v 5.0 87/08/11 10:51:18 sprite Exp $ SPRITE (Berkeley)
+@

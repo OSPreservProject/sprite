@@ -1,0 +1,76 @@
+#!/bin/csh -f
+#
+# A script to generate (or regenerate) the Makefile for a test directory.
+# If ./Makefile.proto exists, use it, else use a common prototype.
+#
+# We assume we were invoked from mkmf, thus we don't need to alter the
+# path, and MKMFDIR is in the environment to tell us where to find prototype
+# makefiles, etc.
+#
+# Variables:
+#	prog		program to create (directories are assumed to be named
+#			after the programs they create)
+#	pref		prefix pattern that files must match to be included
+#	makefile	name of the makefile to create
+#	MKMFDIR		directory containing prototype makefiles
+#
+set prog=$cwd:t
+set pref='[a-z_A-Z]'
+
+if ($?MAKEFILE) then
+	set makefile=$MAKEFILE
+else
+	set makefile=Makefile
+endif
+
+set distdir=($DISTDIR)
+
+if (-e $makefile.proto) then
+	set proto=$makefile.proto
+else
+	set proto="${MKMFDIR}/Makefile.test"
+endif
+
+echo "Generating a Makefile for $prog using $proto"
+
+#
+# First figure out what's there by way of .c, .y, .l, .s, .p, .h and .o files
+# If any one doesn't have any members, it'll contain the original
+# pattern (b/c of nonomatch). We want it to be empty, though, so
+# we reset it.
+#
+set nonomatch
+set srcs=( ${pref}*.[cylsp] )
+if ("$srcs" == "${pref}*.[cylsp]") set srcs=()
+set Hfiles=( ${pref}*.h )
+if ("$Hfiles" == "${pref}*.h") set Hfiles=()
+rm -f version.o
+set Ofiles=( ${pref}*.o )
+if ("$Ofiles" == "${pref}*.o") set Ofiles=()
+unset nonomatch
+
+#
+# Merge in any .o files that can be created from local source files but don't
+# exist yet. In addition, figure out which .o files may be safely removed
+# during a "make clean" and store them in RmOfiles.
+#
+set RmOfiles=""
+if ("$srcs" != "") then
+	foreach file ($srcs)
+		set file=$file:r.o
+		set RmOfiles=($RmOfiles $file)
+		if (! -e $file) set Ofiles=($Ofiles $file)
+	end
+endif
+
+cat $proto | sed \
+	-e "s,@(PROGRAM),$prog,g" \
+	-e "s,@(OBJS),$Ofiles,g" \
+	-e "s,@(CLEANOBJS),$RmOfiles,g" \
+	-e "s,@(SRCS),$srcs,g" \
+	-e "s,@(HDRS),$Hfiles,g" \
+	-e "s,@(MAKEFILE),$makefile,g" \
+	-e "s,@(TEMPLATE),$proto,g" \
+	-e "s,@(DISTDIR),$distdir,g" \
+	-e "s,@(DATE),`date`,g" > $makefile
+endif

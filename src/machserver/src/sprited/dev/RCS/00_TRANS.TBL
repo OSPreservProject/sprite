@@ -1,0 +1,10 @@
+F DEV.H_V;1                         	dev.h,v
+F DEVBLOCK.H_V;1                    	devBlockDevice.h,v
+F DEVFSOPT.H_V;1                    	devFsOpTable.h,v
+F DEVINT.H_V;1                      	devInt.h,v
+F DEVMACHK.C_V;1                    	devMachKern.c,v
+F DEVNULL.C_V;1                     	devNull.c,v
+F DEVSYSLO.C_V;1                    	devSyslog.c,v
+F DEVTTY.C_V;1                      	devTty.c,v
+F DEVUNIXC.C_V;1                    	devUnixConsole.c,v
+F TTY.H_V;1                         	tty.h,v

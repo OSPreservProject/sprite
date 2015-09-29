@@ -1,0 +1,132 @@
+
+
+
+Tk_RegisterInterp     C Library Procedures      Tk_RegisterInterp
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_RegisterInterp -  make  an  interpreter  accessible  with
+     ``send'' command
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     int
+     TTkk__RReeggiisstteerrIInntteerrpp(_i_n_t_e_r_p, _n_a_m_e, _t_k_w_i_n)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp  *_i_n_t_e_r_p  (in)      Interpreter  to  register  in
+                                    display    associated    with
+                                    _t_k_w_i_n.  Also used  to  return
+                                    errors     if    registration
+                                    failed.
+
+     char        *_n_a_m_e    (in)      Name under which to  register
+                                    interpreter.   Must be unique
+                                    among all  registered  inter-
+                                    preters  for _t_k_w_i_n's display.
+                                    May not contain the character
+                                    ``|''.
+
+     Tk_Window   _t_k_w_i_n    (in)      Token for window.  Used  only
+                                    to find a display in which to
+                                    register _i_n_t_e_r_p.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__RReeggiisstteerrIInntteerrpp is invoked to associate a name (_n_a_m_e) with
+     a  Tcl interpreter (_i_n_t_e_r_p) and record that association in a
+     well-known property of a particular display  (the  one  con-
+     taining  _t_k_w_i_n).   After  this  procedure  has been invoked,
+     other interpreters in the display will be able  to  use  the
+     sseenndd  command  to invoke operations remotely in _i_n_t_e_r_p.  The
+     procedure returns TCL_OK if the registration completed  suc-
+     cessfully  and  TCL_ERROR  if  the  interpreter could not be
+     registered (e.g. because _n_a_m_e is already in  use).   In  the
+     event  of an error, _i_n_t_e_r_p->_r_e_s_u_l_t is modified to point to a
+     message describing the error.
+
+     This procedure also adds a sseenndd command to _i_n_t_e_r_p,  so  that
+     commands may be sent from _i_n_t_e_r_p to other interpreters.
+
+     The registration persists until the interpreter  is  deleted
+     or  the  sseenndd command is deleted from _i_n_t_e_r_p, at which point
+     _i_n_t_e_r_p is automatically unregistered.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_RegisterInterp     C Library Procedures      Tk_RegisterInterp
+
+
+
+     TTkk__RReeggiisstteerrIInntteerrpp     is     called     automatically     by
+     TTkk__CCrreeaatteeMMaaiinnWWiinnddooww,  so applications don't normally need to
+     call it explicitly.
+
+
+KKEEYYWWOORRDDSS
+     interpreter, name, register, send command
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

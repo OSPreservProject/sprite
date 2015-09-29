@@ -1,0 +1,16 @@
+L CHANGELO.;1                       	ChangeLog	../../dist/glob/ChangeLog
+L CONFIG.;1                         	config	../../dist/glob/config
+F CONFIG.STA;1                      	config.status
+L CONFIGUR.IN;1                     	configure.in	../../dist/glob/configure.in
+L GLOB.C;1                          	glob.c	../../dist/glob/glob.c
+L GLOB.TEX;1                        	glob.texinfo	../../dist/glob/glob.texinfo
+F MAKEFILE.;1                       	Makefile
+L MAKEFILE.IN;1                     	Makefile.in	../../dist/glob/Makefile.in
+F SYSDEP.H;1                        	sysdep.h
+L SYSDEP_0.H;1                      	sysdep-a68v.h	../../dist/glob/sysdep-a68v.h
+L SYSDEP_1.H;1                      	sysdep-aix.h	../../dist/glob/sysdep-aix.h
+L SYSDEP_2.H;1                      	sysdep-irix.h	../../dist/glob/sysdep-irix.h
+L SYSDEP_3.H;1                      	sysdep-norm.h	../../dist/glob/sysdep-norm.h
+L SYSDEP_4.H;1                      	sysdep-obsd.h	../../dist/glob/sysdep-obsd.h
+L SYSDEP_5.H;1                      	sysdep-sco.h	../../dist/glob/sysdep-sco.h
+L TILDE.C;1                         	tilde.c	../../dist/glob/tilde.c

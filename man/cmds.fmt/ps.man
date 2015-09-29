@@ -1,0 +1,266 @@
+
+
+
+PS                        User Commands                        PS
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     ps - print process status information
+
+SSYYNNOOPPSSIISS
+     ppss [_o_p_t_i_o_n(_s)] [_p_i_d _p_i_d ...]
+
+OOPPTTIIOONNSS
+     --aa            Print out information for processes  belonging
+                   to  all  users  (normally  only  the  invoking
+                   user's processes are printed).
+
+     --AA            Print  out  information  for  absolutely   all
+                   processes, even dead ones.
+
+     --dd            Print information only for processes in  DEBUG
+                   state.
+
+     --hheellpp         Print out a  help  message  and  exit  without
+                   doing anything else.
+
+     --ii            Instead of  the  default  status  information,
+                   print  information  about  various process ids
+                   (includes the PID, PPID, GROUP,  USER,  RUSER,
+                   TIME, and COMMAND fields).
+
+     --kk            Print  out  information  for   kernel   server
+                   processes  in  addition to any other processes
+                   requested with other switches.
+
+     --ll            Use local information for  migrated  processes
+                   rather  than  following  them to their current
+                   hosts.
+
+     --mm            Print information only for processes that  are
+                   migrated to or from another machine.
+
+     --MM            Instead of  the  default  status  information,
+                   print   information  about  process  migration
+                   (includes the PID, STATE, FLAGS, EVENT, RNODE,
+                   RPID, and COMMAND fields).
+
+     --ss            Instead of  the  default  status  information,
+                   print  information about signals (includes the
+                   PID, PENDING, HELD, IGNORE, HANDLE,  and  COM-
+                   MAND fields).
+
+     --uu            Instead of  the  default  status  information,
+                   print  additional  ``user-oriented''  informa-
+                   tion, including PID, %CPU,  %MEM,  SIZE,  RSS,
+                   STATE, TIME, PRI, and COMMAND.
+
+
+
+Sprite v.1.0        Printed:  August 10, 1989                   1
+
+
+
+
+
+
+PS                        User Commands                        PS
+
+
+
+     --vv            Instead of  the  default  status  information,
+                   print virtual memory information (includes the
+                   PID, CODSZ, CODRS, HPSZ, HPRS,  STKSZ,  STKRS,
+                   SIZE, RSS, and COMMAND fields).
+
+     --ww _l_i_n_e_W_i_d_t_h  Use _l_i_n_e_W_i_d_t_h as the output line  length,  and
+                   format  output so that it fits neatly on lines
+                   of this length.  The COMMAND field gets  trun-
+                   cated as necessary to accomplish this.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command prints out process status information.  If  one
+     or  more  _p_i_d's  is  given,  then information is printed for
+     those processes.  If no _p_i_d is given,  then  information  is
+     printed  for  all  processes  belonging to the invoking user
+     (additional processes may be requested  with  switches  like
+     --aa).
+
+     By default, ppss prints a short status report  for  each  pro-
+     cess,  containing  the PID, STATE, TIME, and COMMAND fields.
+     Other forms of printout are available using switches like --uu
+     and --mm.
+
+
+FFIIEELLDDSS
+     The names of fields printed by ppss (which appear at the  tops
+     of  the  columns  of  ppss  printout),  and the meaning of the
+     information printed in the fields, are:
+
+     CCOODDRRSS        The amount of physical memory occupied by  this
+                  process's code segment, in units of 1024 bytes.
+
+     CCOODDSSZZ        The total size of this process's code  segment,
+                  in  units  of  1024  bytes.  Not all of this is
+                  necessarily resident in memory.
+
+     CCOOMMMMAANNDD      The command  that  the  process  is  executing.
+                  This field gets truncated if necessary to avoid
+                  running off the end of the line.   Use  the  --ww
+                  switch  to  request  a  longer  line  size when
+                  needed.
+
+     EEVVEENNTT        The _e_v_e_n_t field from the process control  block
+                  (printed in hexadecimal).  See the include file
+                  <kernel/proc.h> for further information.
+
+     FFLLAAGGSS        The _g_e_n_F_l_a_g_s field  from  the  process  control
+                  block   (printed   in  hexadecimal).   See  the
+                  include file <kernel/proc.h> for further infor-
+                  mation.
+
+
+
+
+Sprite v.1.0        Printed:  August 10, 1989                   2
+
+
+
+
+
+
+PS                        User Commands                        PS
+
+
+
+     GGRROOUUPP        The  process  group  to  which   this   process
+                  belongs.
+
+     HHAANNDDLLEE       A hexadecimal value giving a  bit-mask  of  the
+                  signals  for  which  the  process has specified
+                  handler procedures.
+
+     HHEELLDD         A hexadecimal value giving a  bit-mask  of  the
+                  signals   currently  ``held''  (prevented  from
+                  being delivered to the process at its request).
+
+     HHPPRRSS         The amount of physical memory occupied by  this
+                  process's heap segment, in units of 1024 bytes.
+
+     HHPPSSZZ         The total size of this process's heap  segment,
+                  in units of 1024 bytes.
+
+     IIGGNNOORREE       A hexadecimal value giving a  bit-mask  of  the
+                  signals currently being ignored by the process
+
+     PPIIDD          The process ID for the process.
+
+     PPPPIIDD         The process id of the parent of this process.
+
+     PPRRII          The priority of the  process.   Processes  with
+                  normal   priority  have  no  specific  priority
+                  listed.  Server processes, with infinite prior-
+                  ity,  are  listed as "S". Processes with above-
+                  normal  priority  are  listed   as   ">",   and
+                  processes with below-normal priority are listed
+                  as "<".  Processes with  VERY_LOW_PRIORITY  are
+                  listed as "<<".
+
+     PPEENNDDIINNGG      A hexadecimal value giving a  bit-mask  of  the
+                  signals  that are awaiting delivery to the pro-
+                  cess.
+
+     RRNNOODDEE        For a migrated  process,  this  identifies  the
+                  ``other'' node that the process belongs to (its
+                  home node if this is the remote node,  or  vice
+                  versa).
+
+     RRPPIIDD         For a migrated process, this contains the id of
+                  the  process  on  its  ``other'' node (its home
+                  node if  this  is  the  remote  node,  or  vice
+                  versa).
+
+     RRSSSS          Resident set size:  the total  physical  memory
+                  occupied  by  this  process,  in  units of 1024
+                  bytes.  This is the sum  of  CODRS,  HPRS,  and
+                  STKRS.
+
+
+
+
+Sprite v.1.0        Printed:  August 10, 1989                   3
+
+
+
+
+
+
+PS                        User Commands                        PS
+
+
+
+     RRUUSSEERR        The name of the user corresponding to the  real
+                  user ID of this process.
+
+     SSIIZZEE         The total amount of virtual memory allocated to
+                  this  process, in units of 1024 bytes.  Not all
+                  of this memory is necessary resident in  physi-
+                  cal  memory,  and  some of it may not even have
+                  been accessed.  SIZE is equal  to  the  sum  of
+                  CODSZ, HPSZ, and STKSZ.
+
+     SSTTAATTEE        The current execution state of the process.
+
+     SSTTKKRRSS        The amount of physical memory occupied by  this
+                  process's  stack  segment,  in  units  of  1024
+                  bytes.
+
+     SSTTKKSSZZ        The total size of this process's heap  segment,
+                  in units of 1024 bytes.
+
+     TTIIMMEE         The total CPU time consumed by the process,  in
+                  minutes  and  seconds.  This time includes both
+                  kernel and user time.
+
+     UUSSEERR         The user name corresponding  to  the  effective
+                  user ID of this process.
+
+     %%CCPPUU         A smoothed average of the  fraction  of  a  CPU
+                  that  this  process  has consumed over the last
+                  several seconds.
+
+     %%MMEEMM         The fraction of total physical memory  occupied
+                  by  this  process's segments.  Does not include
+                  memory that  belongs  to  the  process  but  is
+                  swapped out.
+
+
+KKEEYYWWOORRDDSS
+     process, status
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 10, 1989                   4
+
+
+

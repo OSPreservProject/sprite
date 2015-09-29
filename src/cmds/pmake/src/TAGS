@@ -1,0 +1,340 @@
+
+arch.c,288
+} Arch;79,3086
+ArchFindArchive 347,10351
+ArchFindMember 542,16823
+ArchStatMember 372,11206
+Arch_FindLib 820,25151
+Arch_Init 922,28272
+Arch_LibOODate 873,27071
+Arch_MTime 720,22382
+Arch_MemMTime 754,23255
+Arch_ParseArchive 101,3761
+Arch_Touch 652,20474
+Arch_TouchLib 685,21377
+
+buf.c,417
+} Buf,30,904
+Buf_AddBytes 103,2580
+Buf_Destroy 407,9514
+Buf_Discard 324,7738
+Buf_GetAll 297,7226
+Buf_GetByte 230,5827
+Buf_GetBytes 263,6478
+Buf_Init 375,8874
+Buf_Size 353,8340
+Buf_UngetByte 135,3278
+Buf_UngetBytes 185,4526
+	    Byte 46,1337
+	    (bp)48,1408
+	    (bp)49,1468
+	    (bp)50,1529
+	    (bp)51,1558
+#define 33,933
+#define 43,1188
+ 	if 44,1215
+	    int 45,1278
+	    Byte 46,1337
+35,982
+
+buf.h,381
+void	28,823
+void	29,889
+void	27,770
+void	35,1252
+Byte	34,1203
+int	30,958
+int	31,1018
+Buffer	26,714
+int	36,1317
+void	32,1072
+void	33,1137
+typedef struct Buffer *Buffer;23,654
+Buffer	26,714
+Byte	34,1203
+typedef unsigned char 24,685
+#define 38,1374
+int	30,958
+int	31,1018
+int	36,1317
+void	27,770
+void	28,823
+void	29,889
+void	32,1072
+void	33,1137
+void	35,1252
+
+compat.c,95
+CompatInterrupt 67,2133
+CompatMake 335,8823
+CompatRunCommand 107,3116
+Compat_Run(546,14626
+
+cond.c,312
+CondCvtArg(398,10002
+CondDoDefined 243,6671
+CondDoExists 327,8446
+CondDoMake 296,7806
+CondDoTarget 361,9161
+CondE(946,21722
+CondF(899,20835
+CondGetArg 141,4338
+CondPushBack 120,3819
+CondStrMatch(275,7361
+CondT(850,19991
+CondToken(456,11062
+Cond_End(1192,28038
+Cond_Eval 1000,23067
+} Token;66,2029
+
+config.h,0
+
+dir.c,490
+DirExpandCurly(326,12345
+DirExpandInt(437,15332
+DirFindName 219,9197
+DirMatchFiles 274,10586
+static int DirPrintDir 1207,36913
+DirPrintWord(469,16198
+Dir_AddDir 968,30543
+Dir_ClearPath(1144,35353
+Dir_Concat(1170,35902
+Dir_CopyDir(1044,32714
+Dir_Destroy 1109,34599
+Dir_Expand 492,16763
+Dir_FindFile 604,19834
+Dir_HasWildcards 239,9707
+Dir_Init 182,8047
+Dir_MTime 904,28814
+Dir_MakeFlags 1070,33437
+Dir_PrintDirectories(1187,36292
+Dir_PrintPath 1209,36991
+} Path;155,7195
+
+job.c,964
+#define	FD_CLR(124,4222
+#define	FD_ISSET(125,4299
+#define	FD_SET(123,4146
+#define FD_ZERO(126,4376
+JobCmpPid 406,12307
+JobCmpRmtID 427,12826
+JobCondPassSig(281,9171
+JobDoOutput 1902,54788
+JobExec(1117,32958
+JobFinish 646,19955
+JobFlagForMigration 3014,85248
+JobInterrupt 2740,78535
+JobLocalInput(1093,32351
+JobMakeArgv(1292,37276
+JobMatchShell 2531,71989
+JobPassSig(325,10211
+JobPrintCommand 462,14330
+JobRestart(1352,39032
+JobSaveCommand 612,18822
+JobStart 1567,44710
+Job_AbortAll 2957,83912
+Job_CatchChildren 2159,62076
+Job_CatchOutput 2250,64417
+Job_CheckCommands 1030,30276
+Job_Empty 2498,71300
+Job_End 2894,82433
+Job_Full 2476,70734
+Job_Init 2354,67218
+Job_Make 2335,66850
+Job_ParseShell 2604,74666
+Job_RestartJobs(3172,89581
+Job_Touch 958,28478
+Job_Wait(2930,83246
+#define KILL(253,8565
+#define KILL(256,8637
+#define KILL(258,8686
+char 214,6947
+typedef long	fd_mask;111,3856
+} fd_set;119,4108
+#define	howmany(114,3955
+
+job.h,48
+} Job;115,5028
+}               Shell;174,7675
+
+lst.h,72
+typedef	struct	Lst	*Lst;26,729
+typedef	struct	LstNode	*LstNode;27,754
+
+main.c,358
+Boolean	71,2373
+DieHorribly(1098,29795
+Error 1012,27673
+Fatal 1043,28510
+Finish 1124,30298
+MainAddInclude 308,9823
+MainAddMakefile 343,10651
+MainDebug(405,12095
+MainDefineVar 371,11353
+MainParseArgs 198,7096
+MainUnlock 287,9338
+Main_ParseArgLine 257,8620
+Punt 1075,29301
+ReadMakefile 950,26263
+#define 64,2086
+exit(1132,30489
+main 472,13667
+
+make.c,239
+MakeAddAllSrc 497,15969
+MakeAddChild 232,7463
+MakePrintStatus(693,21878
+MakeStartJobs 609,19846
+Make_DoAllVar 575,18993
+Make_HandleUse 266,8577
+Make_OODate 103,3773
+Make_Run 751,23809
+Make_TimeStamp 74,2820
+Make_Update 339,10893
+
+make.h,196
+#define CONCAT(341,14213
+#define CONCAT(343,14245
+#define DEBUG(346,14293
+} GNode;118,4582
+#define I(340,14195
+#define OP_NOP(189,7836
+#define Str_FindSubstring(355,14547
+extern 298,12689
+
+nonints.h,0
+
+parse.c,673
+}              	  IFile;92,3551
+ParseAddCmd 1447,40280
+ParseAddDir(538,17058
+ParseClearPath(560,17492
+ParseDoDependency 602,19236
+ParseDoInclude 1528,42452
+ParseDoOp 337,10967
+ParseDoSrc 414,13592
+ParseEOF 1699,47442
+ParseFindKeyword 207,7549
+ParseFindMain(512,16522
+ParseFinishLine(2009,55506
+ParseHasCommands(1479,41168
+ParseLinkSrc 306,10050
+ParseReadLine 1760,49140
+#define ParseReadc(1735,48270
+#define ParseReadc(1738,48386
+} ParseSpecial;137,5143
+Parse_AddIncludeDir 1503,41728
+Parse_AnyExport(284,9442
+Parse_DoVar 1206,34995
+Parse_Error 249,8485
+Parse_File(2037,56239
+Parse_Init 2207,60215
+Parse_IsVar 1124,32966
+Parse_MainName(2251,61302
+
+rmt.c,233
+DoExec(508,11971
+RemotePathExec(567,13614
+RmtExit(451,10752
+RmtStatusChange 137,3250
+Rmt_AddServer 114,2864
+Rmt_Begin 175,4104
+Rmt_Done 410,9838
+Rmt_Exec 250,5911
+Rmt_Init(88,2363
+Rmt_LastID(386,9380
+Rmt_ReExport(296,7127
+
+str.c,156
+DoBackslash 127,3298
+Str_BreakString 158,4069
+Str_Concat 52,1716
+Str_FindSubstring(315,8171
+Str_FreeVec 286,7394
+Str_Match(368,9350
+Str_New 116,3091
+
+suff.c,982
+} LstSrc;861,24824
+} Src;104,4227
+} Suff;91,3704
+SuffAddLevel 929,26762
+SuffAddSrc 878,25349
+SuffApplyTransform(1367,38241
+SuffExpandChildren(1121,31785
+SuffFindArchiveDeps(1486,41759
+SuffFindCmds 1035,29364
+SuffFindNormalDeps(1622,45533
+SuffFindThem 983,28054
+SuffFree 269,8481
+SuffFreeSrc 954,27350
+SuffGNHasNameP 248,7915
+SuffInsert 293,9023
+SuffParseTransform(370,11066
+static int SuffPrintName(2111,59337
+SuffPrintSuff 2114,59425
+SuffPrintTrans 2156,60289
+SuffRebuildGraph(602,17943
+SuffStrIsPrefix 125,4808
+SuffSuffHasNameP 205,6729
+SuffSuffIsPrefix 228,7407
+SuffSuffIsSuffix 152,5460
+SuffSuffIsSuffixP(184,6241
+Suff_AddInclude 810,23580
+Suff_AddLib 840,24335
+Suff_AddSuffix 669,19712
+Suff_AddTransform 474,14278
+Suff_ClearSuffixes 347,10515
+Suff_DoPaths(744,21758
+Suff_EndTransform(539,16209
+Suff_FindDeps 1983,56126
+Suff_GetPath 710,20817
+Suff_Init 2086,58641
+Suff_IsTransform 451,13572
+Suff_PrintAll(2169,60551
+Suff_SetNull(2050,57869
+
+targ.c,355
+TargPrintName 317,8995
+TargPrintNode 440,11822
+TargPrintOnlySrc(520,13908
+Targ_FindList 188,5909
+Targ_FindNode 143,4537
+Targ_FmtTime 359,9770
+Targ_Ignore 237,7259
+Targ_Init 78,2787
+Targ_NewGN 98,3256
+Targ_Precious 283,8207
+Targ_PrintCmd 337,9283
+Targ_PrintGraph 542,14350
+Targ_PrintType 390,10499
+Targ_SetMain 310,8888
+Targ_Silent 260,7730
+
+var.c,542
+}  Var;112,4354
+VarAdd 288,9221
+VarAlloc(128,4692
+VarCmp 157,5306
+VarFind 179,5885
+VarHead 548,16056
+VarMatch 709,20254
+VarModify 964,28131
+VarNoMatch 743,21256
+} VarPattern;771,22280
+VarPrintVar 1887,52461
+VarRoot 670,19224
+VarSubstitute 788,22692
+VarSuffix 632,18240
+VarTail 594,17219
+Var_Append 440,13265
+Var_Delete(324,10039
+Var_Dump 1900,52800
+Var_Exists(488,14528
+Var_GetHead(1859,51871
+Var_GetTail(1837,51356
+Var_Init 1878,52297
+Var_Parse 1037,30131
+Var_Set 366,11211
+Var_Subst 1720,47897
+Var_Value 518,15241

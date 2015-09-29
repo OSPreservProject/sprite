@@ -1,0 +1,238 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.5
+date     89.01.06.08.10.09;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.07.23.13.32.14;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.21.09.30.35;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.16.13.22.55;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.16.11.16.16;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Sun Unix code to do the first few things as a boot program.
+@
+
+
+1.5
+log
+@SUN_ => MACH_
+@
+text
+@|* start.s
+|*
+|*	Initial instructions executed by a boot program loaded by the PROM.
+|*	This is derived from 
+|*	"@@(#)srt0.s	4.15 83/10/12	Copyr 1983 Sun Micro";
+|*	The first thing done here is to relocate the boot program if
+|*	the boot PROM hasn't loaded the program into the expected place.
+|*	After that the stack is set up, BSS area is zero filled, and
+|*	then the code jumps to main().  The entry point to transfer to
+|*	another program is also defined here.
+|*
+#ifndef lint
+.data
+.asciz "$Header: start.s,v 1.4 86/07/23 13:32:14 brent Exp $ SPRITE (Berkeley)"
+.even
+#endif not lint
+.text
+
+#include "machConst.h"
+
+	.globl	_endText
+	.globl	_endData
+	.globl	_endBss
+	.globl	_main
+	.globl	_Boot_Exit
+	.globl	_Boot_Transfer
+
+	.globl	start
+start:
+	movw	#MACH_SR_HIGHPRIO,sr	| lock out interrupts, just in case
+leax:	lea	pc@@(start-(leax+2)),a0	| True current location of "start"
+	lea	start:l,a1		| Desired      location of "start"
+	cmpl	a0,a1
+	jeq	begin			| If the same, just go do it.
+	movl	#_endData,d0		| Desired end of program
+	subl	a1,d0			| Calculate length, round up.
+	lsrl	#2,d0
+movc:	movl	a0@@+,a1@@+		| Move it where it belongs.
+	dbra	d0,movc
+	jmp	begin:l			| Force non-PCrel jump
+
+begin:
+	movl	sp,start-4:l		| Save old stack pointer value
+	lea	start-4:l,sp		| Set up new stack below load point
+	movl	#_endData,a0		| Zero fill BSS area (and _endData)
+clr:
+	clrl	a0@@+
+	cmpl	#_endBss,a0
+	ble	clr
+|
+| Argc and argv are set to zeros here and the boot main program knows
+| to get arguments from the monitor vector.
+|
+	clrl	sp@@-			| argv = 0 for now.
+	clrl	sp@@-			| argc = 0 for now.
+	jsr	_main
+	addqw	#8,sp
+	jsr	_Exit			| after main() returns, call Exit().
+| Just fall thru into _Boot_Exit if exit() ever returns.
+
+_Boot_Exit:
+	movl	start-4:l,sp		| Restore caller's stack pointer
+	rts				| Return to caller (PROM probably)
+
+| Boot_Transfer --
+| Transfer control to a new program, no arguments are set up.
+
+_Boot_Transfer:
+	movl	sp@@(4),a0		| Address to call
+	movl	a0,sp			| Set the stack below the load point
+	jra	a0@@			| Jump to callee using new stack
+
+@
+
+
+1.4
+log
+@fiddled with Boot_Transfer.  The old version would be fine too.
+We arn't passing parameters to the booted program anyway.
+@
+text
+@d14 1
+a14 1
+.asciz "$Header: start.s,v 1.3 86/07/21 09:30:35 brent Exp $ SPRITE (Berkeley)"
+d19 1
+a19 1
+#include "sunSR.h"
+d30 1
+a30 1
+	movw	#SUN_SR_HIGHPRIO,sr	| lock out interrupts, just in case
+@
+
+
+1.3
+log
+@fixed RCS header.
+@
+text
+@d14 1
+a14 1
+.asciz "$Header$ SPRITE (Berkeley)"
+d65 3
+a67 2
+| Transfer control to a new program, passing on the same arguments that
+| we (start.s) received when we were started.
+d70 2
+a71 2
+	movl	start-4:l,sp		| Restore caller's stack pointer
+	jra	a0@@			| Jump to callee using caller's stk
+@
+
+
+1.2
+log
+@Spritified version of srt0.o
+@
+text
+@d12 1
+d14 1
+a14 1
+.asciz "$Header"
+d16 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 15
+a15 4
+	.data
+	.asciz	"@@(#)srt0.s	4.15 83/10/12	Copyr 1983 Sun Micro";
+	.even
+	.text
+d17 1
+a17 1
+|	Copyright (c) 1983 by Sun Microsystems, Inc.
+d19 3
+a21 7
+|
+| Startup code for standalone system
+| Non-relocating version -- for programs which are loaded by boot
+|
+
+	.globl	_end
+	.globl	_edata
+d23 2
+a24 3
+	.globl	__exit
+	.globl	__exitto
+	.globl	_openfirst
+d26 5
+a30 7
+HIGH = 0x2700
+
+	.globl	entry
+entry:
+	movw	#HIGH,sr		| just in case
+leax:	lea	pc@@(entry-(leax+2)),a0	| True current location of "entry"
+	lea	entry:l,a1		| Desired      location of "entry"
+d33 1
+a33 1
+	movl	#_end,d0		| Desired end of program
+d41 3
+a43 3
+	movl	sp,entry-4:l		| Save old stack pointer value
+	lea	entry-4:l,sp		| Set up new stack below load point
+	movl	#_edata,a0
+d46 1
+a46 1
+	cmpl	#_end,a0
+d48 4
+a51 2
+	movl	#1,_openfirst
+| FIXME, should push argc and argv (from bootparam.h) here.
+d56 2
+a57 2
+	jsr	_exit			| after main() returns, call exit().
+| Just fall thru into __exit if exit() ever returns.
+d59 2
+a60 2
+__exit:
+	movl	entry-4:l,sp		| Restore caller's stack pointer
+d64 2
+a65 3
+| we (srt0.s) received when we were started.  Note that this does NOT call
+| exit() -- you'd better close your files yourself.
+__exitto:
+d67 1
+a67 1
+	movl	entry-4:l,sp		| Restore caller's stack pointer
+@

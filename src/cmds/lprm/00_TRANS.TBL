@@ -1,0 +1,14 @@
+L COMMON.C;1                        	common.c	../../daemons/lpd/common.c
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+L LP.H;1                            	lp.h	../lpr/lp.h
+F LPRM.C;1                          	lprm.c
+F LPRM.MAN;1                        	lprm.man
+L LP_LOCAL.H;1                      	lp.local.h	../lpr/lp.local.h
+F MAKEFILE.;1                       	Makefile
+L PRINTCAP.C;1                      	printcap.c	../lpr/printcap.c
+D RCS                               	RCS
+L RMJOB.C;1                         	rmjob.c	../../daemons/lpd/rmjob.c
+L STARTDAE.C;1                      	startdaemon.c	../lpr/startdaemon.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

@@ -1,0 +1,98 @@
+#
+# filecmds.test
+#
+# Tests for the copyfile, and pipe commands.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: filecmds.test,v 2.0 1992/10/16 04:49:46 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+# Create a test file
+
+catch {unlink {IOTEST.TMP IOTEST2.TMP}}
+
+set testFH [open IOTEST.TMP w]
+for {set cnt 0} {$cnt < 100} {incr cnt} {
+     puts $testFH [GenRec $cnt]
+}
+close $testFH
+
+Test filecmds-3.1 {copyfile tests} {
+    set testFH [open IOTEST.TMP r]
+    set testFH2 [open IOTEST2.TMP w]
+    copyfile $testFH $testFH2
+    close $testFH
+    close $testFH2
+    system "diff IOTEST.TMP IOTEST2.TMP >/dev/null 2>&1"
+} 0 0
+
+Test filecmds-3.2 {copyfile tests} {
+    set testFH [open IOTEST.TMP w]
+    set testFH2 [open IOTEST2.TMP w]
+    set stat [list [catch {copyfile $testFH $testFH2} msg] $msg]
+    close $testFH
+    close $testFH2
+    set stat
+} 0 {1 {Source file is not open for read access}}
+
+Test filecmds-3.3 {copyfile tests} {
+    set testFH [open IOTEST.TMP r]
+    set testFH2 [open IOTEST2.TMP r]
+    copyfile $testFH $testFH2
+} 1 {Target file is not open for write access}
+
+close $testFH
+close $testFH2
+
+Test filecmds-3.4 {copyfile tests} {
+    copyfile $testFH $testFH2
+} 1 "file \"$testFH\" isn't open"
+
+Test filecmds-3.5 {copyfile tests} {
+    copyfile
+} 1 {wrong # args: copyfile fromfilehandle tofilehandle}
+
+pipe readPF writePF
+
+flush stdout  ;# Not going to exec, must clean up the buffers.
+flush stderr
+set sonPid [fork]
+
+if {$sonPid == 0} {
+    for {set cnt 0} {$cnt < 50} {incr cnt} {
+        Test filecmds-4.1 {pipe tests} {
+            if {![gets $readPF msgBuf]} {
+               set msgBuf "Premature eof on pipe"
+            }
+            set msgBuf
+        } 0 [GenRec $cnt]
+    }
+    close $readPF
+    exit 0
+}
+
+for {set cnt 0} {$cnt < 50} {incr cnt} {
+    puts $writePF [GenRec $cnt]
+}
+flush $writePF
+Test filecmds-4.2 {pipe tests} {
+    wait $sonPid
+} 0 "$sonPid EXIT 0"
+
+close $readPF
+close $writePF
+
+unlink {IOTEST.TMP IOTEST2.TMP OUTPUT.TMP INCMDS.TMP}
+
+

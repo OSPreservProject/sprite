@@ -1,0 +1,348 @@
+%		*****	LTUGBOT.STY	*****			 6 Feb 88
+%						last revised	 1 Mar 89
+%
+%	Hacks to pieces of article.sty to support a rudimentary
+%	pseudo-TUGboat format.
+%
+%	Incorporates ideas and elements from these TUGboat authors:
+%		Adrian Clark
+
+
+%  need some more fonts that aren't activated in lfonts
+\font\sevbf=cmbx7
+
+%  redo definition of 8pt from latex (lfonts), to install amcsc8 instead
+%  of de-magnified amcsc10
+%\catcode`\@=11
+\def\viiipt{\textfont\z@\egtrm 
+  \scriptfont\z@\sixrm \scriptscriptfont\z@\fivrm
+\textfont\@ne\egtmi \scriptfont\@ne\sixmi \scriptscriptfont\@ne\fivmi
+\textfont\tw@\egtsy \scriptfont\tw@\sixsy \scriptscriptfont\tw@\fivsy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\prm{\fam\z@\egtrm}%
+\def\unboldmath{\everymath{}\everydisplay{}\@nomath
+\unboldmath\@boldfalse}\@boldfalse
+\def\boldmath{\@subfont\boldmath\unboldmath}%
+\def\pit{\fam\itfam\egtit}\textfont\itfam\egtit 
+   \scriptfont\itfam\sevit \scriptscriptfont\itfam\sevit 
+\def\psl{\@getfont\psl\slfam\@viiipt{cmsl8}}%
+\def\pbf{\@getfont\pbf\bffam\@viiipt{cmbx8}}%
+\def\ptt{\@getfont\ptt\ttfam\@viiipt{cmtt8}}%
+\def\psf{\@getfont\psf\sffam\@viiipt{\@mss\@ptscale8}}%
+\def\psc{\@getfont\psc\scfam\@viiipt{amcsc8}}%
+\def\ly{\fam\lyfam\egtly}\textfont\lyfam\egtly 
+    \scriptfont\lyfam\sixly \scriptscriptfont\lyfam\fivly 
+\@setstrut \rm}
+
+%  redo definition of 10pt, to install \sevenbf as \*scriptfont for \bffam
+\def\xpt{\textfont\z@\tenrm 
+  \scriptfont\z@\sevrm \scriptscriptfont\z@\fivrm
+\textfont\@ne\tenmi \scriptfont\@ne\sevmi \scriptscriptfont\@ne\fivmi
+\textfont\tw@\tensy \scriptfont\tw@\sevsy \scriptscriptfont\tw@\fivsy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\unboldmath{\everymath{}\everydisplay{}\@nomath\unboldmath
+          \textfont\@ne\tenmi 
+          \textfont\tw@\tensy \textfont\lyfam\tenly
+          \@boldfalse}\@boldfalse
+\def\boldmath{\@ifundefined{tenmib}{\global\font\tenmib\@mbi 
+   \global\font\tensyb\@mbsy 
+   \global\font\tenlyb\@lasyb\relax\@addfontinfo\@xpt
+   {\def\boldmath{\everymath{\mit}\everydisplay{\mit}\@prtct\@nomathbold
+        \textfont\@ne\tenmib \textfont\tw@\tensyb 
+        \textfont\lyfam\tenlyb \@prtct\@boldtrue}}}{}\@xpt\boldmath}%
+\def\prm{\fam\z@\tenrm}%
+\def\pit{\fam\itfam\tenit}\textfont\itfam\tenit \scriptfont\itfam\sevit
+    \scriptscriptfont\itfam\sevit
+\def\psl{\fam\slfam\tensl}\textfont\slfam\tensl 
+     \scriptfont\slfam\tensl \scriptscriptfont\slfam\tensl
+\def\pbf{\fam\bffam\tenbf}\textfont\bffam\tenbf 
+    \scriptfont\bffam\sevbf \scriptscriptfont\bffam\sevbf 
+\def\ptt{\fam\ttfam\tentt}\textfont\ttfam\tentt
+    \scriptfont\ttfam\tentt \scriptscriptfont\ttfam\tentt
+\def\psf{\fam\sffam\tensf}\textfont\sffam\tensf
+    \scriptfont\sffam\tensf \scriptscriptfont\sffam\tensf
+\def\psc{\@getfont\psc\scfam\@xpt{\@mcsc}}%
+\def\ly{\fam\lyfam\tenly}\textfont\lyfam\tenly 
+   \scriptfont\lyfam\sevly \scriptscriptfont\lyfam\fivly 
+\@setstrut \rm}
+
+%\catcode`\@=12
+
+
+%  normal TUGboat dimensions
+
+\@twosidetrue		% for odd/even asymmetry in running heads
+\twocolumn		% two columns
+\sloppy			% make those columns justify
+%\flushbottom		% but ensure they line up
+\columnsep 1.5pc	% space between columns
+\columnwidth 18.75pc	% width of each column
+\parindent 20pt		% paragraph indent
+\parskip 0pt		% no inter-paragraph space
+\leftmargini 2em	% unchanged
+\leftmarginv .5em	% unchanged
+\leftmarginvi .5em	% unchanged
+\oddsidemargin 0pt	% was 42pt
+\evensidemargin 0pt	% was 84pt
+\topmargin -2.5pc	% was 0pt
+\headheight 12pt	% height of running head, unchanged
+\headsep 20pt		% distance between header and text
+\marginparwidth 48pt	% don't use marginal notes
+\marginparsep 10pt	%  in TUGboat
+\textheight 54pc	% height of text on page
+\textwidth 39pc		% total width of a page
+%\nofiles
+
+\itemsep=2pt plus 2pt minus 1pt
+
+\def\@normalsize{\@setsize\normalsize{12pt}\xpt\@xpt
+\abovedisplayskip=3pt plus 3pt minus 1pt \belowdisplayskip=\abovedisplayskip
+\abovedisplayshortskip=\z@ plus3pt \belowdisplayshortskip=1pt plus3pt minus1pt}
+
+\def\small{\@setsize\small{11pt}\ixpt\@ixpt
+\abovedisplayskip=2.5pt plus2.5pt minus1pt\belowdisplayskip=\abovedisplayskip
+\abovedisplayshortskip=\z@ plus2pt \belowdisplayshortskip=1pt plus2pt minus1pt}
+
+\def\footnotesize{\@setsize\footnotesize{12pt}\xpt\@xpt
+\abovedisplayskip=3pt plus 3pt minus 1pt \belowdisplayskip=\abovedisplayskip
+\abovedisplayshortskip=\z@ plus3pt \belowdisplayshortskip=1pt plus3pt minus1pt}
+
+\def\@listi{\parsep=1pt plus 1pt minus 1pt
+\itemsep=\parsep}
+\def\@listii{\leftmargin\leftmarginii
+ \labelwidth=\leftmarginii \advance\labelwidth-\labelsep
+ \topsep=2pt plus 1pt minus 1pt
+ \parsep=1pt plus 1pt minus 1pt
+ \itemsep=\parsep}
+\def\@listiii{\leftmargin=\leftmarginiii
+ \labelwidth=\leftmarginiii \advance\labelwidth-\labelsep
+ \topsep=1pt plus 1pt minus 1pt
+ \parsep=\z@
+ \itemsep=\topsep}
+\partopsep=\z@ \topsep=3pt plus1pt minus1pt
+\parsep=3pt plus 1pt minus 1pt \itemsep=\parsep
+
+%  not ordinarily in LaTeX, but usually wanted in TUGboat
+
+\clubpenalty=10000
+\widowpenalty=10000
+
+
+%  modify some style elements
+
+%	Section titles
+
+\newif\ifSecTitle	 \SecTitlefalse
+
+\newskip\Tabskss
+\Tabskss=0pt plus 1000pt minus 1000pt
+\newskip\AboveTitleSkip  \AboveTitleSkip=12pt   % 10pt plus 2pt minus 2pt
+\newskip\BelowTitleSkip  \BelowTitleSkip=8pt    % plus 1pt minus 1pt
+
+\font \sixteenssb=cmssbx10 scaled \magstep3
+\let\titlefont=\sixteenssb
+\newbox\T@stBox
+\setbox\T@stBox=\hbox{\titlefont O}
+\newdimen\stfontheight          \stfontheight=\ht\T@stBox
+\newdimen\strulethickness       \strulethickness=.6pt
+\newcount\n@stnum               \n@stnum=0
+\def \sthrule{\hrule height\strulethickness depth 0pt }
+\def \stvrule{\vrule height 2\stfontheight depth\stfontheight
+                        width\strulethickness }
+\def \sectitlebox #1<{\vbox{\sthrule
+        \hbox to \hsize{\stvrule\hfil #1\hfil\vrule width\strulethickness }%
+        \sthrule }}
+
+\def \secsep{\vskip 5\baselineskip}
+
+\def \sectitle#1{\SecTitletrue \def\s@ctitle{#1}}
+
+\def \@sectitle#1{\par\penalty-1000\secsep
+        \n@stnum=0
+        {\def\\{ }\setbox\T@stBox=\hbox{\titlefont#1}%
+        \ifdim\wd\T@stBox < \hsize \def\result{\unhbox\T@stBox}%
+        \else \def\\{\cr\noalign{\global\advance\n@stnum by 1 }}%
+                \setbox\T@stBox=\vbox{\titlefont
+                        \halign{\hfil##\hfil\cr#1\crcr}}%
+                \def\result{\vbox{\unvbox\T@stBox}}\fi
+        \ifnum\n@stnum=1 \def\stvrule{\vrule height 3.5\stfontheight
+                        depth\stfontheight width\strulethickness }\fi
+        \centerline{\sectitlebox \titlefont\result<}}%
+        \nobreak \vskip\baselineskip }
+
+\newskip\AboveTitleSkip  \AboveTitleSkip=12pt
+\newskip\BelowTitleSkip  \BelowTitleSkip=8pt
+\newdimen\PreTitleDrop	 \PreTitleDrop=0pt
+
+\def\maketitle{\par
+ \ifdim\PreTitleDrop > 0pt
+   \loop
+   \ifdim \PreTitleDrop > \textheight
+     \vbox{}\vfil\eject
+     \advance\PreTitleDrop by -\textheight
+   \repeat
+   \vbox to \PreTitleDrop{}
+   \PreTitleDrop=0pt
+ \fi
+ \begingroup
+ \def\thefootnote{\fnsymbol{footnote}}
+ \def\@makefnmark{\hbox to 0pt{$^{\@thefnmark}$\hss}} 
+ \@maketitle
+ \@thanks
+ \endgroup
+ \setcounter{footnote}{0}
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax}
+
+% modified \@maketitle to prevent 2 occurrences of \@thanks in footnote
+% rw 12 Feb 89
+%\def\@maketitle{\ifSecTitle \SecTitlefalse
+%        \else \vskip\AboveTitleSkip \fi
+%	{\hyphenpenalty=10000 \interlinepenalty=10000
+%	\setbox0=\hbox{\ignorespaces\@author}%
+
+% rule added above title to conform to updated (89) style
+% bb 18 Feb 89
+\newdimen\strulethickness       \strulethickness=.6pt
+\def\emptythanks#1{}
+\def\@maketitle{\ifSecTitle \SecTitlefalse
+		\@sectitle{\s@ctitle}%
+        \else \vskip\AboveTitleSkip
+		\kern\topskip
+		\hrule height\z@ depth\z@ width 10pt
+		\kern-\topskip
+		\kern-\strulethickness
+		\hrule height\strulethickness depth\z@
+		\kern\medskipamount
+	\fi
+	{\hyphenpenalty=10000 \interlinepenalty=10000
+	\setbox0=\hbox{\let\thanks\emptythanks\ignorespaces\@author}%
+	{\noindent\bf\ignorespaces\@title\endgraf}%
+	\ifdim \wd0 < 5pt		% omit if author is null
+	\else \nobreak \vskip 4pt       % 4pt + \BelowTitleSkip = \baselineskip
+		{\leftskip=\parindent \noindent\@author\endgraf}%
+	\fi \nobreak \vskip\BelowTitleSkip }}
+
+\def\fnum@figure{{\bf Figure \thefigure}}
+
+\def\quote{\list{}{\rightmargin.5\leftmargin}\item[]}
+
+%	From Dominik Wujastyk's font article.  First paragraph of a quotation
+%	will not be indented, and right margin is decreased for narrow columns.
+\renewcommand{\quotation}{\list{}{\listparindent 1.5em
+	\rightmargin.5\leftmargin\parsep 0pt plus 1pt}\item[]}
+
+%  make it possible to use the standard issue/date job file
+
+\newcount\issueseqno
+\def \v@lx{\gdef\volx{Volume~\volno~(\volyr), No.~\issno}}
+\def \volyr{}
+\def \volno{}
+\def \vol #1,#2.{\gdef\volno{#1\unskip}%
+        \gdef\issno{\ignorespaces#2\unskip}%
+        \setbox0=\hbox{\volyr}%
+        \ifdim \wd0 > .2em \v@lx \fi }
+
+\def \issdate #1#2 #3.{\gdef\issdt{#1#2 #3}\gdef\volyr{#3}%
+        \gdef\bigissdt{#1{\smc\uppercase{#2}} #3}%
+        \setbox0=\hbox{\volno}%
+        \ifdim \wd0 > .2em \v@lx \fi }
+
+\input tugbot.dates
+
+
+%  Fix up the running heads and footers.
+%  Only one style supported; suppress LaTeX's separate definitions.
+
+\def \TUB{TUGboat}
+\def \rtitlex{\TUB, \volx }
+
+\def\@oddhead{\hbox{}\rm\rtitlex \hfil \thepage}
+\def\@evenhead{\rm \thepage\hfil \rtitlex}
+\def\@oddfoot{}
+\def\@evenfoot{}
+
+\def\ps@headings{}
+
+\pagestyle{headings}
+
+
+%  Miscellaneous defs from plain tugbot.sty.
+
+\font\manual=nwmanfnt % to avoid problems while old manfnt is preloaded
+\def \MF{{\manual META}\-{\manual FONT}}
+
+\def \careof{\leavevmode\hbox{\raise.75ex\hbox{c}\kern-.15em
+                /\kern-.125em\smash{\lower.3ex\hbox{o}}} \ignorespaces}
+\def \sfrac#1/#2{\leavevmode\kern.1em
+        \raise.5ex\hbox{\the\scriptfont0 #1}\kern-.1em
+        /\kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
+
+%	Support ad-hoc strut construction.
+\def \makestrut[#1;#2]{\vrule height#1 depth#2 width\z@ }
+
+\def \d@sh#1{\nobreak\thinspace#1\penalty0\thinspace}
+\def \dash{\d@sh{--}}
+\def \Dash{\d@sh{---}}
+
+%	Hack to permit automatic hyphenation after an actual hyphen.
+
+\def\hyph{-\penalty0\hskip0pt\relax }
+
+\def\slash{/\penalty0\hskip0pt} 	% "breakable" slash
+
+%	utility registers
+
+\newcount\TestCount
+
+%	various logos and abbreviations
+
+\def \AMSTeX{\leavevmode\hbox{$\cal A\kern-.2em\lower.376ex
+        \hbox{$\cal M$}\kern-.2em\cal S$-\TeX}}
+\def \LaTeX{\TestCount=\the\fam \leavevmode L\raise.42ex
+	\hbox{$\fam\TestCount\scriptstyle\kern-.3em A$}\kern-.15em\TeX}
+\def \BibTeX{{\rm B\kern-.05em{\sc i\kern-.025emb}\kern-.08em\TeX}}
+\font\manual=nwmanfnt % to avoid problems while old manfnt is preloaded
+\def \MF{{\manual META}\-{\manual FONT}}
+\def \slMF{{\manual 89:;}\-{\manual <=>:}} % slant the logo
+\def \MFB{{\sl The \slMF book}}
+\def \mf{{\sc Metafont}}
+\def \Pas{Pascal}
+\def \PiC{P\kern-.12em\lower.5ex\hbox{I}\kern-.075emC}
+\def \PiCTeX{\PiC\kern-.11em\TeX}
+\def \PS{Post\-Script}
+\def \SliTeX{{\rm S\kern-.06em{\sc l\kern-.035emi}\kern-.06em\TeX}}
+\def \TB{{\sl The \TeX book}}
+\def \UNIX{{\sc unix}}
+\def \TeXXeT{\TeX--X\kern-.125em\lower.5ex\hbox{E}\kern-.1667emT}
+\def \TUB{TUGboat}
+\def \VAX{\leavevmode\hbox{V\kern-.12em A\kern-.1em X}}
+\def \WEB{{\tt WEB}}
+
+%  Redefine style of section headings to look more like TUGboat.
+%  Start with definitions from art10.sty .  (Only \section correct so far.)
+%
+%  \vskip 8pt \vskip\parskip before; \vskip 4pt after
+%  Negative beforeskip suppresses following parindent.
+
+\def\section{\@startsection {section}{1}{\z@}{-8pt}{4pt}{\normalsize\bf}}
+\def\subsection{\@startsection{subsection}{2}{\z@}{-8pt}{4pt}{\normalsize\bf}}
+\def\subsubsection
+	{\@startsection{subsubsection}{3}{\z@}{-8pt}{4pt}{\normalsize\bf}}
+\def\paragraph{\@startsection
+ {paragraph}{4}{\z@}{3.25ex plus 1ex minus .2ex}{-1em}{\normalsize\bf}}
+\def\subparagraph{\@startsection
+ {subparagraph}{4}{\parindent}{3.25ex plus 1ex minus
+ .2ex}{-1em}{\normalsize\bf}}
+%	Modify \appendix from art10.sty, to add ``Appendix''
+\def\appendix{\par
+ \setcounter{section}{0}
+ \setcounter{subsection}{0}
+ \def\thesection{Appendix \Alph{section}}}
+
+\font\tenupit=cmu10
+
+\def \EdNote{{\tenupit Editor's note:\enspace }}
+
+\endinput

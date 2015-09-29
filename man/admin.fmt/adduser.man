@@ -1,0 +1,68 @@
+
+
+
+ADDUSER              Administrative Commands              ADDUSER
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     adduser - Create a user account
+
+SSYYNNOOPPSSIISS
+     aadddduusseerr
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The aadddduusseerr  program  creates  a  new  user  account.   This
+     involves gathering information for the account (user's name,
+     password, etc.), creating an entry for the user in the pass-
+     word  file, creating and initializing the user's home direc-
+     tory, and adding the  user's  account  to  the  sspprriittee--uusseerrss
+     mailing list.
+
+     AAdddduusseerr is basically menu-driven; its usage should be  self-
+     explanatory.   If it runs into problems or you kill it half-
+     way through, it will try to clean up after itself.
+
+
+KKEEYYWWOORRDDSS
+     user, account
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 4, 1991                     1
+
+
+

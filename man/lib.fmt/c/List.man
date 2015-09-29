@@ -1,0 +1,266 @@
+
+
+
+List                  C Library Procedures                   List
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     List - overview of circular linked list routines.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<lliisstt..hh>>
+
+     LLiisstt__IInniitt(_h_e_a_d_e_r_P_t_r)
+     LLiisstt__IInniittEElleemmeenntt(_i_t_e_m_P_t_r)
+     LLiisstt__IInnsseerrtt(_i_t_e_m_P_t_r, _d_e_s_t_P_t_r)
+     LLiisstt__LLiissttIInnsseerrtt(_h_e_a_d_e_r_P_t_r, _d_e_s_t_P_t_r)
+     LLiisstt__RReemmoovvee(_i_t_e_m_P_t_r)
+     LLiisstt__MMoovvee(_i_t_e_m_P_t_r, _d_e_s_t_P_t_r)
+
+     LLIISSTT__AAFFTTEERR(_i_t_e_m_P_t_r)
+     LLIISSTT__BBEEFFOORREE(_i_t_e_m_P_t_r)
+     LLIISSTT__AATTFFRROONNTT(_h_e_a_d_e_r_P_t_r)
+     LLIISSTT__AATTRREEAARR(_h_e_a_d_e_r_P_t_r)
+
+     LLIISSTT__FFOORRAALLLL(_h_e_a_d_e_r_P_t_r, _i_t_e_m_P_t_r)
+
+     LLiisstt__IIssEEmmppttyy((_h_e_a_d_e_r_P_t_r))
+     LLiisstt__IIssAAttEEnndd(_h_e_a_d_e_r_P_t_r, _i_t_e_m_P_t_r)
+     LLiisstt__FFiirrsstt((_h_e_a_d_e_r_P_t_r))
+     LLiisstt__LLaasstt((_h_e_a_d_e_r_P_t_r))
+     LLiisstt__PPrreevv((_i_t_e_m_P_t_r))
+     LLiisstt__NNeexxtt((_i_t_e_m_P_t_r))
+
+AARRGGUUMMEENNTTSS
+     List_Links   *_h_e_a_d_e_r_P_t_r   (in)      Pointer to the header of
+                                         a list.
+
+     List_Links   *_i_t_e_m_P_t_r     (in)      Pointer to a member of a
+                                         list    (possibly    the
+                                         header).
+
+     List_Links   *_d_e_s_t_P_t_r     (in)      Pointer  to  the  member
+                                         after which to insert or
+                                         move another member.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The LLiisstt__ routines define the  ``list''  abstraction,  which
+     enables  one  to  link  together  arbitrary data structures.
+     Lists are doubly-linked and circular.   A  list  contains  a
+     header followed by its real members, if any.  (An empty list
+     therefore consists of a single element, the  header,   whose
+     _n_e_x_t_P_t_r  and _p_r_e_v_P_t_r fields point to itself).  To refer to a
+     list as a whole, the user keeps a  pointer  to  the  header;
+     that  header  is initialized by a call to LLiisstt__IInniitt(()), which
+     creates an empty  list  given  a  pointer  to  a  List_Links
+
+
+
+Sprite v.1.0       Printed:  December 14, 1989                  1
+
+
+
+
+
+
+List                  C Library Procedures                   List
+
+
+
+     structure (described below).
+
+     The links are contained in a  two-element  structure  called
+     List_Links.   A list joins List_Links records (that is, each
+     List_Links structure points to other List_Links structures),
+     but  if  the  List_Links  is the first field within a larger
+     structure, then the larger structures are effectively linked
+     together as shown in Figure 1.
+
+     A typical structure might be something like:
+
+          typedef struct {
+                      List_Links links;
+                      char ch;
+                      int flags;
+          } EditChar;
+
+     It is possible to link structures through List_Links  fields
+     that  are  not at the beginning of the larger structure, but
+     it is  then  necessary  to  perform  an  additional  pointer
+     indirection  to  find the beginning of the larger structure,
+     given a pointer to some point within it.  The easiest way to
+     do  this is to define a structure that contains a List_Links
+     field and a pointer to the larger structure, such as:
+          typedef struct {
+                      List_Links links;
+                      LargeStruct *structPtr;
+          } LargeStructLink;
+
+     By including a ``LargeStructLink'' within a  ``LargeStruct''
+     and  setting  the  structPtr field of the LargeStructLink to
+     point to the LargeStruct itself, LargeStruct structures  may
+     be linked together in a list that is contained in the middle
+     of the structure rather than the beginning.
+
+
+UUSSAAGGEE
+     After a list has been initialized by calling LLiisstt__IInniitt, ele-
+     ments  may  be  inserted, deleted, or moved within the list.
+     Before an element is inserted in a list for the  first  time
+     it    must   be   initialized   by   calling   the   routine
+     LLiisstt__IInniittEElleemmeenntt.  To insert a  List_Links  element  into  a
+     list,  LLiisstt__IInnsseerrtt  is called with two arguments.  The first
+     argument is a pointer to the structure to be inserted into a
+     list,  and  the  second  argument  is  a pointer to the list
+     member after which it is to  be  inserted.   Typically,  the
+     following  macros  are used to select the insertion point or
+     the destination of a LLiisstt__MMoovvee:
+
+
+
+          o+ LLIISSTT__BBEEFFOORREE(_i_t_e_m_P_t_r)        Insert the element before
+
+
+
+Sprite v.1.0       Printed:  December 14, 1989                  2
+
+
+
+
+
+
+List                  C Library Procedures                   List
+
+
+
+                                        *_i_t_e_m_P_t_r.
+
+          o+ LLIISSTT__AAFFTTEERR(_i_t_e_m_P_t_r)         Insert the element  after
+                                        *_i_t_e_m_P_t_r.
+
+          o+ LLIISSTT__AATTFFRROONNTT(_h_e_a_d_e_r_P_t_r)     Insert the element at the
+                                        front of the list.
+
+          o+ LLIISSTT__AATTRREEAARR(_h_e_a_d_e_r_P_t_r)      Insert the element at the
+                                        end of the list.
+
+     To insert a list into  another  list,  call  LLiisstt__LLiissttIInnsseerrtt  |
+     with  the header of the list to be inserted and a pointer to  |
+     the member of the second list after which the first list  is  |
+     to  be  inserted.  After calling LLiisstt__LLiissttIInnsseerrtt, the header  |
+     of the first list is no longer valid and may be destroyed.
+
+     To remove a structure from a list, call LLiisstt__RReemmoovvee  with  a
+     pointer to the structure to be removed. To move a structure,
+     call LLiisstt__MMoovvee with two arguments: a pointer to  the  struc-
+     ture to be moved, and a pointer to the structure after which
+     it is to be placed.  LLiisstt__MMoovvee(_i_t_e_m_P_t_r, _d_e_s_t_P_t_r)  is  there-
+     fore   equivalent   to   LLiisstt__RReemmoovvee(_i_t_e_m_P_t_r)   followed  by
+     LLiisstt__IInnsseerrtt(_i_t_e_m_P_t_r, _d_e_s_t_P_t_r).
+
+
+AADDDDIITTIIOONNAALL UUTTIILLIITTIIEESS
+     Several other macros are available for the  manipulation  of
+     List_Links.  LLIISSTT__FFOORRAALLLL(_h_e_a_d_e_r_P_t_r, _i_t_e_m_P_t_r) is used to step
+     through each element in the list pointed  to  by  headerPtr,
+     setting   itemPtr   to   point  to  each  element  in  turn.
+     LLIISSTT__FFOORRAALLLL is  used  typically  by  casting  _i_t_e_m_P_t_r  as  a
+     pointer to the entire structure, as in:
+          List_Links *headerPtr;   /* pointer to head of existing list */
+          List_Links *itemPtr;     /* place-holder during loop */
+          EditChar   *charPtr;     /* pointer to entire EditChar structure */
+
+          LIST_FORALL(headerPtr, itemPtr) {
+               charPtr = (EditChar *) itemPtr;
+               /* operations using charPtr */
+          }
+
+     The  following  macros  may  be  useful  to  those  who  use
+     List_Links  at  a  ``lower''  level  than looping through an
+     entire list:
+
+          o+ LLiisstt__IIssEEmmppttyy(_h_e_a_d_e_r_P_t_r)     returns TRUE if _h_e_a_d_e_r_P_t_r
+                                        points to an empty list.
+
+          o+ LLiisstt__IIssAAttEEnndd(_h_e_a_d_e_r_P_t_r, _i_t_e_m_P_t_r)
+                                        returns TRUE  if  _i_t_e_m_P_t_r
+                                        is  past  the  end of the
+
+
+
+Sprite v.1.0       Printed:  December 14, 1989                  3
+
+
+
+
+
+
+List                  C Library Procedures                   List
+
+
+
+                                        list; i.e., it points  to
+                                        the header.
+
+          o+ LLiisstt__FFiirrsstt(_h_e_a_d_e_r_P_t_r)
+
+          o+ LLiisstt__LLaasstt(_h_e_a_d_e_r_P_t_r)        LLiisstt__FFiirrsstt  returns   the
+                                        first  member  in a list,
+                                        and LLiisstt__LLaasstt returns the
+                                        last member.  If the list
+                                        is empty, the  header  is
+                                        considered   to   be  the
+                                        first and last member.
+
+          o+ LLiisstt__PPrreevv(_i_t_e_m_P_t_r)          returns a pointer to  the
+                                        member    preceding   the
+                                        given member in its list.
+                                        Note:    if   the   given
+                                        member is the first  ele-
+                                        ment    of    the   list,
+                                        LLiisstt__PPrreevv will return the
+                                        list header.
+
+          o+ LLiisstt__NNeexxtt(_i_t_e_m_P_t_r)          returns the  next  member
+                                        of  the  list.  Note:  if
+                                        the given member  is  the
+                                        last element of the list,
+                                        LLiisstt__NNeexxtt will return the
+                                        list header.
+
+KKEEYYWWOORRDDSS
+     list, linked, circular, List_Links, data structures
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 14, 1989                  4
+
+
+

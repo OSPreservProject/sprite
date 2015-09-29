@@ -1,0 +1,140 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.03.10.22.31.28;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.03.04.10.07.35;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@test program for fbio.c
+@
+
+
+1.2
+log
+@all kinds of tests added
+@
+text
+@/*
+ * fbtst.c - test fbio
+ *
+ */
+
+#include <sprite.h>
+#include <stdio.h>
+#include "fbio.h"
+
+char *succ(status)
+{
+	if(status == SUCCESS) return "SUCCESS"; else return "FAILURE";
+}
+
+main(argc, argv)
+{
+	Fb_Type	fb;
+	Fb_Addr fba;
+	Fb_Cmap	fbc;
+	unsigned char	red[256], grn[256], blu[256];
+	int	x, y, dy, dx;
+
+	if(Fb_GTYPE(&fb) != SUCCESS) {
+		printf("Unknown frame buffer\n");
+		exit(1);
+	}
+	printf("Type=%d, %dx%d, %d plane(s), %d colors\n",
+	fb.fb_type, fb.fb_height, fb.fb_width, fb.fb_depth, fb.fb_cmsize);
+
+	Fb_MAP(&fba);
+	printf("Buff=%x Over=%x Enab=%x\n",
+		fba.fb_buffer, fba.fb_overlay, fba.fb_enable);
+
+	/* test video on/off */
+	printf("Video off...%s\n", succ(Fb_SVIDEO(0)));
+	printf("Test video off...%s\n", succ(Fb_GVIDEO(&x)));
+	printf("\t%s\n", x?"ERROR":"OK");
+	fflush(stdout);
+	sleep(2);
+	printf("Video on...%s\n", succ(Fb_SVIDEO(1)));
+	printf("Test video off...%s\n", succ(Fb_GVIDEO(&x)));
+	printf("\t%s\n", !x?"ERROR":"OK");
+	fflush(stdout);
+	sleep(2);
+
+	/* create color pattern */
+	for(x=0; x<16; x++)
+	for(y=0; y<16; y++)
+		for(dy=0; dy<32; dy++)
+		for(dx=0; dx<32; dx++) {
+			*(char *)(fba.fb_buffer+x*32+dx+(y*32+dy)*1152) =
+				(y<<4)+x;
+		}
+
+	/* turn overlay plane on */
+	for(y=0; y<900; y++)
+		for(x=0; x<1152/32; x++)
+			*(int *)(fba.fb_enable+y*144+x*4) = ~0;
+	printf("Overlay plane on\n"); fflush(stdout);
+	sleep(2);
+
+	/* turn overlay plane off */
+	for(y=0; y<900; y++)
+		for(x=0; x<1152/32; x++)
+			*(int *)(fba.fb_enable+y*144+x*4) = 0;
+	printf("Overlay plane off\n"); fflush(stdout);
+	sleep(2);
+
+	/* changing colormap */
+	for(x=0; x<256; x++) {
+		red[x] = (x&0xE0);
+		grn[x] = (x&0x1C)<<3;
+		blu[x] = (x&0x03)<<5;
+	}
+	fbc.index = 0;
+	fbc.count = 256;
+	fbc.red = red;
+	fbc.green = grn;
+	fbc.blue = blu;
+	printf("Changing colormap...%s\n", succ(Fb_PUTCMAP(&fbc)));
+	fflush(stdout);
+	sleep(2);
+
+	/* changing colormap */
+	fbc.index = 0;
+	fbc.count = 1;
+	fbc.red = red;
+	fbc.green = grn;
+	fbc.blue = blu;
+	for(x=0; x<256; x++) {
+		red[0] = (x&0xE0);
+		grn[0] = (x&0x1C)<<3;
+		blu[0] = (x&0x03)<<5;
+		fbc.index = 255-x;
+		Fb_PUTCMAP(&fbc);
+	}
+	printf("Changing colormap...\n");
+	fflush(stdout);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 5
+d19 3
+d33 66
+@

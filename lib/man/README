@@ -1,0 +1,2 @@
+Update the config file in /sprite/src/cmds/man and then do 
+pmake installconfig.

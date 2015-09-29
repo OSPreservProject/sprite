@@ -1,0 +1,66 @@
+
+
+
+tkerror                   User Commands                   tkerror
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     tkerror - Command invoked to process background errors
+
+SSYYNNOOPPSSIISS
+     ttkkeerrrroorr _m_e_s_s_a_g_e
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttkkeerrrroorr command doesn't exist as part of  Tk.   Instead,
+     individual  applications  or users can define a ttkkeerrrroorr com-
+     mand (e.g. as a Tcl procedure) if they wish to handle  back-
+     ground errors.
+
+     A background error is one that  occurs  in  a  command  that
+     didn't  originate  with the application.  For example, if an
+     error occurs while executing a command specified with a bbiinndd
+     of  aafftteerr  command,  then  it  is a background error.  For a
+     non-background error, the error can simply  be  returned  up
+     through  nested Tcl command evaluations until it reaches the
+     top-level code in the application; then the application  can
+     report  the  error  in whatever way it wishes.  When a back-
+     ground error occurs, the unwinding ends in  the  Tk  library
+     and there is no obvious way for Tk to report the error.
+
+     When Tk detects a background error, it invokes  the  ttkkeerrrroorr
+     command,  passing it the error message as its only argument.
+     Tk assumes that the application has implemented the  ttkkeerrrroorr
+     command, and that the command will report the error in a way
+     that makes sense for the application.  Tk  will  ignore  any
+     result returned by the ttkkeerrrroorr command.
+
+     If another Tcl error occurs within the ttkkeerrrroorr command (e.g.
+     because  the  application hasn't defined a ttkkeerrrroorr command),
+     then Tk reports the error itself by  writing  a  message  to
+     stderr.
+
+
+KKEEYYWWOORRDDSS
+     background error, reporting
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

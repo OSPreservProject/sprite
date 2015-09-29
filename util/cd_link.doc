@@ -1,0 +1,119 @@
+The cd_link Program:
+
+
+	The 'cd_link' program, creates a set of symbolic links
+from a specified target directory to the files/directories
+stored on a CD-ROM created by 'Makedisc', ISO/Rock Ridge
+Formatting Software from Young Minds, Inc..  The program uses a
+'cdrom_directory' to search for a translation file (for example,
+00_TRANS.TBL).  If found the program uses the translation file to
+build a set of symbolic links to the other files (and
+directories if the '-r' option is given) in the cdrom_directory,
+using the original UNIX-style file and directory names for the
+links.  This utility is particularly useful for compiling source
+code straight off of the CD-ROM disc or for having access to
+known UNIX-style libraries without having to load them off the
+CD-ROM onto your hard disk. 
+
+	Usage for cd_link is as follows:
+
+cd_link [-rR] [cdrom_directory] [target directory]
+
+	The -r option will recursively descend the subdirectory
+rooted at cdrom_directory creating links at each level.
+
+	The -R option is for use with a Rock Ridge driver and will
+create links to an image with Rock Ridge extensions.
+
+	The following example demonstrates how to create the
+symbolic links necessary to recreate the directory tree for
+gnuplot in the directory '~my_account/gnuplot' (where the CD-ROM
+image has been mounted as '/cd-rom_disc'):
+
+cd ~my_account
+	
+Move to the ~my_account directory.
+
+	In order to support as many end users of CD-ROM as
+possible, (some of which are probably unanticipated) the
+cd_link utility is provided in source form.  So, if binaries
+are not present on your platform, you can create them by
+compiling the source code with a standard ANSI C compiler
+(available on most UNIX platforms).
+
+
+	First, copy the source to your current directory:
+
+cp /cd-rom/ym_utils/"cd_link.c;1" cd_link.c
+
+	The quotes around the cd_link.c;1 are necessary to prevent
+the shell from interferring with the operation.  Next, enter:
+
+cc -o cd_link cd_link.c
+
+	This will create an executable called cd_link.  On some
+platforms it may be necessary to link in a BSD compatibility
+library.  Check with your system administrator or operating
+system documentation to see if this is the case for your machine.
+If so, to get cd_link to compile you should enter the following
+command:
+
+cc -o cd_link cd_link.c /usr/lib/libBSD.a
+
+Once you have an executable, enter the following commands:
+
+mkdir gnuplot
+
+Create the gnuplot directory to use in recreating the directory
+tree.
+
+cd gnuplot
+
+Move to the gnuplot directory.
+
+../cd_link -r /cd-rom_disc/x11r2/gnuplot
+
+or, if you want to direct output to the gnuplot directory from
+elsewhere, try:
+
+cd_link -r /cd-rom_disc/x11r5/gnuplot <PATH>/gnuplot
+
+where <PATH> is the path to the gnuplot directory.
+
+	It will take a little while, but once it's finished,
+listing the contents of your gnuplot directory will now show
+the files in the gnuplot directory on the CD-ROM, except that
+the original UNIX filenames will appear instead of the actual,
+translated filenames on the CD-ROM.  If you want to see how
+they are different, you save the listings of both your gnuplot
+directory and the one on the CD-ROM to files and apply the
+'diff' utility.
+
+
+NOTE:  While all filenames on CD-ROM discs from Young Minds, Inc.
+are stored using uppercase letters, some CD-ROM file system
+drivers will automatically convert the filename characters to
+lowercase.
+
+	The directory 'cdrom_directory' need not reside on a
+CD-ROM disc, as long as it contains a copy of all files from
+a directory on a CD-ROM disc (and that directory's
+subdirectories if you wish to use the -r option).
+
+	Also, while the current version of Makedisc generates
+translation table entries for block device nodes, character
+device nodes, pipes and sockets (denoted as B, C, P, and S), the
+current version of cd_link ignores these entries since there is
+as yet no well-defined, machine-independant mapping for these
+entries.
+
+NOTE:  While there is no reason why the program could not be
+useful in making directory trees of symbolic links to
+arbitrary directories, the required translation file only
+allows the program to be used on a directory (or directory tree)
+that contains correct translation files.
+
+	Once you have successfully created the executable, you
+may wish to store it in some commonly accessible location like
+'/usr/local/bin'.
+

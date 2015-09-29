@@ -1,0 +1,14 @@
+Host_ByID.c:
+Host_ByInetAddr.c:
+Host_ByInetAddr.c(56): can't take & of inetAddr
+Host_ByName.c:
+Host_ByNetAddr.c:
+Host_End.c:
+Host_Next.c:
+Host_SetFile.c:
+Host_Start.c:
+Host_Stat.c:
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  Host_ByNetAddr.c(56)
+strcpy returns value which is always ignored
+fclose returns value which is always ignored
+ungetc returns value which is always ignored

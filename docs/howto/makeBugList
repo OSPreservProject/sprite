@@ -1,0 +1,41 @@
+		    How to make a Sprite bug list
+		      $Date: 92/10/07 13:50:33 $
+
+Messages to the Sprite log are filed in ~Sprite/Log/log.  Messages in
+the Sprite log that were specifically addressed to "bugs" are
+regularly printed and gone over at a Sprite meeting.  This note tells
+how to make a bug list for a Sprite meeting.
+
+
+1. Go to /sprite/admin/bugs.
+
+2. The file bugs.last contains the number of the last bug report
+   covered in a meeting. Let FIRST be this number plus 1.
+
+3. cd to ~sprite/Log/log and find what the highest number log message
+is (e.g., "ls XXX* | tail -5" where XXX are the first few digits of FIRST).  
+Call this number LAST.
+
+4. Run 
+
+  ~sprite/cmds.gen/mkbuglist FIRST LAST > /sprite/admin/bugs/bugs.new
+
+5. Put LAST into bugs.last.
+
+6. Check bugs.new for entries that don't merit discussion at the
+meeting (e.g., announcements of fixes, bugs that are known to be
+fixed, bug reports that are really pilot error).  You can optionally
+try to arrange related messages to come in a group; the mkbuglist
+script already tries to cluster messages with the same subject line.
+
+7. Print bugs.new in a "two-up" format (e.g., using "enscript -2r")
+and make copies for everyone who is expected to be at the meeting.
+
+8. After the meeting, put copies of the messages from bugs.new into
+bugs.archive, bugs.active, and bugs.spring as appropriate.  Most
+messages will at least end up in bugs.archive, but you can again apply
+the filters from step 4, plus you might want to remove messages that
+were useful for discussion during the meeting but don't provide useful
+long-term information.
+
+9. Delete bugs.new.

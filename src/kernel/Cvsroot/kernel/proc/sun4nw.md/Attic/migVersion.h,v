@@ -1,0 +1,50 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     91.10.31.17.20.48;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * migVersion.h --
+ *
+ *	Define the migration version, which is machine-dependent.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/proc/sun4.md/RCS/migVersion.h,v 1.6 90/07/30 16:16:00 douglis Exp $ SPRITE (Berkeley)
+ */
+
+/*
+ * Set the migration version number.  Machines can only migrate to other
+ * machines of the same architecture and version number.
+ */
+#ifndef PROC_MIGRATE_VERSION
+#define PROC_MIGRATE_VERSION 1016
+#endif /* PROC_MIGRATE_VERSION */
+
+@

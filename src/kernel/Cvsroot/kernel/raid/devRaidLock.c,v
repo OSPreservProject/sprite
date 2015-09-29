@@ -1,0 +1,883 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  ds3100:1.12 sun3:1.12 sun4nw:1.11 symm:1.11 spur:1.11;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     92.06.25.17.21.04;  author eklee;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.11.09.13.15.47;  author eklee;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.11.08.13.35.43;  author eklee;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.10.12.14.01.04;  author eklee;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.09.19.14.54.07;  author eklee;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.09.05.12.33.14;  author eklee;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.08.29.13.52.19;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.08.27.13.42.11;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.06.22.13.36.09;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.15.18.59.55;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.30.11.29.23;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.01.21;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@routines for locking/unlocking stripes
+@
+
+
+1.12
+log
+@Fixed bug where data was sometimes trashed during writes with a failed disk.
+Fixed up consistency problems while a disk is failed.
+Redid logging.
+@
+text
+@/* 
+ * devRaidLock.c --
+ *
+ *	Routines for locking and unlocking RAID stripes.
+ *	Note that because of the manner in which these routines are used,
+ *	stripes with the same number in different arrays (i.e. different
+ *	unit numbers) will share the same lock.  Therefore, care must be
+ *	taken to avoid unexpected deadlocks (i.e. a single process should never
+ *	simultaneously lock two stripes in different raid devices).
+ *	All locks are exclusive.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/raid/devRaidLock.c,v 1.11 90/11/09 13:15:47 eklee Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sync.h"
+#include <sprite.h>
+#include <stdio.h>
+#include "hash.h"
+#include "devRaid.h"
+#include "semaphore.h"
+#include "devRaidProto.h"
+
+extern char *malloc();
+
+#define LOCK_TABLE_SIZE	4096
+
+static Hash_Table lockTable;
+static Sync_Semaphore mutex =
+	Sync_SemInitStatic("devRaidLock.c: Stripe Lock Table");
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_InitStripeLocks --
+ *
+ *	Should be called at least once before calling any other procedure
+ *	from this module.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes stripe lock table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_InitStripeLocks()
+{
+    static int	initialized = 0;
+
+    MASTER_LOCK(&mutex);
+    if (initialized == 0) {
+	initialized = 1;
+        MASTER_UNLOCK(&mutex);
+	Hash_Init(&lockTable, 1000, 1);
+    } else {
+	MASTER_UNLOCK(&mutex);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_SLockStripe --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Share lock requested stripe.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_SLockStripe(raidPtr, stripe)
+    Raid *raidPtr;
+    int stripe;
+{
+    Hash_Entry		*hashEntryPtr;
+    Sync_Condition	*condPtr;
+    condPtr = (Sync_Condition *) Malloc(sizeof(Sync_Condition));
+
+    MASTER_LOCK(&mutex);
+    hashEntryPtr = Hash_Find(&lockTable, (Address) stripe);
+    while ( Hash_GetValue(hashEntryPtr) != (char *) NIL ) {
+	Sync_MasterWait((Sync_Condition *) Hash_GetValue(hashEntryPtr),
+		&mutex, FALSE);
+        hashEntryPtr = Hash_Find(&lockTable, (Address) stripe);
+    }
+#ifdef TESTING
+    Sync_CondInit(condPtr);
+#endif TESTING
+    Hash_SetValue(hashEntryPtr, condPtr);
+    MASTER_UNLOCK(&mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_XLockStripe --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Exclusively lock requested stripe.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Raid_XLockStripe(raidPtr, stripe)
+    Raid *raidPtr;
+    int stripe;
+{
+    Raid_SLockStripe(raidPtr, stripe);
+    Raid_LogStripe(raidPtr, stripe);
+#ifdef TESTING
+    CheckStripeLog(raidPtr, stripe); 
+#endif /* TESTING */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_SUnlockStripe --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Unlocks requested stripe.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_SUnlockStripe(raidPtr, stripe)
+    Raid *raidPtr;
+    int stripe;
+{
+    Hash_Entry		*hashEntryPtr;
+    Sync_Condition	*condPtr;
+
+    MASTER_LOCK(&mutex);
+    hashEntryPtr = Hash_Find(&lockTable, (Address) stripe);
+    if ( Hash_GetValue(hashEntryPtr) == (char *) NIL ) {
+	MASTER_UNLOCK(&mutex);
+	panic("Error: UnlockStripe: Attempt to unlock unlocked stripe.");
+    }
+    condPtr = (Sync_Condition *) Hash_GetValue(hashEntryPtr);
+    Sync_MasterBroadcast(condPtr);
+    Hash_Delete(&lockTable, hashEntryPtr);
+    MASTER_UNLOCK(&mutex);
+    Free((char *) condPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_XUnlockStripe --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Unlocks requested stripe.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_XUnlockStripe(raidPtr, stripe)
+    Raid *raidPtr;
+    int stripe;
+{
+#ifdef TESTING
+    CheckStripeLog(raidPtr, stripe); 
+#endif /* TESTING */
+    Raid_UnlogStripe(raidPtr, stripe);
+    Raid_SUnlockStripe(raidPtr, stripe);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_Disable --
+ *
+ * Results:
+ *	Disable non-exclusive access.
+ *
+ * Side effects:
+ *	Gains exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Raid_Disable(raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numWaitExclusive++;
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_Enable --
+ *
+ * Results:
+ *	Locks a disabled RAID.
+ *
+ * Side effects:
+ *	Gains exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Raid_Enable(raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numWaitExclusive--;
+    Sync_MasterBroadcast(&raidPtr->waitExclusive);
+    Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_IsLocked --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Raid_IsLocked(raidPtr)
+    Raid *raidPtr;
+{
+    return raidPtr->numReqInSys == -1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_Lock --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Gains exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_Lock (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numWaitExclusive++;
+    while (raidPtr->numReqInSys != 0) {
+	Sync_MasterWait(&raidPtr->waitExclusive, &raidPtr->mutex, FALSE);
+    }
+    raidPtr->numWaitExclusive--;
+    raidPtr->numReqInSys = -1;
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_Unlock --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_Unlock (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numReqInSys = 0;
+    if (raidPtr->numWaitExclusive > 0) {
+	Sync_MasterBroadcast(&raidPtr->waitExclusive);
+    } else {
+	Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
+    }
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_BeginUse --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_BeginUse (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    while (raidPtr->numReqInSys == -1 || raidPtr->numWaitExclusive > 0) {
+	Sync_MasterWait(&raidPtr->waitNonExclusive, &raidPtr->mutex, FALSE);
+    }
+    raidPtr->numReqInSys++;
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_EndUse --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_EndUse (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numReqInSys--;
+    if (raidPtr->numReqInSys == 0) {
+	Sync_MasterBroadcast(&raidPtr->waitExclusive);
+    }
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+@
+
+
+1.11
+log
+@Moved semaphore routies to semaphore.c.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.10 90/11/08 13:35:43 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d135 3
+d196 4
+d201 65
+@
+
+
+1.10
+log
+@Used to do a Sync_MasterBroadcast without a masterlock set.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.9 90/10/12 14:01:04 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d32 1
+a32 1
+#include "devRaidLock.h"
+a302 75
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitSema
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+InitSema(semaPtr, name, val)
+    Sema	*semaPtr;
+    char	*name;
+    int		val;
+{
+    Sync_SemInitDynamic(&semaPtr->mutex, name);
+    semaPtr->val = val;
+#ifdef TESTING
+    Sync_CondInit(&semaPtr->wait);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DownSema
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DownSema(semaPtr)
+    Sema	*semaPtr;
+{
+    MASTER_LOCK(&semaPtr->mutex);
+    while (semaPtr->val <= 0) {
+	Sync_MasterWait(&semaPtr->wait, &semaPtr->mutex, FALSE);
+    }
+    semaPtr->val--;
+    MASTER_UNLOCK(&semaPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpSema
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+UpSema(semaPtr)
+    Sema	*semaPtr;
+{
+    MASTER_LOCK(&semaPtr->mutex);
+    semaPtr->val++;
+    Sync_MasterBroadcast(&semaPtr->wait);
+    MASTER_UNLOCK(&semaPtr->mutex);
+@
+
+
+1.9
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.8 90/09/19 14:54:07 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+a127 27
+
+void
+Raid_CheckPoint(raidPtr)
+    Raid	*raidPtr;
+{
+    MASTER_LOCK(&raidPtr->log.mutex);
+    if (!raidPtr->log.enabled) {
+	MASTER_UNLOCK(&raidPtr->log.mutex);
+	return;
+    }
+    MASTER_UNLOCK(&raidPtr->log.mutex);
+    printf("RAID:MSG:Checkpointing RAID\n");
+    Raid_Lock(raidPtr);
+#ifndef TESTING
+    ClearBitVec(raidPtr->log.diskLockVec, raidPtr->log.diskLockVecNum);
+#endif TESTING
+    Raid_SaveLog(raidPtr);
+    Raid_Unlock(raidPtr);
+    printf("RAID:MSG:Checkpoint Complete\n");
+}
+
+#ifdef TESTING
+#define NUM_LOG_STRIPE 2
+#else
+#define NUM_LOG_STRIPE 100
+#endif
+
+d134 1
+a134 13
+    if (!IsSet(raidPtr->log.diskLockVec, stripe)) {
+	MASTER_LOCK(&raidPtr->mutex);
+	raidPtr->numStripeLocked++;
+	if (raidPtr->numStripeLocked % NUM_LOG_STRIPE == 0) {
+	    MASTER_UNLOCK(&raidPtr->mutex);
+	    Proc_CallFunc((void (*)
+		    _ARGS_((ClientData clientData, Proc_CallInfo *callInfoPtr)))
+		    Raid_CheckPoint, (ClientData) raidPtr, 0);
+	} else {
+	    MASTER_UNLOCK(&raidPtr->mutex);
+	}
+	Raid_LogStripe(raidPtr, stripe);
+    }
+a161 2
+    MASTER_UNLOCK(&mutex);
+#ifdef TESTING
+d163 2
+a164 1
+	printf("Error: UnlockStripe: Attempt to unlock unlocked stripe.\n");
+a165 1
+#endif TESTING
+a167 1
+    MASTER_LOCK(&mutex);
+@
+
+
+1.8
+log
+@Added prototypes.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.7 90/09/05 12:33:14 eklee Exp $ SPRITE (Berkeley)";
+d28 2
+d47 1
+a47 1
+ * InitStripeLocks --
+d62 1
+a62 1
+InitStripeLocks()
+d80 1
+a80 1
+ * SLockStripe --
+d92 1
+a92 1
+SLockStripe(raidPtr, stripe)
+d118 1
+a118 1
+ * XLockStripe --
+d129 2
+a130 1
+CheckPointRaid(raidPtr)
+d140 1
+a140 1
+    LockRaid(raidPtr);
+d144 2
+a145 2
+    SaveRaidLog(raidPtr);
+    UnlockRaid(raidPtr);
+d156 1
+a156 1
+XLockStripe(raidPtr, stripe)
+d160 1
+a160 1
+    SLockStripe(raidPtr, stripe);
+d166 3
+a168 1
+	    Proc_CallFunc(CheckPointRaid, raidPtr, 0);
+d172 1
+a172 1
+	LogStripe(raidPtr, stripe);
+d180 1
+a180 1
+ * SUnlockStripe --
+d192 1
+a192 1
+SUnlockStripe(raidPtr, stripe)
+d219 1
+a219 1
+ * XUnlockStripe --
+d231 1
+a231 1
+XUnlockStripe(raidPtr, stripe)
+d235 1
+a235 1
+    SUnlockStripe(raidPtr, stripe);
+d241 1
+a241 1
+ * LockRaid --
+d253 1
+a253 1
+LockRaid (raidPtr)
+d270 1
+a270 1
+ * UnlockRaid --
+d282 1
+a282 1
+UnlockRaid (raidPtr)
+d299 1
+a299 1
+ * BeginRaidUse --
+d310 1
+a310 1
+BeginRaidUse (raidPtr)
+d325 1
+a325 1
+ * EndRaidUse --
+d336 1
+a336 1
+EndRaidUse (raidPtr)
+@
+
+
+1.7
+log
+@Added semaphores.
+Improved LockRaid and UnlockRaid (eliminated starvation).
+Logs to raw disk instead of file.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.6 90/08/29 13:52:19 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+@
+
+
+1.6
+log
+@Added periodic checkpointing and lock caching.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.5 90/08/27 13:42:11 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+a29 1
+#include "debugMem.h"
+d31 1
+d130 6
+d138 4
+a141 1
+    SaveRaidState(raidPtr);
+d146 6
+a156 2
+    char buf[120];
+
+d158 1
+a158 2
+/* LOGOFF
+    if (!IsSet(raidPtr->lockedVec, stripe)) {
+d161 1
+a161 1
+	if (raidPtr->numStripeLocked % 100 == 0) {
+d167 1
+a167 3
+	sprintf(buf, "L %d\n", stripe);
+	LogEntry(raidPtr, buf);
+	SetBit(raidPtr->lockedVec, stripe);
+a168 1
+*/
+a229 6
+/*
+    char buf[120];
+
+    sprintf(buf, "U %d\n", stripe);
+    LogEntry(raidPtr, buf);
+*/
+d252 1
+d256 1
+d282 5
+a286 2
+    Sync_MasterBroadcast(&raidPtr->waitExclusive);
+    Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
+d309 1
+a309 1
+    while (raidPtr->numReqInSys == -1) {
+d340 75
+@
+
+
+1.5
+log
+@Replace Unlock with XUnlock and SUnlock.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.4 90/06/22 13:36:09 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d31 1
+d127 10
+d145 15
+a159 2
+    sprintf(buf, "L %d\n", stripe);
+    LogEntry(raidPtr, buf);
+d221 1
+d226 1
+d244 1
+a244 1
+int
+@
+
+
+1.4
+log
+@Added support for logging RAID state changes.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidLock.c,v 1.3 90/05/15 18:59:55 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d142 1
+a142 1
+ * UnlockStripe --
+d154 2
+a155 1
+UnlockStripe(stripe)
+d177 26
+@
+
+
+1.3
+log
+@Raid locking module.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /user4/eklee/raidlib/RCS/devRaidLock.c,v 1.1 90/03/05 11:38:52 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d77 1
+a77 1
+ * LockStripe --
+d83 1
+a83 1
+ *	Locks requested stripe.
+d89 2
+a90 1
+LockStripe(stripe)
+d115 27
+d196 2
+a197 10
+    if (raidPtr->state != RAID_VALID) {
+	MASTER_UNLOCK(&raidPtr->mutex);
+	return 0;
+    } else {
+	raidPtr->state = RAID_EXCLUSIVE;
+	if (raidPtr->numReqInSys != 0) {
+	    Sync_MasterWait(&raidPtr->waitExclusive, &raidPtr->mutex, FALSE);
+	}
+	MASTER_UNLOCK(&raidPtr->mutex);
+	return 1;
+d199 2
+d223 2
+a224 1
+    raidPtr->state = RAID_VALID;
+d248 1
+a248 1
+    if (raidPtr->state == RAID_EXCLUSIVE) {
+d275 1
+a275 1
+    if (raidPtr->state == RAID_EXCLUSIVE && raidPtr->numReqInSys == 0) {
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d29 1
+d146 110
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

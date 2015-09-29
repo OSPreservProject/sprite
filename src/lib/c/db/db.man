@@ -1,0 +1,143 @@
+'\" $Header: /sprite/src/lib/c/db/RCS/db.man,v 1.2 89/01/26 16:49:40 douglis Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Db lib
+.BS
+.SH NAME
+Db \- manipulate simple database files
+.SH SYNOPSIS
+.nf
+\fB#include	<db.h>\fR
+
+int
+\fBDb_WriteEntry\fR(\fIfile, buffer, index, size, lockHow\fP)
+
+int
+\fBDb_ReadEntry\fR(\fIfile, buffer, index, size, lockHow\fP)
+
+int
+\fBDb_Open\fR(\fIfile, size, handlePtr, writing, lockWhen, lockHow, numBuf\fP)
+
+int
+\fBDb_Put\fR(\fIhandlePtr, buffer, index\fP)
+
+int
+\fBDb_Get\fR(\fIhandlePtr, buffer, index\fP)
+
+int
+\fBDb_Close\fR(\fIhandlePtr\fP)
+
+.SH ARGUMENTS
+.AS Db_LockWhen *handlePtr
+.AP char *file in
+The name of a database file on which to perform operations.
+.AP char *buffer "in/out"
+A pointer to the area from which or to which to transfer the record.
+.AP int index out
+Which record to access in a database operation.
+.AP int size in
+The size of a record.
+.AP Db_LockHow lockHow in
+Method to use when locking the database.
+.AP Db_Handle *handlePtr "in/out"
+A pointer to a ``database handle''.  
+.AP int writing in
+If non-zero, the database file is opened in write-only mode, otherwise in
+read-only mode.
+.AP Db_LockWhen lockWhen in
+Determines when to lock the database for long-term accesses.
+.AP int numBuf in
+Number of records to buffer when reading from database.
+.BE
+.SH DESCRIPTION
+These functions provide shared access to files containing
+arbitrary numbers of fixed-length records.  There are two ways to
+access the files.  The simplest way to access a database file is to
+use \fBDb_WriteEntry()\fR and \fBDb_ReadEntry()\fR to open the file,
+access a record, and close the file again.  An alternative method is
+to use \fBDb_Open()\fR to obtain a \fBhandle\fP for the file, use
+\fBDb_Put()\fR or
+\fBDb_Get()\fR to write or read entries, respectively, and use Db_Close() to
+close the file when it is no longer needed.  In this case, the
+\fInumBuf\fR
+argument is used to specify how many records to buffer internally when doing
+reads (it must be specified as 0 for writes).
+.PP
+The Db library provides a simple locking facility to allow shared
+access to files, built on top of the \fBflock()\fR system call.  Database
+files can be accessed without using locks, or using the standard
+\fBflock()\fR call in blocking or non-blocking mode.  Unfortunately, hosts
+can hold locks when they crash, so a program that performs a blocking
+lock could wait indefinitely 
+for a lock if no additional mechanism is used.  The Db library allows
+locks to time out, and it can optionally break a lock if the lock
+times out.  The time-out period is currently fixed.  The different
+options are specified by the Db_LockHow type:
+.DS
+.ta 1c 2c 3c 4c 5c 6c 7c 8c
+typedef enum {
+	\fBDB_LOCK_NO_BLOCK\fP,		/* return immediately with error */
+	\fBDB_LOCK_POLL\fP,			/* poll the lock; time out if necessary */
+	\fBDB_LOCK_WAIT\fP,			/* wait indefinitely */
+	\fBDB_LOCK_BREAK\fP,		/* poll, plus break the lock if needed */
+	\fBDB_LOCK_NONE\fP,			/* do not lock the file at all */
+} Db_LockHow;
+.DE
+.PP
+The \fBDb_WriteEntry()\fR and \fBDb_ReadEntry()\fR procedures take a Db_LockHow
+parameter to determine how to lock the database file the one time it
+is accessed.  In addition to  a Db_Lock parameter, \fBDb_Open()\fR takes a
+Db_LockWhen argument to specify when to perform the lock.  Generally,
+when a file is going to be read or written sequentially, one would
+like to lock 
+it before starting to do I/O and unlock it after finishing.  If a file
+is going to be accessed repeatedly over a long period of time,
+however, it should be opened once but locked only during each access.
+These options are \fBDB_LOCK_OPEN\fP and \fBDB_LOCK_ACCESS\fP, respectively.  If
+the file is never to be locked, then the Db_LockWhen argument may be
+specified as \fBDB_LOCK_NEVER\fP or the Db_LockHow argument may be specified
+as \fBDB_LOCK_NONE\fP.
+.PP
+\fBDb_WriteEntry()\fR and \fBDb_ReadEntry()\fR provide access to a single record.
+They take the \fIfilename\fP to access; an \fIindex\fP into the file,
+the \fIsize\fP of a record; a pointer to a data \fIbuffer\fP;
+and the method of locking the database, \fIlockHow\fP.  All records
+must have the same size.  The index is zero-based, so \fIindex\fP 0
+refers to the first record in the file.
+.PP
+\fBDb_Open()\fR takes the same \fIfile\fP, \fIsize\fP, and \fIlockHow\fP
+arguments as \fBDb_WriteEntry()\fR and \fBDb_ReadEntry()\fR.  It also takes an
+argument, \fIwriting\fP, which indicates whether access will be
+writing (1) or reading (0); and another argument, \fInumBuf\fR, which
+specifies how many records to read from the file at once when doing
+reads.  The \fIlockWhen\fP argument is described 
+above; it indicates whether locking should be done for each access or at
+the time the file is opened.  \fBDb_Open()\fR returns a database handle in
+\fI*handlePtr\fP.  The storage for the handle must be allocated by the
+caller of \fBDb_Open()\fR.  A pointer to the handle must be used in later
+calls to \fBDb_Put()\fR, \fBDb_Get()\fR, or \fBDb_Close()\fR.
+.PP
+\fBDb_Put()\fR and \fBDb_Get()\fR are analogous to \fBDb_WriteEntry()\fR and
+\fBDb_ReadEntry()\fR.  They are used in cases when the database file is
+opened by \fBDb_Open()\fR, for use over an extended period of time.  The
+\fIhandlePtr\fP  argument must be a handle returned by \fBDb_Open()\fR. The
+\fIbuffer\fP  must be a pointer to an area of the size specified in the call
+to \fBDb_Open()\fR.  The \fIindex\fP  is an integer: if non-negative, it
+specifies a record number, like in calls to \fBDb_WriteEntry()\fR and
+\fBDb_ReadEntry()\fR.  If \fIindex\fP  is -1, it specifies that the access
+should be sequential: the
+record to be operated upon should be the one immediately following the
+last record read or written.  If \fBDb_Put()\fR
+or \fBDb_Get()\fR is called for the first time with an \fIindex\fP  of -1,
+the first record is written or read.
+.PP
+\fBDb_Close()\fR closes a file that was opened with \fBDb_Open()\fR.
+\fIHandlePtr\fP must point to a handle that was initialized by
+\fBDb_Open()\fR.
+.SH DIAGNOSTICS
+All routines return 0 if they complete successfully.  Upon error, they
+return -1 and the \fIerrno\fP variable  contains additional information
+about what error occurred.
+.SH KEYWORDS
+database, data base, lock, record, handle
+.SH SEE ALSO
+mig, ulog, flock, dbm

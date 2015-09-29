@@ -1,0 +1,24 @@
+.\" Copyright (c) 1992 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)gethostname.2	6.4 (Berkeley) 5/22/86
+.\"
+.TH GETHOSTNAME 2 "March 19, 1992"
+.UC 5
+.SH NAME
+gethostid \- get sprite identifier of current host
+.SH SYNOPSIS
+.nf
+.ft B
+gethostid()
+.fi
+.SH DESCRIPTION
+.I Gethostid
+returns the sprite host id of the current host.
+.SH "RETURN VALUE
+If the call succeeds the sprite ID is returned.  If the call
+fails, then a value of \-1 is returned and an error code is
+placed in the global location \fIerrno\fP.
+.SH SEE ALSO
+gethostid(2)

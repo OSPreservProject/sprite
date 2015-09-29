@@ -1,0 +1,175 @@
+#
+# colors.tk --
+#	setColorCube is used to pick a set of 4 complementary colors
+#
+
+# random, unused colors
+#set chocolate		#ae7359
+#set maroon		#b03060
+#set lightblue2		#b2dfee
+#set lightpink1		#ffaeb9
+
+
+# Default color values
+#	A suite of 4 (possibly 5) colors is defined together:
+#	backgroundColor:	Used for frame backgrounds, darkish
+#	paleBackground:		Used for label, entry, message, scroll_bg
+#	passiveColor:		listbox_bg, scroll_fg, buttons
+#	activeColor:		buttons, scroll_sel, listbox_select
+
+global currentCube
+global screenDepth
+
+set currentCube blue
+set screenDepth unknown
+
+proc setTestCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    set backgroundColor		blue
+    set paleBackground		pink
+    set foregroundColor		black
+    set passiveColor		yellow
+    set activeColor		red
+}
+
+proc setBlueCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    set backgroundColor	[format "#%02x%02x%02x" 128 128 200]
+    set paleBackground		#e4f4fe
+    set foregroundColor		black
+    set passiveColor		#acd6f1
+    set activeColor		#61acde
+}
+
+proc setRedCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    set backgroundColor		#cd8e91
+    set paleBackground		#fddede
+    set foregroundColor		black
+    set passiveColor		#ffb5b9
+    set activeColor		#cd6368
+}
+
+proc setGreenCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    set backgroundColor		#32cd83
+    set paleBackground		#d9ffe6
+    set foregroundColor		black
+    set passiveColor		#b2f6ab
+    set activeColor		#13cd00
+}
+
+proc setPurpleCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    set backgroundColor		#cb02dd
+    set paleBackground		#ffceff
+    set foregroundColor		black
+    set passiveColor		#eeadf3
+    set activeColor		#f154ff
+}
+
+proc setBisqueCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    # These are the TK defaults from default.h
+    set bisque1			#ffe4c4
+    set bisque2			#eed5b7
+    set bisque3			#cdb79e
+
+    set backgroundColor		$bisque3	
+    set paleBackground 		$bisque1
+    set foregroundColor		black
+    set activeColor 		$bisque2
+    set passiveColor		$bisque1
+}
+
+proc setBrownCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    # These are the TK defaults from default.h
+    set bisque1			#ffe4c4
+    set bisque2			#eed5b7
+    set bisque3			#cdb79e
+    set chocolate		#ae7359
+
+    set backgroundColor		$chocolate	
+    set paleBackground 		$bisque1
+    set foregroundColor		black
+    set activeColor 		$bisque3
+    set passiveColor		$bisque2
+}
+
+# For 4-bits of grey - a la Tadpole screen.  Cannot get X server to work yet.
+proc setGray4Cube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    global currentCube
+
+    set backgroundColor	black
+    set paleBackground	white
+    set foregroundColor	black
+    set passiveColor	white
+    set activeColor	black
+
+    set currentCube Gray4
+}
+
+# 
+proc setBWCube { } {
+    global backgroundColor paleBackground foregroundColor passiveColor activeColor
+    global currentCube
+
+    set backgroundColor	black
+    set paleBackground	white
+    set foregroundColor	black
+    set passiveColor	white
+    set activeColor	black
+
+    set currentCube BW
+}
+
+proc setColorCube { { cube "blue" } } {
+    global backgroundColor paleBackground foregroundColor \
+		passiveColor activeColor currentCube
+
+    case [screendepth] in {
+	8 {
+	    case $cube in {
+		{$currentCube} {  } 
+		{default "blue"} { setBlueCube } 
+		"red" { setRedCube } 
+		"green" { setGreenCube } 
+		"purple" { setPurpleCube } 
+		"bisque" { setBisqueCube } 
+		"brown" { setBrownCube }
+	    }
+	}
+	4 {
+	    setGray4Cube
+	}
+	1 {
+	    setBWCube
+	}
+	default {
+	    puts stderr "setColorCube unknown screendepth [screendepth]"
+	    setBWCube
+	}
+    }
+    set currentCube $cube
+    return $currentCube
+}
+
+proc getColorCube { } {
+    global currentCube
+    return $currentCube
+}
+
+proc screendepth {} {
+    global screenDepth
+    if {$screenDepth == "unknown"} {
+	if [catch {winfo screendepth} screenDepth] {
+	    set _d [exec xwininfo -root | egrep Depth:]
+	    set screenDepth [lindex $_d [expr [llength $_d]-1]]
+	}
+    }
+    return $screenDepth
+}
+
+setColorCube

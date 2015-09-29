@@ -1,0 +1,14 @@
+sun3.md/netConfig.c:
+netRoute.c:
+netArp.c:
+netCode.c:
+netMach.c:
+netEther.c:
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  netRoute.c(872)
+sprintf, arg. 3 used inconsistently	netRoute.c(351)  ::  netCode.c 2(116)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  netCode.c(730)
+sprintf: variable # of args.	netRoute.c(351)  ::  netMach.c 2(139)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  netMach.c 2(535)
+Sync_SlowWait returns value which is always ignored
+Timer_DescheduleRoutine returns value which is always ignored
+Net_AddrToString returns value which is always ignored

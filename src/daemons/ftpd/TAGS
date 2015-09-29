@@ -1,0 +1,77 @@
+
+ftpcmd.y,122
+copy(816,14942
+getline(570,10999
+help(829,15137
+lookup(553,10730
+toolong(628,12076
+upper(806,14846
+yylex(645,12414
+
+ftpd.c,657
+#define	SCPYN(780,15547
+ack(639,13316
+checkuser(945,19028
+cwd(685,13973
+dataconn(412,8878
+delete(661,13576
+dolog(758,15056
+dologin(786,15656
+dologout(810,16172
+fatal(602,12690
+getdatasock(385,8295
+gunique(1052,21228
+lostconn(193,4268
+lreply(625,13070
+main(106,2487
+makedir(696,14103
+myoob(981,19716
+nack(645,13380
+nextarg(842,16869
+pass(201,4352
+passive(1007,20264
+pclose(917,18343
+popen(862,17162
+pwd(722,14512
+receive_data(547,11731
+removedir(711,14376
+renamecmd(747,14907
+renamefrom(734,14678
+reply(610,12825
+retrieve(283,6150
+savestr(272,6000
+send_data(487,10649
+store(331,7193
+#define	tst(836,16758
+yyerror(651,13450
+
+glob.c,460
+Gcat(479,7658
+Gmatch(419,6895
+acollect(112,2363
+addpath(495,7931
+amatch(329,5670
+any(570,8766
+blkcpy(591,8974
+blkfree(602,9107
+blklen(580,8872
+collect(101,2233
+copyblk(627,9462
+digit(563,8701
+#define	eq(31,811
+execbrc(231,4302
+expand(141,2765
+gethdir(654,9973
+ginit(92,2107
+glob(66,1649
+#define	isdir(33,873
+letter(556,8599
+match(311,5428
+matchdir(194,3731
+rscan(508,8067
+sort(124,2527
+strend(640,9679
+strspl(614,9228
+tglob(538,8444
+
+vers.c,0

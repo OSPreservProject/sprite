@@ -1,0 +1,31 @@
+#!/bin/csh -f
+
+onintr cleanup
+
+set tmpfile = /tmp/Kgdb.$$
+
+if (($#argv != 1) && ($#argv != 2)) then
+    echo "Useage: $0 kernel [core]"
+    exit 1
+endif
+
+set machine = $1:r
+set machine = $machine:r
+
+if ($machine == "sun4c") then
+    set machine = "sun4"
+endif
+
+set version=`echo $1 | sed -e 's/[a-z0-9]*\.//'`
+if ("$version" !~ 1.*) set version=""
+echo Debugging $machine kernel version \"$version\"
+if ("$version" == "") then
+    set SRC=..
+else
+    set SRC=../Snapshots/$version
+endif
+
+cat ../Modules | sed "s,^,dir $SRC/,g" > $tmpfile
+kgdb -m$machine -nx -command $tmpfile $*
+cleanup:
+rm $tmpfile

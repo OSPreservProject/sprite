@@ -1,0 +1,902 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 sprited:9.3.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.06.27.12.16.11;  author shirriff;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.09.11.14.11.38;  author kupfer;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.15.24.41;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.05;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.15.16.03.05;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.19.22.13.10;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.31.11.47.56;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.15.43.00;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.38.11;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.22;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.30.20.58.15;  author jhh;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.24.17.51.00;  author brent;  state Exp;
+branches 6.2.1.1;
+next     6.1;
+
+6.1
+date     88.08.23.15.54.36;  author rab;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.50;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     87.08.27.10.37.52;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.08.24.10.58.27;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.59;  author sprite;  state Exp;
+branches ;
+next     ;
+
+6.2.1.1
+date     88.10.17.14.25.52;  author jhh;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.10.21.21.50.45;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@Added copyright.
+@
+text
+@/* 
+ * trace.c --
+ *
+ *	This files implements a generalized tracing facility.  A Trace_Buffer
+ *	contains information about the number and size of the elements in a
+ *	circular buffer that is dynamically allocated by Trace_Init.  Calls
+ *	to Trace_Insert add a time-stamped trace record to the buffer.
+ *	A circular buffer of trace records can be dumped to a file via calls
+ *	to Trace_Dump.
+ *
+ * Copyright 1986 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 9.2 90/09/11 14:11:38 kupfer Exp Locker: shirriff $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "trace.h"
+#include "bstring.h"
+#include "timer.h"
+#include "stdlib.h"
+#include "sys.h"
+#include "sync.h"
+#include "vm.h"
+#include <stdio.h>
+
+/* 
+ * Trace module mutex.
+ */
+
+Sync_Semaphore trace_Mutex = Sync_SemInitStatic("Utils:trace_Mutex");
+
+/*
+ * Global tracing inhibit flag so it is easy to turn off all system tracing.
+ */
+Boolean trace_Disable = FALSE;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Trace_Init --
+ *
+ *	Allocate and initialize a circular trace buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is allocated for the individual buffer records.  Note 
+ *	that the Trace_Header is assumed to be allocated
+ *	(statically or dynamically) by the calling routine, and its values
+ *	are initialized in this routine.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Trace_Init(traceHdrPtr, numRecords, size, flags)
+    register Trace_Header *traceHdrPtr;	/* pointer to tracing info */
+    int numRecords;			/* number of records to allocate */
+    int size;				/* size of each client-specific area */
+    int flags;				/* TRACE_NO_TIMES */
+{
+    register Address clientPtr;
+    register Trace_Record *recordPtr;
+    int i;
+
+
+    traceHdrPtr->numRecords = numRecords;
+    traceHdrPtr->currentRecord = 0;
+    traceHdrPtr->flags = flags & ~TRACE_INHIBIT;
+    traceHdrPtr->dataSize = size;
+
+    recordPtr = (Trace_Record *) Vm_RawAlloc(numRecords * sizeof(Trace_Record));
+    traceHdrPtr->recordArray = recordPtr;
+
+    if (size > 0) {
+	clientPtr = Vm_RawAlloc(numRecords * size);
+    } else {
+	clientPtr = (Address) NIL;
+    }
+    for (i = 0; i < numRecords; i++) {
+	recordPtr[i].flags = TRACE_UNUSED;
+	recordPtr[i].event = NIL;
+	recordPtr[i].traceData = (ClientData *) clientPtr;
+	if (size > 0) {
+	    clientPtr += size;
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Trace_Insert --
+ *
+ *	Save a time stamp and any client-specific data in a circular buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Record the information in a trace record and advance the
+ *	circular buffer pointer.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Trace_Insert(traceHdrPtr, event, data)
+    Trace_Header *traceHdrPtr;
+    int event;
+    ClientData data;
+{
+    Trace_Record *recordPtr;
+    int size;
+    Timer_Ticks ticks;
+
+    if (trace_Disable) {
+	return;
+    }
+    MASTER_LOCK(&trace_Mutex);
+    Sync_SemRegister(&trace_Mutex);
+    if (traceHdrPtr == (Trace_Header *)NIL ||
+	(traceHdrPtr->flags & TRACE_INHIBIT)) {
+	MASTER_UNLOCK(&trace_Mutex);
+	return;
+    }
+
+    recordPtr = &(traceHdrPtr->recordArray[traceHdrPtr->currentRecord]);
+    if ( ! (traceHdrPtr->flags & TRACE_NO_TIMES)) {
+	Timer_GetCurrentTicks(&ticks);
+	Timer_TicksToTime(ticks, &(recordPtr->time));
+    }
+    size = traceHdrPtr->dataSize;
+    if ((size > 0) && (data != (ClientData) NIL)) {
+	bcopy((Address) data, (Address) recordPtr->traceData,size);
+	recordPtr->flags = TRACE_DATA_VALID;
+    } else {
+	if (recordPtr->traceData != (ClientData *) NIL) {
+	    bzero((Address) recordPtr->traceData,size);
+	}
+	recordPtr->flags = TRACE_DATA_INVALID;
+    }
+    recordPtr->event = event;
+    traceHdrPtr->currentRecord =
+	    (traceHdrPtr->currentRecord + 1) % traceHdrPtr->numRecords;
+    MASTER_UNLOCK(&trace_Mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Trace_Dump --
+ *
+ *	Dump trace records into the user's address space.  Data is copied
+ *	in the following order:
+ *
+ *	(1) The number of records being copied is copied.
+ *	(2) numRecs Trace_Records are copied.
+ *	(3) If traceData is non-NIL, numRecs records of traceData are copied.
+ *
+ * Results:
+ *	The result from Vm_CopyOut is returned, in addition to the
+ *	data specified above.
+ *
+ * Side effects:
+ *	Data is copied out to the user's address space.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Trace_Dump(traceHdrPtr, numRecs, addr)
+    register Trace_Header *traceHdrPtr;
+    int numRecs;
+    Address addr;
+{
+    ReturnStatus status;
+    int size;
+    int earlyRecs = 0;
+    int lateRecs;
+    int current;
+
+    if (traceHdrPtr == (Trace_Header *) NIL) {
+	printf("Trace_Dump: trace buffer not initialized.\n");
+	numRecs = 0;
+	status = Vm_CopyOut(sizeof(int), (Address) &numRecs, addr);
+	return(status);
+    }
+    if (trace_Disable) {
+	printf("Trace_Dump: all tracing disabled.\n");
+	numRecs = 0;
+	status = Vm_CopyOut(sizeof(int), (Address) &numRecs, addr);
+	return(status);
+    }
+
+    MASTER_LOCK(&trace_Mutex);
+    traceHdrPtr->flags |= TRACE_INHIBIT;
+    MASTER_UNLOCK(&trace_Mutex);
+
+    if (numRecs > traceHdrPtr->numRecords) {
+	numRecs = traceHdrPtr->numRecords;
+    }
+
+    /*
+     * Check the current record to see if it's unused.  If so, then all
+     * records before it are valid and all records after it are invalid,
+     * since once we wrap around once all records are used forever.
+     */
+    
+    current = traceHdrPtr->currentRecord;
+    lateRecs = traceHdrPtr->numRecords - current;
+    if (traceHdrPtr->recordArray[current].flags == TRACE_UNUSED) {
+	numRecs = current;
+	earlyRecs = current;
+	lateRecs = 0;
+    } else if (numRecs > lateRecs) {
+	earlyRecs = numRecs - lateRecs;
+    }
+    
+    status = Vm_CopyOut(sizeof(int), (Address) &numRecs, addr);
+    if (status != SUCCESS || numRecs == 0) {
+	goto done;
+    }
+    addr += sizeof(int);
+
+    /*
+     * Copy the general trace records.  First copy the ones from "current"
+     * to the end of the buffer, then copy the ones at the front.
+     */
+
+    if (lateRecs > 0) {
+	size = lateRecs * sizeof(Trace_Record);
+	status = Vm_CopyOut(size, (Address) &traceHdrPtr->recordArray[current],
+			    addr);
+	if (status != SUCCESS) {
+	    goto done;
+	}
+	addr += size;
+    }
+    if (earlyRecs > 0) {
+	size = earlyRecs * sizeof(Trace_Record);
+	status = Vm_CopyOut(size, (Address) &traceHdrPtr->recordArray[0],
+			    addr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	addr += size;
+    }
+
+    /*
+     * Copy the client-specific data, if there is any.
+     */
+    
+    if (traceHdrPtr->dataSize == 0) {
+	goto done;
+    }
+    if (lateRecs > 0) {
+	size = lateRecs * traceHdrPtr->dataSize;
+	status = Vm_CopyOut(size, (Address)
+			      traceHdrPtr->recordArray[current].traceData,
+			    addr);
+	if (status != SUCCESS) {
+	    goto done;
+	}
+	addr += size;
+    }
+    if (earlyRecs > 0) {
+	size = earlyRecs * traceHdrPtr->dataSize;
+	status = Vm_CopyOut(size,
+			    (Address) traceHdrPtr->recordArray[0].traceData,
+			    addr);
+	if (status != SUCCESS) {
+	    goto done;
+	}
+	addr += size;
+    }
+
+done:
+    traceHdrPtr->flags &= ~TRACE_INHIBIT;
+    return(SUCCESS);
+    
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Trace_Print --
+ *
+ *	Print trace records using a client's printing procedure to
+ *	format the client data.  The N most recent records are displayed.
+ *	The interface to the printing procedure is:
+ *	(*printRecord)(clientData, printHeaderFlag)
+ *		ClientData clientData;
+ *		Boolean printHeaderFlag;
+ *	where the flag should cause column headers to be printed.
+ *	Careful, ClientData might be NIL if the flag is TRUE.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	prints to the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Trace_Print(traceHdrPtr, numRecs, printProc)
+    register Trace_Header *traceHdrPtr;	/* Trace record */
+    int numRecs;		/* Number of most recent records to print */
+    int (*printProc)();		/* See above doc. for this call-back */
+{
+    register int traceLength;
+/*    int lastRec; */		/* Index of last record to be printed */
+/*    int firstRec; */		/* Index of first record to be printed */
+    int index;
+/*    Boolean printHeader; */	/* Passed to output routine */
+    Time deltaTime;		/* Time difference between trace records */
+    Time baseTime;		/* Used to calculate deltaTime */
+    Trace_Record *recordPtr;
+
+    if (trace_Disable) {
+	(*printProc)((ClientData *)NIL, TRUE);
+	printf("All Tracing Disabled.\n");
+	return SUCCESS;
+    }
+
+    MASTER_LOCK(&trace_Mutex);
+    traceHdrPtr->flags |= TRACE_INHIBIT;
+    MASTER_UNLOCK(&trace_Mutex);
+
+    baseTime.seconds = 0;
+    baseTime.microseconds = 0;
+    /*
+     * Print the header.
+     * Loop through the records starting numRecs modulo-before the end.
+     * Print the header.
+     */
+    (*printProc)((ClientData *)NIL, TRUE);
+    traceLength = traceHdrPtr->numRecords;
+    if (numRecs > traceLength) {
+	numRecs = traceLength;
+    }
+    index = (traceHdrPtr->currentRecord - numRecs + traceLength)
+		% traceLength;
+    for ( ; numRecs > 0; numRecs--, index = (index + 1) % traceLength) {
+	recordPtr = &traceHdrPtr->recordArray[index];
+	if (recordPtr->flags & TRACE_UNUSED) {
+	    continue;
+	}
+	if ( ! (traceHdrPtr->flags & TRACE_NO_TIMES)) {
+	    Time_Subtract(recordPtr->time, baseTime, &deltaTime);
+	    if (baseTime.seconds + baseTime.microseconds > 0) {
+		printf("%2d.%04d ", deltaTime.seconds,
+				    deltaTime.microseconds / 100);
+	    } else {
+		printf("           ");
+	    }
+	    baseTime = recordPtr->time;
+	}
+	(*printProc)(recordPtr->traceData, recordPtr->event, FALSE);
+	printf("\n");
+    }
+    (*printProc)((ClientData *)NIL, TRUE);
+
+    traceHdrPtr->flags &= ~TRACE_INHIBIT;
+    return(SUCCESS);
+}
+
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 9.3 91/06/27 12:16:11 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Use function prototypes. Lint.
+@
+text
+@d11 8
+a18 2
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 9.1 89/10/26 15:24:41 douglis Exp Locker: kupfer $ SPRITE (Berkeley)";
+@
+
+
+9.1
+log
+@removed some lint
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 9.0 89/09/12 15:22:05 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+d28 1
+d83 2
+d89 1
+a90 1
+	    recordPtr[i].traceData = (ClientData *) clientPtr;
+a91 2
+	} else {
+	    recordPtr[i].traceData = (ClientData *) NIL;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 8.5 89/03/15 16:03:05 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d76 1
+a76 2
+    recordPtr = (Trace_Record *) Vm_RawAlloc((unsigned) (numRecords
+	    * sizeof(Trace_Record)));
+d80 1
+a80 1
+	clientPtr = Vm_RawAlloc((unsigned) (numRecords * size));
+@
+
+
+8.5
+log
+@Added global trace_Disable flag
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 8.4 89/02/19 22:13:10 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Changes due to lock registration
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 8.3 89/01/31 11:47:56 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d34 5
+d121 4
+a124 1
+    
+d195 6
+d327 6
+@
+
+
+8.3
+log
+@Changed malloc to Vm_RawAlloc because the space is never free'ed
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 8.2 88/12/04 15:43:00 ouster Exp $ SPRITE (Berkeley)";
+d26 1
+d32 1
+a32 1
+Sync_Semaphore trace_Mutex = SYNC_SEM_INIT_STATIC("trace_Mutex");
+d64 2
+a65 1
+    
+d118 1
+@
+
+
+8.2
+log
+@Stop using obsolete header files.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 8.1 88/11/22 19:38:11 jhh Exp Locker: ouster $ SPRITE (Berkeley)";
+d69 1
+a69 1
+    recordPtr = (Trace_Record *) malloc((unsigned) (numRecords
+d74 1
+a74 1
+	clientPtr = malloc((unsigned) (numRecords * size));
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 8.0 88/11/11 18:41:22 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d23 1
+a23 2
+#include "mem.h"
+#include "byte.h"
+d69 2
+a70 1
+    recordPtr = (Trace_Record *) Mem_Alloc(numRecords * sizeof(Trace_Record));
+d74 1
+a74 1
+	clientPtr = Mem_Alloc(numRecords * size);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 6.3 88/10/30 20:58:15 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d32 1
+a32 1
+int trace_Mutex = 0;
+d115 1
+a115 1
+    MASTER_LOCK(trace_Mutex);
+d118 1
+a118 1
+	MASTER_UNLOCK(trace_Mutex);
+d140 1
+a140 1
+    MASTER_UNLOCK(trace_Mutex);
+d185 1
+a185 1
+    MASTER_LOCK(trace_Mutex);
+d187 1
+a187 1
+    MASTER_UNLOCK(trace_Mutex);
+d311 1
+a311 1
+    MASTER_LOCK(trace_Mutex);
+d313 1
+a313 1
+    MASTER_UNLOCK(trace_Mutex);
+@
+
+
+6.3
+log
+@multiprocessor port
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/trace.c,v 6.2 88/08/24 17:51:00 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@Changed Trace_Insert parameter from ClientData * to ClientData
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: trace.c,v 6.1 88/08/23 15:54:36 rab Exp $ SPRITE (Berkeley)";
+d26 1
+d28 6
+d115 1
+d118 1
+d129 1
+a129 1
+	Byte_Copy(size, (Address) data, (Address) recordPtr->traceData);
+d133 1
+a133 1
+	    Byte_Zero(size, (Address) recordPtr->traceData);
+d140 1
+d179 1
+a179 1
+	Sys_Panic(SYS_WARNING, "Trace_Dump: trace buffer not initialized.\n");
+d185 1
+d187 1
+d291 1
+a291 1
+ *	Sys_Printf's to the screen.
+d311 1
+d313 1
+d337 1
+a337 1
+		Sys_Printf("%2d.%04d ", deltaTime.seconds,
+d340 1
+a340 1
+		Sys_Printf("           ");
+d345 1
+a345 1
+	Sys_Printf("\n");
+@
+
+
+6.2.1.1
+log
+@added unneeded locks
+@
+text
+@a10 22
+ *      Each of the routines in the trace library (except for Trace_Init)
+ *	locks the trace structure being modified. Each trace structure has
+ *	a lock for this purpose. Since Trace_Init is initializing the
+ *	structure it can't use the lock in the structure. This shouldn't be a
+ *	problem because if two processes try to initialize the same structure
+ *	concurrently you probably have a bug anyway.
+ *
+ *	Locking is done in the library, rather than by the routines that call 
+ *	the library, because trace routines are scattered throughout the
+ *	system and it is conceivable that unsynchronized processes may access
+ *	the same trace structure (unlike hash tables where accesses probably
+ *	have to be synchonized at a higher level if they are going to leave
+ *	the table in a "sensible" state). Each trace structure has its
+ *	own lock, so that different trace structures can be modified
+ *	concurrently. The alternative is to have one lock around the entire
+ *	trace module. Such a solution might affect the tracing results and
+ *	could have deadlock problems. Master locks are used in order to allow
+ *	interrupt handlers to call the trace library (I'm not sure they do,
+ *	but let's be safe anyway).
+ *
+ *	Fixes: get rid of trace_inhibit because we have locks?
+ *
+d16 1
+a16 1
+static char rcsid[] = "$Header: trace.c,v 6.2 88/08/24 17:51:00 brent Exp $ SPRITE (Berkeley)";
+a61 1
+    traceHdrPtr->mutex = 0;
+a107 1
+    MASTER_LOCK(traceHdrPtr->mutex);
+a109 1
+	MASTER_UNLOCK(traceHdrPtr->mutex);
+d120 1
+a120 1
+	bcopy((Address) data, (Address) recordPtr->traceData,size);
+d124 1
+a124 1
+	    bzero((Address) recordPtr->traceData,size);
+a130 1
+    MASTER_UNLOCK(traceHdrPtr->mutex);
+a167 1
+    MASTER_LOCK(traceHdrPtr->mutex);
+a171 1
+	MASTER_UNLOCK(traceHdrPtr->mutex);
+a221 1
+	    MASTER_UNLOCK(traceHdrPtr->mutex);
+a256 1
+    MASTER_UNLOCK(traceHdrPtr->mutex);
+a298 1
+    MASTER_LOCK(traceHdrPtr->mutex);
+a335 1
+    MASTER_UNLOCK(traceHdrPtr->mutex);
+@
+
+
+6.1
+log
+@Cleaned everything up so it would lint with fewer complaints.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: trace.c,v 6.0 88/08/11 12:28:50 brent Stable $ SPRITE (Berkeley)";
+d99 1
+a99 1
+Trace_Insert(traceHdrPtr, event, dataPtr)
+d102 1
+a102 1
+    ClientData *dataPtr;
+d119 2
+a120 2
+    if ((size > 0) && (dataPtr != (ClientData *) NIL)) {
+	Byte_Copy(size, (Address) dataPtr, (Address) recordPtr->traceData);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: trace.c,v 5.2 87/08/27 10:37:52 brent Exp $ SPRITE (Berkeley)";
+d291 2
+a292 2
+    int lastRec;		/* Index of last record to be printed */
+    int firstRec;		/* Index of first record to be printed */
+d294 1
+a294 1
+    Boolean printHeader;	/* Passed to output routine */
+@
+
+
+5.2
+log
+@Made the time-stamp part of the traces optional.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: trace.c,v 5.1 87/08/24 10:58:27 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Added a little robustness check.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: trace.c,v 5.0 87/08/11 10:51:59 sprite Exp $ SPRITE (Berkeley)";
+d48 1
+a48 1
+Trace_Init(traceHdrPtr, numRecords, size)
+d52 1
+d60 1
+a60 1
+    traceHdrPtr->inhibitTracing = FALSE;
+d109 1
+a109 1
+	traceHdrPtr->inhibitTracing) {
+d114 4
+a117 2
+    Timer_GetCurrentTicks(&ticks);
+    Timer_TicksToTime(ticks, &(recordPtr->time));
+d175 1
+a175 1
+    traceHdrPtr->inhibitTracing = TRUE;
+d256 1
+a256 1
+    traceHdrPtr->inhibitTracing = FALSE;
+d299 1
+a299 1
+    traceHdrPtr->inhibitTracing = TRUE;
+d320 9
+a328 5
+	Time_Subtract(recordPtr->time, baseTime, &deltaTime);
+	if (baseTime.seconds + baseTime.microseconds > 0) {
+	    Sys_Printf("%2d.%06d ", deltaTime.seconds, deltaTime.microseconds);
+	} else {
+	    Sys_Printf("           ");
+a329 1
+	baseTime = recordPtr->time;
+d335 1
+a335 1
+    traceHdrPtr->inhibitTracing = FALSE;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: trace.c,v 4.2 87/02/11 12:31:06 douglis Exp $ SPRITE (Berkeley)";
+d107 2
+a108 1
+    if (traceHdrPtr->inhibitTracing) {
+@

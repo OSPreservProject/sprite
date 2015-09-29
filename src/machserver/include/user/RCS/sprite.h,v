@@ -1,0 +1,174 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.05.12.11.54.30;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.21.14.09.26;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.21.14.07.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Make NIL be -1 for user code.
+@
+text
+@/*
+ * sprite.h --
+ *
+ * Common constants and type declarations for Sprite.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/sprite.h,v 1.2 91/08/21 14:09:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _SPRITE
+#define _SPRITE
+
+#include "cfuncproto.h"
+/*
+ * A boolean type is defined as an integer, not an enum. This allows a
+ * boolean argument to be an expression that isn't strictly 0 or 1 valued.
+ */
+
+#ifndef TRUE
+#define TRUE	1
+#endif
+#ifndef FALSE
+#define FALSE	0
+#endif
+
+#ifndef _ASM
+typedef int Boolean;
+
+/*
+ * Functions that must return a status can return a ReturnStatus to
+ * indicate success or type of failure.
+ */
+
+typedef int  ReturnStatus;
+#endif /* _ASM */
+
+/*
+ * The following statuses overlap with the first 2 generic statuses 
+ * defined in status.h:
+ *
+ * SUCCESS			There was no error.
+ * FAILURE			There was a general error.
+ */
+
+#define	SUCCESS			0x00000000
+#define	FAILURE			0x00000001
+
+
+/*
+ * A nil pointer must be something that will cause an exception if
+ * referenced.  In native Sprite there are two nils: the kernel's nil
+ * and the nil used by user processes.  In the Sprite server these two
+ * are the same.  
+ * XXX Unfortunately, there's some user code that knows about NIL and knows 
+ * that it's set to -1.  Maybe it would be better to make NIL -1 for the 
+ * server, too.
+ */
+
+#ifdef SPRITED
+#define NIL 		0
+#else
+#define NIL		0xFFFFFFFF
+#endif
+#define USER_NIL 	0
+#ifndef NULL
+#define NULL	 	0
+#endif
+
+#ifndef _ASM
+/*
+ * An address is just a pointer in C.  It is defined as a character pointer
+ * so that address arithmetic will work properly, a byte at a time.
+ */
+
+typedef char *Address;
+
+/*
+ * ClientData is an uninterpreted word.  It is defined as an int so that
+ * kdbx will not interpret client data as a string.  Unlike an "Address",
+ * client data will generally not be used in arithmetic.
+ */
+
+#ifndef _CLIENTDATA
+typedef int *ClientData;
+#define _CLIENTDATA
+#endif
+
+#ifndef __STDC__
+#define volatile
+#define const
+#endif
+
+extern void panic();
+
+#endif /* !_ASM */
+
+#endif /* _SPRITE */
+@
+
+
+1.2
+log
+@Make NIL the same as NULL.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/include/RCS/sprite.h,v 1.1 91/08/21 14:07:57 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d61 4
+a64 1
+ * are the same.
+d67 1
+d69 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.10 90/12/05 14:55:08 ouster Exp $ SPRITE (Berkeley)
+d58 4
+a61 3
+ * A nil pointer must be something that will cause an exception if 
+ * referenced.  There are two nils: the kernels nil and the nil used
+ * by user processes.
+d64 1
+a64 1
+#define NIL 		0xFFFFFFFF
+@

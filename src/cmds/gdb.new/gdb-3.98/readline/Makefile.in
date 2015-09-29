@@ -1,0 +1,156 @@
+## -*- text -*- ####################################################
+#								   #
+# Makefile for readline and history libraries.			   #
+#								   #
+####################################################################
+
+srcdir = .
+destdir = /usr/local
+
+INSTALL_PROG = install -c
+INSTALL_FILE = $(INSTALL_PROG)
+
+#### host and target dependent Makefile fragments come in here.
+##
+
+# Here is a rule for making .o files from .c files that doesn't force
+# the type of the machine (like -sun3) into the flags.
+.c.o:
+	$(CC) -c $(CFLAGS) $(LOCAL_INCLUDES) $(CPPFLAGS) $(READLINE_DEFINES) $<
+
+# Destination installation directory.  The libraries are copied to DESTDIR
+# when you do a `make install', and the header files to INCDIR/readline/*.h.
+DESTDIR = $(destdir)/lib
+INCDIR = $(destdir)/include
+
+# Define TYPES as -DVOID_SIGHANDLER if your operating system uses
+# a return type of "void" for signal handlers.
+TYPES = -DVOID_SIGHANDLER
+
+# Define SYSV as -DSYSV if you are using a System V operating system.
+#SYSV = -DSYSV
+
+# HP-UX compilation requires the BSD library.
+#LOCAL_LIBS = -lBSD
+
+# Xenix compilation requires -ldir -lx
+#LOCAL_LIBS = -ldir -lx
+
+# Comment out "-DVI_MODE" if you don't think that anyone will ever desire
+# the vi line editing mode and features.
+READLINE_DEFINES = $(TYPES) -DVI_MODE
+
+DEBUG_FLAGS = -g
+LDFLAGS = $(DEBUG_FLAGS) 
+CFLAGS = $(DEBUG_FLAGS) $(SYSV) -I.
+
+# A good alternative is gcc -traditional.
+#CC = gcc -traditional
+CC = cc
+RANLIB = /bin/ranlib
+AR = ar
+AR_FLAGS = clq
+RM = rm
+CP = cp
+
+LOCAL_INCLUDES = -I$(srcdir)/../
+
+CSOURCES = readline.c history.c funmap.c keymaps.c vi_mode.c \
+	   emacs_keymap.c vi_keymap.c
+
+HSOURCES = readline.h chardefs.h history.h keymaps.h
+SOURCES  = $(CSOURCES) $(HSOURCES)
+
+DOCUMENTATION = readline.texinfo inc-readline.texinfo \
+		history.texinfo inc-history.texinfo
+
+SUPPORT = COPYING Makefile $(DOCUMENTATION) ChangeLog
+
+THINGS_TO_TAR = $(SOURCES) $(SUPPORT)
+
+##########################################################################
+
+STAGESTUFF = *.o
+
+all: libreadline.a
+
+libreadline.a:	readline.o history.o funmap.o keymaps.o
+		$(RM) -f libreadline.a
+		$(AR) $(AR_FLAGS) libreadline.a readline.o history.o funmap.o keymaps.o
+		$(RANLIB) libreadline.a
+
+readline.o:	readline.h chardefs.h  keymaps.h history.h readline.c vi_mode.c
+history.o:	history.c history.h
+funmap.o:	readline.h
+keymaps.o:	emacs_keymap.c vi_keymap.c keymaps.h chardefs.h keymaps.c
+
+libtest:	libreadline.a libtest.c
+		$(CC) -o libtest $(CFLAGS) $(CPPFLAGS) -L. libtest.c -lreadline -ltermcap
+
+readline: readline.c history.o keymaps.o funmap.o readline.h chardefs.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(READLINE_DEFINES) \
+		$(LOCAL_INCLUDES) -DTEST -o readline readline.c funmap.o \
+		 keymaps.o history.o -L. -ltermcap
+
+readline.tar:	$(THINGS_TO_TAR)
+		tar -cf readline.tar $(THINGS_TO_TAR)
+
+readline.tar.Z:	readline.tar
+		compress -f readline.tar
+
+install:	$(DESTDIR)/libreadline.a includes
+
+includes:
+		if [ ! -r $(INCDIR)/readline ]; then\
+		 mkdir $(INCDIR)/readline;\
+		 chmod a+r $(INCDIR)/readline;\
+		fi
+		$(INSTALL_FILE) $(srcdir)/readline.h $(srcdir)/keymaps.h $(srcdir)/chardefs.h $(INCDIR)/readline/
+clean:
+		rm -f $(STAGESTUFF) *.a *.log *.cp *.tp *.vr *.fn *.aux *.pg *.toc
+
+$(DESTDIR)/libreadline.a: libreadline.a
+		-mv $(DESTDIR)/libreadline.a $(DESTDIR)/libreadline.old
+		$(INSTALL_PROG) libreadline.a $(DESTDIR)/libreadline.a
+		$(RANLIB) $(DESTDIR)/libreadline.a
+
+# Copy the object files from a particular stage into a subdirectory.
+stage1: force
+	-mkdir stage1
+	-mv $(STAGESTUFF) stage1
+
+stage2: force
+	-mkdir stage2
+	-mv $(STAGESTUFF) stage2
+
+stage3: force
+	-mkdir stage3
+	-mv $(STAGESTUFF) stage3
+
+against=stage2
+
+comparison: force
+	for i in $(STAGESTUFF) ; do cmp $$i $(against)/$$i ; done
+
+de-stage1: force
+	- (cd stage1 ; mv -f * ..)
+	- rmdir stage1
+
+de-stage2: force
+	- (cd stage2 ; mv -f * ..)
+	- rmdir stage2
+
+de-stage3: force
+	- (cd stage3 ; mv -f * ..)
+	- rmdir stage3
+
+force:
+
+# with the gnu make, this is done automatically.
+
+Makefile: $(srcdir)/Makefile.in $(srcdir)/configure
+	(cd $(srcdir) ; \
+		./configure +destdir=$(destdir) +norecurse \
+		 `if [ "$(srcdir)" != "." ] ; then echo +f; fi` \
+		$(host) +target=$(target))
+

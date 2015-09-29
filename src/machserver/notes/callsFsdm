@@ -1,0 +1,211 @@
+FSDM_BAD_BLOCK_FILE_NUMBER
+	ofs/ofs.h
+FSDM_BOOT_SECTOR_INC
+	ofs/ofsDisk.c
+FSDM_DBL_INDIRECT
+	ofs/ofs.h
+	ofs/ofsIndex.c
+FSDM_DIRECT
+	ofs/ofs.h
+FSDM_DISK_MAGIC
+	dev/devSCSIDisk.c
+FSDM_DOMAIN_ATTACH_BOOT
+	ofs/ofsDisk.c
+FSDM_DOMAIN_DOWN
+	ofs/ofsDisk.c
+FSDM_FD_ACCESSTIME_DIRTY
+	fsio/fsioFile.c
+	fslcl/{fslclAttributes,fslclLookup}.c
+	lfs/lfsDesc.c
+FSDM_FD_ALLOC
+	fsio/fsioFile.c
+	lfs/{lfsDesc,lfsFileLayout}.c
+	ofs/ofsFileDesc.c
+FSDM_FD_DIRTY
+	fsio/fsioFile.c
+	fslcl/fslclLookup.c
+	lfs/{lfsDesc,lfsFileLayout}.c
+	ofs/ofsFileDesc.c
+FSDM_FD_FREE
+	fslcl/fslclLookup.c
+	lfs/lfsDesc.c
+FSDM_FD_INDEX_DIRTY
+	lfs/lfsFileIndex.c
+	ofs/ofsAlloc.c
+FSDM_FD_LINKS_DIRTY
+	fslcl/fslclLookup.c
+FSDM_FD_MAGIC
+	lfs/lfsDesc.c
+	ofs/ofsFileDesc.c
+FSDM_FD_MODTIME_DIRTY
+	fsio/fsioFile.c
+	fslcl/{fslclAttributes,fslclLookup}.c
+FSDM_FD_OTHERS_DIRTY
+	fslcl/{fslclAttributes,fslclDomain}.c
+FSDM_FD_PERMISSIONS_DIRTY
+	fslcl/{fslclAttributes,fslclLookup}.c
+FSDM_FD_SIZE_DIRTY
+	lfs/{lfsDesc,lfsBlockIO}.c
+	ofs/ofsAlloc.c
+FSDM_FD_USERTYPE_DIRTY
+	fslcl/fslclAttributes.c
+FSDM_FD_VERSION_DIRTY
+	fsio/fsioFile.c
+FSDM_FILE_DESC_PER_BLOCK
+	ofs/{ofsDisk,ofsFileDesc}.c
+FSDM_INDICES_PER_BLOCK
+	lfs/lfsFileIndex.c
+	ofs/ofsIndex.c
+FSDM_INDIRECT
+	ofs/ofs.h
+	ofs/ofsIndex.c
+FSDM_LOG_CREATE
+	fslcl/fslclLookup.c
+FSDM_LOG_LINK
+	fslcl/fslclLookup.c
+FSDM_LOG_RENAME_DELETE
+	fslcl/fslclLookup.c
+FSDM_LOG_RENAME_LINK
+	fslcl/fslclLookup.c
+FSDM_LOG_RENAME_UNLINK
+	fslcl/fslclLookup.c
+FSDM_LOG_STILL_OPEN
+	fslcl/fslclLookup.c
+FSDM_LOG_UNLINK
+	fslcl/fslclLookup.c
+FSDM_LOST_FOUND_FILE_NUMBER
+	ofs/ofs.h
+FSDM_MAX_BOOT_SECTORS
+	ofs/ofsDisk.c
+FSDM_MAX_FILE_DESC_SIZE
+	ofs/ofsFileDesc.c
+FSDM_NIL_INDEX
+	fscache/fscacheOps.c
+	fslcl/fslclLookup.c
+	lfs/lfsDesc.c
+	lfs/lfsDesc.h
+	lfs/lfsBlockIO.c
+	ofs/{ofsAlloc,ofsFileDesc,ofsIndex,ofsIo}.c
+FSDM_NUM_DIRECT_BLOCKS
+	fscache/fscacheBlocks.c
+	lfs/{lfsDesc,lfsFileIndex}.c
+	ofs/{ofsAlloc,ofsFileDesc,ofsIndex}.c
+FSDM_NUM_DISK_PARTS
+	ofs/ofsDisk.c
+FSDM_NUM_INDIRECT_BLOCKS
+	lfs/{lfsDesc,lfsFileIndex}.c
+	ofs/ofsFileDesc.c
+FSDM_ROOT_FILE_NUMBER
+	fslcl/{fslclDomain,fslclLookup}.c
+	ofs/ofs.h
+Fsdm_AttachDisk
+	fs/fsInit.c
+Fsdm_AttachDiskByHandle
+	fs/fsSysCall.c
+Fsdm_BlockAllocate
+	fscache/fscacheOps.c
+	fslcl/fslclLookup.c
+	lfs/lfsCacheBackend.c
+	ofs/ofsDisk.c
+Fsdm_DetachDisk
+	fs/{fsInit,fsSysCall}.c
+Fsdm_DirOpEnd
+	fslcl/fslclLookup.c
+Fsdm_DirOpStart
+	fslcl/fslclLookup.c
+Fsdm_DiskHeader
+	dev/devSCSIDisk.c
+	ofs/ofsDisk.c
+Fsdm_Domain
+	fsio/fsioFile.c
+	fslcl/fslclLookup.c
+	lfs/lfs.h
+	lfs/{lfsDirOpLog,lfsDesc,lfsDescMap,lfsFileIndex}.c
+	lfs/lfsInt.h
+	lfs/{lfsIo,lfsMain,lfsSegUsage,lfsBlockIO}.c
+	ofs/ofs.h
+	ofs/{ofsAlloc,ofsDisk,ofsFileDesc,ofsIo}.c
+Fsdm_DomainFetch
+	fsio/fsioFile.c
+	fslcl/fslclLookup.c
+	lfs/lfsFileIndex.c
+	ofs/ofsAlloc.c
+Fsdm_DomainInfo
+	fsutil/fsutilSubr.c
+Fsdm_DomainOps
+	lfs/lfsLoad.c
+	ofs/ofsDisk.c
+Fsdm_DomainRelease
+	fsio/fsioFile.c
+	fslcl/{fslclDomain,fslclLookup}.c
+	lfs/lfsFileIndex.c
+	ofs/ofsAlloc.c
+Fsdm_DomainWriteBack
+	fsutil/fsutilSync.c
+	ofs/ofsDisk.c
+Fsdm_FileBlockRead
+	lfs/lfsCacheBackend.c
+	ofs/ofsDisk.c
+Fsdm_FileBlockWrite
+	lfs/lfsCacheBackend.c
+	ofs/{ofsDisk,ofsIo}.c
+Fsdm_FileDescFetch
+	fsio/fsioFile.c
+Fsdm_FileDescInit
+	fslcl/fslclLookup.c
+Fsdm_FileDescStore
+	fsio/fsioFile.c
+	fslcl/{fslclAttributes,fslclDomain,fslclLookup}.c
+	lfs/lfsFileIndex.c
+Fsdm_FileDescWriteBack
+	fsio/fsioFile.c
+	fsrmt/fsrmtIO.c
+	fsutil/fsutilHandle.c
+Fsdm_FileDescriptor
+	fsio/{fsioDevice,fsioFile}.c
+	fsio/fsioFile.h
+	fsio/fsioOps.c
+	fslcl/{fslclAttributes,fslclDomain,fslclLookup}.c
+	fsrmt/fsrmtAttributes.c
+	fsutil/fsutilHandle.c
+	lfs/lfs.h
+	lfs/{lfsDirOpLog,lfsDesc}.c
+	lfs/lfsDesc.h
+	lfs/{lfsFileIndex,lfsFileLayout,lfsStableMem,lfsBlockIO}.c
+	ofs/ofs.h
+	ofs/{ofsAlloc,ofsDisk,ofsFileDesc,ofsIndex,ofsIo}.c
+Fsdm_FileTrunc
+	lfs/lfsCacheBackend.c
+	ofs/ofsDisk.c
+Fsdm_FindFileType
+	fscache/fscacheBlocks.c
+	fsrmt/fsrmtFile.c
+Fsdm_FreeFileNumber
+	fslcl/fslclLookup.c
+Fsdm_GetNewFileNumber
+	fslcl/fslclLookup.c
+Fsdm_Init
+	fslcl/fslclDomain.c
+Fsdm_InstallDomain
+	lfs/lfsLoad.c
+	ofs/ofsDisk.c
+Fsdm_IsDecLabel
+	ofs/ofsDisk.c
+Fsdm_IsSpriteLabel
+	ofs/ofsDisk.c
+Fsdm_IsSunLabel
+	ofs/ofsDisk.c
+Fsdm_RegisterDiskManager
+	lfs/lfsMain.c
+	ofs/ofsDisk.c
+Fsdm_RereadSummaryInfo
+	fs/fsCommand.c
+Fsdm_UpdateDescAttr
+	fscache/fscacheOps.c
+	fsconsist/fsconsistCache.c
+	fsio/fsioFile.c
+	fslcl/fslclLookup.c
+fsdmDescBytesSearched
+	ofs/ofsFileDesc.c
+fsdmDescSearchStarts
+	ofs/ofsFileDesc.c

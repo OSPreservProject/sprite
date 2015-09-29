@@ -1,0 +1,66 @@
+
+
+
+variables                 User Commands                 variables
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     variables - Variables used or set by Tk
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The following Tcl variables are either set or used by Tk  at
+     various times in its execution:
+
+     ttkk__lliibbrraarryy     Tk sets this variable  hold  the  name  of  a  |
+                    directory containing a library of Tcl scripts  |
+                    related to Tk.  These scripts include an ini-  |
+                    tialization  file  that is normally processed  |
+                    whenever a Tk  application  starts  up,  plus  |
+                    other files containing procedures that imple-  |
+                    ment default behaviors for widgets.            |
+
+     ttkk__pprriivv                                                            ||
+                    This  variable is an array containing several  |
+                    pieces of information that are private to Tk.  |
+                    The  elements  of  ttkk__pprriivv  are  used  by  Tk  |
+                    library  procedures  and  default   bindings.  |
+                    They  should not be accessed by any code out-  |
+                    side Tk.                                       |
+
+     ttkk__vveerrssiioonn                                                         ||
+                    Tk  sets this variable in the interpreter for  |
+                    each application.   The  variable  holds  the  |
+                    current  version  number of the Tk library in  |
+                    the form _m_a_j_o_r._m_i_n_o_r.  _M_a_j_o_r  and  _m_i_n_o_r  are  |
+                    integers.  The major version number increases  |
+                    in any Tk release that includes changes  that  |
+                    are  not  backward  compatible (i.e. whenever  |
+                    existing Tk applications and scripts may have  |
+                    to change to work with the new release).  The  |
+                    minor version number increases with each  new  |
+                    release  of Tk, except that it resets to zero  |
+                    whenever the major version number changes.     |
+
+     ttkkVVeerr--  |
+                    ssiioonn                                                          ||
+                    Has the same value as ttkk__vveerrssiioonn.  This vari-  |
+                    able is obsolete and will be deleted soon.
+
+
+KKEEYYWWOORRDDSS
+     variables, version
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

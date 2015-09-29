@@ -1,0 +1,12 @@
+F DOALL.;1                          	DoAll
+F DOALLMAS.;1                       	DoAllMaster
+F DOMASTER.;1                       	DoMaster
+F DOSLAVE.;1                        	DoSlave
+F EXTRACTA.;1                       	ExtractAll
+F IOCTL.;1                          	IOCTL
+F IOCTL.AVG;1                       	IOCTL.avg
+F PDEVTEST.OUT;1                    	pdevtest.out
+F READ.;1                           	READ
+F READ.AVG;1                        	READ.avg
+F WRITE.;1                          	WRITE
+F WRITE.AVG;1                       	WRITE.avg

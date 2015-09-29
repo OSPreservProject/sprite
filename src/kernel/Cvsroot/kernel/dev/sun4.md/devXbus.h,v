@@ -1,0 +1,107 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     92.10.23.15.04.44;  author elm;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     92.08.17.14.21.25;  author elm;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Include file for modules using the Xbus device.
+@
+
+
+9.2
+log
+@
+Updated version of RAID/xbus device modules.  These versions have all
+been tested and work as far as we know.
+@
+text
+@/***********************************************************************
+ *
+ * devXbus.h
+ *
+ *	Include file detailing the exports from the xbus driver module
+ *	to the rest of the dev module.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devXbus.h,v 9.1 92/08/17 14:21:25 elm Exp $
+ *
+ ***********************************************************************
+ */
+
+#ifndef _DEV_XBUS_
+#define	_DEV_XBUS_
+
+#include <dev/xbus.h>
+
+#define	Dev_XbusAddressBase(boardId)	((boardId) << DEV_XBUS_ID_ADDR_SHIFT)
+
+extern ClientData	DevXbusInit _ARGS_((DevConfigController *ctrlPtr));
+
+extern ReturnStatus	DevXbusIOControl _ARGS_((Fs_Device *devicePtr,
+				Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus	DevXbusOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+					    Fs_NotifyToken notifyToken,
+					    int *flagsPtr));
+extern Boolean		DevXbusIntr _ARGS_((ClientData data));
+
+extern ReturnStatus	Dev_XbusXor _ARGS_((unsigned int boardId,
+					    unsigned int destBuf,
+					    unsigned int numBufs,
+					    unsigned int* bufArrayPtr,
+					    unsigned int bufLen,
+					    void (*callbackProc)(),
+					    ClientData clientData));
+extern ReturnStatus	Dev_XbusHippiBuffer _ARGS_((int boardNum,
+						    int which,
+						    unsigned int size,
+						    unsigned int addr));
+
+
+#endif	/* _DEV_XBUS_ */
+@
+
+
+9.1
+log
+@
+VME link driver now supports block device-type reads and writes.  The
+Xbus driver is *always* installed, but only installs an interrupt
+handler (which should never be used except when the xbus board is
+present).
+@
+text
+@d17 1
+a17 1
+ * $Header: Locker:$
+d22 2
+a23 2
+#ifndef _XBUS_
+#define	_XBUS_
+d27 2
+d33 3
+d38 14
+a51 1
+#endif	/* _XBUS_ */
+@

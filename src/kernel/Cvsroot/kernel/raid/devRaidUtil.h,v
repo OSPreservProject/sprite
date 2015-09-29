@@ -1,0 +1,285 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ds3100:1.8 sun3:1.8 sun4nw:1.8 symm:1.8 spur:1.8;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     90.10.12.14.01.26;  author eklee;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.09.19.14.54.31;  author eklee;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.06.22.13.39.36;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.05.15.18.55.15;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.10.12.12.13.32;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.09.27.17.14.24;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.30.11.29.49;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.05.44;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@/*
+ * devRaidUtil.h --
+ *
+ *	Miscellaneous mapping macros.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidUtil.h,v 1.7 90/09/19 14:54:31 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVRAIDUTIL
+#define _DEVRAIDUTIL
+
+#include <sprite.h>
+#include "devBlockDevice.h"
+#include "devRaid.h"
+
+/*
+ * Maps a RAID sector to stripe ID and visa versa.
+ */
+#define SectorToStripeID(raidPtr, sector)	\
+    ((int)((sector) / (raidPtr)->sectorsPerStripeUnit) / (raidPtr)->numDataCol)
+
+#define StripeIDToSector(raidPtr, stripeID)	\
+    ((stripeID) * (raidPtr)->sectorsPerStripeUnit * (raidPtr)->numDataCol)
+
+/*
+ * Maps RAID sector to stripe unit ID.
+ */
+#define SectorToStripeUnitID(raidPtr, sector)	\
+    ((sector) / (raidPtr)->sectorsPerStripeUnit)
+
+/*
+ * Maps RAID/disk byte addresses to RAID/disk sector addresses and visa versa.
+ */
+#define ByteToSector(raidPtr, byteAddr)		\
+    ((byteAddr) >> (raidPtr)->logBytesPerSector)
+
+#define SectorToByte(raidPtr, sector)		\
+    ((sector) << (raidPtr)->logBytesPerSector)
+
+/*
+ * Determine first/Nth sector of stripe.
+ */
+#define FirstSectorOfStripe(raidPtr, sector)	\
+    (((sector)/(raidPtr)->dataSectorsPerStripe)*(raidPtr)->dataSectorsPerStripe)
+
+#define NthSectorOfStripe(raidPtr, sector)	\
+((((sector)/(raidPtr)->dataSectorsPerStripe)+1)*(raidPtr)->dataSectorsPerStripe)
+
+/*
+ * Determine first/Nth sector of stripe unit.
+ */
+#define FirstSectorOfStripeUnit(raidPtr, sector)	\
+    (((sector)/(raidPtr)->sectorsPerStripeUnit)*(raidPtr)->sectorsPerStripeUnit)
+
+#define NthSectorOfStripeUnit(raidPtr, sector)	\
+((((sector)/(raidPtr)->sectorsPerStripeUnit)+1)*(raidPtr)->sectorsPerStripeUnit)
+
+/*
+ * Determine byte offset within stripe unit.
+ */
+#define StripeUnitOffset(raidPtr, byteAddr)	\
+	((byteAddr) % (raidPtr)->bytesPerStripeUnit)
+
+#define XorRaidRequests(reqControlPtr, raidPtr, destBuf)		\
+    (Raid_XorRangeRequests(reqControlPtr, raidPtr, destBuf,		\
+	    0, raidPtr->bytesPerStripeUnit))
+
+#define AddRaidDataRequests(reqControlPtr, raidPtr, operation, firstSector, nthSector, buffer, ctrlData)			\
+    (Raid_AddDataRangeRequests(reqControlPtr, raidPtr, operation, 	\
+	    firstSector, nthSector, buffer, ctrlData,			\
+	    0, raidPtr->bytesPerStripeUnit))
+
+#define AddRaidParityRequest(reqControlPtr, raidPtr, operation, firstSector, buffer, ctrlData)			\
+    (Raid_AddParityRangeRequest(reqControlPtr, raidPtr, operation, 	\
+	    firstSector, buffer, ctrlData,			\
+	    0, raidPtr->bytesPerStripeUnit))
+
+extern DevBlockDeviceRequest *Raid_MakeBlockDeviceRequest _ARGS_((Raid *raidPtr,
+ int operation, unsigned diskSector, int numSectorsToTransfer, Address buffer, void (*doneProc)(), ClientData clientData, int ctrlData));
+extern void Raid_FreeBlockDeviceRequest _ARGS_((DevBlockDeviceRequest *requestPtr));
+extern RaidIOControl *Raid_MakeIOControl _ARGS_((void (*doneProc)(), ClientData clientData));
+extern void Raid_FreeIOControl _ARGS_((RaidIOControl *IOControlPtr));
+extern RaidRequestControl *Raid_MakeRequestControl _ARGS_((Raid *raidPtr));
+extern void Raid_FreeRequestControl _ARGS_((RaidRequestControl *reqControlPtr));
+extern RaidStripeIOControl *Raid_MakeStripeIOControl _ARGS_((Raid *raidPtr, int operation, unsigned firstSector, unsigned nthSector, Address buffer, void (*doneProc)(), ClientData clientData, int ctrlData));
+extern void Raid_FreeStripeIOControl _ARGS_((RaidStripeIOControl *stripeIOControlPtr));
+extern RaidReconstructionControl *Raid_MakeReconstructionControl _ARGS_((Raid *raidPtr, int col, int row, RaidDisk *diskPtr, void (*doneProc)(), ClientData clientData, int ctrlData));
+extern void Raid_FreeReconstructionControl _ARGS_((RaidReconstructionControl *reconstructionControlPtr));
+extern void Raid_RangeRestrict _ARGS_((int start, int len, int rangeOffset, int rangeLen, int fieldLen, int *newStart, int *newLen));
+extern void Raid_XorRangeRequests _ARGS_((RaidRequestControl *reqControlPtr, Raid *raidPtr, char *destBuf, int rangeOffset, int rangeLen));
+extern void Raid_AddParityRangeRequest _ARGS_((RaidRequestControl *reqControlPtr, Raid *raidPtr, int operation, unsigned sector, Address buffer, int ctrlData, int rangeOffset, int rangeLen));
+extern void Raid_AddDataRangeRequests _ARGS_((RaidRequestControl *reqControlPtr, Raid *raidPtr, int operation, unsigned firstSector, unsigned nthSector, Address buffer, int ctrlData, int rangeOffset, int rangeLen));
+
+#endif /* _DEVRAIDUTIL */
+@
+
+
+1.7
+log
+@Added prototypes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidUtil.h,v 1.6 90/06/22 13:39:36 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+d18 4
+d74 1
+a74 1
+    (XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf,		\
+d78 1
+a78 1
+    (AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation, 	\
+d83 1
+a83 1
+    (AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation, 	\
+d86 18
+@
+
+
+1.6
+log
+@Added support for logging RAID state changes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidUtil.h,v 1.5 90/05/15 18:55:15 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+a81 16
+
+extern DevBlockDeviceRequest *MakeBlockDeviceRequest();
+extern RaidIOControl *MakeIOControl();
+extern RaidRequestControl *MakeRequestControl();
+extern RaidStripeIOControl *MakeStripeIOControl();
+extern RaidReconstructionControl *MakeReconstructionControl();
+extern void FreeBlockDeviceRequest();
+extern void FreeRaidDisk();
+extern void FreeIOControl();
+extern void FreeRequestControl();
+extern void FreeStripeIOControl();
+extern void FreeReconstructionControl();
+extern void RangeRestrict();
+extern void XorRaidRangeRequests();
+extern void AddRaidParityRangeRequest();
+extern void AddRaidDataRangeRequests();
+@
+
+
+1.5
+log
+@Moved Raid Disk related code to separate module (devRaidDisk.h).
+@
+text
+@d15 1
+a15 1
+ * $Header: /user4/eklee/raidlib/RCS/devRaidUtil.h,v 1.1 90/03/05 11:39:06 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+a83 1
+extern RaidDisk *MakeRaidDisk();
+@
+
+
+1.4
+log
+@Added include files.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+a21 6
+ * Is specified range of disk sectors "valid" on specified disk? 
+ */
+#define IsInRange(diskPtr, startSector, numSector) 	\
+    ((startSector) + (numSector) <= (diskPtr)->numValidSector)
+
+/*
+a94 3
+extern void MapPhysicalToStripeID();
+extern void MapParity();
+extern void MapSector();
+@
+
+
+1.3
+log
+@Added more comments.
+@
+text
+@d17 3
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d2 1
+a2 1
+ * header.h --
+d4 1
+a4 1
+ *	Declarations of ...
+d18 3
+d24 3
+d33 3
+d39 3
+d48 3
+d57 3
+d66 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

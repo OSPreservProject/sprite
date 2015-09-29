@@ -1,0 +1,108 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.2; strict;
+comment  @@;
+
+
+1.2
+date     92.08.20.16.58.34;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.11.22.00.24;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@checking in for rab -- jhh
+@
+text
+@XCOMM platform:  $XConsortium: ultrix.cf,v 1.45 91/07/30 12:12:11 rws Exp $
+
+#define OSName           Sprite
+XCOMM operating system:  OSName
+#define OSMajorVersion    4
+#define OSMinorVersion    2
+
+#define HasPutenv NO
+#define HasSaberC NO
+#define HasShm NO
+#define LintLibFlag -o
+#define LintOpts -ax
+
+#ifdef VaxArchitecture
+#define XqdssServer YES
+#define XqvssServer YES
+#define UnalignedReferencesAllowed YES	       /* if arbitrary deref is okay */
+#if HasGcc
+#define BuildPexExt XqdssServer
+#else
+#define BuildPex NO /* compiler runs out of table space */
+#endif
+#endif
+
+#ifdef MipsArchitecture
+#ifdef sprite
+#define XdecServer NO
+#define XmfbpmaxServer YES
+#define XcfbpmaxServer YES
+#else
+#if OSMajorVersion > 4 || (OSMajorVersion == 4 && OSMinorVersion >= 2)
+#define XdecServer YES
+/* Even under ultrix 4.2, the compiler miscompiles some alloca calls */
+#define AllocateLocalDefines /* -DINCLUDE_ALLOCA_H */
+#else
+#define XmfbpmaxServer NO
+#define XcfbpmaxServer YES
+#define AllocateLocalDefines /**/
+#endif
+#endif /* sprite */
+#define NeedFunctionPrototypes YES
+#define PexCCOptions -Wf,-XNp15000,-XNd15000 -Dsprite
+#endif
+
+#if HasGcc
+#define CcCmd gcc -ansi -Dvax -Dultrix -fpcc-struct-return
+#define ServerCCOptions /* */
+#define AllocateLocalDefines /* */
+#endif
+
+#define ServerOSDefines AllocateLocalDefines
+
+#ifdef sprite
+#undef DefaultCCOptions
+#define DefaultCCOptions  -Dsprite
+#endif
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+a3 1
+#define OSName            Ultrix-32 4.2
+d8 3
+a10 3
+#define HasPutenv YES
+#define HasSaberC YES
+#define HasShm YES
+d26 5
+d40 1
+d42 1
+a42 1
+#define PexCCOptions -Wf,-XNp15000,-XNd15000
+d52 6
+@

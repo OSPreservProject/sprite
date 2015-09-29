@@ -1,0 +1,178 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.09.23.13.23.57;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.26.17.13.55;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@pmake library for old c library
+@
+
+
+1.2
+log
+@Fixed include path.
+@
+text
+@#
+# Included makefile for creating a single library
+#
+# $Header: library.mk,v 1.4 88/06/16 10:15:35 douglis Exp $ SPRITE (Berkeley)
+#
+# Expected variables:
+#	LIBRARY		base name of library (e.g. tcl, sx, c, etc.)
+#	INSTALLDIR	place to install archive
+#	LINTDIR		place to install lint library
+#	INCLUDEDIR	place to install public header files
+#	SRCS		all sources for library
+#	HDRS		all header files (public and private)
+#	PUBHDRS		all public header files.
+#
+
+#
+# Define search paths for include files
+#
+.PATH.h		: # Clear out previous
+.PATH.h		: /sprite/lib/include /sprite/att/lib/include \
+                  /sprite/lib/include/kernel /sprite/lib/include/sun2.md
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile
+#
+BINDIR		= /sprite/cmds
+KERNELLINTDIR	= /sprite/src/kernel/Lint
+
+AS		?= $(BINDIR)/as
+CC		?= $(BINDIR)/cc
+CP		?= $(BINDIR)/cp
+CTAGS		?= $(BINDIR)/ctags
+ECHO		?= $(BINDIR)/echo
+INSTALL		?= $(BINDIR)/install
+LINT		?= $(BINDIR)/lint
+MV		?= $(BINDIR)/mv
+RM		?= $(BINDIR)/rm
+CHOWN		?= $(BINDIR)/chown
+CHGRP		?= $(BINDIR)/chgrp
+CHMOD		?= $(BINDIR)/chmod
+
+#
+# Flags everyone should have. CCFLAGS, CAFLAGS and CLINTFLAGS are provided
+# for the user to add flags for CC, AS or LINT from the command line.
+#
+CCFLAGS		?=
+CAFLAGS		?=
+CLINTFLAGS	?=
+CFLAGS		+= -g -m68010 $(CCFLAGS) $(.INCLUDES)
+AFLAGS		+= -m68010 $(CAFLAGS)
+LINTFLAGS	+= $(CLINTFLAGS)
+
+INSTALLFLAGS	?=
+
+.MAKEFLAGS	: -C
+
+#
+# Include the various system makefiles we need --
+#	po.mk for creating profiled objects
+#	makelib.mk for creating archived libraries
+#	makelint.mk for creating lint libraries
+#
+many_libraries	= True
+#include	<po.mk>
+#include	<makelib.mk>
+#include	<makelint.mk>
+
+#
+# Define the various types of libraries we can make to make our rules and
+# maybe the user's easier to write.
+#
+REGLIB		= lib$(LIBRARY).a
+PROFLIB		= lib$(LIBRARY)_p.a
+LINTLIB		= llib-l$(LIBRARY).ln
+
+#
+# Installation macro. Archived libraries go in INSTALLDIR, lint libraries
+# go in LINTDIR, header files go in INCLUDEDIR
+#
+# INSTALLLIB may be used to install libraries only
+# INSTALLLINT will install only lint libraries
+# INSTALLHDRS will install header files only.
+# MAKEINSTALL will do all of them in a single rule.
+#
+# In this version, the 'install' target uses the MAKEINSTALL rule,
+# so it depends on all the archives, lint libraries and header files for
+# the library. 'instlib' will install the library, 'instlint' will install
+# the lint library and 'installhdrs' will install the public header files
+#
+INSTALLLIB	: .USE
+	if [ ! -z "$(.ALLSRC:Mlib*.a)" ]; then
+		$(INSTALL) -c -m 664 -o root -g wheel $(INSTALLFLAGS) \
+			$(.ALLSRC:Mlib*.a) $(INSTALLDIR)
+		for i in $(.ALLSRC:Mlib*.a); do
+			ranlib $(INSTALLDIR)/$i
+		done
+	fi
+INSTALLLINT	: .USE
+	if [ ! -z "$(.ALLSRC:Mllib*.ln)" ]; then
+		$(INSTALL) -c -m 444 -o root -g wheel $(INSTALLFLAGS) \
+			$(.ALLSRC:Mllib*.ln) $(LINTDIR)
+	fi
+INSTALLHDR	: .USE
+	if [ ! -z "$(.ALLSRC:M*.h)" ]; then
+		$(INSTALL) -c -m 444 -o root -g wheel $(INSTALLFLAGS) \
+			$(.ALLSRC:M*.h) $(INCLUDEDIR)
+	fi
+MAKEINSTALL	: INSTALLLIB INSTALLLINT INSTALLHDR .USE
+
+#
+# Define the targets, if the user wants us to
+#
+#ifdef define_targets
+$(REGLIB)	: $(REGLIB)($(OBJS)) MAKELIB
+$(PROFLIB)	: $(PROFLIB)($(OBJS:S/.o$/.po/g)) MAKELIB
+$(LINTLIB)	: $(SRCS:M*.c) $(HDRS) MAKELINT
+
+library		: $(REGLIB)
+profile		: $(PROFLIB)
+lint		: $(LINTLIB)
+
+install		:: $(REGLIB) $(LINTLIB) $(PUBHDRS) MAKEINSTALL
+instlib		:: $(REGLIB) INSTALLIB
+instlint	:: $(LINTLIB) INSTALLLINT
+installhdrs	: $(PUBHDRS) INSTALLHDR
+
+#endif define_targets
+
+CLEANOBJS	?=
+clean		:: .NOTMAIN
+	$(RM) -f $(CLEANOBJS) y.tab.c lex.yy.c core a.out *~
+
+mkmf makemake	:: .NOTMAIN	# Does nothing. Says nothing
+
+DEPFILE		?= $(MAKEFILE)
+#include	<makedepend.mk>
+#include 	<rdist.mk>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+                  /sprite/lib/include/kernel /sprite/lib/include/kernel/sun2.md
+@

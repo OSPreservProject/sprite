@@ -1,0 +1,253 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ds3100:1.8 sun3:1.8 sun4nw:1.7 symm:1.7 spur:1.7;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.09.03.18.13.30;  author shirriff;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.06.29.17.04.50;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.05.29.14.12.10;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.12.07.10.07.56;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.10.30.10.03.46;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.10.19.17.23.07;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.33.16;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.31;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Moved type declarations into lfsTypes.h.
+@
+text
+@/*
+ * lfsSegUsageInt.h --
+ *
+ *	Declarations of LFS segment ussage routines and data structures
+ *	private to the Lfs module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsSegUsageInt.h,v 1.7 91/06/29 17:04:50 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSSEGUSAGEINT
+#define _LFSSEGUSAGEINT
+
+#include <lfsUsageArray.h>
+
+/* constants */
+
+/* data structures */
+
+/* procedures */
+
+extern void LfsSegUsageInit _ARGS_((void));
+
+extern void LfsSetSegUsage _ARGS_((struct Lfs *lfsPtr, int segNumber, 
+			int activeBytes));
+extern ReturnStatus LfsGetLogTail _ARGS_((struct Lfs *lfsPtr, Boolean cantWait,
+			LfsSegLogRange *logRangePtr, int *startBlockPtr ));
+
+extern void LfsSetLogTail _ARGS_((struct Lfs *lfsPtr, 
+			LfsSegLogRange *logRangePtr, int startBlock, 
+			int activeBytes, int timeOfLastWrite));
+
+extern void LfsMarkSegsClean _ARGS_((struct Lfs *lfsPtr, int numSegs, 
+				LfsSegList  *segs));
+extern void LfsSetDirtyLevel _ARGS_((struct Lfs *lfsPtr, int dirtyActiveBytes));
+
+extern int LfsGetSegsToClean _ARGS_((struct Lfs *lfsPtr, 
+			int maxSegArrayLen, LfsSegList *segArrayPtr, 
+			int *minNeededToCleanPtr, int *maxAvailToWritePtr));
+
+extern ReturnStatus LfsSegUsageFreeBlocks _ARGS_((struct Lfs *lfsPtr, 
+			int blockSize, int blockArrayLen, 
+			LfsDiskAddr *blockArrayPtr));
+extern ReturnStatus LfsSegUsageAllocateBytes _ARGS_((struct Lfs *lfsPtr,				 int numBytes));
+extern ReturnStatus LfsSegUsageFreeBytes _ARGS_((struct Lfs *lfsPtr, 
+			int numBytes));
+
+extern void LfsSegUsageCheckpointUpdate _ARGS_((struct Lfs *lfsPtr,
+			char *checkPointPtr, int size));
+
+extern Boolean LfsSegUsageEnoughClean _ARGS_((struct Lfs *lfsPtr,
+				int dirtyBytes));
+
+#endif /* _LFSSEGUSAGEINT */
+
+@
+
+
+1.7
+log
+@Added priority field to ListSeg for sorting.
+Added timeOfLastWrite for currentSegment
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSegUsageInt.h,v 1.6 91/05/29 14:12:10 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+a26 14
+
+typedef struct LfsSegUsage {
+    LfsStableMem	stableMem;/* Stable memory supporting the map. */
+    LfsSegUsageParams	params;	  /* Map parameters taken from super block. */
+    LfsSegUsageCheckPoint checkPoint; /* Desc map data written at checkpoint. */
+    int			timeOfLastWrite; /* Time of last write of current
+					  * segment. */
+} LfsSegUsage;
+
+typedef struct LfsSegList {
+    int	segNumber;	/* Segment number of segment. */
+    int activeBytes;	/* Active bytes from the seg usage array. */
+    unsigned int priority;	/* Priority for the space-time sorting. */
+} LfsSegList;
+@
+
+
+1.6
+log
+@Changed the calling sequence to LfsGetSegsToClean to return a list
+of segments regardless of active bytes size.  The reposibility now 
+rest with the caller not to read too much in.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSegUsageInt.h,v 1.5 90/12/07 10:07:56 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d32 2
+d39 1
+d53 1
+a53 1
+			int activeBytes));
+d55 2
+a56 1
+extern void LfsMarkSegClean _ARGS_((struct Lfs *lfsPtr, int segNumber));
+d60 2
+a61 1
+			int maxSegArrayLen, LfsSegList *segArrayPtr));
+d72 3
+@
+
+
+1.5
+log
+@Redid checkpoint sync to remove races.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSegUsageInt.h,v 1.4 90/10/30 10:03:46 mendel Exp $ SPRITE (Berkeley)
+d55 1
+a55 1
+extern int LfsGetSegsToClean _ARGS_((struct Lfs *lfsPtr, int maxBlocks, 
+@
+
+
+1.4
+log
+@Modified to update segment checkpoint info during write done callback.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSegUsageInt.h,v 1.3 90/10/19 17:23:07 mendel Exp $ SPRITE (Berkeley)
+a28 5
+    int	waitCheckpointList;        /* First segments in clean list that is
+				    * waiting to become clean after a 
+				    * checkpoint. */
+    LfsSegUsageCheckPoint *cpLocPtr; /* Location in cp buffer of last 
+				      * checkpoint. */
+d65 2
+@
+
+
+1.3
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSegUsageInt.h,v 1.2 90/05/25 15:33:16 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d32 2
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/lfsSegUsageInt.h,v 1.1 90/01/16 17:12:31 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d22 1
+a22 1
+#include "lfsUsageArray.h"
+d29 3
+d37 5
+d44 23
+a66 1
+extern void LfsSetSegUsage();
+a67 3
+extern ReturnStatus LfsSegUsageAttach();
+extern Boolean	LfsSegUsageClean(), LfsSegUsageCheckpoint(), LfsSegUsageLayout();
+extern void LfsSegUsageWriteDone();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+d37 4
+@

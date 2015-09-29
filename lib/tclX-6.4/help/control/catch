@@ -1,0 +1,16 @@
+          catch command ?varName?
+               The catch command may be used to  prevent  errors  from
+               aborting  command  interpretation.  Catch calls the Tcl
+               interpreter recursively to execute command, and  always
+               returns  a  TCL_OK  code, regardless of any errors that
+               might occur while executing command.  The return  value
+               from catch is a decimal string giving the code returned
+               by the Tcl interpreter after executing  command.   This
+               will  be 0 (TCL_OK) if there were no errors in command;
+               otherwise it will have a non-zero  value  corresponding
+               to  one  of the exceptional return codes (see tcl.h for
+               the  definitions  of  code  values).   If  the  varName
+               argument  is  given,  then  it  gives  the  name  of  a
+               variable; catch will set the value of the  variable  to
+               the string returned from command (either a result or an
+               error message).

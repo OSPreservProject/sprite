@@ -1,0 +1,12 @@
+D INDEX                             	index
+F LST_MANS.;1                       	Lst.mansp
+F MAKEFILE.;1                       	Makefile
+F PMAKE.MAN;1                       	pmake.mansp
+F PMAKE.PSC;1                       	pmake.psc
+F PREFIX.MS;1                       	prefix.ms
+F PREFIX.PSC;1                      	prefix.psc
+D RCS                               	RCS
+F TMAC.ANS;1                        	tmac.ansp
+F TUTORIAL.MS;1                     	tutorial.ms
+F TUTORIAL.PSC;1                    	tutorial.psc
+F TUTORIAL.T;1                      	tutorial.t

@@ -1,0 +1,132 @@
+
+
+
+Tcl_InitHistory       C Library Procedures        Tcl_InitHistory
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_InitHistory, Tcl_RecordAndEval - procedures for managing
+     history list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     TTccll__IInniittHHiissttoorryy(_i_n_t_e_r_p)                                       |
+
+     int
+     TTccll__RReeccoorrddAAnnddEEvvaall(_i_n_t_e_r_p, _c_m_d, _f_l_a_g_s)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p    (in)      Tcl interpreter  in  which
+                                       history   facilities   are
+                                       being used.
+
+     char         *_c_m_d       (in)      Command  (or  sequence  of
+                                       commands) to execute.
+
+     char         _f_l_a_g_s      (in)      Flags to pass to  TTccll__EEvvaall
+                                       (normally 0).  If -1, then
+                                       the command  is  not  exe-
+                                       cuted;       it's     just
+                                       recorded.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The procedure TTccll__HHiissttoorryyIInniitt is invoked to enable the  his-  |
+     tory  facilities  in  an interpreter (by default there is no  |
+     hhiissttoorryy command in an interpreter).  After this command  has  |
+     been  executed  the  hhiissttoorryy  command  will  be available in  |
+     _i_n_t_e_r_p and  the  history  facilities  will  be  initialized.  |
+     TTccll__HHiissttoorryyIInniitt      is     invoked     automatically     by  |
+     TTccll__RReeccoorrddAAnnddEEvvaall, so it  need  not  be  invoked  explicitly  |
+     unless   the   hhiissttoorryy   command   is   to  be  used  before  |
+     TTccll__RReeccoorrddAAnnddEEvvaall has been called.
+
+     TTccll__RReeccoorrddAAnnddEEvvaall is invoked to record a command on the his-
+     tory list and then execute it.  Programs that do not wish to
+     use the history mechanism should not call TTccll__RReeccoorrddAAnnddEEvvaall;
+     they    should    call   TTccll__EEvvaall   instead.    Furthermore,
+     TTccll__RReeccoorrddAAnnddEEvvaall should only be called with top-level  com-
+     mands  typed by the user, since the purpose of history is to
+     allow the user to re-issue recently-invoked commands.
+
+     TTccll__RReeccoorrddAAnnddEEvvaall  does  three  things.   First,  it   calls
+     TTccll__HHiissttoorryyIInniitt  to  initialize  history for the interpreter
+     _i_n_t_e_r_p,  if  this  hasn't  already   been   done.    Second,
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_InitHistory       C Library Procedures        Tcl_InitHistory
+
+
+
+     TTccll__RReeccoorrddAAnnddEEvvaall  saves  _c_o_m_m_a_n_d  in  the  history list for
+     _i_n_t_e_r_p, making a new event  to  hold  the  command.   Third,
+     TTccll__RReeccoorrddAAnnddEEvvaall  executes  the  command  by passing it and
+     _f_l_a_g_s to TTccll__EEvvaall.  If _f_l_a_g_s is -1 then only the  first  two
+     steps are taken;  the command will not be executed.
+
+
+KKEEYYWWOORRDDSS
+     command, event, execute, history, interpreter, record
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

@@ -1,0 +1,200 @@
+
+
+
+DUMP                      User Commands                      DUMP
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     dump - A program that dumps directories
+
+SSYYNNOOPPSSIISS
+     dduummpp [_o_p_t_i_o_n_s] _d_i_r_e_c_t_o_r_y
+
+OOPPTTIIOONNSS
+     --aa             Reset access times after dumping each file.
+
+     --ff  _f_i_l_e_n_a_m_e   Use _f_i_l_e_n_a_m_e as the name of the dump archive.
+
+     --hheellpp          Print a help message.
+
+     --ii nnuummbbeerr      Initialize the tape,  using  nnuummbbeerr  for  the
+                    label.
+
+     --ll  _d_i_g_i_t      The single digit in the range  0-9  specifies
+                    the dump level.  The default is zero.
+
+     --mm _u_s_e_r_n_a_m_e    Send mail  to  _u_s_e_r_n_a_m_e  to  report  a  fatal
+                    error, or successful completion.
+
+     --rr             Re-initialize the tape.  Any data on the tape
+                    is lost.
+
+     --ss             Safe re-initialization of tape.   The  reini-
+                    tialization  will  fail  if the tape has been
+                    recently used.
+
+     --tt             Print the dump archive table of contents.
+
+     --vv             Verbose.  The name of each file is listed  as
+                    it is dumped.
+
+     --uu             Unofficial dump.  The dump is not recorded in
+                    the dumpdates file.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The dduummpp command is used to do an incremental dump of a  set
+     of  directory.   It will recursively dump all files and sub-
+     directories.  Each file that has been  created  or  modified
+     since  the  last  lower  level  dump  will  be copied to the
+     archive file.  For example, the command
+
+          dump -l 2 -f /dev/tape0 /sprite
+
+     will dump all files in the directory //sspprriittee in tar  format,
+     to //ddeevv//ttaappee00.
+
+
+
+
+Sprite v.1.0       Printed:  December 20, 1991                  1
+
+
+
+
+
+
+DUMP                      User Commands                      DUMP
+
+
+
+TTAAPPEE FFOORRMMAATT
+     Dump tapes have a particular  format.  It  is  assumed  that
+     blocks  on  the  tape  cannot be overwritten, so the tape is
+     written in an append-only fashion.  When a tape is  initial-
+     ized  a  file called the tape _l_a_b_e_l is written at the begin-
+     ning of the tape. Each time a filesystem  is  dumped  a  new
+     updated  tape  label  is  written to the end of the tape, so
+     that the current tape label is always the last  one  on  the
+     tape. The tape label is 16 Kbytes in size, and consists of a
+     sequence of ASCII strings separated by newlines.  The  first
+     string is of the form
+
+          SPRITE DUMP TAPE, Version _v Level _x Tape _n
+
+     where _v is the version of dduummpp that wrote the tape, xx is the
+     level  of the dump tape, and nn is the dump tape number.  The
+     version is intended to allow future versions of dduummpp  to  be
+     backwards  compatible.  The level is filled in when the tape
+     is initialized, but is otherwise unused.  It could  be  used
+     by  dduummpp  and  higher-level software to automate the dumping
+     process.
+
+     Subsequent lines in the tape label contain a table  of  con-
+     tents for the tape, and are of the form
+
+          _T_a_p_e_N_u_m _F_i_l_e_N_u_m _M_B_D_u_m_p_e_d _M_B_L_e_f_t _D_a_t_e _F_i_l_e_S_y_s_t_e_m
+
+     where _T_a_p_e_N_u_m is the tape number, _F_i_l_e_N_u_m is the file number
+     on  tape  corresponding  to the current entry (starting with
+     1), _M_B_D_u_m_p_e_d  is  the  number  of  MBytes  dumped  from  the
+     filesystem,  _M_B_L_e_f_t is the number of MBytes remaining on the
+     tape after the filesystem was dumped, _D_a_t_e is the date  when
+     the filesystem was dumped, and _F_i_l_e_S_y_s_t_e_m is the name of the
+     filesystem that was dumped.
+
+FFIILLEESS
+     //sspprriittee//aaddmmiinn//dduummpp//dduummppddaatteess
+          When a dump completes the information that  is  written
+          into  the  tape  label  is also written into this file.
+          Each line is of the form
+
+          _T_a_p_e_N_u_m _F_i_l_e_N_u_m _M_B_D_u_m_p_e_d _M_B_L_e_f_t _D_a_t_e _F_i_l_e_S_y_s_t_e_m
+
+          where _T_a_p_e_N_u_m is the tape number, _F_i_l_e_N_u_m is  the  file
+          number  on  tape  corresponding  to  the  current entry
+          (starting with 1), _M_B_D_u_m_p_e_d is  the  number  of  MBytes
+          dumped  from  the  filesystem,  _M_B_L_e_f_t is the number of
+          MBytes remaining on the tape after the  filesystem  was
+          dumped,  _D_a_t_e  is  the  date  when  the  filesystem was
+          dumped, and _F_i_l_e_S_y_s_t_e_m is the name  of  the  filesystem
+          that was dumped.
+
+
+
+
+Sprite v.1.0       Printed:  December 20, 1991                  2
+
+
+
+
+
+
+DUMP                      User Commands                      DUMP
+
+
+
+     //sspprriittee//aaddmmiinn//dduummpp//dduummpplloogg
+          This file contains low-level debugging information that
+          is printed out by dduummpp as it runs.
+
+     //sspprriittee//aaddmmiinn//dduummpp//ssttaattuusslloogg
+          This file contains information about the status of both
+          the  tape drives and the tapes.  A line is added to the
+          file each time a dump completes, and is of the form
+
+          _D_r_i_v_e_T_y_p_e _S_e_r_i_a_l _T_a_p_e_N_u_m _M_B_D_u_m_p_e_d _E_r_r_o_r_R_a_t_e _D_a_t_e _D_e_v_i_c_e
+
+          _D_r_i_v_e_T_y_p_e is the type of  drive  that  was  used  (e.g.
+          EXB-8500).   _S_e_r_i_a_l  is the serial number of the drive.
+          The combination of the drive  type  and  serial  number
+          should  allow  tape  drives  to be uniquely identified.
+          _T_a_p_e_N_u_m_b_e_r is the number of the  tape  that  was  used.
+          _M_B_D_u_m_p_e_d  is  the  number  of  MBytes that were dumped.
+          _E_r_r_o_r_R_a_t_e is the number  of  errors  per  tape  access,
+          expressed  as  a percentage of tape accesses.  An error
+          rate of 100% means that there was  an  average  of  one
+          error  per  tape access.  The definition of an error is
+          vendor specific but an increase in the error rate  over
+          time  may indicate that a tape is wearing out or that a
+          drive needs servicing.  The _D_a_t_e is the date  on  which
+          the  dump  occurred,  and the _D_e_v_i_c_e is the name of the
+          device as passed  to  the  dduummpp  command.   The  latter
+          should  not  be  considered to uniquely identify a tape
+          drive since the mapping between the device name and the
+          device  can  change,  thus  the  drive  type and serial
+          number should be used to look for an  increasing  error
+          rate on a particular drive.
+
+KKEEYYWWOORRDDSS
+     dump, restore, tape, backup, tar
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 20, 1991                  3
+
+
+

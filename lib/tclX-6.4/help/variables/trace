@@ -1,0 +1,142 @@
+          trace option ?arg arg ...?
+               Cause Tcl commands  to  be  executed  whenever  certain
+               operations  are  invoked.   At  present,  only variable
+               tracing is implemented. The legal option's  (which  may
+               be abbreviated) are:
+
+               trace variable name ops command
+                    Arrange   for  command  to  be  executed  whenever
+                    variable name is accessed in one of the ways given
+                    by  ops.   Name may refer to a normal variable, an
+                    element of an array, or to an  array  as  a  whole
+                    (i.e.  name may be just the name of an array, with
+                    no parenthesized index).   If  name  refers  to  a
+                    whole  array, then command is invoked whenever any
+                    element of the array is manipulated.
+
+                    Ops indicates which operations  are  of  interest,
+                    and  consists  of  one  or  more  of the following
+                    letters:
+
+                         r
+                              Invoke  command whenever the variable is
+                              read.
+
+                         w
+                              Invoke  command whenever the variable is
+                              written.
+
+                         u
+                              Invoke  command whenever the variable is
+                              unset.    Variables   can    be    unset
+                              explicitly  with  the  unset command, or
+                              implicitly when procedures  return  (all
+                              of  their  local  variables  are unset).
+                              Variables   are    also    unset    when
+                              interpreters  are  deleted,  but  traces
+                              will not be invoked because there is  no
+                              interpreter in which to execute them.
+
+                    When  the  trace  triggers,  three  arguments  are
+                    appended  to command so that the actual command is
+                    as follows:
+
+                         command name1 name2 op
+
+                    Name1 and name2 give the name(s) for the  variable
+                    being  accessed:  if the variable is a scalar then
+                    name1 gives the variable's name and  name2  is  an
+                    empty  string; if the variable is an array element
+                    then name1 gives the name of the array  and  name2
+                    gives the index into the array; if an entire array
+                    is being deleted and the trace was  registered  on
+                    the  overall  array, rather than a single element,
+                    then name1 gives the array name and  name2  is  an
+                    empty  string.   Op  indicates  what  operation is
+                    being performed on the variable, and is one of  r,
+                    w, or u as defined above.
+
+                    Command executes in the same context as  the  code
+                    that   invoked   the  traced  operation:   if  the
+                    variable was accessed as part of a Tcl  procedure,
+                    then  command  will  have access to the same local
+                    variables as code in the procedure.  This  context
+                    may  be  different  than  the context in which the
+                    trace  was  created.   Note  that  name1  may  not
+                    necessarily  be  the  same as the name used to set
+                    the trace on the variable;  differences can  occur
+                    if  the  access is made through a variable defined
+                    with the upvar command.
+
+                    For read and write traces, command can modify  the
+                    variable  to  affect  the  result  of  the  traced
+                    operation.  If command modifies  the  value  of  a
+                    variable  during  a  read  trace,  then  the value
+                    returned by the traced read operation will be  the
+                    value  of  the  variable  after command completes.
+                    For write traces, command  is  invoked  after  the
+                    variable's  value has been changed; it can write a
+                    new  value  into  the  variable  to  override  the
+                    original  value  specified in the write operation.
+                    The value returned by the traced  write  operation
+                    will  be  the  value  of the variable when command
+                    completes.  If command returns an error  during  a
+                    read  or write trace, then the traced operation is
+                    aborted with an error.  This mechanism can be used
+                    to  implement  read-only  variables,  for example.
+                    Command's result is always ignored.
+
+                    While command is executing during a read or  write
+                    trace,  traces  on  the  variable  are temporarily
+                    disabled.   This  means  that  reads  and   writes
+                    invoked  by  command  will occur directly, without
+                    invoking command (or any other traces) again.   It
+                    is  illegal  to  unset a variable while a trace is
+                    active for it.  It is also  illegal  to  unset  an
+                    array  if  there  are traces active for any of the
+                    array's elements.
+
+                    When an unset trace is invoked, the  variable  has
+                    already  been  deleted:   it  will  appear  to  be
+                    undefined with no  traces.   If  an  unset  occurs
+                    because of a procedure return, then the trace will
+                    be  invoked  in  the  variable  context   of   the
+                    procedure  being  returned to:  the stack frame of
+                    the returning  procedure  will  no  longer  exist.
+                    Traces are not disabled during unset traces, so if
+                    an unset trace command creates  a  new  trace  and
+                    accesses the variable, the trace will be invoked.
+
+                    If there are multiple traces on  a  variable  they
+                    are  invoked  in  order  of  creation, most-recent
+                    first.  If one trace returns  an  error,  then  no
+                    further  traces  are invoked for the variable.  If
+                    an array element has a trace  set,  and  there  is
+                    also  a  trace  set  on  the array as a whole, the
+                    trace on the overall array is invoked  before  the
+                    one on the element.
+
+                    Once created, the trace remains in  effect  either
+                    until  the trace is removed with the trace vdelete
+                    command described below,  until  the  variable  is
+                    unset,   or  until  the  interpreter  is  deleted.
+                    Unsetting an element  of  array  will  remove  any
+                    traces on that element, but will not remove traces
+                    on the overall array.
+
+                    This command returns an empty string.
+
+               trace vdelete name ops command
+                    If  there is a trace set on variable name with the
+                    operations and command given by ops  and  command,
+                    then  the  trace  is removed, so that command will
+                    never again be invoked.  Returns an empty string.
+
+               trace vinfo name
+                    Returns  a  list  containing  one element for each
+                    trace  currently  set  on  variable  name.    Each
+                    element  of  the  list is itself a list containing
+                    two  elements,  which  are  the  ops  and  command
+                    associated  with the trace.  If name doesn't exist
+                    or doesn't have any traces set, then the result of
+                    the command will be an empty string.

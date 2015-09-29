@@ -1,0 +1,8 @@
+F BOOTPARA.H_V;1                    	bootparam.h,v
+F EEPROM.H_V;1                      	eeprom.h,v
+F IDPROM.H_V;1                      	idprom.h,v
+F KEYBOARD.H_V;1                    	keyboard.h,v
+F LED.H_V;1                         	led.h,v
+F MAKEFILE.;1                       	Makefile,v
+F SUNMON.H_V;1                      	sunmon.h,v
+F SUNROMVE.H_V;1                    	sunromvec.h,v

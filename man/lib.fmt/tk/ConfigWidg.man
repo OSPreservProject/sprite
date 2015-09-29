@@ -1,0 +1,792 @@
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_ConfigureWidget, Tk_Offset,  Tk_ConfigureInfo  -  process
+     configuration options for widgets
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     int
+     TTkk__CCoonnffiigguurreeWWiiddggeett((_i_n_t_e_r_p, _t_k_w_i_n, _s_p_e_c_s, _a_r_g_c, _a_r_g_v, _w_i_d_g_R_e_c, _f_l_a_g_s))
+
+     int
+     TTkk__OOffffsseett((_t_y_p_e, _f_i_e_l_d))
+
+     int
+     TTkk__CCoonnffiigguurreeIInnffoo((_i_n_t_e_r_p, _t_k_w_i_n, _s_p_e_c_s, _w_i_d_g_R_e_c, _a_r_g_v_N_a_m_e, _f_l_a_g_s))
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp      *_i_n_t_e_r_p    (in)      Interpreter to use  for
+                                          returning   error  mes-
+                                          sages.
+
+     Tk_Window       _t_k_w_i_n      (in)      Window     used      to
+                                          represent        widget
+                                          (needed  to  set  up  X
+                                          resources).
+
+     Tk_ConfigSpec   *_s_p_e_c_s     (in)      Pointer to table speci-
+                                          fying  legal configura-
+                                          tion options  for  this
+                                          widget.
+
+     int             _a_r_g_c       (in)      Number of arguments  in
+                                          _a_r_g_v.
+
+     char            **_a_r_g_v     (in)      Command-line    options
+                                          for configuring widget.
+
+     char            *_w_i_d_g_R_e_c   (in/out)  Points to widget record
+                                          structure.   Fields  in
+                                          this   structure    get
+                                          modified             by
+                                          TTkk__CCoonnffiigguurreeWWiiddggeett   to
+                                          hold      configuration
+                                          information.
+
+     int             _f_l_a_g_s      (in)      If  non-zero,  then  it
+                                          specifies  one  or more
+                                          flags that control  the
+                                          processing   of  confi-
+                                          guration   information.
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+                                          Different  flags may be
+                                          OR'ed  together.    The
+                                          only   flag   currently
+                                          defined              is
+                                          TK_CONFIG_ARGV_ONLY.
+
+     char            *_a_r_g_v_N_a_m_e  (in)      The name  used  on  Tcl
+                                          command  lines to refer
+                                          to a particular  option
+                                          (e.g.  when  creating a
+                                          widget or invoking  the
+                                          ccoonnffiigguurree  widget  com-
+                                          mand).   If   non-NULL,
+                                          then   information   is
+                                          returned only for  this
+                                          option.   If NULL, then
+                                          information is returned
+                                          for    all    available
+                                          options.
+
+     type name       _t_y_p_e       (in)      The name of the type of
+                                          a widget record.
+
+     field name      _f_i_e_l_d      (in)      The name of a field  in
+                                          records of type _t_y_p_e.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__CCoonnffiigguurreeWWiiddggeett is called to configure various aspects of
+     a  widget,  such as colors, fonts, border width, etc.  It is
+     intended as a convenience procedure to reduce the amount  of
+     code  that  must be written in individual widget managers to
+     handle configuration information.  It is  typically  invoked
+     when  widgets are created, and again when the ccoonnffiigguurree com-
+     mand is invoked for a widget.  Although  intended  primarily
+     for  widgets, TTkk__CCoonnffiigguurreeWWiiddggeett can be used in other situa-
+     tions where _a_r_g_c-_a_r_g_v information is to be used to fill in a
+     record structure, such as configuring graphical elements for
+     a canvas widget or entries of a menu.
+
+     TTkk__CCoonnffiigguurreeWWiiddggeett processes a table specifying  the  confi-
+     guration options that are supported (_s_p_e_c_s) and a collection
+     of command-line arguments (_a_r_g_c and _a_r_g_v) to fill in  fields
+     of  a  record  (_w_i_d_g_R_e_c).   It  uses the option database and
+     defaults specified in _s_p_e_c_s to fill  in  fields  of  _w_i_d_g_R_e_c
+     that are not specified in _a_r_g_v.  TTkk__CCoonnffiigguurreeWWiiddggeett normally
+     returns the value TCL_OK; in this case it  does  not  modify
+     _i_n_t_e_r_p.   If  an error occurs then TCL_ERROR is returned and
+     TTkk__CCoonnffiigguurreeWWiiddggeett will leave an error  message  in  _i_n_t_e_r_p-
+     >_r_e_s_u_l_t  in  the  standard  Tcl fashion.  In the event of an
+     error return, some of the fields of  _w_i_d_g_R_e_c  could  already
+     have  been  modified,  if configuration information for them
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+     was successfully processed before the error occurred.
+
+     The _s_p_e_c_s array specifies the kinds of configuration options
+     expected  by  the widget.  Each of its entries specifies one
+     configuration option and has the following structure:
+
+          typedef struct {
+              int _t_y_p_e;
+              char _a_r_g_v_N_a_m_e;
+              char *_d_b_N_a_m_e;
+              char *_d_b_C_l_a_s_s;
+              char *_d_e_f_V_a_l_u_e;
+              int _o_f_f_s_e_t;
+              int _s_p_e_c_F_l_a_g_s;
+              Tk_CustomOption *_c_u_s_t_o_m_P_t_r;                          |
+          } Tk_ConfigSpec;
+
+     The _t_y_p_e field indicates what type of  configuration  option
+     this   is  (e.g.  TK_CONFIG_COLOR  for  a  color  value,  or
+     TK_CONFIG_INT for an integer value).  The _t_y_p_e  field  indi-
+     cates  how  to  use  the  value  of the option (more on this
+     below).  The _a_r_g_v_N_a_m_e field is a string such as ``-font'' or
+     ``-bg'',  which  is  compared  with  the  values in _a_r_g_v (if
+     _a_r_g_v_N_a_m_e is NULL it means this  is  a  grouped  entry;   see
+     GROUPED  ENTRIES  below).  The _d_b_N_a_m_e and _d_b_C_l_a_s_s fields are
+     used to look up a value for this option in the option  data-
+     base.  The _d_e_f_V_a_l_u_e field specifies a default value for this
+     configuration option if no value is specified in either _a_r_g_v
+     or  the  option database.  _O_f_f_s_e_t indicates where in _w_i_d_g_R_e_c
+     to store information about this option, and  _s_p_e_c_F_l_a_g_s  con-
+     tains  additional  information  to control the processing of
+     this configuration  option  (see  FLAGS  below).   The  last
+     field,  _c_u_s_t_o_m_P_t_r, is only used if _t_y_p_e is TK_CONFIG_CUSTOM;
+     see CUSTOM OPTION TYPES below.
+
+     TTkk__CCoonnffiigguurreeWWiiddggeett first processes _a_r_g_v  to  see  which  (if
+     any)  configuration  options are specified there.  _A_r_g_v must
+     contain an even number of fields;  the first of each pair of
+     fields  must  match  the  _a_r_g_v_N_a_m_e  of  some  entry in _s_p_e_c_s
+     (unique abbreviations are acceptable), and the second  field
+     of  the  pair  contains  the  value  for  that configuration
+     option.  If there are entries in _s_p_e_c for which  there  were
+     no  matching  entries  in  _a_r_g_v, TTkk__CCoonnffiigguurreeWWiiddggeett uses the
+     _d_b_N_a_m_e and _d_b_C_l_a_s_s fields of the _s_p_e_c_s entry  to  probe  the
+     option  database;   if  a value is found, then it is used as
+     the value for the option.  Finally, if no entry is found  in
+     the  option  database, the _d_e_f_V_a_l_u_e field of the _s_p_e_c_s entry
+     is used as the value for the configuration option.   If  the
+     _d_e_f_V_a_l_u_e  is  NULL, or if the TK_CONFIG_DONT_SET_DEFAULT bit
+     is set in _f_l_a_g_s, then there is no  default  value  and  this
+     _s_p_e_c_s entry will be ignored if no value is specified in _a_r_g_v
+     or the option database.
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+     Once a string value has been determined for a  configuration
+     option,  TTkk__CCoonnffiigguurreeWWiiddggeett translates the string value into
+     a  more  useful  form,  such  as  a   color   if   _t_y_p_e   is
+     TK_CONFIG_COLOR  or  an  integer  if  _t_y_p_e is TK_CONFIG_INT.
+     This value is then  stored  in  the  record  pointed  to  by
+     _w_i_d_g_R_e_c.   This  record  is  assumed  to contain information
+     relevant to the manager of the widget;  its  exact  type  is
+     unknown  to  TTkk__CCoonnffiigguurreeWWiiddggeett.   The  _o_f_f_s_e_t field of each
+     _s_p_e_c_s entry indicates where in _w_i_d_g_R_e_c to store the informa-
+     tion  about  this  configuration option.  You should use the
+     TTkk__OOffffsseett macro to generate _o_f_f_s_e_t values (see below  for  a
+     description   of  TTkk__OOffffsseett).   The  location  indicated  by
+     _w_i_d_g_R_e_c and _o_f_f_s_e_t will be referred to as the ``target''  in
+     the descriptions below.
+
+     The _t_y_p_e field of each entry in _s_p_e_c_s determines what to  do
+     with  the  string  value  of that configuration option.  The
+     legal values for _t_y_p_e, and the corresponding actions, are:
+
+     TTKK__CCOONNFFIIGG__AACCTTIIVVEE__CCUURRSSOORR
+          The value must be an ASCII string identifying a  cursor  |
+          in  a  form  suitable  for passing to TTkk__GGeettCCuurrssoorr. The  |
+          value is converted to a CCuurrssoorr by calling  TTkk__GGeettCCuurrssoorr  |
+          and  the  result is stored in the target.  In addition,  |
+          the resulting cursor is  made  the  active  cursor  for  |
+          _t_k_w_i_n  by  calling XXDDeeffiinneeCCuurrssoorr.  If TK_CONFIG_NULL_OK  |
+          is specified in _s_p_e_c_F_l_a_g_s then  the  value  may  be  an  |
+          empty  string,  in  which  case  the target and _t_k_w_i_n's  |
+          active cursor will be set to  NNoonnee.   If  the  previous  |
+          value  of  the  target wasn't NNoonnee, then it is freed by  |
+          passing it to TTkk__FFrreeeeCCuurrssoorr.                             |
+
+     TTKK__CCOONNFFIIGG__AANNCCHHOORR                                                   ||
+          The value must be an ASCII string identifying an anchor  |
+          point in one of the ways accepted by TTkk__GGeettAAnncchhoorr.  The  |
+          string   is   converted   to  a  TTkk__AAnncchhoorr  by  calling  |
+          TTkk__GGeettAAnncchhoorr and the result is stored in the target.
+
+     TTKK__CCOONNFFIIGG__BBIITTMMAAPP
+          The value must be an ASCII string identifying a  bitmap
+          in  a  form  suitable for passing to TTkk__GGeettBBiittmmaapp.  The
+          value is converted to a PPiixxmmaapp by calling  TTkk__GGeettBBiittmmaapp
+          and   the   result   is   stored  in  the  target.   If  |
+          TK_CONFIG_NULL_OK is specified in  _s_p_e_c_F_l_a_g_s  then  the  |
+          value  may be an empty string, in which case the target  |
+          is set to NNoonnee.  If the previous value  of  the  target
+          wasn't  NNoonnee,  then  it  is  freed  by  passing  it  to
+          TTkk__FFrreeeeBBiittmmaapp.
+
+     TTKK__CCOONNFFIIGG__BBOOOOLLEEAANN
+          The value must be an ASCII string specifying a  boolean
+          value.  Any of the values ``true'', ``yes'', ``on'', or
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+          ``1'', or an abbreviation of one of these values, means
+          true;  any of the values ``false'', ``no'', ``off'', or
+          ``0'', or an abbreviation of one of these values, means
+          false.   The  target is expected to be an integer;  for
+          true values it will be set to 1 and for false values it
+          will be set to 0.
+
+     TTKK__CCOONNFFIIGG__BBOORRDDEERR
+          The value must be an ASCII string identifying a  border
+          color in a form suitable for passing to TTkk__GGeett33DDBBoorrddeerr.
+          The value is converted to a (TTkk__33DDBBoorrddeerr **) by  calling
+          TTkk__GGeett33DDBBoorrddeerr  and the result is stored in the target.  |
+          If TK_CONFIG_NULL_OK is specified in _s_p_e_c_F_l_a_g_s then the  |
+          value  may be an empty string, in which case the target  |
+          will be set to NULL.  If the previous value of the tar-
+          get  wasn't  NULL,  then  it  is freed by passing it to
+          TTkk__FFrreeee33DDBBoorrddeerr.
+
+     TTKK__CCOONNFFIIGG__CCAAPP__SSTTYYLLEE
+          The value must be an ASCII  string  identifying  a  cap  |
+          style  in  one  of the ways accepted by TTkk__GGeettCCaappSSttyyllee.  |
+          The string is converted to an integer value correspond-  |
+          ing  to the cap style by calling TTkk__GGeettCCaappSSttyyllee and the  |
+          result is stored in the target.
+
+     TTKK__CCOONNFFIIGG__CCOOLLOORR
+          The value must be an ASCII string identifying  a  color
+          in  a  form  suitable  for passing to TTkk__GGeettCCoolloorr.  The
+          value  is  converted  to  an  (XXCCoolloorr  **)  by   calling
+          TTkk__GGeettCCoolloorr and the result is stored in the target.  If  |
+          TK_CONFIG_NULL_OK is specified in  _s_p_e_c_F_l_a_g_s  then  the  |
+          value  may be an empty string, in which case the target  |
+          will be set to NNoonnee.  If the previous value of the tar-
+          get  wasn't  NULL,  then  it  is freed by passing it to
+          TTkk__FFrreeeeCCoolloorr.
+
+     TTKK__CCOONNFFIIGG__CCUURRSSOORR
+          This option  is  identical  to  TTKK__CCOONNFFIIGG__AACCTTIIVVEE__CCUURRSSOORR
+          except  that  the new cursor is not made the active one
+          for _t_k_w_i_n.
+
+     TTKK__CCOONNFFIIGG__CCUUSSTTOOMM
+          This option allows applications to  define  new  option  |
+          types.   The  _c_u_s_t_o_m_P_t_r  field of the entry points to a  |
+          structure defining the new option type.  See  the  sec-  |
+          tion CUSTOM OPTION TYPES below for details.
+
+     TTKK__CCOONNFFIIGG__DDOOUUBBLLEE
+          The value must be an ASCII floating-point number in the
+          format  accepted by ssttrrttooll.  The string is converted to
+          a ddoouubbllee value, and the value is stored in the target.
+
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+     TTKK__CCOONNFFIIGG__EENNDD
+          Marks the end of the table.  The last  entry  in  _s_p_e_c_s
+          must  have  this  type;   all  of  its other fields are
+          ignored and it will never match any arguments.
+
+     TTKK__CCOONNFFIIGG__FFOONNTT
+          The value must be an ASCII string identifying a font in
+          a  form  suitable for passing to TTkk__GGeettFFoonnttSSttrruucctt.  The
+          value is converted to an  (XXFFoonnttSSttrruucctt  **)  by  calling
+          TTkk__GGeettFFoonnttSSttrruucctt  and  the result is stored in the tar-
+          get.  If TK_CONFIG_NULL_OK is  specified  in  _s_p_e_c_F_l_a_g_s  |
+          then  the  value  may be an empty string, in which case  |
+          the target will be set to NULL.  If the previous  value
+          of  the target wasn't NULL, then it is freed by passing
+          it to TTkk__FFrreeeeFFoonnttSSttrruucctt.
+
+     TTKK__CCOONNFFIIGG__IINNTT
+          The value must be an ASCII integer string in the format
+          accepted  by ssttrrttooll (e.g. ``0'' and ``0x'' prefixes may
+          be  used  to  specify  octal  or  hexadecimal  numbers,
+          respectively).   The  string is converted to an integer
+          value and the integer is stored in the target.
+
+     TTKK__CCOONNFFIIGG__JJOOIINN__SSTTYYLLEE
+          The value must be an ASCII string  identifying  a  join  |
+          style  in  one of the ways accepted by TTkk__GGeettJJooiinnSSttyyllee.  |
+          The string is converted to an integer value correspond-  |
+          ing  to  the  join style by calling TTkk__GGeettJJooiinnSSttyyllee and  |
+          the result is stored in the target.                      |
+
+     TTKK__CCOONNFFIIGG__JJUUSSTTIIFFYY                                                  ||
+          The value must be an ASCII string identifying a justif-  |
+          ication  method  in  one  of  the  ways   accepted   by  |
+          TTkk__GGeettJJuussttiiffyy.  The string is converted to a TTkk__JJuussttiiffyy  |
+          by calling TTkk__GGeettJJuussttiiffyy and the result  is  stored  in  |
+          the target.                                              |
+
+     TTKK__CCOONNFFIIGG__MMMM                                                       ||
+          The  value must specify a screen distance in one of the  |
+          forms acceptable to TTkk__GGeettSSccrreeeennMMMM.  The string is con-  |
+          verted  to  double-precision floating-point distance in  |
+          millimeters and the value is stored in the target.       |
+
+     TTKK__CCOONNFFIIGG__PPIIXXEELLSS                                                   ||
+          The value must specify screen units in one of the forms  |
+          acceptable to TTkk__GGeettPPiixxeellss.  The string is converted to  |
+          an  integer  distance in pixels and the value is stored  |
+          in the target.
+
+     TTKK__CCOONNFFIIGG__RREELLIIEEFF
+          The value must be an ASCII string identifying a  relief
+          in  a  form  suitable for passing to TTkk__GGeettRReelliieeff.  The
+
+
+
+Sprite v1.0                                                     6
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+          value is converted to an integer relief value  by  cal-
+          ling  TTkk__GGeettRReelliieeff and the result is stored in the tar-
+          get.
+
+     TTKK__CCOONNFFIIGG__SSTTRRIINNGG
+          A copy of the value is made by allocating memory  space  |
+          with   mmaalllloocc   and   copying   the   value   into  the  |
+          dynamically-allocated space.   A  pointer  to  the  new  |
+          string  is  stored in the target.  If TK_CONFIG_NULL_OK  |
+          is specified in _s_p_e_c_F_l_a_g_s then  the  value  may  be  an  |
+          empty  string,  in which case the target will be set to  |
+          NULL.  If the previous value of the target wasn't NULL,  |
+          then it is freed by passing it to ffrreeee.
+
+     TTKK__CCOONNFFIIGG__SSYYNNOONNYYMM
+          This _t_y_p_e value identifies  special  entries  in  _s_p_e_c_s
+          that  are synonyms for other entries.  If an _a_r_g_v value
+          matches the _a_r_g_v_N_a_m_e of a TK_CONFIG_SYNONYM entry,  the
+          entry  isn't used directly. Instead, TTkk__CCoonnffiigguurreeWWiiddggeett
+          searches _s_p_e_c_s for another entry whose _a_r_g_v_N_a_m_e is  the
+          same  as  the  _d_b_N_a_m_e  field  in  the TK_CONFIG_SYNONYM
+          entry;  this new entry is used just as if its  _a_r_g_v_N_a_m_e
+          had  matched  the  _a_r_g_v  value.   The synonym mechanism
+          allows multiple _a_r_g_v values to be  used  for  a  single
+          configuration   option,  such  as  ``-background''  and
+          ``-bg''.
+
+     TTKK__CCOONNFFIIGG__UUIIDD
+          The value is translated to a TTkk__UUiidd (by passing  it  to
+          TTkk__GGeettUUiidd).   The resulting value is stored in the tar-
+          get.  If TK_CONFIG_NULL_OK is  specified  in  _s_p_e_c_F_l_a_g_s  |
+          and  the  value is an empty string then the target will  |
+          be set to NULL.
+
+
+GGRROOUUPPEEDD EENNTTRRIIEESS
+     In some cases it is useful to  generate  multiple  resources
+     from  a  single  configuration  value.  For example, a color
+     name might be used both to generate the background color for
+     a  widget  (using  TK_CONFIG_COLOR)  and  to  generate a 3-D
+     border to draw around the widget  (using  TK_CONFIG_BORDER).
+     In  cases  like  this it is possible to specify that several
+     consecutive entries in _s_p_e_c_s are to be treated as  a  group.
+     The  first  entry  is  used  to determine a value (using its
+     _a_r_g_v_N_a_m_e, _d_b_N_a_m_e, _d_b_C_l_a_s_s, and _d_e_f_V_a_l_u_e fields).  The  value
+     will  be  processed several times (one for each entry in the
+     group), generating multiple different resources and  modify-
+     ing  multiple  targets  within _w_i_d_g_R_e_c.  Each of the entries
+     after the first must have  a  NULL  value  in  its  _a_r_g_v_N_a_m_e
+     field;   this indicates that the entry is to be grouped with
+     the entry that precedes it.  Only the _t_y_p_e and _o_f_f_s_e_t fields
+     are used from these follow-on entries.
+
+
+
+Sprite v1.0                                                     7
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+FFLLAAGGSS
+     The _f_l_a_g_s argument passed to TTkk__CCoonnffiigguurreeWWiiddggeett is  used  in
+     conjunction  with  the  _s_p_e_c_F_l_a_g_s  fields  in the entries of
+     _s_p_e_c_s to provide additional control over the  processing  of
+     configuration  options.  These values are used in three dif-
+     ferent ways as described below.
+
+     First, if the _f_l_a_g_s argument to TTkk__CCoonnffiigguurreeWWiiddggeett  has  the
+     TK_CONFIG_ARGV_ONLY     bit     set     (i.e.,    _f_l_a_g_s    |
+     TK_CONFIG_ARGV_ONLY != 0),  then  the  option  database  and
+     _d_e_f_V_a_l_u_e  fields are not used.  In this case, if an entry in
+     _s_p_e_c_s doesn't match a field in _a_r_g_v  then  nothing  happens:
+     the  corresponding  target  isn't modified.  This feature is
+     useful when the goal  is  to  modify  certain  configuration
+     options while leaving others in their current state, such as
+     when a ccoonnffiigguurree widget command is being processed.
+
+     Second, the _s_p_e_c_F_l_a_g_s field of an entry in _s_p_e_c_s may be used  |
+     to  control  the  processing  of that entry.  Each _s_p_e_c_F_l_a_g_s  |
+     field may consists of an OR-ed combination of the  following  |
+     values:                                                       |
+
+     TTKK__CCOONNFFIIGG__CCOOLLOORR__OONNLLYY                                               ||
+          If  this  bit  is  set then the entry will only be con-  |
+          sidered if the display for _t_k_w_i_n has more than one  bit  |
+          plane.  If the display is monochromatic then this _s_p_e_c_s  |
+          entry will be ignored.                                   |
+
+     TTKK__CCOONNFFIIGG__MMOONNOO__OONNLLYY                                                ||
+          If  this  bit  is  set then the entry will only be con-  |
+          sidered if the display for _t_k_w_i_n has  exactly  one  bit  |
+          plane.   If  the display is not monochromatic then this  |
+          _s_p_e_c_s entry will be ignored.                             |
+
+     TTKK__CCOONNFFIIGG__NNUULLLL__OOKK                                                  ||
+          This  bit  is  only  relevant for some types of entries  |
+          (see  the  descriptions  of  the  various  entry  types  |
+          above).  If this bit is set, it indicates that an empty  |
+          string value for the field  is  acceptable  and  if  it  |
+          occurs  then  the target should be set to NULL or NNoonnee,  |
+          depending on the type of the target.  This flag is typ-  |
+          ically  used  to  allow  a  feature  to  be  turned off  |
+          entirely, e.g. set a cursor value to  NNoonnee  so  that  a  |
+          window  simply  inherits  its parent's cursor.  If this  |
+          bit isn't set  then  empty  strings  are  processed  as  |
+          strings, which generally results in an error.            |
+
+     TTKK__CCOONNFFIIGG__DDOONNTT__SSEETT__DDEEFFAAUULLTT                                         ||
+          If this bit is one, it means that the _d_e_f_V_a_l_u_e field of  |
+          the entry should only be used for returning the default  |
+          value     in    TTkk__CCoonnffiigguurreeIInnffoo.     In    calls    to  |
+          TTkk__CCoonnffiigguurreeWWiiddggeett no  default  will  be  supplied  for  |
+
+
+
+Sprite v1.0                                                     8
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+          entries  with  this  flag  set;  it is assumed that the  |
+          caller has already supplied a default value in the tar-  |
+          get location.  This flag provides a performance optimi-  |
+          zation where it is expensive  to  process  the  default  |
+          string:   the client can compute the default once, save  |
+          the   value,   and   provide    it    before    calling  |
+          TTkk__CCoonnffiigguurreeWWiiddggeett.                                      |
+
+     TTKK__CCOONNFFIIGG__OOPPTTIIOONN__SSPPEECCIIFFIIEEDD                                         ||
+          This  bit  is  set  and  cleared by TTkk__CCoonnffiigguurreeWWiiddggeett.  |
+          Whenever TTkk__CCoonnffiigguurreeWWiiddggeett returns, this bit  will  be  |
+          set  in  all the entries where a value was specified in  |
+          _a_r_g_v.  It will be zero in all other entries.  This  bit  |
+          provides  a  way  for clients to determine which values  |
+          actually changed in a call to TTkk__CCoonnffiigguurreeWWiiddggeett.
+
+     The TK_CONFIG_MONO_ONLY and TK_CONFIG_COLOR_ONLY  flags  are
+     typically used to specify different default values for mono-
+     chrome and color displays.  This is  done  by  creating  two
+     entries  in  _s_p_e_c_s  that  are  identical  except  for  their
+     _d_e_f_V_a_l_u_e and _s_p_e_c_F_l_a_g_s fields.  One entry  should  have  the
+     value  TK_CONFIG_MONO_ONLY  in its _s_p_e_c_F_l_a_g_s and the default
+     value for monochrome displays in its  _d_e_f_V_a_l_u_e;   the  other
+     entry  entry  should  have the value TK_CONFIG_COLOR_ONLY in
+     its  _s_p_e_c_F_l_a_g_s  and  the  appropriate  _d_e_f_V_a_l_u_e  for   color
+     displays.
+
+     Third, it is possible to use _f_l_a_g_s and _s_p_e_c_F_l_a_g_s together to
+     selectively  disable  some  entries.   This  feature  is not
+     needed very often.  It is  useful  in  cases  where  several
+     similar  kinds  of widgets are implemented in one place.  It
+     allows a single _s_p_e_c_s table to be created with all the  con-
+     figuration  options for all the widget types.  When process-
+     ing a particular widget type, only entries relevant to  that
+     type  will  be used.  This effect is achieved by setting the
+     high-order bits (those in positions equal to or greater than
+     TK_CONFIG_USER_BIT)  in  _s_p_e_c_F_l_a_g_s  values  or in _f_l_a_g_s.  In
+     order for a particular entry in _s_p_e_c_s to be used, its  high-
+     order  bits  must  match  exactly the high-order bits of the
+     _f_l_a_g_s value passed to TTkk__CCoonnffiigguurreeWWiiddggeett.  If a _s_p_e_c_s  table
+     is  being  used  for N different widget types, then N of the
+     high-order bits will be used.  Each _s_p_e_c_s  entry  will  have
+     one  of  more  of  those  bits set in its _s_p_e_c_F_l_a_g_s field to
+     indicate the widget types for which  this  entry  is  valid.
+     When  calling  TTkk__CCoonnffiigguurreeWWiiddggeett,  _f_l_a_g_s will have a single
+     one of these bits set to select the entries for the  desired
+     widget type.  For a working example of this feature, see the
+     code in tkButton.c.
+
+
+TTKK__OOFFFFSSEETT
+     The TTkk__OOffffsseett macro is provided as a safe way of  generating
+
+
+
+Sprite v1.0                                                     9
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+     the  _o_f_f_s_e_t  values for entries in Tk_ConfigSpec structures.
+     It takes two arguments:  the name of a type of  record,  and
+     the  name  of  a  field in that record.  It returns the byte
+     offset of the named field in records of the given type.
+
+
+TTKK__CCOONNFFIIGGUURREEIINNFFOO
+     The TTkk__CCoonnffiigguurreeIInnffoo procedure may be used to obtain  infor-
+     mation  about  one or all of the options for a given widget.
+     Given a token for a window (_t_k_w_i_n), a table  describing  the
+     configuration  options  for  a  class  of widgets (_s_p_e_c_s), a
+     pointer to a widget record containing the  current  informa-
+     tion  for  a widget (_w_i_d_g_R_e_c), and a NULL _a_r_g_v_N_a_m_e argument,
+     TTkk__CCoonnffiigguurreeIInnffoo generates a string describing  all  of  the
+     configuration  options for the window.  The string is placed
+     in _i_n_t_e_r_p->_r_e_s_u_l_t.  Under normal  circumstances  it  returns
+     TCL_OK;   if  an  error occurs then it returns TCL_ERROR and
+     _i_n_t_e_r_p->_r_e_s_u_l_t contains an error message.
+
+     If _a_r_g_v_N_a_m_e is NULL, then the value left  in  _i_n_t_e_r_p->_r_e_s_u_l_t
+     by  TTkk__CCoonnffiigguurreeIInnffoo  consists  of  a  list  of  one or more
+     entries, each of which describes  one  configuration  option
+     (i.e. one entry in _s_p_e_c_s).  Each entry in the list will con-
+     tain either two or five values.  If the corresponding  entry
+     in _s_p_e_c_s has type TK_CONFIG_SYNONYM, then the list will con-
+     tain two values:  the _a_r_g_v_N_a_m_e for the entry and the  _d_b_N_a_m_e
+     (synonym  name).   Otherwise  the  list  will  contain  five
+     values:  _a_r_g_v_N_a_m_e, _d_b_N_a_m_e, _d_b_C_l_a_s_s,  _d_e_f_V_a_l_u_e,  and  current
+     value.   The  current value is computed from the appropriate
+     field of _w_i_d_g_R_e_c by calling procedures like TTkk__NNaammeeOOffCCoolloorr.
+
+     If the _a_r_g_v_N_a_m_e argument to  TTkk__CCoonnffiigguurreeIInnffoo  is  non-NULL,
+     then  it  indicates  a  single  option,  and  information is
+     returned  only  for  that  option.   The  string  placed  in
+     _i_n_t_e_r_p->_r_e_s_u_l_t  will be a list containing two or five values
+     as  described  above;   this  will  be  identical   to   the
+     corresponding  sublist  that  would  have  been  returned if
+     _a_r_g_v_N_a_m_e had been NULL.
+
+     The _f_l_a_g_s argument to TTkk__CCoonnffiigguurreeIInnffoo is used  to  restrict
+     the    _s_p_e_c_s    entries    to    consider,   just   as   for
+     TTkk__CCoonnffiigguurreeWWiiddggeett.
+
+
+CCUUSSTTOOMM OOPPTTIIOONN TTYYPPEESS
+     Applications can extend  the  built-in  configuration  types  |
+     with additional configuration types by writing procedures to  |
+     parse and print options of the a type and creating a  struc-  |
+     ture pointing to those procedures:                            |
+
+          typedef struct Tk_CustomOption {                         |
+              Tk_OptionParseProc *_p_a_r_s_e_P_r_o_c;                       |
+
+
+
+Sprite v1.0                                                    10
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+              Tk_OptionPrintProc *_p_r_i_n_t_P_r_o_c;                       |
+              ClientData _c_l_i_e_n_t_D_a_t_a;                               |
+          } Tk_CustomOption;                                       |
+
+          typedef int Tk_OptionParseProc(                          |
+              ClientData _c_l_i_e_n_t_D_a_t_a,                               |
+              Tcl_Interp *_i_n_t_e_r_p,                                  |
+              Tk_Window _t_k_w_i_n,                                     |
+              char *_v_a_l_u_e,                                         |
+              char *_w_i_d_g_R_e_c,                                       |
+              int _o_f_f_s_e_t);                                         |
+
+          typedef char *Tk_OptionPrintProc(                        |
+              ClientData _c_l_i_e_n_t_D_a_t_a,                               |
+              Tk_Window _t_k_w_i_n,                                     |
+              char *_w_i_d_g_R_e_c,                                       |
+              int _o_f_f_s_e_t,                                          |
+              Tcl_FreeProc **_f_r_e_e_P_r_o_c_P_t_r);                         |
+
+     The Tk_CustomOption structure contains three  fields,  which  |
+     are pointers to the two procedures and a _c_l_i_e_n_t_D_a_t_a value to  |
+     be passed to those procedures when they  are  invoked.   The  |
+     _c_l_i_e_n_t_D_a_t_a  value typically points to a structure containing  |
+     information that is needed by the procedures when  they  are  |
+     parsing and printing options.                                 |
+
+     The _p_a_r_s_e_P_r_o_c procedure is invoked by TTkk__CCoonnffiigguurreeWWiiddggeett  to  |
+     parse  a  string and store the resulting value in the widget  |
+     record.  The _c_l_i_e_n_t_D_a_t_a argument is a copy of the _c_l_i_e_n_t_D_a_t_a  |
+     field in the Tk_CustomOption structure.  The _i_n_t_e_r_p argument  |
+     points to a Tcl interpreter used for error reporting.  _T_k_w_i_n  |
+     is  a copy of the _t_k_w_i_n argument to TTkk__CCoonnffiigguurreeWWiiddggeett.  The  |
+     _v_a_l_u_e argument is a string  describing  the  value  for  the  |
+     option;  it could have been specified explicitly in the call  |
+     to TTkk__CCoonnffiigguurreeWWiiddggeett or it could come from the option data-  |
+     base  or  a default.  _V_a_l_u_e will never be a null pointer but  |
+     it may point to an empty string.  _R_e_c_o_r_d_P_t_r is the  same  as  |
+     the  _w_i_d_g_R_e_c  argument  to TTkk__CCoonnffiigguurreeWWiiddggeett;  it points to  |
+     the start of the widget record to modify.   The  last  argu-  |
+     ment,  _o_f_f_s_e_t,  gives  the offset in bytes from the start of  |
+     the widget record to the location where the option value  is  |
+     to  be placed.  The procedure should translate the string to  |
+     whatever form is appropriate for the option  and  store  the  |
+     value  in  the  widget  record.   It  should normally return  |
+     TCL_OK, but if an error occurs in translating the string  to  |
+     a  value  then it should return TCL_ERROR and store an error  |
+     message in _i_n_t_e_r_p->_r_e_s_u_l_t.                                    |
+
+     The _p_r_i_n_t_P_r_o_c procedure is  called  by  TTkk__CCoonnffiigguurreeIInnffoo  to  |
+     produce  a  string value describing an existing option.  Its  |
+     _c_l_i_e_n_t_D_a_t_a, _t_k_w_i_n, _w_i_d_g_R_e_c, and _o_f_f_s_e_t  arguments  all  have  |
+     the  same meaning as for Tk_OptionParseProc procedures.  The  |
+
+
+
+Sprite v1.0                                                    11
+
+
+
+
+
+
+Tk_ConfigureWidget    C Library Procedures     Tk_ConfigureWidget
+
+
+
+     _p_r_i_n_t_P_r_o_c procedure should examine the option whose value is  |
+     stored  at  _o_f_f_s_e_t  in  _w_i_d_g_R_e_c, produce a string describing  |
+     that option, and return a pointer to  the  string.   If  the  |
+     string  is  stored in dynamically-allocated memory, then the  |
+     procedure must set *_f_r_e_e_P_r_o_c_P_t_r to the  address  of  a  pro-  |
+     cedure    to    call    to   free   the   string's   memory;  |
+     TTkk__CCoonnffiigguurreeIInnffoo will call this procedure when  it  is  fin-  |
+     ished  with  the  string.  If the result string is stored in  |
+     static memory then _p_r_i_n_t_P_r_o_c need not do anything  with  the  |
+     _f_r_e_e_P_r_o_c_P_t_r argument.                                         |
+
+     Once  _p_a_r_s_e_P_r_o_c  and  _p_r_i_n_t_P_r_o_c  have  been  defined  and  a  |
+     Tk_CustomOption structure has been created for them, options  |
+     of this new  type  may  be  manipulated  with  Tk_ConfigSpec  |
+     entries  whose  _t_y_p_e  fields  are TK_CONFIG_CUSTOM and whose  |
+     _c_u_s_t_o_m_P_t_r fields point to the Tk_CustomOption structure.
+
+
+EEXXAAMMPPLLEESS
+     Although the explanation  of  TTkk__CCoonnffiigguurreeWWiiddggeett  is  fairly
+     complicated,  its actual use is pretty straightforward.  The
+     easiest way to get started is  to  copy  the  code  from  an
+     existing  widget.   The  library  implementation  of  frames
+     (tkFrame.c)  has  a  simple  configuration  table,  and  the
+     library  implementation  of  buttons (tkButton.c) has a much
+     more complex table that uses many  of  the  fancy  _s_p_e_c_F_l_a_g_s
+     mechanisms.
+
+
+KKEEYYWWOORRDDSS
+     anchor, bitmap, boolean, border, cap  style,  color,  confi-
+     guration  options,  cursor,  custom,  double, font, integer,
+     join style, justify, millimeters, pixels,  relief,  synonym,
+     uid
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                    12
+
+
+

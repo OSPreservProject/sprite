@@ -1,0 +1,176 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.7
+date     92.06.09.21.13.05;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.04.09.10.18.11;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.08.22.23.00.06;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.07.31.17.52.00;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.05.04.15.50.40;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.17.12.43.06;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.15.12.15.23;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@local mods for pmake for this directory.
+@
+
+
+1.7
+log
+@use the regular C library
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#include	<$(SYSMAKEFILE)>
+
+#
+# Add more install stuff in order to create symbolic links for other
+# aliases.
+#
+
+SYNONYMS	= $(INSTALLDIR).$(TM)/la \
+		  $(INSTALLDIR).$(TM)/evict \
+		  $(INSTALLDIR).$(TM)/uptime
+install		:: $(SYNONYMS)
+$(SYNONYMS)	:
+	ln -s $(NAME) $(.TARGET)
+@
+
+
+1.6
+log
+@no longer runs as setuid, since doesn't run as daemon.  added alias for
+'uptime'.
+@
+text
+@a7 3
+# Use the uninstalled C library, in general.
+LIBS += -lc_g
+
+@
+
+
+1.5
+log
+@removed old comment
+@
+text
+@d8 2
+a9 8
+#
+# Must run set-user-id to root because it signals processes of random users.
+INSTALLFLAGS	+= -o root -m 4775
+
+#if !empty(TM:Msun3)
+# Use the uninstalled C library during testing.
+LIBS = -lc_g
+#endif
+d18 3
+a20 1
+SYNONYMS	= $(INSTALLDIR).$(TM)/la $(INSTALLDIR).$(TM)/evict
+@
+
+
+1.4
+log
+@single '.')
+>> use the kernel idle time by default, but changes to support statting 
+if only it would work without requiring exclusive access
+@
+text
+@a11 6
+#
+# Disable the new code that uses stat instead of the internal kernel
+# variable.
+#
+# XCFLAGS = -DUSE_KERNEL_IDLE_TIME
+
+@
+
+
+1.3
+log
+@check for sun4. INTERIM defined (but could be removed, probably).
+@
+text
+@d14 1
+a14 1
+# variable.  Check for old kernels that can't handle GET_STATE call.
+d16 1
+a16 1
+XCFLAGS = -DUSE_KERNEL_IDLE_TIME -DINTERIM
+d18 1
+a18 1
+#if empty(TM:Msun4)
+d24 10
+@
+
+
+1.2
+log
+@Disable the new code that uses stat instead of the internal kernel
+variable.
+@
+text
+@a12 5
+# Turn on extra debugging.
+#
+#XCFLAGS = -DDEBUG -DWRITE_INTERVAL=5
+
+#
+d14 1
+a14 1
+# variable
+d16 1
+a16 1
+XCFLAGS = -DUSE_KERNEL_IDLE_TIME
+d18 1
+d21 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 6
+@

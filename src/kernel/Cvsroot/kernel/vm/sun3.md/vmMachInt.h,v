@@ -1,0 +1,293 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     91.10.18.01.13.58;  author dlong;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.09.10.18.30.04;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.09.15.35.57;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.20.16.27.27;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.10.45.57;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.07.30.11.41.47;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.55;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.19.28.00;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.44.08;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.51;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.09.46.13;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.12.11.14.14.33;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.6
+log
+@sun4c sun4c2 merge
+@
+text
+@/*
+ * vmMachInt.h
+ *
+ *     	Internal machine dependent virtual memory data structures and procedure 
+ *	headers.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachInt.h,v 9.4 90/10/09 15:35:57 shirriff Exp $ SPRITE (Berkeley)
+ */
+
+#include "vmMach.h"
+#ifndef _VMMACHINT
+#define _VMMACHINT
+
+extern	Address		vmMachPTESegAddr;
+extern	Address		vmMachPMEGSegAddr;
+
+/*
+ * Machine-dependent routines internal to the vm module.
+ */
+extern VmMachPTE VmMachGetPageMap _ARGS_((Address virtualAddress));
+extern void VmMachSetPageMap _ARGS_((Address virtualAddress, VmMachPTE pte));
+extern int VmMachGetSegMap _ARGS_((Address virtualAddres));
+extern void VmMachSetSegMap _ARGS_((Address virtualAddress, int value));
+extern VmMachPTE VmMachReadPTE _ARGS_((int pmegNum, Address addr));
+extern void VmMachWritePTE _ARGS_((int pmegNum, Address addr, VmMachPTE pte));
+extern int VmMachGetUserContext _ARGS_((void));
+extern int VmMachGetKernelContext _ARGS_((void));
+extern int VmMachGetContextReg _ARGS_((void));
+extern void VmMachSetUserContext _ARGS_((int value));
+extern void VmMachSetKernelContext _ARGS_((int value));
+extern void VmMachSetContextReg _ARGS_((int value));
+extern void VmMachPMEGZero _ARGS_((int pmeg));
+extern void VmMachClearCacheTags _ARGS_((void));
+extern void VmMachInitAddrErrorControlReg _ARGS_((void));
+extern void VmMachInitSystemEnableReg _ARGS_((void));
+#ifdef sun4
+extern void VmMachFlushCurrentContext _ARGS_((void));
+extern ReturnStatus VmMachTouchPages _ARGS_((int firstPage, int numPages));
+#endif
+extern void VmMachFlushSegment _ARGS_((Address segVirtAddr));
+extern void VmMachReadAndZeroPMEG _ARGS_((int pmeg, VmMachPTE pteArray[]));
+extern void VmMachSetSegMap _ARGS_((Address virtualAddress, int value));
+extern void VmMachCopyUserSegMap _ARGS_((unsigned short *tablePtr));
+extern void VmMachFlushByteRange _ARGS_((Address virtAddr, int numBytes));
+extern void VmMachFlushPage _ARGS_((Address pageVirtAddr));
+extern void VmMachSetup32BitDVMA _ARGS_((void));
+extern ReturnStatus VmMachQuickNDirtyCopy _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr, unsigned int sourceContext,
+	unsigned int destContext));
+extern ReturnStatus VmMachDoCopy _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr));
+extern void VmMachSegMapCopy _ARGS_((char *tablePtr, int startAddr,
+	int endAddr));
+
+#endif /* _VMMACHINT */
+@
+
+
+9.5
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachInt.h,v 9.4 90/10/09 15:35:57 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+d40 4
+@
+
+
+9.4
+log
+@Moved VmMach_FlushCurrentContext to vmMach.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachInt.h,v 9.3 90/09/20 16:27:27 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+a41 1
+extern void VmMachTracePMEG _ARGS_((int pmeg));
+@
+
+
+9.3
+log
+@Fixed a procedure name.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachInt.h,v 9.2 90/09/11 10:45:57 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+a44 1
+extern void VmMach_FlushCurrentContext _ARGS_((void));
+@
+
+
+9.2
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm.ken/sun4.md/RCS/vmMachInt.h,v 1.1 90/08/31 15:59:30 shirriff Exp $ SPRITE (Berkeley)
+d45 1
+a45 1
+extern void VmMachFlushCurrentContext _ARGS_((void));
+@
+
+
+9.1
+log
+@Moved declaration to vmMach.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachInt.h,v 8.1 89/08/15 19:28:00 rab Exp $ SPRITE (Berkeley)
+d22 1
+a22 1
+ * Assembly language routines in vmSunAsm.s.
+d24 32
+a55 13
+extern	int		VmMachCopyEnd();
+extern	VmMachPTE	VmMachGetPageMap();
+extern	void		VmMachSetPageMap();
+extern	int		VmMachGetSegMap();
+extern	void		VmMachSetSegMap();
+extern	VmMachPTE	VmMachReadPTE();
+extern	void		VmMachWritePTE();
+extern	int		VmMachGetUserContext();
+extern	int		VmMachGetKernelContext();
+extern	int		VmMachGetContextReg();
+extern	void		VmMachSetUserContext();
+extern	void		VmMachSetKernelContext();
+extern	void		VmMachSetContextReg();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachInt.h,v 8.1 89/08/15 19:28:00 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d14 1
+a16 2
+
+typedef unsigned int	VmMachPTE;	
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachInt.h,v 8.0 88/11/11 18:44:08 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMachInt.h,v 6.0 88/08/11 12:30:51 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d39 1
+a39 1
+#endif _VMMACHINT
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMachInt.h,v 1.2 88/04/11 09:46:13 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Define VmMachCopyEnd in vmMachInt.h
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMachInt.h,v 1.1 87/12/11 14:14:33 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+ * $Header: vmSunInt.h,v 5.3 87/11/18 21:50:59 nelson Exp $ SPRITE (Berkeley)
+d25 1
+@

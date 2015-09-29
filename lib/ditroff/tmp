@@ -1,0 +1,13 @@
+.\" psfig macros. An argument will turn off centering.
+.de F+
+.br
+.nr F, \\n(.u
+.nf
+.if ^G\\n(.z^G^G .sp -.5
+.if \\n(.$=0 .ce 9999
+..
+.de F-
+.ce 0
+.if \\n(F, .fi
+.br
+..

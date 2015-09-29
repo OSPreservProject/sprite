@@ -1,0 +1,4 @@
+
+
+          asin expr
+               Returns the arcsin of expr.  expr is in radians.

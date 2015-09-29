@@ -1,0 +1,22 @@
+Aug. 23, 1989
+On regular file system (RPC's necessary)
+exec test 1000 exec time   31.770
+
+On local disk
+exec test 1000 exec time   19.780
+
+On local disk (profiled)
+exec test 1000 exec time   20.90 
+
+Aug. 25, 1989
+Without bcopy optimizations but with network optimizations
+(profiled)
+
+exec test 1000 exec time   31.250
+
+exec test 1000 exec time   31.70 
+
+Aug. 26, 1989
+With bcopy opt. (profiled)
+
+exec test 1000 exec time   30.970

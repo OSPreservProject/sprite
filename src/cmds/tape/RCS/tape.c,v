@@ -1,0 +1,455 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     92.08.09.18.05.59;  author mottsmth;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.07.22.18.26.07;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.03.17.33.39;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.06.28.15.15.42;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.03.21.17.38.06;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.03.21.17.32.49;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.04.22.16.59.32;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Checked in for Brent.
+@
+
+
+1.7
+log
+@Add inquiry option
+@
+text
+@/*
+ * tape.c --
+ *	Manipulate a tape drive.
+ */
+#include "sprite.h"
+#include "status.h"
+#include "time.h"
+#include "sys/file.h"
+#include "fs.h"
+#include "dev/tape.h"
+#include <dev/scsi.h>
+#include <sys/scsi.h>
+#include "stdio.h"
+#include "option.h"
+#include "errno.h"
+#include "tape.h"
+
+char *tapeFile = "/dev/tape0";
+Boolean rewindIt = FALSE;
+Boolean retension = FALSE;
+Boolean gotoEnd = FALSE;
+Boolean readIt = FALSE;
+Boolean erase = FALSE;
+int skipFiles = 0;
+int skipBlocks = 0;
+int writeIt = 0;
+int blockSize = 16 * 1024;
+int weof = 0;
+int gotoBlock = -1;
+Boolean doStatus = FALSE;
+Boolean load = FALSE;
+Boolean unload = FALSE;
+Boolean prevent = FALSE;
+Boolean allow = FALSE;
+Boolean inquiry = FALSE;
+
+Option optionArray[] = {
+    { OPT_STRING, "t", (Address)&tapeFile, "Name of tape device" },
+    { OPT_TRUE, "r", (Address)&rewindIt, "Rewind the tape" },
+    { OPT_TRUE, "T", (Address)&retension, "Retension the tape" },
+    { OPT_TRUE, "e", (Address)&gotoEnd, "Skip to the end of data." },
+    { OPT_INT, "f", (Address)&skipFiles, "Number of tape files to skip" }, 
+    { OPT_INT, "b", (Address)&skipBlocks, "Number of blocks to skip" }, 
+    { OPT_INT, "m", (Address)&weof, "Number of end-of-file marks to write" }, 
+    { OPT_INT, "B", (Address)&blockSize, "Block size" },
+    { OPT_TRUE, "R", (Address)&readIt, "Read til end of file"},
+    { OPT_INT, "W",  (Address)&writeIt, "Write -W N blocks"},
+    { OPT_TRUE, "E",  (Address)&erase, "Erase the whole tape!"},
+    { OPT_INT, "g", (Address) &gotoBlock, "Goto block N"},
+    { OPT_TRUE, "s", (Address) &doStatus, "Print tape status"},
+    { OPT_TRUE, "l", (Address) &load, "Load tape"},
+    { OPT_TRUE, "u", (Address) &unload, "Unload tape"},
+    { OPT_TRUE, "p", (Address) &prevent, "Prevent tape removal"},
+    { OPT_TRUE, "a", (Address) &allow, "Allow tape removal"},
+    { OPT_TRUE, "i", (Address) &inquiry, "Perform tape inquiry"}
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+    int oldOffset;
+    ReturnStatus status;
+    int tapeStream;
+    Address buffer;
+    int amountRead, amountWritten, total;
+    int openFlags;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+
+    if (writeIt || weof) {
+	openFlags = O_RDWR;
+    } else {
+	openFlags = O_RDONLY;
+    }
+    tapeStream = open(tapeFile, openFlags, 0);
+    if (tapeStream < 0) {
+	perror("Can't open tape drive");
+	exit(errno);
+    }
+    buffer = (Address)malloc(blockSize);
+    if (inquiry) {
+	status = Inquiry(tapeStream);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't perform inquiry");
+	    exit(status);
+	}
+    }
+
+    if (retension) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_RETENSION, 1);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't retension tape");
+	    exit(status);
+	}
+    }
+
+    if (gotoEnd) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_SKIP_EOD, 0);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't position at end-of-tape");
+	    exit(status);
+	}
+    }
+    if (rewindIt) {
+	status = Ioc_Reposition(tapeStream, IOC_BASE_ZERO, 0, &oldOffset);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't rewind tape drive");
+	    exit(status);
+	}
+    }
+    if (erase) {
+	char answer[40];
+	printf("Really erase the tape? ");
+	scanf(" %s", answer);
+	if (answer[0] == 'y' || answer[0] == 'Y') {
+	    printf("Ok, here goes\n");
+	    status = Ioc_TapeCommand(tapeStream, IOC_TAPE_ERASE, 0);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Can't erase tape");
+		exit(status);
+	    }
+	} else {
+	    printf("Ok, not erasing\n");
+	}
+    }
+    if (skipFiles) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_SKIP_FILES, skipFiles);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't skip tape files");
+	    exit(status);
+	}
+    } else if (skipBlocks > 0) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_SKIP_BLOCKS, skipBlocks);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't skip tape blocks");
+	    exit(status);
+	}
+    }
+    if (weof) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_WEOF, weof);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't write file mark(s)");
+	    exit(status);
+	}
+    }
+
+    if (writeIt > 0) {
+	total = 0;
+	while (writeIt-- > 0) {
+	    amountWritten = write(tapeStream, buffer, blockSize);
+	    if (amountWritten < 0) {
+		break;
+	    }
+	    total += amountWritten;
+	    if (amountWritten < blockSize) {
+		break;
+	    }
+	}
+	fprintf(stderr, "Wrote %d bytes\n", total);
+	if (amountWritten < 0) {
+	    perror("Tape write failed");
+	}
+    } else if (readIt) {
+	total = 0;
+	while (1) {
+	    amountRead = read(tapeStream, buffer, blockSize, buffer);
+	    if (amountRead <= 0) {
+		break;
+	    }
+	    total += amountRead;
+	}
+	if (amountRead < 0) {
+	    perror("Tape read failed");
+	}
+	fprintf(stderr, "Read %d bytes\n", total);
+    }
+    if (gotoBlock != -1) {
+        status = Ioc_TapeCommand(tapeStream, IOC_TAPE_GOTO_BLOCK, gotoBlock);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't goto block");
+	    exit(status);
+	}
+    }
+    if (doStatus) {
+	Dev_TapeStatus	tapeStatus;
+	bzero((char *) &tapeStatus, sizeof(tapeStatus));
+	status = Fs_IOControl(tapeStream, IOC_TAPE_STATUS, 0, NULL, 
+	    sizeof(tapeStatus), &tapeStatus);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't get status");
+	    exit(status);
+	}
+	printf("Type : 0x%x\n", tapeStatus.type);
+	printf("Serial : %s\n", tapeStatus.serial);
+	printf("Block size : %d\n", tapeStatus.blockSize);
+	printf("Current block : %d\n", tapeStatus.position);
+	printf("Remaining blocks : %d\n", tapeStatus.remaining);
+	printf("Data errors : %d\n", tapeStatus.dataError);
+	printf("Read/Write retry : %d\n", tapeStatus.readWriteRetry);
+	printf("Tracking retry : %d\n", tapeStatus.trackingRetry);
+	printf("Write protect : %d\n", tapeStatus.writeProtect);
+	printf("Buffered mode : %d\n", tapeStatus.bufferedMode);
+	printf("Speed : %d\n", tapeStatus.speed);
+	printf("Density : %d\n", tapeStatus.density);
+    }
+    if (load) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_LOAD, 0);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't load tape");
+	    exit(status);
+	}
+    }
+    if (unload) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_UNLOAD, 0);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't unload tape");
+	    exit(status);
+	}
+    }
+    if (prevent) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_PREVENT_REMOVAL, 0);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't prevent tape removal");
+	    exit(status);
+	}
+    }
+    if (allow) {
+	status = Ioc_TapeCommand(tapeStream, IOC_TAPE_ALLOW_REMOVAL, 0);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Can't allow tape removal");
+	    exit(status);
+	}
+    }
+    close(tapeStream);
+    fprintf(stderr, "done\n");
+    exit(SUCCESS);
+}
+
+static int
+Inquiry(fd)
+int fd;
+{
+    int status;
+    char buf[80];
+
+    struct InCmd {
+	Dev_ScsiCommand hdr;
+	InquiryCommand cmd;	
+    } inCmd; 
+
+    struct OutStatus {
+	Dev_ScsiStatus hdr;
+	struct InquiryData {
+#if BYTE_ORDER == BIG_ENDIAN
+	    unsigned char type;     	/* Peripheral device type */
+	    unsigned char rmb:1;        /* Removable Medium bit. */
+	    unsigned char qualifier:7;  /* Device type qualifier. */
+	    unsigned char version;      /* Version info. */
+	    unsigned char reserved:4;   /* reserved. */
+	    unsigned char format:4;     /* Response format. */
+#else /* BYTE_ORDER == LITTLE_ENDIAN */
+	    unsigned char type;		/* Peripheral device type. */
+	    unsigned char qualifier:7;	/* Device Type qualifier. */
+	    unsigned char rmb:1;	/* Removable Medium bit. */
+	    unsigned char version;	/* Version info. */
+	    unsigned char format:4;	/* Response format */
+	    unsigned char reserved:4;	/* reserved. */
+#endif
+	    unsigned char length;         /* Additional length of data returned. */
+	    unsigned char reserved2[3];   /* More reserved and not supported. */
+	    char          vendorID[8];  /* Vector identification. */
+	    char          productID[16]; /* Product identification. */
+	    char          revLevel[4]; /* Firmware identification. */
+	    unsigned char reserved3[20];  /* More reserved. */
+	} inquiryData; 
+    } outStatus;
+
+    memset(&inCmd, 0, sizeof(inCmd));
+    memset(&outStatus, 0, sizeof(outStatus));
+    
+    inCmd.hdr.bufferLen = sizeof(struct InquiryData);
+    inCmd.hdr.commandLen = sizeof(InquiryCommand);
+    inCmd.hdr.dataOffset = sizeof(Dev_ScsiCommand) + sizeof(InquiryCommand);
+
+/* Fill in Command Descriptor Block. */
+
+    inCmd.cmd.command = SCSI_INQUIRY;
+    inCmd.cmd.unitNumber = 0;	/* For our purposes, the unitNumber is always
+				 * zero. 
+				 */
+    inCmd.cmd.evpd = 0;		/* The EXB-120 only supports 0 for this field. */
+    inCmd.cmd.allocLength = 0x38;
+    inCmd.cmd.link = 0;
+    inCmd.cmd.flag = 0;
+    inCmd.cmd.vendorUnique = 0;
+    
+    status = Fs_IOControl(fd, IOC_SCSI_COMMAND,
+			  inCmd.hdr.dataOffset, (void *) &inCmd,
+			  sizeof(outStatus), (void *) &outStatus);
+
+    printf("Scsi status byte = 0x%x\n", outStatus.hdr.statusByte);
+    printf("Scsi transfer len = %d\n", outStatus.hdr.amountTransferred);
+    printf("Scsi senseData len = %d\n", outStatus.hdr.senseDataLen);
+
+    strncpy(buf,outStatus.inquiryData.vendorID,
+	    sizeof(outStatus.inquiryData.vendorID));
+    *(buf+sizeof(outStatus.inquiryData.vendorID)) = '\0';
+    printf("Vendor ID = %s\n", buf);
+    strncpy(buf,outStatus.inquiryData.productID,
+	    sizeof(outStatus.inquiryData.productID));
+    *(buf+sizeof(outStatus.inquiryData.productID)) = '\0';
+    printf("Product ID = %s\n", buf);
+    strncpy(buf,outStatus.inquiryData.revLevel,
+	    sizeof(outStatus.inquiryData.revLevel));
+    *(buf+sizeof(outStatus.inquiryData.revLevel)) = '\0';
+    printf("Rev level = %s\n", buf);
+
+    return status;
+}
+
+@
+
+
+1.6
+log
+@added skip to end-of-data
+@
+text
+@d11 2
+d16 1
+d35 1
+d55 1
+d83 8
+d240 83
+@
+
+
+1.5
+log
+@added a bunch of new options
+@
+text
+@d87 1
+a87 1
+	status = Ioc_Reposition(tapeStream, IOC_BASE_EOF, 0, &oldOffset);
+@
+
+
+1.4
+log
+@the -m option was goofed up
+@
+text
+@d26 6
+d37 1
+a37 1
+    { OPT_TRUE, "e", (Address)&gotoEnd, "Skip to the end of the tape" },
+d45 6
+d165 57
+@
+
+
+1.3
+log
+@exits with 0 status if no error
+@
+text
+@d34 1
+a34 1
+    { OPT_INT, "m", (Address)&skipBlocks, "Number of end-of-file marks to write" }, 
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d156 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 3
+a23 3
+int skipFiles = -1024;	/* funny initial value because back skipping is ok */
+int skipBlocks = -1;
+int writeIt = -1;
+d25 1
+a25 1
+int weof = -1;
+d103 1
+a103 1
+    if (skipFiles != -1024) {
+@

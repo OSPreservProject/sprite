@@ -1,0 +1,41 @@
+
+
+          The standard Tcl shell initialization consists of the
+          following steps:
+
+               Search for a default file.  The default file is a Tcl
+               script that is executed to set important Tcl variables
+               that govern startup, such as TCLPATH.  The current
+               Extended Tcl version, represented by $ver, is included
+               in the default file name to allow multiple Tcl versions
+               to exists on a system.  Note that the Extended Tcl
+               version is the standard Tcl version number with an
+               alphabetic character added to indicated the version of
+               Extended Tcl.  (The infox version command will return
+               this version number.)
+
+          The Tcl default file is searched for using the following
+          algorithm:
+
+                    - An environment variable, TCLDEFAULT, is checked
+                    for.  If present, it is used as the name of the
+                    default file.
+
+                    - A global default file, which is usually either
+                    /etc/default/tcl$ver or
+                    /usr/local/lib/tcldefault$ver.  (Tcl may be
+                    compiled to use a different directory if desired).
+
+               First, Tcl executes the default file.  This file
+               normally sets at least two Tcl variables: TCLPATH,
+               which contains a list of directories that contain tcl
+               source files and libraries, and TCLINIT, the full
+               pathname of the Tcl source file that performs Tcl
+               initialization.  Other site-specific variables may also
+               be set in this file.
+
+               Next, tcl executes the initialization file specified by
+               the Tcl variable TCLINIT.  This is normally the
+               TclInit.Tcl file distributed with Tcl.  This file
+               defines the Tcl environment, including standard
+               Extended Tcl procedures and variables.

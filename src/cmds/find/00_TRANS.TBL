@@ -1,0 +1,45 @@
+L ALLOCA.C;1                        	alloca.c	dist/lib/alloca.c
+L DEFS.H;1                          	defs.h	dist/find/defs.h
+L DIRNAME.C;1                       	dirname.c	dist/lib/dirname.c
+D DIST                              	dist
+D DS3100_M                          	ds3100.md
+L ERROR.C;1                         	error.c	dist/lib/error.c
+L FILEBLOC.C;1                      	fileblocks.c	dist/lib/fileblocks.c
+L FILEMODE.C;1                      	filemode.c	dist/lib/filemode.c
+L FIND.C;1                          	find.c	dist/find/find.c
+L FIND.MAN;1                        	find.man	dist/man/find.1
+L FNMATCH.C;1                       	fnmatch.c	dist/lib/fnmatch.c
+L FNMATCH.H;1                       	fnmatch.h	dist/lib/fnmatch.h
+L FSTYPE.C;1                        	fstype.c	dist/find/fstype.c
+L GETOPT.C;1                        	getopt.c	dist/lib/getopt.c
+L GETOPT.H;1                        	getopt.h	dist/lib/getopt.h
+L GETOPT1.C;1                       	getopt1.c	dist/lib/getopt1.c
+L IDCACHE.C;1                       	idcache.c	dist/lib/idcache.c
+L LISTFILE.C;1                      	listfile.c	dist/lib/listfile.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L MEMSET.C;1                        	memset.c	dist/lib/memset.c
+L MODECHAN.C;1                      	modechange.c	dist/lib/modechange.c
+L MODECHAN.H;1                      	modechange.h	dist/lib/modechange.h
+L MODETYPE.H;1                      	modetype.h	dist/lib/modetype.h
+L NEXTELEM.C;1                      	nextelem.c	dist/lib/nextelem.c
+L PARSER.C;1                        	parser.c	dist/find/parser.c
+L PATHMAX.H;1                       	pathmax.h	dist/lib/pathmax.h
+L PRED.C;1                          	pred.c	dist/find/pred.c
+D RCS                               	RCS
+L REGEX.C;1                         	regex.c	dist/lib/regex.c
+L REGEX.H;1                         	regex.h	dist/lib/regex.h
+L SAVEDIR.C;1                       	savedir.c	dist/lib/savedir.c
+L STPCPY.C;1                        	stpcpy.c	dist/lib/stpcpy.c
+L STRDUP.C;1                        	strdup.c	dist/lib/strdup.c
+L STRFTIME.C;1                      	strftime.c	dist/lib/strftime.c
+L STRSPN.C;1                        	strspn.c	dist/lib/strspn.c
+L STRSTR.C;1                        	strstr.c	dist/lib/strstr.c
+L STRTOL.C;1                        	strtol.c	dist/lib/strtol.c
+D SUN4_MD                           	sun4.md
+L TREE.C;1                          	tree.c	dist/find/tree.c
+L UTIL.C;1                          	util.c	dist/find/util.c
+L VERSION.C;1                       	version.c	dist/find/version.c
+L WAIT.H;1                          	wait.h	dist/lib/wait.h
+L XMALLOC.C;1                       	xmalloc.c	dist/lib/xmalloc.c
+L XSTRDUP.C;1                       	xstrdup.c	dist/lib/xstrdup.c

@@ -1,0 +1,61 @@
+#!/sprite/cmds/perl
+
+do 'getopts.pl';
+
+do Getopts('vmh');
+
+if ($opt_h) {
+    &Usage();
+}
+
+$currentSize = -1;
+
+while(<>) {
+    if (/^[0-9]+/) {
+	($size, $time, $timeouts) = split(" ");
+	if ($timeouts eq "timeouts") {
+	    next;
+	}
+	if ($size != $currentSize) {
+	    if ($currentSize != -1) {
+		printf("%6.2f %6.2f", $currentSize / 1024, $total / $count);
+		if ($opt_v) {
+		    printf(" %f %f", $min, $max);
+		} 
+		printf("\n");
+	    }
+	    $count = 0;
+	    $total = 0;
+	}
+	$currentSize = $size;
+	if ($opt_m) {
+	    $value = ($size / $time) / (1024 * 1024);
+	} else {
+	    $value = $time * 1000;
+	}
+	$total += $value;
+	if ($value < $min || $count == 0) {
+	    $min = $value;
+	}
+	if ($value > $max || $count == 0) {
+	    $max = $value;
+	}
+	$count++;
+    }
+}
+if ($currentSize != -1) {
+    printf("%6.2f %6.2f",$currentSize / 1024, $total / $count);
+    if ($opt_v) {
+	printf(" %f %f", $min, $max);
+    } 
+    printf("\n");
+}
+
+sub Usage {
+    printf("Usage: $0 [options] file\n");
+    printf(" -v:\tPrint min and max values (variance).\n");
+    printf(" -t:\tPrint bandwidth (MB/sec) rather than latency.\n");
+    exit(0);
+}
+
+

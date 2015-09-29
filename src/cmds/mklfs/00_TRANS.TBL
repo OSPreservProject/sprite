@@ -1,0 +1,11 @@
+D DS3100_M                          	ds3100.md
+F GETMACHI.C;1                      	getMachineInfo.c
+F GETMACHI.H;1                      	getMachineInfo.h
+F HDR_LOGS.;1                       	hdr.logStartOffset
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MKLFS.C;1                         	mklfs.c
+F MKLFS.MAN;1                       	mklfs.man
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

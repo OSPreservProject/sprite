@@ -1,0 +1,54 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.07.31.17.54.17;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.26.23.20.49;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@port to the ds3100
+@
+text
+@#include <dev/ccdev.h>
+
+/*
+** Machine dependent Statistics 
+**	There are no machine dependent stats for the ds3100.
+*/
+
+
+typedef struct {
+	int dummy;
+} MachStats;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+d5 1
+a5 1
+**	There are no machine dependent stats for the sun3.
+a7 1
+#include <dev/ccdev.h>
+@

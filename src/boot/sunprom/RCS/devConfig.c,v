@@ -1,0 +1,80 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    rab:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     90.09.17.11.01.50;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * devConfig.c --
+ *
+ *	Excerpts from the dev module in the kernel.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifdef notdef
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devInit.c,v 8.3 89/05/24 07:50:56 rab Exp $ SPRITE (Berkeley)";
+#endif 
+
+#include "sprite.h"
+#include "fsBoot.h"
+#include "vmSunConst.h"
+#include "machMon.h"
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_Config --
+ *
+ *	Boottime device configuration.  This is a special version of this
+ *	routine that knows we will be using the PROM driver routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This saves the pointer to the boot parameters in the global
+ *	fsDevice so that it is available to the SunPromDevOpen and
+ *	SunPromDevRead routines.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_Config(paramPtr, fsDevicePtr)
+    MachMonBootParam *paramPtr;	/* PROM parameters */
+    Fs_Device *fsDevicePtr;	/* FS descriptor for the boot device */
+{
+    Mach_MonPrintf("Sprite Boot %s(%d,%d,%d)%s\n", paramPtr->devName,
+		     paramPtr->ctlrNum, paramPtr->unitNum,
+		     paramPtr->partNum, paramPtr->fileName);
+
+    fsDevicePtr->serverID = -1;
+    fsDevicePtr->type = 0;
+    fsDevicePtr->unit = paramPtr->unitNum;
+    fsDevicePtr->data = (ClientData)paramPtr;
+}
+
+
+@

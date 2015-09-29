@@ -1,0 +1,211 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sprited:1.5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.09.11.14.27.18;  author kupfer;  state Exp;
+branches 1.5.1.1;
+next     1.4;
+
+1.4
+date     89.11.04.21.50.19;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.19.14.15.10;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.20.18.11.40;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.29;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.5.1.1
+date     91.12.02.19.53.06;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Use function prototypes. Lint.
+@
+text
+@/* 
+ * StdioFileCloseProc.c --
+ *
+ *	Source code for the "StdioFileCloseProc" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileCloseProc.c,v 1.4 89/11/04 21:50:19 douglis Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+#include "fileInt.h"
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StdioFileCloseProc --
+ *
+ *	This procedure is used as the closeProc for all streams
+ *	that are associated with files.  It just closes the file
+ *	associated with the stream.
+ *
+ * Results:
+ *	Returns 0 if all went well, or EOF if there was an error during
+ *	the close operation.
+ *
+ * Side effects:
+ *	A file is closed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+StdioFileCloseProc(stream)
+    register FILE *stream;	/* Stream to be closed.  The clientData
+				 * field of the stream contains the id to
+				 * use when talking to the operating system
+				 * about the stream. */
+{
+    register FILE *prev;
+
+    /*
+     * Careful!  Don't free the buffer unless we allocated it.
+     */
+
+    if ((stream->buffer != stdioTempBuffer)
+	    && (stream->buffer != stdioStderrBuffer)
+	    && (stream->buffer != NULL)
+	    && !(stream->flags & STDIO_NOT_OUR_BUF)) {
+	free((char *) stream->buffer);
+	stream->buffer = NULL;
+	stream->bufSize = 0;
+    }
+    stream->flags = 0;
+    stream->readCount = stream->writeCount = 0;
+    if (close((int) stream->clientData) != 0) {
+	stream->status = errno;
+	return EOF;
+    }
+
+    /*
+     * Free the stream's struct unless it's one of the ones statically
+     * allocated for a standard channel.
+     */
+
+    if ((stream != stdin) && (stream != stdout) && (stream != stderr)) {
+	if (stdioFileStreams == stream) {
+	    stdioFileStreams = stream->nextPtr;
+	} else {
+	    for (prev = stdioFileStreams; prev != NULL;
+		    prev = prev->nextPtr) {
+		if (prev->nextPtr == stream) {
+		    prev->nextPtr = stream->nextPtr;
+		    break;
+		}
+	    }
+	}
+	free((char *) stream);
+    }
+    return 0;
+}
+@
+
+
+1.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileCloseProc.c,v 1.5 90/09/11 14:27:18 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@fixes for freopen
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileCloseProc.c,v 1.3 89/06/19 14:15:10 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+d24 1
+@
+
+
+1.3
+log
+@Made stderr buffer static
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: StdioFileCloseProc.c,v 1.2 88/07/20 18:11:40 ouster Exp $ SPRITE (Berkeley)";
+d62 1
+@
+
+
+1.2
+log
+@Change file streams so that fdopen can be called more than once
+for a given stream id, and get separate buffers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: StdioFileCloseProc.c,v 1.1 88/06/10 16:23:29 ouster Exp $ SPRITE (Berkeley)";
+d57 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d50 2
+d70 2
+a71 2
+     * Don't free the statically-allocated structures for the standard
+     * streams, either.
+d75 12
+a86 2
+	    stdioFileStreams[(int) stream->clientData] = NULL;
+	    free((char *) stream);
+@

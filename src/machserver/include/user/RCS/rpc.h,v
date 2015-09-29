@@ -1,0 +1,235 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.01.21.14.23.43;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.11.11.23.09.27;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.11.00.31.15;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Add timeoutRaces to Rpc_CltStat.
+@
+text
+@/*
+ * rpc.h --
+ *
+ *	User declarations for dealing with the Sprite RPC system.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/rpc.h,v 1.2 91/11/11 23:09:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _RPCUSER
+#define _RPCUSER
+
+#include <cfuncproto.h>
+#include <sprite.h>
+#include <spriteTime.h>
+
+/* 
+ * All RPC names should fit in a char array this long (including the 
+ * trailing null byte).
+ */
+#define RPC_MAX_NAME_LENGTH	100
+
+
+/*
+ * The record counting various RPC client system events.
+ */
+typedef struct Rpc_CltStat {
+		/*
+		 * Counters incremented during dispatch.
+		 */
+    int toClient;	/* # of packets destined for client side RPC */
+    int badChannel;	/* # of packets discarded because of a bad channel */
+			/* (toClient - badChannel) msgs passed to dispatch */
+    int chanBusy;	/* # of times input was dropped because the channel
+			 *     it was for was busy, ie. not waiting for input */
+    int badId;		/* # of packets discarded because of a bad (old) ID */
+		/*
+		 * requests = replies + aborts
+		 */
+    int requests;	/* # of request messages sent to the server */
+    int replies;	/* ... of replies from the server.  Not counting
+			 *     on going RPCs, the total # of requests should
+			 *     equal the sum of timeouts, tooManyAcks, errors
+			 *     and replies. */
+    int acks;		/* # of acknowledgment received from the server */
+    int recvPartial;	/* # of partial acks received from the server */
+    int	nacks;		/* # of negative acknowledgements from the server */
+    int	reNacks;	/* # of nacks after first for requests */
+    int	maxNacks;	/* # of nacks after setting max backoff wait */
+		/*
+		 * timeouts = resends + aborts + sentPartial
+		 */
+    int timeouts;	/* # of timeouts waiting for a reply message */
+    int aborts;		/* # of times an RPC aborted because of timeouts */
+    int resends;	/* # of messages resent to the server */
+    int sentPartial;	/* # of partial acks sent to the server */
+
+    int errors;		/* ... of errors received from the server, these
+			 *     errors are reflections of errors during
+			 *     execution of the RPC, or errors during dispatch
+			 *     of the RPC on the server. */
+    int nullErrors;	/* ... of times return error code was null */
+    int dupFrag;	/* # of duplicate frags received */
+    int close;		/* # of close requests from the server */
+
+    int oldInputs;	/* Same as badID, but when recieved by process */
+    int badInput;	/* # times received unexpected message type */
+    int tooManyAcks;	/* # of times a large number of acks were
+			 * received while waiting for a reply. Could be
+			 * incremented more than once per RPC */
+    int timeoutRaces;	/* # of responses dropped on the floor because they 
+			 * didn't quite beat the timeout */
+		/*
+		 * These fields record events related to allocating channels 
+		 */
+    int chanWaits;	/* ... of times a process had to wait for a channel. */
+    int chanBroads;	/* ... of times a broadcast was done to wake up
+			 *     processes waiting for channels. */
+    int chanHits;	/* ... of times a channel was reallocated to the same
+			 *     server. */
+    int chanNew;	/* ... indicates how many different channels have been
+			 *     allocated.  The system tries to allocate a
+			 *     different channel for different servers.*/
+    int chanReuse;	/* ... of times a channel had to allocated for a
+			 *     server that was different from the one it had
+			 *     been allocated to before. */
+    int	newTrouble;	/* ... of times a server not already ramped down
+			       is ramped down by client. */
+    int	moreTrouble;	/* ... of times a server already ramped down is again
+			       noted as sending nacks. */
+    int	endTrouble;	/* ... of times a server previously ramped down is
+			       marked as okay again. */
+    int	noMark;		/* ... of times there was no room to mark a server
+			       as in trouble - too many servers in trouble! */
+    int	nackChanWait;	/* ... of waits for busy channel 'cause ramped down. */
+		/*
+		 * These are common to both client-side and server-side
+		 */
+    int paramOverrun;	/* ... of times the parameters were too big */
+    int dataOverrun;	/* ... of times the data was too big */
+    int shorts;		/* ... of too short packets discarded by Rpc_Dispatch */
+    int longs;		/* ... of too long packets trimmed down, Rpc_Dispatch */
+
+} Rpc_CltStat;
+
+/*
+ * The record counting various RPC server system events.
+ * 
+ * Warning: the kernel routine RpcResetSrvStat relies on the fact that 
+ * the stats are an array of ints.
+ */
+typedef struct Rpc_SrvStat {
+    int toServer;	/* # messages to the server half of RPC */
+    int noAlloc;	/* # srvr msgs discarded due to no srvr proc avail */
+    int	nacks;		/* # neg acks sent */
+    int invClient;	/* # srvr msgs discarded from invalid clients */
+    int serverBusy;	/* # requests ignored because srvr proc was busy */
+			/* Messages passed to RpcServerDispatch is equal to
+			 * toServer - noAlloc - invClient */
+    int requests;	/* # messages that start a new RPC */
+    int impAcks;	/* # requests that imp acked previous reply */
+    int handoffs;	/* # times complete message handed to srvr proc */
+    int fragMsgs;	/* # of packets that were the first fragment of msg */
+			/* requests = handoffs + fragMsgs - serverBusy */
+    int handoffAcks;	/* # acks sent when handoff occurred */
+    int fragAcks;	/* # acks sent when fragment received */
+    int sentPartial;	/* # of partial acknowledgments sent */
+    int busyAcks;	/* # acks sent when srvr proc was busy with request */
+
+    int resends;	/* # of reply messages that were resent */
+    int badState;	/* # msgs ignored because srvr in unexpected state */
+    int extra;		/* # msgs ignored because srvr was SRV_FREE */
+    int reclaims;	/* # times a server process was forcibly reclaimed
+			 *     from an unreachable client */
+    int reassembly;	/* # of packets that were reassembled */
+			/* Total number of fragments received is the sum of
+			 * fragMsgs + dupFrag + reassembly */
+    int dupFrag;	/* # duplicate fragments received */
+    int nonFrag;	/* # nonFrag msgs ignored when srvr was SRV_FRAGMENT */
+    int fragAborts;	/* # requests that aborted previous frag assembly */
+
+    int recvPartial;	/* # of partial acks received */
+    int closeAcks;	/* # acks that close a connection, RPC_CLOSE */
+    int discards;	/* # broadcasts discarded because of SRV_NO_REPLY */
+    int unknownAcks;	/* # of unexpected types of acks */
+    int mostNackBuffers;/* high-water mark of nack buffers used */
+    int selfNacks;	/* # of nacks we tried to send ourselves */
+} Rpc_SrvStat;
+
+
+/*
+ * Commands for the Test_Rpc system call.
+ *	This is invoked via
+ *		status = Test_Rpc(command, argPtr);
+ */
+
+#define TEST_RPC_ECHO	1
+#define TEST_RPC_SEND	2
+#define TEST_RPC_BOUNCE	3
+
+typedef struct Rpc_EchoArgs {
+    int serverID;		/* Sprite host ID of echo target */
+    int n;			/* Number of repetitions */
+    int size;			/* Size of packet, up to 16 K bytes */
+    Address inDataPtr;		/* Pointer to send buffer */
+    Address outDataPtr;		/* Pointer to receive buffer */
+    Time *deltaTimePtr;		/* Elapsed time of all n tests */
+} Rpc_EchoArgs;
+
+
+extern void Rpc_GetName _ARGS_ ((int rpcNum, int resultLen, char *resultPtr));
+extern ReturnStatus Test_Rpc _ARGS_ ((int command, Address argPtr));
+
+#endif /* _RPCUSER */
+@
+
+
+1.2
+log
+@Add Test_Rpc.
+@
+text
+@d10 1
+a10 1
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/rpc.h,v 1.1 91/11/11 00:31:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d74 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/rpc.h,v 1.8 91/05/30 13:12:56 jhh Exp $ SPRITE (Berkeley)
+d173 1
+@

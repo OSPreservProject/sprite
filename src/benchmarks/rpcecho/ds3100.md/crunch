@@ -1,0 +1,25 @@
+#!/sprite/cmds/perl
+
+%count = ();
+%sum = ();
+
+### open(DATA, "fddi.out1");
+
+$header = <STDIN>;
+
+while(<STDIN>) {
+
+chop $_;
+
+($size, $time) = split(/\s+/, $_);  
+$count{$size} = $count{$size} + 1;
+$sum{$size} = $sum{$size} + $time;
+
+}
+
+while (($sz, $tm) = each %sum) {
+$blat = $tm / $count{$sz};
+$mb = $sz / ($blat * 1000000);
+printf "%d:\t%1.6f\t%1.6f MBytes/s\n", $sz, $blat, $mb;
+}
+

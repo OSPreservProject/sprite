@@ -1,0 +1,7 @@
+L ARGV.T;1                          	argv.t	../../dist/t/io/argv.t
+L DUP.T;1                           	dup.t	../../dist/t/io/dup.t
+L FS.T;1                            	fs.t	../../dist/t/io/fs.t
+L INPLACE.T;1                       	inplace.t	../../dist/t/io/inplace.t
+L PIPE.T;1                          	pipe.t	../../dist/t/io/pipe.t
+L PRINT.T;1                         	print.t	../../dist/t/io/print.t
+L TELL.T;1                          	tell.t	../../dist/t/io/tell.t

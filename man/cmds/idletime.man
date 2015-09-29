@@ -1,0 +1,17 @@
+' $Header: /sprite/src/cmds/rpccmd/RCS/rpccmd.man,v 1.4 88/12/30 10:11:07 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS IDLETIME cmds
+.BS
+.SH NAME
+idletime \- Show idle ticks, idle time, and context switch information.
+.SH SYNOPSIS
+\fBidletime\fR  [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-s\fR" 14
+.BE
+.SH INTRODUCTION
+Sleep for some number of seconds (default is 10) counting idle ticks.  Then
+print the idle ticks, idle time percentage, number of context switches and
+the number of involuntary and full context switches.
+.SH KEYWORDS
+idle, cpu, ticks, context switch

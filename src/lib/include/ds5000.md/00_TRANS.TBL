@@ -1,0 +1,11 @@
+F ALLOCA.H;1                        	alloca.h
+D CMPLRS                            	cmplrs
+F FLOAT.H;1                         	float.h
+F LIMITS.H;1                        	limits.h
+F MACHPARA.H;1                      	machparam.h
+F MAKEFILE.;1                       	Makefile
+F NLIST.H;1                         	nlist.h
+D RCS                               	RCS
+F SIGMACH.H;1                       	sigMach.h
+D SYS                               	sys
+F VMMACH.H;1                        	vmMach.h

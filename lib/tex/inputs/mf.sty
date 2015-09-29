@@ -1,0 +1,37 @@
+% mf.sty:
+% Document style option to define Metafont logo in all sizes
+% Author: Don Hosek
+% Revision Date: 3/27/89
+% User macros defined: \mf (print Metafont logo)
+%                      \logo (select MF logo font
+     
+% Define \logo in terms of \plogo so that it isn't fragile (see lfonts.tex)
+\def\logo{\protect\plogo}
+     
+% We need a family too. [I think this is a waste on LaTeX's part]
+\newfam\logofam
+     
+% Define font that will be loaded for logo font here:
+\def\@logof{logo10}
+\def\@logoix{logo9}
+\def\@logoviii{logo8}
+     
+% Insert messages for attempted use of \logo at 5-7pt:
+\@addfontinfo\@vpt{\def\plogo{\@prtct\@subfont\@prtct\logo\@prtct\rm}}
+\@addfontinfo\@vipt{\def\plogo{\@prtct\@subfont\@prtct\logo\@prtct\rm}}
+\@addfontinfo\@viipt{\def\plogo{\@prtct\@subfont\@prtct\logo\@prtct\rm}}
+     
+% actually get the font for sizes 8-25pt:
+\@getfont\plogo\logofam\@viiipt{\@logoviii}
+\@getfont\plogo\logofam\@ixpt{\@logoix}
+\@getfont\plogo\logofam\@xpt{\@logof}
+\@getfont\plogo\logofam\@xipt{\@logof\@halfmag}
+\@getfont\plogo\logofam\@xiipt{\@logof\@magscale1}
+\@getfont\plogo\logofam\@xivpt{\@logof\@magscale2}
+\@getfont\plogo\logofam\@xviipt{\@logof\@magscale3}
+\@getfont\plogo\logofam\@xxpt{\@logof\@magscale4}
+\@getfont\plogo\logofam\@xxvpt{\@logof\@magscale5}
+     
+\def\MF{{\logo META}\-{\logo FONT}}
+     
+\endinput

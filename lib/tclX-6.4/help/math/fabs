@@ -1,0 +1,4 @@
+
+
+          fabs expr
+               Returns the absolute value of expr (floating point).

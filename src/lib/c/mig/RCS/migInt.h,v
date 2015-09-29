@@ -1,0 +1,129 @@
+head     2.1;
+branch   ;
+access   ;
+symbols  no-auto-remigrate:2.1 installed:2.0;
+locks    ; strict;
+comment  @ * @;
+
+
+2.1
+date     90.06.22.14.58.25;  author douglis;  state Exp;
+branches ;
+next     2.0;
+
+2.0
+date     90.03.10.13.12.59;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.28.10.58.33;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.16.14.29.59;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations used internally by the mig procedures.
+@
+
+
+2.1
+log
+@changes for alarms for timeouts with migd and for printing to stderr instead of syslog
+@
+text
+@/*
+ * migInt.h --
+ *
+ *	Declarations used internally by the mig procedures.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/c/mig/RCS/migInt.h,v 2.0 90/03/10 13:12:59 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _MIGINT
+#define _MIGINT
+
+/*
+ * Operations we perform on the host cache.
+ */
+typedef enum {
+    MIG_CACHE_ADD,		/* Add entry to cache. */
+    MIG_CACHE_REMOVE,		/* Remove entry from cache. */
+    MIG_CACHE_REMOVE_ALL,	/* Remove all entries from cache. */
+    MIG_CACHE_VERIFY,		/* Verify entry is in cache. */
+} MigCacheOp;
+
+extern int MigHostCache();	/* Routine to manage cache. */
+extern int MigOpenPdev();	/* Routine to open pdev, sleeping if needed. */
+extern int migGetNewHosts;	/* Whether to query server for new hosts. */
+
+extern void (*migCallBackPtr)();/* Procedure to call if idle hosts become
+				   available, or NULL. */
+extern int MigSetAlarm();	/* For setting timeouts. */
+extern int MigClearAlarm();	/* For removing timeouts. */
+/*
+ * Library routines that aren't automatically declared by include files.
+ */
+extern int errno;
+
+extern int strlen();
+extern char *strcpy();
+extern char *strerror();
+
+#endif _MIGINT
+
+
+
+
+
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/c/mig/RCS/migInt.h,v 1.2 90/02/28 10:58:33 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d37 2
+@
+
+
+1.2
+log
+@added migCallBackPtr use.  changed Mig_OpenPdev to internal Mig routine.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/c/mig/RCS/migInt.h,v 1.1 90/02/16 14:29:59 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/c/mig/RCS/migInt.h,v 1.7 89/11/04 21:55:36 douglis Exp $ SPRITE (Berkeley)
+d32 1
+d35 2
+@

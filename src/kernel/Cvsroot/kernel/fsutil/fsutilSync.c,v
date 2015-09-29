@@ -1,0 +1,2345 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sprited:9.2.1 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.09.10.18.24.24;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     91.01.26.15.35.47;  author mgbaker;  state Exp;
+branches 9.2.1.1;
+next     9.1;
+
+9.1
+date     90.10.08.13.19.33;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.11.44;  author douglis;  state Stable;
+branches ;
+next     8.18;
+
+8.18
+date     89.08.21.15.30.24;  author mendel;  state Exp;
+branches ;
+next     8.17;
+
+8.17
+date     89.06.30.15.23.08;  author brent;  state Exp;
+branches ;
+next     8.16;
+
+8.16
+date     89.06.29.16.14.43;  author brent;  state Exp;
+branches ;
+next     8.15;
+
+8.15
+date     89.06.15.09.39.03;  author brent;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.06.07.14.38.44;  author brent;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.05.30.16.10.05;  author jhh;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.03.21.16.19.42;  author douglis;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.03.17.12.49.24;  author brent;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.03.15.15.16.21;  author brent;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.03.14.10.47.37;  author brent;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.03.03.08.10.59;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.02.09.08.32.21;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.01.30.16.48.23;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.01.29.14.38.15;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.29.14.36.34;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.06.11.17.01;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.29.18.09.02;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.26.11.26.23;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.16.25;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.27.43;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.22.15.10.15;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.13.11.25.05;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.08.17.29.24;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.07.21.17.46;  author nelson;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.06.11.14.03;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.12.02.41;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.13.33;  author brent;  state Stable;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.04.15.06.09;  author mlgray;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.16.10.20.17;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.01.17.08.04;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.05.05.17.01.11;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.19.10.50.05;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.43.31;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.2.1.1
+date     91.11.15.17.04.24;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Miscellaneous routines
+@
+
+
+9.3
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/* 
+ * fsutilSync.c --
+ *
+ * Routines controlling the syncing of cached data to disk or the server.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsutilSync.c,v 9.2 91/01/26 15:35:47 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+
+#include <fs.h>
+#include <vm.h>
+#include <rpc.h>
+#include <fsutil.h>
+#include <fsdm.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fsStat.h>
+#include <sync.h>
+#include <timer.h>
+#include <proc.h>
+#include <hash.h>
+#include <fsrmt.h>
+
+#include <stdio.h>
+
+#define	MAX_WAIT_INTERVALS	5
+
+
+Boolean fsutil_ShouldSyncDisks;
+
+int		fsWriteBackInterval = 30;	/* How long blocks have to be
+						 * dirty before they are
+						 * written back. */
+int		fsWriteBackCheckInterval = 5;	/* How often to scan the
+						 * cache for blocks to write
+						 * back. */
+Boolean		fsutil_ShouldSyncDisks = TRUE;	/* TRUE means that we should
+						 * sync the disks when
+						 * Fsutil_SyncProc is called. */
+int		lastHandleWBTime = 0;		/* Last time that wrote back
+						 * file handles. */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_SyncProc --
+ *
+ *	Process to loop and write back things every thiry seconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Fsutil_SyncProc(data, callInfoPtr)
+    ClientData		data;		/* IGNORED */
+    Proc_CallInfo	*callInfoPtr;
+{
+    int	blocksLeft;
+
+    if (Fsutil_TimeInSeconds() - lastHandleWBTime >= fsWriteBackInterval) {
+	(void) Fsutil_HandleDescWriteBack(FALSE, -1);
+	lastHandleWBTime = Fsutil_TimeInSeconds();
+    }
+
+    if (fsutil_ShouldSyncDisks) {
+	Fscache_WriteBack((unsigned) (Fsutil_TimeInSeconds() -
+		fsWriteBackInterval), &blocksLeft, FALSE);
+    }
+    if (fsWriteBackCheckInterval < fsWriteBackInterval) {
+	callInfoPtr->interval = fsWriteBackCheckInterval * timer_IntOneSecond;
+    } else {
+	callInfoPtr->interval = fsWriteBackInterval * timer_IntOneSecond;
+    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_Sync --
+ *
+ *	Write back bit maps, file descriptors, and all dirty cache buffers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsutil_Sync(writeBackTime, shutdown)
+    unsigned int writeBackTime;	/* Write back all blocks in the cache and file
+			           descriptors that were dirtied before 
+				   this time. */
+    Boolean	shutdown;	/* TRUE if the kernel is being shutdown. */
+{
+    int		blocksLeft = 0;
+    /*
+     * Force all file descriptors into the cache.
+     */
+    (void) Fsutil_HandleDescWriteBack(shutdown, -1);
+    /*
+     * Write back the cache.
+     */
+    Fscache_WriteBack(writeBackTime, &blocksLeft, shutdown);
+    if (shutdown) {
+	if (blocksLeft) {
+	    printf("Fsutil_Sync: %d blocks still locked\n", blocksLeft);
+	}
+#ifdef notdef
+	Fscache_CleanBlocks((ClientData) FALSE, (Proc_CallInfo *) NIL);
+#endif
+    }
+    /*
+     * Finally write all domain information to disk.  This will mark each
+     * domain to indicate that we went down gracefully and recovery is in
+     * fact possible.
+     */
+    Fsdm_DomainWriteBack(-1, shutdown, FALSE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_SyncStub --
+ *
+ *	Procedure bound to the L1-w keystoke.  This is called at
+ *	keyboard interrupt time and so it makes a Proc_CallFunc
+ *	to invoke the Fsutil_Sync procedure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Attempts to sync the disks.
+ *
+ *----------------------------------------------------------------------
+ */
+void SyncCallBack();
+
+void
+Fsutil_SyncStub(data)
+    ClientData		data;
+{
+    printf("Queueing call to Fsutil_Sync() ... ");
+    Proc_CallFunc(SyncCallBack, data, 0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SyncCallBack --
+ *
+ *	Procedure called via Proc_CallFunc to sync the disks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Syncs the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SyncCallBack(data, callInfoPtr)
+    ClientData		data;
+    Proc_CallInfo	*callInfoPtr;
+{
+    printf("Syncing disks");
+    Fsutil_Sync(-1, (Boolean)data);
+    callInfoPtr->interval = 0;
+    printf(".\n");
+}
+
+@
+
+
+9.2
+log
+@Sosp stuff
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsutilSync.c,v 9.1 90/10/08 13:19:33 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a34 1
+#include <trace.h>
+@
+
+
+9.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilSync.c,v 9.2 91/01/26 15:35:47 mgbaker Exp $ SPRITE (Berkeley)";
+@
+
+
+9.1
+log
+@Changed include to use <> rather than "" and added function prototypes.
+Fixed lint.
+Changed name to fsutilSync.c.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsSync.c,v 1.1 90/01/16 17:11:52 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d43 1
+d85 3
+a87 3
+    if (fsutil_ShouldSyncDisks && !fsutil_WriteThrough && !fsutil_WriteBackASAP) {
+	Fscache_WriteBack((unsigned) (Fsutil_TimeInSeconds() - fsWriteBackInterval), 
+			  &blocksLeft, FALSE);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d2 1
+a2 1
+ * fsSync.c --
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsSync.c,v 8.18 89/08/21 15:30:24 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 1
+a21 1
+#include "sprite.h"
+d23 15
+a37 15
+#include "fs.h"
+#include "vm.h"
+#include "rpc.h"
+#include "fsutil.h"
+#include "fsdm.h"
+#include "fslcl.h"
+#include "fsNameOps.h"
+#include "fsprefix.h"
+#include "fsStat.h"
+#include "sync.h"
+#include "timer.h"
+#include "proc.h"
+#include "trace.h"
+#include "hash.h"
+#include "fsrmt.h"
+d39 1
+a42 1
+int	fsutil_TimeInSeconds;
+d79 1
+a79 1
+    if (fsutil_TimeInSeconds - lastHandleWBTime >= fsWriteBackInterval) {
+d81 1
+a81 1
+	lastHandleWBTime = fsutil_TimeInSeconds;
+d85 1
+a85 1
+	Fscache_WriteBack((unsigned) (fsutil_TimeInSeconds - fsWriteBackInterval), 
+a120 1
+
+d133 1
+d135 1
+@
+
+
+8.18
+log
+@
+
+
+Break up fs into many modules.    
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.17 89/06/30 15:23:08 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.17
+log
+@Cleaned up error case in FsDomainInfo
+@
+text
+@d2 1
+a2 1
+ * fsSubr.c --
+d4 1
+a4 1
+ *	Miscellaneous routines.
+d6 8
+a13 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.16 89/06/29 16:14:43 brent Exp $ SPRITE (Berkeley)";
+d26 3
+a28 5
+#include "fsInt.h"
+#include "fsDisk.h"
+#include "fsLocalDomain.h"
+#include "fsOpTable.h"
+#include "fsPrefix.h"
+d30 1
+a30 1
+#include "fsTrace.h"
+a31 2
+#include "devDiskLabel.h"
+#include "dev.h"
+d37 1
+a38 20
+/*
+ * TEMPORARY STUBS.
+ */
+Fs_RpcReply()
+{
+    panic( "Fs_RpcReply called");
+}
+Fs_RpcRequest()
+{
+    panic( "Fs_RpcRequest called");
+}
+
+/*
+ * Monitor for OkToScavenge and DoneScavenge
+ */
+static Sync_Lock scavengeLock = Sync_LockInitStatic("Fs:scavengeLock");
+#define LOCKPTR (&scavengeLock)
+
+static Boolean OkToScavenge();
+void DoneScavenge();
+a39 1
+
+d42 2
+a43 221
+int	fsTimeInSeconds;
+Boolean fsShouldSyncDisks;
+Boolean	fsWriteThrough = FALSE;	
+Boolean	fsWriteBackOnClose  = FALSE;
+Boolean	fsDelayTmpFiles = FALSE;
+int	fsTmpDirNum = -1;	
+Boolean	fsWriteBackASAP = FALSE;
+Boolean fsWBOnLastDirtyBlock = FALSE;
+
+Trace_Header fsTraceHdr;
+Trace_Header *fsTraceHdrPtr = &fsTraceHdr;
+int fsTraceLength = 256;
+Boolean fsTracing = FALSE;
+Time fsTraceTime;		/* Cost of taking a trace record */
+int fsTracedFile = -1;		/* fileID.minor of traced file */
+
+typedef struct FsTracePrintTable {
+    FsTraceRecType	type;		/* This determines the format of the
+					 * trace record client data. */
+    char		*string;	/* Human readable record type */
+} FsTracePrintTable;
+
+FsTracePrintTable fsTracePrintTable[] = {
+    /* TRACE_0 */		FST_BLOCK, 	"delete block",
+    /* TRACE_OPEN_START */	FST_NAME, 	"open start",
+    /* TRACE_LOOKUP_START */	FST_NAME, 	"after prefix",
+    /* TRACE_LOOKUP_DONE */	FST_NAME, 	"after lookup",
+    /* TRACE_DEL_LAST_WR */	FST_HANDLE, 	"delete last writer",
+    /* TRACE_OPEN_DONE */	FST_NAME, 	"open done",
+    /* TRACE_BLOCK_WAIT */	FST_BLOCK,	"skip block",
+    /* TRACE_BLOCK_HIT */	FST_BLOCK, 	"hit block",
+    /* TRACE_DELETE */		FST_HANDLE, 	"delete",
+    /* TRACE_NO_BLOCK */	FST_BLOCK, 	"new block",
+    /* TRACE_OPEN_DONE_2 */	FST_NAME, 	"after Fs_Open",
+    /* TRACE_OPEN_DONE_3 */	FST_NIL, 	"open complete",
+    /* INSTALL_NEW */		FST_HANDLE,	"inst. new",
+    /* INSTALL_HIT */		FST_HANDLE,	"inst. hit",
+    /* RELEASE_FREE */		FST_HANDLE,	"rels. free",
+    /* RELEASE_LEAVE */		FST_HANDLE,	"rels. leave",
+    /* REMOVE_FREE */		FST_HANDLE,	"remv. free",
+    /* REMOVE_LEAVE */		FST_HANDLE,	"remv. leave",
+    /* SRV_WRITE_1 */		FST_IO,		"invalidate",
+    /* SRV_WRITE_2 */		FST_IO,		"srv write",
+    /* SRV_GET_ATTR_1 */	FST_NIL,	"srv get attr 1",
+    /* SRV_GET_ATTR_2 */	FST_NIL,	"srv get attr 2",
+    /* OPEN */			FST_NIL,	"open",
+    /* READ */			FST_IO, 	"read",
+    /* WRITE */			FST_IO, 	"write",
+    /* CLOSE */			FST_HANDLE, 	"close",
+    /* TRACE_RA_SCHED */	FST_RA, 	"Read ahead scheduled",
+    /* TRACE_RA_BEGIN */	FST_RA,		"Read ahead started",
+    /* TRACE_RA_END */		FST_RA,	 	"Read ahead completed",
+    /* TRACE_DEL_BLOCK */	FST_BLOCK, 	"Delete block",
+    /* TRACE_BLOCK_WRITE */	FST_BLOCK,	"Block write",
+    /* TRACE_GET_NEXT_FREE */	FST_HANDLE,	"get next free",
+    /* TRACE_LRU_FREE */	FST_HANDLE,	"lru free",
+    /* TRACE_LRU_DONE_FREE */	FST_HANDLE,	"lru done free",
+};
+static int numTraceTypes = sizeof(fsTracePrintTable)/sizeof(FsTracePrintTable);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsTraceInit --
+ *
+ *	Initialize the filesystem trace record.  This also determines
+ *	the cost of taking the trace records so this cost can be
+ *	subtracted out when the records are displayed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls Trace_Init and Trace_Insert
+ *
+ *----------------------------------------------------------------------
+ */
+int
+FsTraceInit()
+{
+    Trace_Record *firstPtr, *lastPtr;
+
+    Trace_Init(fsTraceHdrPtr, fsTraceLength, sizeof(FsTraceRecord), 0);
+    /*
+     * Take 10 trace records with a NIL data field.  This causes a
+     * bzero inside Trace_Insert, which is sort of a base case for
+     * taking a trace.  The time difference between the first and last
+     * record is used to determine the cost of taking the trace records.
+     */
+    firstPtr = &fsTraceHdrPtr->recordArray[fsTraceHdrPtr->currentRecord];
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
+    lastPtr = &fsTraceHdrPtr->recordArray[fsTraceHdrPtr->currentRecord-1];
+
+    Time_Subtract(lastPtr->time, firstPtr->time, &fsTraceTime);
+    Time_Divide(fsTraceTime, 9, &fsTraceTime);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_PrintTraceRecord --
+ *
+ *	Format and print the client data part of a filesystem trace record.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	printfs to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
+    ClientData clientData;	/* Client data in the trace record */
+    int event;			/* Type, or event, from the trace record */
+    Boolean printHeaderFlag;	/* If TRUE, a header line is printed */
+{
+    if (printHeaderFlag) {
+	/*
+	 * Print column headers and a newline.
+	 */
+	printf("%10s %17s %8s\n", "Delta  ", "<File ID>  ", "Event ");
+	printf("Cost of taking an fs trace record is %d.%06d\n",
+		     fsTraceTime.seconds, fsTraceTime.microseconds);
+    }
+    if (clientData != (ClientData)NIL) {
+	if (event >= 0 && event < numTraceTypes) {
+	    printf("%20s ", fsTracePrintTable[event].string);
+	    switch(fsTracePrintTable[event].type) {
+		case FST_IO: {
+		    FsTraceIORec *ioRecPtr = (FsTraceIORec *)clientData;
+		    printf("<%2d, %2d, %1d, %4d> ",
+			ioRecPtr->fileID.type, ioRecPtr->fileID.serverID,
+			ioRecPtr->fileID.major, ioRecPtr->fileID.minor);
+		    printf(" off %d len %d ", ioRecPtr->offset,
+						  ioRecPtr->numBytes);
+		    break;
+		}
+		case FST_NAME: {
+		    char *name = (char *)clientData;
+		    name[39] = '\0';
+		    printf("\"%s\"", name);
+		    break;
+		}
+		case FST_HANDLE: {
+		    FsTraceHdrRec *recPtr = (FsTraceHdrRec *)clientData;
+		    printf("<%2d, %2d, %1d, %4d> ref %d blocks %d ",
+		      recPtr->fileID.type, 
+		      recPtr->fileID.serverID,
+		      recPtr->fileID.major, 
+		      recPtr->fileID.minor,
+		      recPtr->refCount,
+		      recPtr->numBlocks);
+		    break;
+		}
+		case FST_BLOCK: {
+		    FsTraceBlockRec *blockPtr = (FsTraceBlockRec *)clientData;
+		    printf("<%2d, %2d, %1d, %4d> block %d flags %x ",
+		      blockPtr->fileID.type, 
+		      blockPtr->fileID.serverID,
+		      blockPtr->fileID.major, 
+		      blockPtr->fileID.minor,
+		      blockPtr->blockNum,
+		      blockPtr->flags);
+		      break;
+		}
+		case FST_RA: {
+		    int	*blockNumPtr;
+
+		    blockNumPtr = (int *) clientData;
+		    printf("<Block=%d> ", *blockNumPtr);
+		    break;
+		}
+		case FST_NIL:
+		default:
+		    break;
+	    }
+	} else {
+	    printf("(%d)", event);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_PrintTrace --
+ *
+ *	Dump out the fs trace.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fs_PrintTrace(numRecs)
+    int numRecs;
+{
+    if (numRecs < 0) {
+	numRecs = fsTraceLength;
+    }
+    printf("FS TRACE\n");
+    (void)Trace_Print(fsTraceHdrPtr, numRecs, Fs_PrintTraceRecord);
+}
+
+d51 1
+a51 1
+Boolean		fsShouldSyncDisks = TRUE;	/* TRUE means that we should
+d53 1
+a53 1
+						 * Fs_SyncProc is called. */
+d59 1
+a59 1
+ * Fs_SyncProc --
+d73 1
+a73 1
+Fs_SyncProc(data, callInfoPtr)
+d79 3
+a81 3
+    if (fsTimeInSeconds - lastHandleWBTime >= fsWriteBackInterval) {
+	(void) FsHandleDescWriteBack(FALSE, -1);
+	lastHandleWBTime = fsTimeInSeconds;
+d84 2
+a85 2
+    if (fsShouldSyncDisks && !fsWriteThrough && !fsWriteBackASAP) {
+	Fs_CacheWriteBack((unsigned) (fsTimeInSeconds - fsWriteBackInterval), 
+d100 1
+a100 1
+ * Fs_Sync --
+d114 1
+a114 1
+Fs_Sync(writeBackTime, shutdown)
+d125 1
+a125 1
+    (void) FsHandleDescWriteBack(shutdown, -1);
+d129 1
+a129 1
+    Fs_CacheWriteBack(writeBackTime, &blocksLeft, shutdown);
+d132 1
+a132 1
+	    printf("Fs_Sync: %d blocks still locked\n", blocksLeft);
+d134 1
+a134 1
+	FsCleanBlocks((ClientData) FALSE, (Proc_CallInfo *) NIL);
+d141 1
+a141 1
+    FsLocalDomainWriteBack(-1, shutdown, FALSE);
+d147 1
+a147 1
+ * Fs_SyncStub --
+d151 1
+a151 1
+ *	to invoke the Fs_Sync procedure.
+d164 1
+a164 1
+Fs_SyncStub(data)
+d167 1
+a167 1
+    printf("Queueing call to Fs_Sync() ... ");
+d193 1
+a193 1
+    Fs_Sync(-1, (Boolean)data);
+a197 553
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsUpdateTimeOfDay --
+ *
+ *	Update the time of day in seconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Global time of day variable updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+FsUpdateTimeOfDay()
+{
+    Time	time;
+
+    Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
+    fsTimeInSeconds = time.seconds;
+    Timer_ScheduleRoutine(&fsTimeOfDayElement, TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CheckSetID --
+ *
+ *	Determine if the given stream has the set uid or set gid bits set.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	*uidPtr and *gidPtr set to -1 if the respective bit isn't set and set
+ *	to the uid and/or gid of the file otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
+    Fs_Stream	*streamPtr;
+    int		*uidPtr;
+    int		*gidPtr;
+{
+    register	FsCachedAttributes	*cachedAttrPtr;
+
+    switch (streamPtr->ioHandlePtr->fileID.type) {
+	case FS_LCL_FILE_STREAM:
+	    cachedAttrPtr =
+	       &((FsLocalFileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
+	    break;
+	case FS_RMT_FILE_STREAM:
+	    cachedAttrPtr =
+	       &((FsRmtFileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
+	    break;
+	default:
+	    panic( "Fs_CheckSetID, wrong stream type\n",
+		streamPtr->ioHandlePtr->fileID.type);
+	    return;
+    }
+    if (cachedAttrPtr->permissions & FS_SET_UID) {
+	*uidPtr = cachedAttrPtr->uid;
+    } else {
+	*uidPtr = -1;
+    }
+    if (cachedAttrPtr->permissions & FS_SET_GID) {
+	*gidPtr = cachedAttrPtr->gid;
+    } else {
+	*gidPtr = -1;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsDomainInfo --
+ *
+ *	Return info about the given domain.
+ *	FIX ME FIX ME FIX ME
+ *	This should be replaced by a call through the domain switch.
+ *	The prefix table module has the domain type, so can do this.
+ *	For now, we infer the domain type from the stream type.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus 
+FsDomainInfo(fileIDPtr, domainInfoPtr)
+    Fs_FileID		*fileIDPtr;	/* FileID from the prefix table,
+					 * This can be changed to make
+					 * it match with what a user sees
+					 * when it stats the file.  This
+					 * is important when computing
+					 * the current directory in getwd(). */
+    Fs_DomainInfo	*domainInfoPtr;	/* Fill in with # free blocks, etc */
+{
+    ReturnStatus	status;
+
+    switch (fileIDPtr->type) {
+	case FS_LCL_FILE_STREAM:
+	    status = FsLocalDomainInfo(fileIDPtr, domainInfoPtr);
+	    break;
+	case FS_PFS_NAMING_STREAM:
+	case FS_RMT_FILE_STREAM:
+	    status = FsRemoteDomainInfo(fileIDPtr, domainInfoPtr);
+	    break;
+	case FS_LCL_PSEUDO_STREAM:
+	    status = FsPseudoDomainInfo(fileIDPtr, domainInfoPtr);
+	    break;
+	default:
+	    printf("FsDomainInfo: Unexpected stream type <%d>\n",
+		    fileIDPtr->type);
+	    status = FS_DOMAIN_UNAVAILABLE;
+	    break;
+    }
+    if (status != SUCCESS) {
+	domainInfoPtr->maxKbytes = -1;
+	domainInfoPtr->freeKbytes = -1;
+	domainInfoPtr->maxFileDesc = -1;
+	domainInfoPtr->freeFileDesc = -1;
+	domainInfoPtr->blockSize = -1;
+    }
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fs_GetFileHandle --
+ *
+ *	Return an opaque handle for a file, really a pointer to its I/O handle.
+ *	This is used for a subsequent call to Fs_GetSegPtr.
+ *
+ * Results:
+ *	A pointer to the I/O handle of the file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+
+ClientData
+Fs_GetFileHandle(streamPtr)
+    Fs_Stream *streamPtr;
+{
+    return((ClientData)streamPtr->ioHandlePtr);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fs_GetSegPtr --
+ *
+ *	Return a pointer to a pointer to the segment associated with this
+ *	file.
+ *
+ * Results:
+ *	A pointer to the segment associated with this file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+
+Vm_Segment **
+Fs_GetSegPtr(fileHandle)
+    ClientData fileHandle;
+{
+    FsHandleHeader *hdrPtr = (FsHandleHeader *)fileHandle;
+    Vm_Segment	**segPtrPtr;
+
+    switch (hdrPtr->fileID.type) {
+	case FS_LCL_FILE_STREAM:
+	    segPtrPtr = &(((FsLocalFileIOHandle *)hdrPtr)->segPtr);
+	    break;
+	case FS_RMT_FILE_STREAM:
+	    segPtrPtr = &(((FsRmtFileIOHandle *)hdrPtr)->segPtr);
+	    break;
+	default:
+	    panic( "Fs_RetSegPtr, bad stream type %d\n",
+		    hdrPtr->fileID.type);
+    }
+    fsStats.handle.segmentFetches++;
+    if (*segPtrPtr != (Vm_Segment *) NIL) {
+	fsStats.handle.segmentHits++;
+    }
+    return(segPtrPtr);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fs_HandleScavengeStub --
+ *
+ *	This is a thin layer on top of Fs_HandleScavenge.  It is called
+ *	when L1-x is pressed at the keyboard, and also from FsHandleInstall
+ *	when a threashold number of handles have been created.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invokes the handle scavenger.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+/*ARGSUSED*/
+void Fs_HandleScavengeStub(data)
+    ClientData	data;	/* IGNORED */
+{
+    /*
+     * This is called when the L1-x keys are held down at the console.
+     * We set up a call to Fs_HandleScavenge, unless there is already
+     * an extra scavenger scheduled.
+     */
+    if (OkToScavenge()) {
+	Proc_CallFunc(Fs_HandleScavenge, (ClientData)FALSE, 0);
+    }
+}
+
+Boolean		scavengerScheduled = FALSE;
+int		fsScavengeInterval = 2;			/* 2 Minutes */
+int		fsLastScavengeTime = 0;
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fs_HandleScavenge --
+ *
+ *	Go through all of the handles looking for clients that have crashed
+ *	and for handles that are no longer needed.  This expects to be
+ *	called by a helper kernel processes at regular intervals defined
+ *	by fsScavengeInterval.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The handle-specific routines may remove handles.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+/*ARGSUSED*/
+void
+Fs_HandleScavenge(data, callInfoPtr)
+    ClientData		data;			/* Whether to reschedule again
+						 */
+    Proc_CallInfo	*callInfoPtr;		/* Specifies interval */
+{
+    Hash_Search				hashSearch;
+    register	FsHandleHeader		*hdrPtr;
+
+    /*
+     * Note that this is unsynchronized access to a global variable, which
+     * works fine on a uniprocessor.  We don't want a monitor lock here
+     * because we don't want a locked handle to hang up all Proc_ServerProcs.
+     */
+    fsLastScavengeTime = fsTimeInSeconds;
+
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = FsGetNextHandle(&hashSearch);
+	 hdrPtr != (FsHandleHeader *) NIL;
+         hdrPtr = FsGetNextHandle(&hashSearch)) {
+	 if (fsStreamOpTable[hdrPtr->fileID.type].scavenge !=
+		 (Boolean (*)())NIL) {
+	     (*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr);
+	 } else {
+	     FsHandleUnlock(hdrPtr);
+	 }
+    }
+    /*
+     * We are called in two cases.  A regular call background call is indicated
+     * by a TRUE data value, while an extra scavenge that is done in an
+     * attempt to free space is the other case.
+     */
+    if ((Boolean)data) {
+	/*
+	 * Set up next background call.
+	 */
+	callInfoPtr->interval = fsScavengeInterval * timer_IntOneMinute;
+    } else {
+	/*
+	 * Indicate that the extra scavenger has completed.
+	 */
+	callInfoPtr->interval = 0;
+	DoneScavenge();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * OkToScavenge --
+ *
+ *	Checks for already active scavengers.  Returns FALSE if there
+ *	is already a scavenger.
+ *
+ * Results:
+ *	TRUE if there is no scavenging in progress.
+ *
+ * Side effects:
+ *	Sets scavengerScheduled to TRUE if it had been FALSE.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+static ENTRY Boolean
+OkToScavenge()
+{
+    register Boolean ok;
+    LOCK_MONITOR;
+    ok = !scavengerScheduled;
+    if (ok) {
+	scavengerScheduled = TRUE;
+    }
+    UNLOCK_MONITOR;
+    return(ok);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * DoneScavenge --
+ *
+ *	Called when done scavenging.  This clears the flag that indicates
+ *	an extra scavenger is present.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears scavengerScheduled.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+void
+DoneScavenge()
+{
+    LOCK_MONITOR;
+    scavengerScheduled = FALSE;
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsFileError --
+ *
+ *	Print an error message about a file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsFileError(hdrPtr, string, status)
+    FsHandleHeader *hdrPtr;
+    char *string;
+{
+    if (hdrPtr == (FsHandleHeader *)NIL) {
+	printf("(NIL handle) %s: ", string);
+    } else {
+	Net_HostPrint(hdrPtr->fileID.serverID,
+		      FsFileTypeToString(hdrPtr->fileID.type));
+	printf(" \"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
+		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
+    }
+    switch (status) {
+	case SUCCESS:
+	    printf("\n");
+	    break;
+	case FS_DOMAIN_UNAVAILABLE:
+	    printf("domain unavailable\n");
+	    break;
+	case FS_VERSION_MISMATCH:
+	    printf("version mismatch\n");
+	    break;
+	case FAILURE:
+	    printf("cacheable/busy conflict\n");
+	    break;
+	case RPC_TIMEOUT:
+	    printf("rpc timeout\n");
+	    break;
+	case RPC_SERVICE_DISABLED:
+	    printf("server rebooting\n");
+	    break;
+	case FS_STALE_HANDLE:
+	    printf("stale handle\n");
+	    break;
+	case DEV_RETRY_ERROR:
+	case DEV_HARD_ERROR:
+	    printf("DISK ERROR\n");
+	    break;
+	case FS_NO_DISK_SPACE:
+	    printf("out of disk space\n");
+	default:
+	    printf("<%x>\n", status);
+	    break;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsFileTypeToString --
+ *
+ *	Map a stream type to a string.  Used for error messages.
+ *
+ * Results:
+ *	A string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+FsFileTypeToString(type)
+    int type;
+{
+    register char *fileType;
+
+    switch (type) {
+	case FS_STREAM:
+	    fileType = "Stream";
+	    break;
+	case FS_LCL_FILE_STREAM:
+	    fileType = "File";
+	    break;
+	case FS_RMT_FILE_STREAM:
+	    fileType = "RmtFile";
+	    break;
+	case FS_LCL_DEVICE_STREAM:
+	    fileType = "Device";
+	    break;
+	case FS_RMT_DEVICE_STREAM:
+	    fileType = "RmtDevice";
+	    break;
+	case FS_LCL_PIPE_STREAM:
+	    fileType = "Pipe";
+	    break;
+	case FS_RMT_PIPE_STREAM:
+	    fileType = "RmtPipe";
+	    break;
+#ifdef notdef
+	case FS_LCL_NAMED_PIPE_STREAM:
+	    fileType = "NamedPipe";
+	    break;
+	case FS_RMT_NAMED_PIPE_STREAM:
+	    fileType = "RmtNamedPipe";
+	    break;
+#endif
+	case FS_CONTROL_STREAM:
+	    fileType = "PdevControlStream";
+	    break;
+	case FS_SERVER_STREAM:
+	    fileType = "SrvStream";
+	    break;
+	case FS_LCL_PSEUDO_STREAM:
+	    fileType = "LclPdev";
+	    break;
+	case FS_RMT_PSEUDO_STREAM:
+	    fileType = "RmtPdev";
+	    break;
+	case FS_PFS_CONTROL_STREAM:
+	    fileType = "PfsControlStream";
+	    break;
+	case FS_PFS_NAMING_STREAM:
+	    fileType = "PfsNamingStream";
+	    break;
+	case FS_LCL_PFS_STREAM:
+	    fileType = "LclPfs";
+	    break;
+	case FS_RMT_PFS_STREAM:
+	    fileType = "RmtPfs";
+	    break;
+#ifdef INET
+	case FS_RAW_IP_STREAM:
+	    fileType = "RawIp Socket";
+	    break;
+	case FS_UDP_STREAM:
+	    fileType = "UDP Socket";
+	    break;
+	case FS_TCP_STREAM:
+	    fileType = "TCP Socket";
+	    break;
+#endif
+#ifdef notdef
+	case FS_RMT_UNIX_STREAM:
+	    fileType = "UnixFile";
+	    break;
+	case FS_RMT_NFS_STREAM:
+	    fileType = "NFSFile";
+	    break;
+#endif
+	default:
+	    fileType = "<unknown file type>";
+	    break;
+    }
+    return(fileType);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetFileName --
+ *
+ *	Return a pointer to the file name for the given stream.
+ *
+ * Results:
+ *	Pointer to file name from handle of given stream.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Fs_GetFileName(streamPtr)
+    Fs_Stream	*streamPtr;
+{
+    if (streamPtr->hdr.name != (char *)NIL) {
+	return(streamPtr->hdr.name);
+    } else if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+	return(streamPtr->ioHandlePtr->name);
+    } else {
+	return("(noname)");
+    }
+}
+@
+
+
+8.16
+log
+@Turned off file system tracing by default
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.15 89/06/15 09:39:03 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d556 2
+a557 5
+	    domainInfoPtr->maxKbytes = -1;
+	    domainInfoPtr->freeKbytes = -1;
+	    domainInfoPtr->maxFileDesc = -1;
+	    domainInfoPtr->freeFileDesc = -1;
+	    domainInfoPtr->blockSize = -1;
+d559 8
+d568 1
+@
+
+
+8.15
+log
+@Cleaned up FsDomainInfo to use domain-specific routines.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.14 89/06/07 14:38:44 brent Exp $ SPRITE (Berkeley)";
+d72 1
+a72 1
+Boolean fsTracing = TRUE;
+@
+
+
+8.14
+log
+@Removed lint
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.13 89/05/30 16:10:05 jhh Exp $ SPRITE (Berkeley)";
+d54 1
+a54 1
+Boolean OkToScavenge();
+d520 3
+a522 5
+ *	This should be fixed so there is a standard interface,
+ *	perhaps fileIDPtr, and domainInoPtr, to the various kinds
+ *	of domains.  This should be called though the domain operation
+ *	switch table.  The worst problem is that the RPC interface is
+ *	wrong, only the domain number is passed.
+d546 1
+a546 1
+	    status = FsLocalDomainInfo(fileIDPtr->major, domainInfoPtr);
+d548 1
+d552 2
+a553 41
+	case FS_PFS_NAMING_STREAM:	/* This should be remote case */
+	case FS_LCL_PSEUDO_STREAM: {
+	    Fs_Attributes attr;
+	    /*
+	     * This is a sort-of-in-lined Fs_GetAttributes that bypasses
+	     * the prefix table.
+	     * Should call FsPseudoDomainInfo(fileIDPtr, domainInfoPtr);
+	     */
+	    FsOpenArgs openArgs;
+	    FsGetAttrResults getAttrResults;
+	    FsRedirectInfo *redirectPtr;
+	    register FsHandleHeader *hdrPtr;
+
+	    openArgs.useFlags = FS_FOLLOW;
+	    openArgs.permissions = 0;
+	    openArgs.type = FS_FILE;
+	    openArgs.clientID = rpc_SpriteID;
+	    FsSetIDs((Proc_ControlBlock *)NIL, &openArgs.id);
+
+	    openArgs.rootID = *fileIDPtr;
+	    openArgs.prefixID = *fileIDPtr;
+	
+	    getAttrResults.attrPtr = &attr;
+	    getAttrResults.fileIDPtr = fileIDPtr;
+
+	    hdrPtr = FsHandleFetch(fileIDPtr);
+	    if (hdrPtr == (FsHandleHeader *)NIL) {
+		break;
+	    } else {
+		FsHandleRelease(hdrPtr, TRUE);
+	    }
+	    if (fileIDPtr->type == FS_LCL_PSEUDO_STREAM) {
+		status = FsPfsGetAttrPath(hdrPtr, ".", &openArgs,
+			    &getAttrResults, &redirectPtr);
+	    } else {
+		status = FsRemoteGetAttrPath(hdrPtr, ".", &openArgs,
+			    &getAttrResults, &redirectPtr);
+	    }
+	    if (status == FS_LOOKUP_REDIRECT) {
+		free((Address) redirectPtr);
+	    }
+a554 1
+	}
+d560 1
+@
+
+
+8.13
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.12 89/03/21 16:19:42 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d794 1
+a794 1
+Boolean
+@
+
+
+8.12
+log
+@cast ptr arg to free to get rid of compilation warning msg.
+.,
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.11 89/03/17 12:49:24 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+a164 1
+    Sync_LockRegister(&scavengeLock);
+@
+
+
+8.11
+log
+@Fixed getwd() in pseudo-file-systems
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.10 89/03/15 15:16:21 brent Exp $ SPRITE (Berkeley)";
+d593 1
+a593 1
+		free(redirectPtr);
+@
+
+
+8.10
+log
+@Fixed FsDomainInfo so remote pseudo-file-systems get the
+correct domain/fileNumber information
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.9 89/03/14 10:47:37 brent Exp $ SPRITE (Berkeley)";
+a563 1
+	    Fs_FileID ioFileID;
+d592 1
+a592 4
+	    if (status == SUCCESS) {
+		fileIDPtr->major = attr.domain;
+		fileIDPtr->minor = attr.fileNumber;
+	    } else if (status == FS_LOOKUP_REDIRECT) {
+@
+
+
+8.9
+log
+@Patched FsDomainInfo to do a stat() on a pseudo-file-system root
+in order to genernate prefix information that matches stat.
+This should really be fixed inside a domain-specific DomainInfo
+procedure, which does not exist (yet!)
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.8 89/03/03 08:10:59 brent Exp $ SPRITE (Berkeley)";
+d575 1
+@
+
+
+8.8
+log
+@Update routine that prints out stream types
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.7 89/02/09 08:32:21 brent Exp $ SPRITE (Berkeley)";
+d25 1
+d520 6
+d536 8
+a543 3
+FsDomainInfo(hdrPtr, domainInfoPtr)
+    FsHandleHeader	*hdrPtr;	/* Handle from the prefix table */
+    Fs_DomainInfo	*domainInfoPtr;
+d547 1
+a547 1
+    switch (hdrPtr->fileID.type) {
+d549 1
+a549 2
+	    status = FsLocalDomainInfo(hdrPtr->fileID.major,
+					domainInfoPtr);
+d552 1
+a552 1
+	    status = FsRemoteDomainInfo(&hdrPtr->fileID, domainInfoPtr);
+d554 46
+d601 4
+@
+
+
+8.7
+log
+@Fixed Sync declarations and changed scavenging not to
+look at handles that have a NIL scavenge routine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.6 89/01/30 16:48:23 brent Exp $ SPRITE (Berkeley)";
+d880 1
+d887 1
+d912 12
+a923 1
+
+d930 1
+@
+
+
+8.6
+log
+@Added more handle trace types
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.5 89/01/29 14:38:15 brent Exp $ SPRITE (Berkeley)";
+d50 1
+a50 1
+static Sync_Lock scavengeLock = SYNC_LOCK_INIT_STATIC();
+d163 2
+d694 6
+a699 1
+	 (*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr);
+@
+
+
+8.5
+log
+@Tweaked print statemen
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.4 89/01/29 14:36:34 brent Exp $ SPRITE (Berkeley)";
+d113 3
+@
+
+
+8.4
+log
+@Added L1-w to sync disks from console.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.3 89/01/06 11:17:01 jhh Exp $ SPRITE (Berkeley)";
+d424 1
+a424 1
+    printf("Syncing disks\n");
+d427 1
+@
+
+
+8.3
+log
+@new Sync_Lock definition
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.2 88/12/29 18:09:02 mendel Exp $ SPRITE (Berkeley)";
+d375 54
+@
+
+
+8.2
+log
+@Change call to Timer_RescheduleRoutine to use Timer_ScheduleRoutine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 8.1 88/11/26 11:26:23 brent Exp Locker: mendel $ SPRITE (Berkeley)";
+d50 1
+a50 1
+static Sync_Lock scavengeLock;
+@
+
+
+8.1
+log
+@Fixed handling of extra scavengers so we can't fill up
+the proc call-back queue with calls to the scavenger.
+This simply required checking against multiple scavenges
+before scheduling the call-back, no inside the call-back
+itself.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 7.0 88/11/11 15:27:43 brent Exp $ SPRITE (Berkeley)";
+d399 1
+a399 1
+    Timer_RescheduleRoutine(&fsTimeOfDayElement, TRUE);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 7.0 88/11/11 15:27:43 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d47 5
+d53 4
+d581 2
+d584 3
+a586 1
+    Proc_CallFunc(Fs_HandleScavenge, (ClientData)FALSE, 0);
+d589 1
+a591 2
+static	int	numScavengers = 0;
+static	Boolean	scavengerStuck = FALSE;
+a592 8
+/*
+ * Set a threshold for when to warn about the scavenger getting stuck.
+ * During high loads it can appear to get stuck for 0 or 1 seconds, or
+ * more.  If the time is greater than SCAVENGE_WARNING_TIME, print
+ * a warning.  SCAVENGE_WARNING_TIME is in seconds.
+ */
+#define SCAVENGE_WARNING_TIME 3
+
+a622 12
+    if (numScavengers > 0) {
+	if (!scavengerStuck &&
+	    fsTimeInSeconds > fsLastScavengeTime + SCAVENGE_WARNING_TIME) {
+	   printf( "Scavenger stuck for %d seconds\n",
+	       fsTimeInSeconds - fsLastScavengeTime);
+	   scavengerStuck = TRUE;
+       }
+       callInfoPtr->interval = 0;
+       return;
+    }
+    numScavengers++;
+
+d637 3
+a639 1
+     * Set up our next call.
+d641 4
+a644 1
+    if ((Boolean)data && numScavengers == 1) {
+d646 6
+d653 27
+a679 4
+    if (scavengerStuck) {
+	printf( "Scavenger unstuck after %d seconds\n",
+	    fsTimeInSeconds - fsLastScavengeTime);
+	scavengerStuck = FALSE;
+d681 27
+a707 1
+    numScavengers--;
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSubr.c,v 6.6 88/10/22 15:10:15 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.6
+log
+@Updated FsFileTypToString
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 6.5 88/09/13 11:25:05 brent Exp $ SPRITE (Berkeley)";
+a29 2
+#include "mem.h"
+#include "byte.h"
+d40 1
+a40 1
+    Sys_Panic(SYS_FATAL, "Fs_RpcReply called");
+d44 1
+a44 1
+    Sys_Panic(SYS_FATAL, "Fs_RpcRequest called");
+d132 1
+a132 1
+     * Byte_Zero inside Trace_Insert, which is sort of a base case for
+d164 1
+a164 1
+ *	Sys_Printf to the display.
+d178 2
+a179 2
+	Sys_Printf("%10s %17s %8s\n", "Delta  ", "<File ID>  ", "Event ");
+	Sys_Printf("Cost of taking an fs trace record is %d.%06d\n",
+d184 1
+a184 1
+	    Sys_Printf("%20s ", fsTracePrintTable[event].string);
+d188 1
+a188 1
+		    Sys_Printf("<%2d, %2d, %1d, %4d> ",
+d191 1
+a191 1
+		    Sys_Printf(" off %d len %d ", ioRecPtr->offset,
+d198 1
+a198 1
+		    Sys_Printf("\"%s\"", name);
+d203 1
+a203 1
+		    Sys_Printf("<%2d, %2d, %1d, %4d> ref %d blocks %d ",
+d214 1
+a214 1
+		    Sys_Printf("<%2d, %2d, %1d, %4d> block %d flags %x ",
+d227 1
+a227 1
+		    Sys_Printf("<Block=%d> ", *blockNumPtr);
+d235 1
+a235 1
+	    Sys_Printf("(%d)", event);
+d263 1
+a263 1
+    Sys_Printf("FS TRACE\n");
+d355 1
+a355 1
+	    Sys_Printf("Fs_Sync: %d blocks still locked\n", blocksLeft);
+d428 1
+a428 1
+	    Sys_Panic(SYS_FATAL, "Fs_CheckSetID, wrong stream type\n",
+d472 1
+a472 1
+	    status = FsSpriteDomainInfo(&hdrPtr->fileID, domainInfoPtr);
+d538 1
+a538 1
+	    Sys_Panic(SYS_FATAL, "Fs_RetSegPtr, bad stream type %d\n",
+d622 1
+a622 1
+	   Sys_Panic(SYS_WARNING, "Scavenger stuck for %d seconds\n",
+d651 1
+a651 1
+	Sys_Panic(SYS_WARNING, "Scavenger unstuck after %d seconds\n",
+d679 1
+a679 1
+	Sys_Printf("(NIL handle) %s: ", string);
+d683 1
+a683 1
+	Sys_Printf(" \"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
+d688 1
+a688 1
+	    Sys_Printf("\n");
+d691 1
+a691 1
+	    Sys_Printf("domain unavailable\n");
+d694 1
+a694 1
+	    Sys_Printf("version mismatch\n");
+d697 1
+a697 1
+	    Sys_Printf("cacheable/busy conflict\n");
+d700 1
+a700 1
+	    Sys_Printf("rpc timeout\n");
+d703 1
+a703 1
+	    Sys_Printf("server rebooting\n");
+d706 1
+a706 1
+	    Sys_Printf("stale handle\n");
+d710 1
+a710 1
+	    Sys_Printf("DISK ERROR\n");
+d713 1
+a713 1
+	    Sys_Printf("out of disk space\n");
+d715 1
+a715 1
+	    Sys_Printf("<%x>\n", status);
+@
+
+
+6.5
+log
+@Added byte swapping code to IOControls
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 6.4 88/09/08 17:29:24 brent Exp $ SPRITE (Berkeley)";
+a67 2
+char *FsFileTypeToString();
+
+d685 1
+a685 1
+	Sys_Printf("\"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
+d727 1
+a727 1
+ *	Map a stream type to a string.  The string has a trailing blank.
+d745 1
+a745 1
+	    fileType = "Stream ";
+d748 1
+a748 1
+	    fileType = "File ";
+d751 1
+a751 1
+	    fileType = "RmtFile ";
+d754 1
+a754 1
+	    fileType = "Device ";
+d757 1
+a757 1
+	    fileType = "RmtDevice ";
+d760 1
+a760 1
+	    fileType = "Pipe ";
+d763 1
+a763 1
+	    fileType = "RmtPipe ";
+d766 1
+a766 1
+	    fileType = "NamedPipe ";
+d769 1
+a769 1
+	    fileType = "RmtNamedPipe ";
+d772 1
+a772 1
+	    fileType = "ControlStream ";
+d775 1
+a775 1
+	    fileType = "SrvStream ";
+d778 1
+a778 1
+	    fileType = "LclPdev ";
+d781 1
+a781 1
+	    fileType = "RmtPdev ";
+d783 13
+d797 1
+a797 1
+	    fileType = "UnixFile ";
+d800 1
+a800 1
+	    fileType = "NFSFile ";
+d803 1
+a803 1
+	    fileType = "<unknown file type> ";
+@
+
+
+6.4
+log
+@Added file name to printout of FsFileError
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 6.3 88/09/07 21:17:46 nelson Exp $ SPRITE (Berkeley)";
+d683 1
+a683 1
+	Sys_Printf("(NIL handle)");
+d691 3
+@
+
+
+6.3
+log
+@Put alternative writing policies into the file system.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 6.2 88/09/06 11:14:03 nelson Exp $ SPRITE (Berkeley)";
+d682 8
+a689 4
+    Net_HostPrint(hdrPtr->fileID.serverID,
+		  FsFileTypeToString(hdrPtr->fileID.type));
+    Sys_Printf("<%d,%d> %s: ", hdrPtr->fileID.major,
+	    hdrPtr->fileID.minor, string);
+@
+
+
+6.2
+log
+@Changed the cache so it scans every 5 seconds for dirty blocks
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 6.1 88/08/31 12:02:41 brent Exp $ SPRITE (Berkeley)";
+d278 5
+a282 2
+Boolean		fsShouldSyncDisks = TRUE;
+
+d304 5
+a308 3
+    if (fsShouldSyncDisks) {
+	Fs_Sync((unsigned int) (fsTimeInSeconds - fsWriteBackInterval), 
+		FALSE);
+d310 5
+d347 1
+a347 1
+    int		blocksLeft;
+d364 3
+a366 3
+     * Finally write all domain information to disk.  If we are shutting down
+     * the system this will mark each domain to indicate that we went down
+     * gracefully and recovery is in fact possible.
+d810 7
+a816 1
+    return(streamPtr->nameInfoPtr->name);
+@
+
+
+6.1
+log
+@Removed lint.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 6.0 88/08/11 12:13:33 brent Stable $ SPRITE (Berkeley)";
+d272 6
+a277 2
+Timer_Ticks 	writeBackSleep;
+int		fsWriteBackInterval = 30;
+d305 6
+a310 1
+    callInfoPtr->interval = fsWriteBackInterval * timer_IntOneSecond;
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 1.6 88/08/04 15:06:09 mlgray Exp $ SPRITE (Berkeley)";
+d268 1
+a268 1
+    Trace_Print(fsTraceHdrPtr, numRecs, Fs_PrintTraceRecord);
+@
+
+
+1.6
+log
+@merging changes from fs into fs.new
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 1.6 88/08/04 12:53:37 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+1.5
+log
+@Fiddled with trace table and the scavenger warnings.
+Added FsFileTypeToString
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 1.4 88/06/01 17:08:04 brent Exp $ SPRITE (Berkeley)";
+d566 8
+d605 2
+a606 1
+	if (!scavengerStuck) {
+@
+
+
+1.4
+log
+@Fixed tracing and the 'fsLastScavengeTime' variable.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 1.3 88/05/05 17:01:11 brent Exp $ SPRITE (Berkeley)";
+d66 1
+d68 2
+d77 1
+a77 1
+    /* TRACE_0 */		FST_NIL, 	"zero",
+d81 1
+a81 1
+    /* TRACE_4 */		FST_HANDLE, 	"delete last writer",
+d83 1
+a83 1
+    /* TRACE_BLOCK_SKIP */	FST_BLOCK,	"skip block",
+d86 1
+a86 1
+    /* TRACE_NO_BLOCK */	FST_NIL, 	"no block",
+d96 6
+a101 6
+    /* SRV_WRITE_2 */		FST_HANDLE,	"srv write 2",
+    /* SRV_GET_ATTR_1 */	FST_NIL, "srv get attr 1",
+    /* SRV_GET_ATTR_2 */	FST_NIL, "srv get attr 2",
+    /* OPEN */			FST_NIL, "open",
+    /* READ */			FST_NIL, 	"read",
+    /* WRITE */			FST_HANDLE, 	"write",
+d103 5
+a107 3
+    /* TRACE_RA_SCHED */	FST_RA, "Read ahead scheduled",
+    /* TRACE_RA_BEGIN */	FST_RA, "Read ahead started",
+    /* TRACE_RA_END */		FST_RA, "Read ahead completed",
+d536 1
+a536 1
+ * Fs_HandleScavenge --
+d538 3
+a540 4
+ *	Go through all of the handles looking for clients that have crashed
+ *	and for handles that are no longer needed.  This expects to be
+ *	called by a helper kernel processes at regular intervals defined
+ *	by fsScavengeInterval.
+a541 1
+ *	Note: Fs_HandleScavengeStub is called via L1-x from the keyboard
+d546 1
+a546 1
+ *	None.
+a550 4
+int		fsScavengeInterval = 2;			/* 2 Minutes */
+int		fsLastScavengeTime = 0;
+static	int	numScavengers = 0;
+
+d560 26
+d597 5
+a601 1
+       Sys_Panic(SYS_WARNING, "Multiple scavengers (%x)\n", callInfoPtr);
+d607 6
+a612 1
+    fsLastScavengeTime = fsTimeInSeconds;	/* XXX unsynchronized access */
+d626 5
+d654 57
+a710 1
+    switch (hdrPtr->fileID.type) {
+d712 1
+a712 1
+	    Sys_Printf("Stream ");
+d715 1
+a715 1
+	    Sys_Printf("File ");
+d718 1
+a718 1
+	    Sys_Printf("RmtFile ");
+d721 1
+a721 1
+	    Sys_Printf("Device ");
+d724 1
+a724 1
+	    Sys_Printf("RmtDevice ");
+d727 1
+a727 1
+	    Sys_Printf("Pipe ");
+d730 1
+a730 1
+	    Sys_Printf("RmtPipe ");
+d733 1
+a733 1
+	    Sys_Printf("NamedPipe ");
+d736 1
+a736 1
+	    Sys_Printf("RmtNamedPipe ");
+d739 1
+a739 1
+	    Sys_Printf("ControlStream ");
+d742 1
+a742 1
+	    Sys_Printf("SrvStream ");
+d745 1
+a745 1
+	    Sys_Printf("LclPdev ");
+d748 1
+a748 1
+	    Sys_Printf("RmtPdev ");
+d751 1
+a751 1
+	    Sys_Printf("UnixFile ");
+d754 1
+a754 1
+	    Sys_Printf("NFSFile ");
+a755 28
+    }
+    Sys_Printf("<%d,%d> server %d: %s: ", hdrPtr->fileID.major,
+	    hdrPtr->fileID.minor, hdrPtr->fileID.serverID, string);
+    switch (status) {
+	case FS_DOMAIN_UNAVAILABLE:
+	    Sys_Printf("domain unavailable\n");
+	    break;
+	case FS_VERSION_MISMATCH:
+	    Sys_Printf("version mismatch\n");
+	    break;
+	case FAILURE:
+	    Sys_Printf("cacheable/busy conflict\n");
+	    break;
+	case RPC_TIMEOUT:
+	    Sys_Printf("rpc timeout\n");
+	    break;
+	case RPC_SERVICE_DISABLED:
+	    Sys_Printf("server rebooting\n");
+	    break;
+	case FS_STALE_HANDLE:
+	    Sys_Printf("stale handle\n");
+	    break;
+	case DEV_RETRY_ERROR:
+	case DEV_HARD_ERROR:
+	    Sys_Printf("DISK ERROR\n");
+	    break;
+	case FS_NO_DISK_SPACE:
+	    Sys_Printf("out of disk space\n");
+d757 1
+a757 1
+	    Sys_Printf("<%x>\n", status);
+d760 1
+a760 1
+
+@
+
+
+1.3
+log
+@Changed header file naem
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 1.2 88/04/19 10:50:05 brent Exp $ SPRITE (Berkeley)";
+d63 2
+a64 2
+int fsTraceLength = 50;
+Boolean fsTracing = FALSE;
+d74 19
+a92 19
+    /* TRACE_0 */		FST_NIL, "zero",
+    /* TRACE_1 */		FST_NAME, "after prefix",
+    /* TRACE_2 */		FST_NAME, "after setup",
+    /* TRACE_3 */		FST_NAME, "after scan",
+    /* TRACE_4 */		FST_NAME, "after domain lookup",
+    /* TRACE_5 */		FST_NAME, "after lookup",
+    /* TRACE_6 */		FST_NIL, "six",
+    /* TRACE_7 */		FST_NIL, "seven",
+    /* TRACE_8 */		FST_NIL, "eight",
+    /* TRACE_9 */		FST_NIL, "nine",
+    /* TRACE_10 */		FST_NAME, "after Fs_Open",
+    /* TRACE_11 */		FST_NIL, "open complete",
+    /* SRV_OPEN_1 */		FST_NAME,	"srv open 1",
+    /* SRV_OPEN_2 */		FST_HANDLE,	"srv open 2",
+    /* SRV_CLOSE_1 */		FST_NIL,	"srv close 1",
+    /* SRV_CLOSE_2 */		FST_HANDLE,	"srv close 2",
+    /* SRV_READ_1 */		FST_IO,		"srv read 1",
+    /* SRV_READ_2 */		FST_HANDLE,	"srv read 2",
+    /* SRV_WRITE_1 */		FST_IO,		"srv write 1",
+d97 3
+a99 3
+    /* READ */			FST_NIL, "read",
+    /* WRITE */			FST_NIL, "write",
+    /* CLOSE */			FST_NIL, "close",
+d183 1
+a183 1
+	    Sys_Printf("%20s", fsTracePrintTable[event].string);
+d201 8
+a208 6
+		    FsHandleHeader *hdrPtr = (FsHandleHeader *)clientData;
+		    Sys_Printf("<%2d, %2d, %1d, %4d> ",
+		      hdrPtr->fileID.type, 
+		      hdrPtr->fileID.serverID,
+		      hdrPtr->fileID.major, 
+		      hdrPtr->fileID.minor);
+d211 11
+d549 2
+a550 1
+static int	lastScavengeTime = 0;
+d571 6
+a576 1
+    lastScavengeTime = fsTimeInSeconds;
+d578 2
+d589 1
+a589 1
+    if ((Boolean)data) {
+d592 1
+d662 1
+a662 1
+    Sys_Printf("<%d,%d> server %d: %s", hdrPtr->fileID.major,
+@
+
+
+1.2
+log
+@Removed stub
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 1.1 88/04/04 10:43:31 brent Exp $ SPRITE (Berkeley)";
+d27 1
+a27 1
+#include "sunDiskLabel.h"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsSubr.c,v 5.10 87/12/30 16:46:57 nelson Exp $ SPRITE (Berkeley)";
+a46 4
+}
+Fs_PdevPrintTrace()
+{
+    Sys_Panic(SYS_FATAL, "Fs_PdevPrintTrace called");
+@

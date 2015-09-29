@@ -1,0 +1,2021 @@
+head     1.68;
+branch   ;
+access   ;
+symbols  ;
+locks    mottsmth:1.68; strict;
+comment  @@;
+
+
+1.68
+date     92.04.13.18.33.52;  author elm;  state Exp;
+branches ;
+next     1.67;
+
+1.67
+date     92.03.13.14.24.08;  author jhh;  state Exp;
+branches ;
+next     1.66;
+
+1.66
+date     91.11.19.18.25.56;  author kupfer;  state Exp;
+branches ;
+next     1.65;
+
+1.65
+date     91.11.06.18.31.53;  author kupfer;  state Exp;
+branches ;
+next     1.64;
+
+1.64
+date     91.09.13.10.50.14;  author ouster;  state Exp;
+branches ;
+next     1.63;
+
+1.63
+date     91.05.23.19.18.16;  author kupfer;  state Exp;
+branches ;
+next     1.62;
+
+1.62
+date     91.05.23.16.03.10;  author kupfer;  state Exp;
+branches ;
+next     1.61;
+
+1.61
+date     91.05.23.14.02.21;  author kupfer;  state Exp;
+branches ;
+next     1.60;
+
+1.60
+date     91.05.22.23.38.09;  author kupfer;  state Exp;
+branches ;
+next     1.59;
+
+1.59
+date     91.04.30.12.09.25;  author kupfer;  state Exp;
+branches ;
+next     1.58;
+
+1.58
+date     90.11.15.23.20.16;  author jhh;  state Exp;
+branches ;
+next     1.57;
+
+1.57
+date     90.11.06.18.19.50;  author rab;  state Exp;
+branches ;
+next     1.56;
+
+1.56
+date     90.11.02.09.57.39;  author shirriff;  state Exp;
+branches ;
+next     1.55;
+
+1.55
+date     90.07.02.13.20.44;  author douglis;  state Exp;
+branches ;
+next     1.54;
+
+1.54
+date     90.04.21.11.35.08;  author ouster;  state Exp;
+branches ;
+next     1.53;
+
+1.53
+date     90.04.15.11.53.15;  author mendel;  state Exp;
+branches ;
+next     1.52;
+
+1.52
+date     90.02.28.11.42.50;  author brent;  state Exp;
+branches ;
+next     1.51;
+
+1.51
+date     90.02.27.17.42.56;  author douglis;  state Exp;
+branches ;
+next     1.50;
+
+1.50
+date     90.02.20.11.50.04;  author douglis;  state Exp;
+branches ;
+next     1.49;
+
+1.49
+date     90.02.08.15.14.37;  author douglis;  state Exp;
+branches ;
+next     1.48;
+
+1.48
+date     90.02.08.15.12.13;  author douglis;  state Exp;
+branches ;
+next     1.47;
+
+1.47
+date     90.02.01.01.07.29;  author tve;  state Exp;
+branches ;
+next     1.46;
+
+1.46
+date     90.01.11.22.03.53;  author jhh;  state Exp;
+branches ;
+next     1.45;
+
+1.45
+date     90.01.06.23.58.25;  author tve;  state Exp;
+branches ;
+next     1.44;
+
+1.44
+date     90.01.06.23.51.03;  author tve;  state Exp;
+branches ;
+next     1.43;
+
+1.43
+date     90.01.06.23.45.16;  author tve;  state Exp;
+branches ;
+next     1.42;
+
+1.42
+date     89.11.30.13.56.27;  author rab;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     89.10.09.19.17.26;  author tve;  state Exp;
+branches ;
+next     1.40;
+
+1.40
+date     89.10.09.17.12.51;  author rab;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     89.10.09.06.55.34;  author rab;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     89.10.02.10.05.02;  author rab;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     89.09.30.02.06.30;  author tve;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     89.09.27.17.59.25;  author douglis;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     89.09.27.17.44.07;  author douglis;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     89.09.15.07.33.56;  author rab;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     89.09.13.10.04.27;  author shirriff;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     89.08.31.16.10.50;  author rab;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     89.08.31.13.10.00;  author jhh;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     89.07.21.18.29.37;  author douglis;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.07.21.13.49.05;  author douglis;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.07.20.17.36.04;  author mgbaker;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.07.20.17.06.22;  author douglis;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.07.13.13.56.04;  author ouster;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.07.13.13.52.56;  author nelson;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.07.02.23.30.34;  author rab;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.06.23.13.11.34;  author jhh;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.05.05.15.00.14;  author douglis;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.04.10.09.44.21;  author douglis;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.04.10.09.42.46;  author douglis;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.04.03.22.23.22;  author douglis;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.03.20.11.02.28;  author douglis;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.03.19.17.38.28;  author mgbaker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.03.17.16.33.39;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.03.15.22.24.54;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.15.22.13.38;  author jhh;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.02.22.13.05.00;  author brent;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.01.15.13.50.51;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.01.01.23.03.23;  author rab;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.12.29.08.37.57;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.12.28.17.08.08;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.12.28.14.48.02;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.12.28.10.43.37;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.12.19.18.03.28;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.12.14.14.16.43;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.11.27.16.25.39;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.23.17.28.27;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.23.09.52.17;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.10.14.23.21;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.68
+log
+@Added support for dependency analysis on .cc (C++) files.
+@
+text
+@#
+# Makefile for commands.  This is a library Makefile that is included
+# by the Makefile's for individual commands.  The file that includes
+# this one should already have defined the following variables:
+#	NAME		name of program to be created
+#	SRCS		all source files, used for linting and making
+#			dependencies
+#	OBJS		object files from which to create it
+#	CLEANOBJS	object files to be removed as part of "make clean"
+#			(need not just be object files)
+#	TM		target machine type for object files etc.
+#	MACHINES	list of all target machines currently available
+#			for this program
+#	TYPE		a keyword identifying which sort of command this
+#			is;  used to determine where to install, etc.
+#
+# Optional variables that may be defined by the invoker:
+#	XAFLAGS		additional flags to pass to assembler
+#	XCFLAGS		additional flags to pass to linker
+#	DEPFLAGS	additional flags to pass to makedepend
+#	no_targets	if defined, this file will not define all of the
+#			basic targets (make, make clean, etc.)
+#	use_version	if defined, then this file will set things up
+#			to include a version number that is automatically
+#			incremented
+#
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.67 92/03/13 14:24:08 jhh Exp Locker: elm $
+#
+
+#
+# The variables below should be defined in md.mk, but they are given
+# default values just in case md.mk doesn't exist yet.
+#
+HDRS		?=
+OBJS		?=
+SRCS		?=
+
+#
+# First define search paths for libraries, include files, lint libraries,
+# and even sources.
+#
+.PATH.h		:
+.PATH.h		: $(TM).md . /sprite/lib/include /sprite/lib/include/$(TM).md
+.PATH.ln	: /sprite/lib/lint
+.PATH.c		:
+.PATH.c		: $(TM).md
+.PATH.s		:
+.PATH.s		: $(TM).md
+
+#
+# Suffix for profiled targets.
+#
+PROFSUFFIX	?= .pg
+
+#
+# Important directories. 
+#
+MISCLIBDIR	?= /sprite/lib/misc
+BINDIR		?= /sprite/cmds.$(MACHINE)
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile.  These need to be defined absolutely so that we
+# can remake these programs without flakey new versions accidentally
+# getting used to make themselves
+#
+AS		?= $(BINDIR)/as
+CC		?= $(BINDIR)/cc
+CPLUSPLUS	?= $(BINDIR)/g++
+CP		?= $(BINDIR)/cp
+CPP		?= $(BINDIR)/cpp -traditional -$
+CTAGS		?= $(BINDIR)/ctags
+ETAGS		?= /emacs/cmds/etags
+ECHO		?= $(BINDIR)/echo
+LINT		?= $(BINDIR)/lint
+MAKEDEPEND	?= $(BINDIR)/makedepend
+MKVERSION	?= $(BINDIR)/mkversion
+MV		?= $(BINDIR)/mv
+RM		?= $(BINDIR)/rm
+SED		?= $(BINDIR)/sed
+TEST            ?= $(BINDIR)/test
+TOUCH		?= $(BINDIR)/touch
+UPDATE		?= $(BINDIR)/update
+
+#
+# Several variables (such as where to install) are set based on the
+# TYPE variable.  Of course, any of these variables can be overridden
+# by explicit assignments.
+#
+TYPE		?= unknown
+#if !empty(TYPE:Msprite)
+INSTALLDIR	?= /sprite/cmds
+INSTALLMAN	?= /sprite/man/cmds
+#elif !empty(TYPE:Mx)
+INSTALLDIR	?= /X/cmds
+INSTALLMAN	?= /X/man/cmds
+#elif !empty(TYPE:MX11R3)
+INSTALLDIR	?= /mic/X11R3/cmds
+INSTALLMAN	?= /mic/X11R3/man/cmds
+#elif !empty(TYPE:Mlocal)
+INSTALLDIR	?= /local/cmds
+INSTALLMAN	?= /local/man/cmds
+#elif !empty(TYPE:MX11R4)
+INSTALLDIR	?= /X11/R4/cmds
+INSTALLMAN	?= /X11/R4/man/cmds
+#elif !empty(TYPE:Memacs)
+INSTALLDIR	?= /emacs/cmds
+INSTALLMAN	?= /emacs/man/cmds
+#elif !empty(TYPE:Mdaemon)
+INSTALLDIR	?= /sprite/daemons
+INSTALLMAN	?= /sprite/man/daemons
+#elif !empty(TYPE:Madmin)
+INSTALLDIR	?= /sprite/admin
+INSTALLMAN	?= /sprite/man/admin
+#elif !empty(TYPE:Mpersonal)
+INSTALLDIR	?= $(HOME)/cmds
+INSTALLMAN	?= $(HOME)/man/cmds
+LOADFLAGS	+= -L$(HOME)/lib/$(TM).md
+XCFLAGS		+= -I$(HOME)/lib/include
+.PATH.h		: $(HOME)/lib/include
+#ifndef		USERBACKUP
+NOBACKUP	=
+#endif
+#endif
+#ifdef INSTALLDIR
+TMINSTALLDIR	?= $(INSTALLDIR).$(TM)
+#endif
+
+#
+# Figure out what stuff we'll pass to sub-makes.
+#
+PASSVARS	= 'INSTALLDIR=$(INSTALLDIR)' 'TM=$(TM)' $(.MAKEFLAGS)
+#ifdef		XCFLAGS
+PASSVARS	+= 'XCFLAGS=$(XCFLAGS)'
+#endif
+#ifdef		XAFLAGS
+PASSVARS	+= 'XAFLAGS=$(XAFLAGS)'
+#endif
+#ifdef		NOBACKUP
+PASSVARS	+= 'NOBACKUP=$(NOBACKUP)'
+#endif
+#ifdef		BACKUPAGE
+PASSVARS	+= 'BACKUPAGE=$(BACKUPAGE)'
+#endif
+
+#
+# Flags. These are ones that are needed by *all* programs. Any other
+# ones should be added with the += operator in the command-specific makefile.
+# The FLAGS variables are defined with the += operator in case this file
+# is included after the main makefile has already defined them...
+#
+
+#include	<tm.mk>
+CTFLAGS		?= -wtd
+INSTALLFLAGS	?=
+INSTALLMANFLAGS	?=
+LINTFLAGS	?= -m$(TM)
+XCFLAGS		?=
+LOADFLAGS	?=
+XAFLAGS		?=
+#
+# The .INCLUDES variable already includes directories that should be
+# used by cc and other programs by default.  Remove them, just so that
+# the output looks cleaner.
+#
+# The dec compiler doesn't include /sprite/lib/include, so we must leave
+# the path as is when TM=ds3100.  
+#
+
+#include <debugflags.mk>
+
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+CFLAGS		+= $(GFLAG) $(OFLAG) $(TMCFLAGS) $(XCFLAGS) -I.
+#elif !empty(TM:Mspur)
+CFLAGS		+= $(GFLAG) $(TMCFLAGS) $(XCFLAGS) -I.
+#else
+CFLAGS		+= $(GFLAG) $(OFLAG) $(TMCFLAGS) $(XCFLAGS) -I.
+#endif
+CFLAGS		+= $(.INCLUDES:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g)
+#if empty(TM:Mds3100) && empty(TM:Mds5000)
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+#else
+CFLAGS		+= -I/sprite/lib/include -I/sprite/lib/include/$(TM).md
+AFLAGS		+= $(.INCLUDES)
+#endif
+
+#
+# Transformation rules: these have special features to place .o files
+# in md subdirectories, run preprocessor over .s files, and generate
+# .po files for profiling.
+#
+
+.SUFFIXES	: .po
+
+.c.o		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -c $(.IMPSRC) -o $(.TARGET)
+.c.po		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -DPROFILE -c $(.IMPSRC) -o $(.TARGET)
+.cc.o		:
+	$(RM) -f $(.TARGET)
+	$(CPLUSPLUS) $(CFLAGS) -c $(.IMPSRC) -o $(.TARGET)
+.cc.po		:
+	$(RM) -f $(.TARGET)
+	$(CPLUSPLUS) $(CFLAGS) -DPROFILE -c $(.IMPSRC) -o $(.TARGET)
+.s.po .s.o	:
+#if empty(TM:Mds3100) && empty(TM:Mds5000)
+	$(CPP) $(CFLAGS:M-[IDU]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).pp
+	$(RM) -f $(.PREFIX).pp
+#else
+	$(RM) -f $(.TARGET)
+	$(AS) $(AFLAGS) $(.IMPSRC) -o $(.TARGET)
+#endif
+
+#
+# The following targets are .USE rules for creating things.
+#
+
+#
+# MAKECMD usage:
+#	program : <objects> <libraries> MAKECMD
+#
+# Creates and links in the file version.o as well. Also makes program depend
+# on the state of the C library.
+#
+# Using .ALLSRC constrains the local.mk, in that additions to LIBS
+# must come before the system makefile(s).  The advantage (or at least
+# an advantage) is that it filters out duplicate .o files that would
+# appear in the OBJS list.  These duplicates can appear if the command
+# generates source files on-the-fly: the local.mk typically has a
+# line like OBJS += foo.o, and if mkmf is run after foo.c is created,
+# foo.o will appear twice.  Also, using .ALLSRC lets pmake generate
+# a command based on knowledge of the search path, rather than
+# relying on the particular tool (e.g., cc or ld) to do the search
+# path processing.
+#
+MAKECMD		: .USE -lc
+	@@echo "Generating date stamp"
+	@@$(RM) -f version.h
+	@@$(MKVERSION) > version.h
+	$(RM) -f $(TM).md/version.o
+	$(CC) $(CFLAGS) -c -o $(TM).md/version.o $(MISCLIBDIR)/version.c
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(TM).md/version.o $(.ALLSRC:N-lc) 
+#if !empty(TM:Mspur) && empty(MACHINE:Mspur)
+	$(XLD) $(.TARGET)
+#endif
+
+#
+# MAKECMDNOVERS usage:
+#	<program> : <objects> <libraries> MAKECMDNOVERS
+#
+# Similar to MAKECMD, except it doesn't create the version.[ho] files.
+#
+MAKECMDNOVERS	:  .USE -lc
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(.ALLSRC:N-lc)
+#if !empty(TM:Mspur) && empty(MACHINE:Mspur)
+	$(XLD) $(.TARGET)
+#endif
+
+#
+# MAKEINSTALL usage:
+#	install :: <dependencies> MAKEINSTALL
+#
+# The program is installed in $(TMINSTALLDIR) and backed-up to
+# $(TMINSTALLDIR).old
+#
+#ifndef NOBACKUP
+BACKUP		= -b $(TMINSTALLDIR).old
+#ifdef BACKUPAGE
+BACKUP += -B $(BACKUPAGE)
+#endif
+#else
+BACKUP		=
+#endif  NOBACKUP
+
+#if !empty(TM:Mspur)
+# use a separate install script that doesn't strip
+# note that XLD has already been run
+MAKEINSTALL	: .USE
+	$(UPDATE) -m 775 $(BACKUP) $(INSTALLFLAGS) $(TM).md/$(NAME) \
+		$(TMINSTALLDIR)/$(NAME)
+#else
+MAKEINSTALL	: .USE
+	$(UPDATE) -m 775 -s $(BACKUP) $(INSTALLFLAGS) $(TM).md/$(NAME) \
+		$(TMINSTALLDIR)/$(NAME)
+#endif
+
+#
+# MAKELINT usage:
+#	<fluff-file> : <sources to be linted> MAKELINT
+#
+# <fluff-file> is the place to store the output from the lint.
+#
+MAKELINT	: .USE
+	$(RM) -f $(.TARGET)
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[IDU]*) $(.ALLSRC) > $(.TARGET) 2>&1
+
+#
+# MAKEDEPEND usage:
+#	<dependency-file> : <sources> MAKEDEPEND
+#
+# Generate dependency file suitable for inclusion in future makes.
+
+MAKEDEPEND	: .USE
+	@@$(TOUCH) $(DEPFILE)
+#if empty(TM:Mds3100) && empty(TM:Mds5000)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+#else
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+#endif
+	@@$(MV) -f $(DEPFILE) $(DEPFILE).tmp
+	@@$(SED) -e '/^#/!s|^.|$(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+	@@$(RM) -f $(DEPFILE).tmp
+
+#if !defined(no_targets) && defined(NAME)
+#
+# We should define the main targets (make, make install, etc.).  See the
+# mkmf man page for details on what these do.
+#
+LIBS			?=
+
+default			:: $(TM).md/$(NAME)
+#if defined(use_version)
+$(TM).md/$(NAME)	: $(OBJS) $(LIBS) MAKECMD
+#else
+$(TM).md/$(NAME)	: $(OBJS) $(LIBS) MAKECMDNOVERS
+#endif
+
+
+clean			:: .NOEXPORT tidy 
+	$(RM) -f $(TM).md/$(NAME) $(TM).md/$(NAME)$(PROFSUFFIX)
+
+tidy			:: .NOEXPORT
+#if defined(CLEANOBJS) && !empty(CLEANOBJS)
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:M*.o:S/.o$/.po/g)
+#endif
+	$(RM) -f y.tab.c lex.yy.c core \
+	        $(TM).md/lint \
+		a.out *~ $(TM).md/*~ gmon.out mon.out
+
+DEPFILE = $(TM).md/dependencies.mk
+
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) $(SRCS:M*.cc) MAKEDEPEND
+
+
+#
+# For "install", a couple of tricks.  First, allow local.mk to disable
+# by setting no_install.  Second, use :: instead of : so that local.mk
+# can augment install with additional stuff.  Third, don't install if
+# TMINSTALLDIR isn't set.
+#
+#ifndef no_install
+#ifdef TMINSTALLDIR
+install			:: $(TM).md/$(NAME) installman MAKEINSTALL
+#else
+install			:: .SILENT
+	echo "Can't install $(NAME):  no install directory defined"
+#endif TMINSTALLDIR
+#endif no_install
+
+
+#if empty(MANPAGES)
+installman		:: .SILENT
+	echo "There's no man page for $(NAME).  Please write one."
+#elif !empty(MANPAGES:MNONE)
+installman		::
+
+#elif defined(INSTALLMAN)
+installman		:: .SILENT $(MANPAGES)
+	$(UPDATE) -m 444 -l $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+#else
+installman		:: .SILENT
+	echo "Can't install man page(s): no install directory defined"
+#endif
+
+
+lint			: $(TM).md/lint
+$(TM).md/lint		: $(SRCS:M*.c) $(LIBS:M-l*) MAKELINT
+
+
+mkmf			:: .SILENT
+	mkmf
+
+
+newtm			:: .SILENT
+	if $(TEST) -d $(TM).md; then
+	    true
+	else
+	    mkdir $(TM).md;
+	    chmod 775 $(TM).md;
+	    mkmf -m$(TM)
+	fi
+
+
+profile			: $(TM).md/$(NAME)$(PROFSUFFIX)
+$(TM).md/$(NAME)$(PROFSUFFIX)	: $(OBJS:S/.o$/.po/g) $(LIBS:S/.a$/_p.a/g)
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -pg -o $(.TARGET) $(.ALLSRC)
+
+
+tags			:: $(SRCS:M*.c) $(HDRS)
+	$(CTAGS) $(CTFLAGS) $(SRCS:M*.c) $(HDRS)
+
+TAGS			:: $(SRCS:M*.[ch]) $(HDRS)
+	$(ETAGS) $(SRCS:M*.[ch])
+
+version.h		:
+	$(RM) -f version.h
+	$(MKVERSION) > version.h
+
+DISTFILES    ?=
+
+dist        !
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in Makefile local.mk sprite dist \
+	    $(TM).md/md.mk $(SRCS) $(HDRS) $(DISTFILES)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+#endif
+
+#include	<all.mk>
+
+#endif no_targets && NAME
+
+.MAKEFLAGS	: -C		# No compatibility needed
+
+#include	<rdist.mk>
+@
+
+
+1.67
+log
+@header files are now passed to ctags, and the -d option makes it produce
+tags for #define's
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.66 91/11/19 18:25:56 kupfer Exp $
+d348 1
+a348 1
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+@
+
+
+1.66
+log
+@makedepend doesn't like -U, so don't pass it in from CFLAGS.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.65 91/11/06 18:31:53 kupfer Exp Locker: kupfer $
+d154 1
+a154 1
+CTFLAGS		?= -wt
+d407 1
+a407 1
+	$(CTAGS) $(CTFLAGS) $(SRCS:M*.c)
+@
+
+
+1.65
+log
+@Pass -U flags to cpp, lint, makedepend.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.64 91/09/13 10:50:14 ouster Exp Locker: kupfer $
+d311 1
+a311 1
+	$(MAKEDEPEND) $(CFLAGS:M-[IDU]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+d313 1
+a313 1
+	$(MAKEDEPEND) $(CFLAGS:M-[IDU]*:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+@
+
+
+1.64
+log
+@Put "." near the front of the library include path.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.63 91/05/23 19:18:16 kupfer Exp $
+d209 1
+a209 1
+	$(CPP) $(CFLAGS:M-[ID]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+d300 1
+a300 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(.ALLSRC) > $(.TARGET) 2>&1
+d311 1
+a311 1
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+d313 1
+a313 1
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+@
+
+
+1.63
+log
+@Add more comments about .ALLSRC, based on mail from Adam de Boor.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.62 91/05/23 16:03:10 kupfer Exp Locker: kupfer $
+d43 1
+a43 1
+.PATH.h		: $(TM).md /sprite/lib/include /sprite/lib/include/$(TM).md
+@
+
+
+1.62
+log
+@Add comments about .ALLSRC versus OBJS+LIBS.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.61 91/05/23 14:02:21 kupfer Exp Locker: kupfer $
+d234 4
+a237 1
+# foo.o will appear twice.
+@
+
+
+1.61
+log
+@Back out the OBJS+LIBS change.  The workaround for the .ALLSRC bug
+(moving the "LIBS +=" line) is less painful than fixing all the
+local.mk's that have "OBJS +=" for object files that may or may not
+already be in the OBJS list.  (If the object file appears twice, the
+link usually fails.)
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.59 91/04/30 12:09:25 kupfer Exp $
+d227 8
+@
+
+
+1.60
+log
+@Use $(OBJS) and $(LIBS) instead of $(.ALLSRC) in the link step.  Using
+$(.ALLSRC) doesn't do the right thing if libraries appear in the
+local.mk after the SYSMAKEFILE is included.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.59 91/04/30 12:09:25 kupfer Exp Locker: kupfer $
+d235 1
+a235 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(TM).md/version.o $(OBJS) $(LIBS)
+d248 1
+a248 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(OBJS) $(LIBS)
+@
+
+
+1.59
+log
+@Set GFLAG and OFLAG in debugflags.mk.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.58 90/11/15 23:20:16 jhh Exp Locker: kupfer $
+d235 1
+a235 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(TM).md/version.o $(.ALLSRC:N-lc) 
+d248 1
+a248 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(.ALLSRC:N-lc)
+@
+
+
+1.58
+log
+@added ds5000
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.56 90/11/02 09:57:39 shirriff Exp Locker: rab $
+d169 3
+a171 15
+#ifndef NOOPTIMIZATION
+OFLAG		= -O
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+#if empty(CC:Mgcc)
+GFLAG 	= -g3
+#else
+GFLAG	=
+#endif
+#else
+GFLAG 	= -g
+#endif
+#else
+OFLAG		=	
+GFLAG		= -g
+#endif
+@
+
+
+1.57
+log
+@checking this in for rab -- jhh
+@
+text
+@d171 1
+a171 1
+#if !empty(TM:Mds3100)
+d184 1
+a184 1
+#if !empty(TM:Mds3100)
+d192 1
+a192 1
+#if empty(TM:Mds3100)
+d220 1
+a220 1
+#if empty(TM:Mds3100)
+d311 1
+a311 1
+#if empty(TM:Mds3100)
+@
+
+
+1.56
+log
+@Added /local/cmds info.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.55 90/07/02 13:20:44 douglis Exp $
+d69 1
+d212 7
+a218 3
+	$(CC) -S $(CFLAGS) -pg -DPROFILE $(.IMPSRC)
+	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).s
+	$(RM) -f $(.PREFIX).s
+@
+
+
+1.55
+log
+@added target to create TAGS file.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.54 90/04/21 11:35:08 ouster Exp Locker: douglis $
+d99 3
+@
+
+
+1.54
+log
+@Don't include header files explicitly in list of things to be
+linted: some header files can only be #include-d in context.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.53 90/04/15 11:53:15 mendel Exp Locker: ouster $
+d72 1
+d401 3
+@
+
+
+1.53
+log
+@Added /X11/R4 directories.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.52 90/02/28 11:42:50 brent Exp Locker: mendel $
+d375 1
+a375 1
+$(TM).md/lint		: $(SRCS:M*.c) $(HDRS) $(LIBS:M-l*) MAKELINT
+@
+
+
+1.52
+log
+@Eliminated the .SILENT for the invocation of the "update" command.
+This way we can see how the thing is being backed up when it is installed.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.51 90/02/27 17:42:56 douglis Exp Locker: brent $
+d98 3
+@
+
+
+1.51
+log
+@added support for backup age flag BACKUPAGE
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.50 90/02/20 11:50:04 douglis Exp Locker: douglis $
+d272 1
+a272 1
+MAKEINSTALL	: .USE .SILENT
+d276 1
+a276 1
+MAKEINSTALL	: .USE .SILENT
+@
+
+
+1.50
+log
+@tried to add some consistency to ::/: operators, and fixed tve's TYPE==personal complaint
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.49 90/02/08 15:14:37 douglis Exp $
+d134 3
+d262 3
+@
+
+
+1.49
+log
+@changed version.o to go in $(TM).md so it can be created in parallel.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.48 90/02/08 15:12:13 douglis Exp Locker: douglis $
+d252 1
+a252 1
+#	install : <dependencies> MAKEINSTALL
+d309 1
+a309 1
+default			: $(TM).md/$(NAME)
+@
+
+
+1.48
+log
+@RAB changes for dist
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.47 90/02/01 01:07:29 tve Exp Locker: rab $
+d229 2
+d232 1
+a232 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(MISCLIBDIR)/version.c $(.ALLSRC:N-lc)
+@
+
+
+1.47
+log
+@fixed the fact that -I/sprite/lib/include and -I/sprite/lib/include/ds3100.md
+appeared *before* include dirs specified in a local.mk (all of course on
+a ds3100).
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.46 90/01/11 22:03:53 jhh Exp Locker: tve $
+d398 2
+a399 1
+	for i in Makefile local.mk $(TM).md/md.mk $(SRCS) $(HDRS) $(DISTFILES)
+@
+
+
+1.46
+log
+@made installman depend upon man pages in case you have a package that
+builds the man pages somehow
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.45 90/01/06 23:58:25 tve Exp Locker: jhh $
+d180 1
+a181 1
+CFLAGS		+= $(.INCLUDES:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g)
+d184 1
+a184 1
+CFLAGS		+= $(.INCLUDES)
+@
+
+
+1.45
+log
+@gcc on the ds3100 doesn't take a -g flag, fixed that...
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.44 90/01/06 23:51:03 tve Exp Locker: tve $
+d355 1
+a355 1
+installman		:: .SILENT
+@
+
+
+1.44
+log
+@if TM is ds3100 and CC contains the string gcc, then use -g instead
+of -g3
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.43 90/01/06 23:45:16 tve Exp Locker: tve $
+d160 2
+a161 1
+#if !empty(TM:Mds3100) && empty(CC:Mgcc)
+d163 3
+@
+
+
+1.43
+log
+@*** empty log message ***
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.42 89/11/30 13:56:27 rab Exp Locker: jhh $
+d160 1
+a160 1
+#if !empty(TM:Mds3100) 
+@
+
+
+1.42
+log
+@Changed dist: to dist!,
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.41 89/10/09 19:17:26 tve Exp Locker: rab $
+d320 1
+a320 1
+		a.out *~ $(TM).md/*~ version.h gmon.out mon.out
+@
+
+
+1.41
+log
+@Added INSDTALLDIR, INSTALLMAN for TYPE == X11R3
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.40 89/10/09 17:12:51 rab Exp Locker: tve $
+d390 1
+a390 1
+DISTOBJS    ?=
+d392 1
+a392 1
+dist:
+d394 1
+a394 1
+	for i in Makefile local.mk $(TM).md/md.mk $(SRCS) $(HDRS) $(DISTOBJS)
+@
+
+
+1.40
+log
+@Check $(CLEANOBJS) before make tidy.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.39 89/10/09 06:55:34 rab Exp Locker: rab $
+d95 3
+@
+
+
+1.39
+log
+@Fixed distribution stuff.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.38 89/10/02 10:05:02 rab Exp Locker: rab $
+d311 6
+a316 4
+tidy			:: .NOEXPORT 
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:M*.o:S/.o$/.po/g) \
+	    	y.tab.c lex.yy.c core \
+		$(TM).md/lint \
+@
+
+
+1.38
+log
+@Added Distribution stuff.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.36 89/09/27 17:59:25 douglis Exp $
+d79 1
+d363 1
+a363 1
+	if test -d $(TM).md; then
+d391 2
+a392 1
+	if test -e $${i}; then $(UPDATE)  $${i} $(DISTDIR)/$${i} ;fi
+@
+
+
+1.37
+log
+@added DEPFLAGS to the MAKEDEPEND rules
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.36 89/09/27 17:59:25 douglis Exp
+d284 1
+a284 2
+#TvE	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC) $(DEPFLAGS)
+d286 1
+a286 2
+#TvE	$(MAKEDEPEND) $(CFLAGS:M-[ID]*:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC) $(DEPFLAGS)
+d388 1
+a388 2
+	for i in Makefile local.mk $(MANPAGES) $(TM).md/md.mk \
+	    $(SRCS) $(HDRS) $(DISTOBJS)
+d390 1
+a390 1
+	if test -e $${i}; then $(UPDATE) -m 664 $${i} $(DISTDIR)/$${i} ;fi
+a391 2
+#else
+	@@echo "Sorry, no distribution directory defined for $(NAME)."
+@
+
+
+1.36
+log
+@enable -O for ds3100, with -g3 when needed
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.35 89/09/27 17:44:07 douglis Exp Locker: douglis $
+d284 2
+a285 1
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+d287 2
+a288 1
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+d389 3
+a391 2
+#if !empty(DISTDIR)
+	for i in Makefile local.mk $(TM).md/md.mk $(SRCS) $(HDRS) $(DISTOBJS)
+d395 2
+@
+
+
+1.35
+log
+@bob's changes for dist
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.34 89/09/15 07:33:56 rab Exp Locker: rab $
+d152 1
+a152 2
+# the path as is when TM=ds3100.  Also, the dec port isn't ready for the -O
+# flag yet.
+a153 1
+GFLAG		= -g
+d156 5
+d163 1
+@
+
+
+1.34
+log
+@Added -m$(TM) flag to cpp.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.33 89/09/13 10:04:27 shirriff Exp Locker: rab $
+d379 10
+@
+
+
+1.33
+log
+@Fixed assembler directives so ds3100 doesn't run preprocessor.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.32 89/08/31 16:10:50 rab Exp Locker: shirriff $
+d194 1
+a194 1
+	$(CPP) $(CFLAGS:M-[ID]*) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+@
+
+
+1.32
+log
+@Added -D_ASM to .s.o rule.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.31 89/08/31 13:10:00 jhh Exp Locker: rab $
+d193 1
+d197 4
+@
+
+
+1.31
+log
+@need to strip out standard include path when calling makedepend
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.30 89/07/21 18:29:37 douglis Exp Locker: jhh $
+d193 1
+a193 1
+	$(CPP) $(CFLAGS:M-[ID]*) -D$(TM) $(.IMPSRC) > $(.PREFIX).pp
+@
+
+
+1.30
+log
+@changed newtm to do mkmf for only the new machine type
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.29 89/07/21 13:49:05 douglis Exp Locker: douglis $
+d274 1
+d276 3
+@
+
+
+1.29
+log
+@fixed typo making OFLAG come out as 0FLAG and confusing pmake.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.28 89/07/20 17:36:04 mgbaker Exp Locker: douglis $
+d354 1
+a354 1
+	    mkmf
+@
+
+
+1.28
+log
+@Got rid of extra porting stuff for sun4.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.27 89/07/20 17:06:22 douglis Exp Locker: mgbaker $
+d162 1
+a162 1
+CFLAGS		+= $(GFLAG) $(0FLAG) $(TMCFLAGS) $(XCFLAGS) -I.
+@
+
+
+1.27
+log
+@added check for TYPE=emacs, and mary changed something for $(OFLAG).
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.26 89/07/13 13:56:04 ouster Exp Locker: douglis $
+a144 3
+#if !empty(TM:Msun4)
+LOADFLAGS	+= -L/sprite/lib/sun4.md
+#endif
+d151 2
+a152 2
+# The sun4 compiler doesn't include /sprite/lib/include, so we must leave
+# the path as is when TM=sun4.  Also, the sun4 port isn't ready for the -O
+d161 1
+a161 1
+#if !empty(TM:Msun4) || !empty(TM:Mds3100)
+d168 1
+a168 1
+#if empty(TM:Msun4) && empty(TM:Mds3100)
+a170 3
+#elif !empty(TM:Msun4)
+CFLAGS		+= $(.INCLUDES)
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+a208 1
+#if empty(TM:Msun4)
+a211 1
+#endif
+a212 4
+#if !empty(TM:Msun4)
+	$(CC) -c $(CFLAGS) $(MISCLIBDIR)/version.c $(.ALLSRC:N-lc)
+	ld -msun4 -o $(.TARGET) $(LOADFLAGS) -e start $(OBJS) $(LIBS) /sprite/lib/sun4.md/libc.a
+#else
+a213 1
+#endif
+a225 4
+#if !empty(TM:Msun4)
+	$(CC) -c $(CFLAGS) $(.ALLSRC:N-lc)
+	ld -msun4 -o $(.TARGET) $(LOADFLAGS) -e start $(OBJS) $(LIBS) /sprite/lib/sun4.md/libc.a
+#else
+a226 1
+#endif
+@
+
+
+1.26
+log
+@Support NOOPTIMIZATION.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.24 89/07/02 23:30:34 rab Exp $
+d94 3
+d165 1
+a165 1
+CFLAGS		+= $(GFLAG) $(TMCFLAGS) $(XCFLAGS) -I.
+@
+
+
+1.25
+log
+@Added ds3100 support.
+@
+text
+@d156 1
+d158 3
+@
+
+
+1.24
+log
+@Fixed sun4 stuff to work with gcc & gld.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.23 89/06/23 13:11:34 jhh Exp Locker: rab $
+d157 1
+a157 1
+#if !empty(TM:Msun4)
+d164 1
+a164 1
+#if empty(TM:Msun4)
+d166 4
+d172 1
+a173 1
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+@
+
+
+1.23
+log
+@*** empty log message ***
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.21 89/04/10 09:44:21 douglis Exp Locker: douglis $
+d212 1
+a212 2
+	$(LD) -o /tmp/$(.TARGET) $(LOADFLAGS) -Bstatic -e start -T 2020 -Tdata 40000 $(OBJS) $(LIBS) /sprite/src/lib/c/sun4.md/libc.a
+	mv -f /tmp/$(.TARGET) $(.TARGET)
+d230 1
+a230 2
+	$(LD) -o /tmp/$(.TARGET) $(LOADFLAGS) -Bstatic -e start -T 2020 -Tdata 40000 $(OBJS) $(LIBS) /sprite/src/lib/c/sun4.md/libc.a
+	mv -f /tmp/$(.TARGET) $(.TARGET)
+@
+
+
+1.22
+log
+@added a missing endif.
+@
+text
+@d103 3
+d141 1
+d143 1
+a143 1
+LOADFLAGS	= -L/sprite/lib/sun4.md
+d157 5
+a161 1
+#if empty(TM:Msun4)
+a162 2
+#else
+CFLAGS		+= $(GFLAG) $(TMCFLAGS) $(XCFLAGS) -I.
+d215 1
+a215 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(MISCLIBDIR)/version.c $(.ALLSRC:N-lc)
+d217 1
+a217 1
+#if !empty(TM:Mspur)
+d234 1
+a234 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(.ALLSRC:N-lc)
+d236 1
+a236 1
+#if !empty(TM:Mspur)
+d335 1
+a335 1
+installman		: .SILENT
+d341 1
+a341 1
+installman		: .SILENT
+d344 1
+a344 1
+installman		: .SILENT
+@
+
+
+1.21
+log
+@default to no backup for personal commands.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.20 89/04/10 09:42:46 douglis Exp Locker: douglis $
+d105 1
+@
+
+
+1.20
+log
+@mary's changes for sun4
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.19 89/04/03 22:23:22 douglis Exp Locker: mgbaker $
+d103 2
+@
+
+
+1.19
+log
+@added 'tidy' target.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.18 89/03/20 11:02:28 douglis Exp Locker: douglis $
+d135 3
+d144 4
+d150 1
+d152 3
+d195 1
+d199 1
+d201 5
+d207 1
+d220 5
+d226 1
+@
+
+
+1.18
+log
+@make lint depend on hdrs
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.17 89/03/19 17:38:28 mgbaker Exp Locker: douglis $
+d269 4
+a272 1
+clean			:: .NOEXPORT
+a273 1
+		$(TM).md/$(NAME) $(TM).md/$(NAME)$(PROFSUFFIX) \
+@
+
+
+1.17
+log
+@Added sun4 compiler necessities.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.16 89/03/17 16:33:39 douglis Exp Locker: mgbaker $
+d314 1
+a314 1
+$(TM).md/lint		: $(SRCS:M*.c) $(LIBS:M-l*) MAKELINT
+@
+
+
+1.16
+log
+@added lint to make clean list of files to remove
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.15 89/03/15 22:24:54 douglis Exp Locker: douglis $
+d144 1
+d146 3
+@
+
+
+1.15
+log
+@added check for MANPAGES = NONE to override complaint about lack of man
+pages.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.14 89/03/15 22:13:38 jhh Exp Locker: douglis $
+d269 1
+@
+
+
+1.14
+log
+@added 'profile' target
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.12 89/01/15 13:50:51 ouster Exp $
+d296 3
+@
+
+
+1.13
+log
+@added GFLAG so it can be overridden from the command line
+to produce better optimized executables
+@
+text
+@d51 5
+d102 1
+d160 1
+a160 1
+	$(CC) -S $(CFLAGS) -p -DPROFILE $(.IMPSRC)
+d256 1
+d264 1
+d267 3
+a269 2
+		$(TM).md/$(NAME) y.tab.c lex.yy.c core \
+		a.out *~ $(TM).md/*~ version.h
+d272 1
+d276 1
+d292 1
+d304 1
+d308 1
+d312 1
+d321 7
+@
+
+
+1.12
+log
+@Added type "personal".
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.11 89/01/01 23:03:23 rab Exp $
+d135 3
+a137 1
+CFLAGS		+= -g -O $(TMCFLAGS) $(XCFLAGS) -I.
+d179 3
+d192 3
+d210 2
+a211 1
+# use a separate install script
+a214 1
+	$(XLD) $(TMINSTALLDIR)/$(NAME)
+@
+
+
+1.11
+log
+@fixed /srpite/admin/man to read /sprite/admin/man
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.10 88/12/29 08:37:57 ouster Exp Locker: rab $
+d95 2
+@
+
+
+1.10
+log
+@When installing man pages, copy files referenced by symbolic links,
+not the links themselves.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.9 88/12/28 17:08:08 ouster Exp Locker: ouster $
+d94 1
+a94 1
+INSTALLMAN	?= /srpite/man/admin
+@
+
+
+1.9
+log
+@Documentation cleanup.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.8 88/12/28 14:48:02 ouster Exp $
+d276 1
+a276 1
+	$(UPDATE) -m 444 $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+@
+
+
+1.8
+log
+@Switched to use TYPE.  Added "installman" target.
+@
+text
+@a10 2
+#	INSTALLDIR	place to install program (without the
+#			machine-dependent suffix;  it will get added here).
+d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.6 88/12/19 18:03:28 douglis Exp $
+d268 1
+a268 1
+#endif
+@
+
+
+1.7
+log
+@Changed to only byte spur binaries in the installed directory.
+@
+text
+@d16 2
+a56 1
+TMINSTALLDIR	?= $(INSTALLDIR).$(TM)
+d80 23
+d126 1
+d190 1
+a190 1
+#	install : <files to install> MAKEINSTALL
+d192 2
+a193 2
+# The sources are installed in $(TMINSTALLDIR) (which is $(INSTALLDIR)
+# with $(TM) appended to it), and backed-up to $(TMINSTALLDIR).old
+d204 1
+a204 1
+	$(UPDATE) -m 775 $(BACKUP) $(INSTALLFLAGS) $(.ALLSRC) \
+d209 1
+a209 1
+	$(UPDATE) -m 775 -s $(BACKUP) $(INSTALLFLAGS) $(.ALLSRC) \
+d261 2
+a262 1
+# can augment install with additional stuff.
+d265 6
+a270 1
+install			:: $(TM).md/$(NAME) MAKEINSTALL
+d272 11
+@
+
+
+1.6
+log
+@define things like TMINSTALLDIR only if not already defined.
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.5 88/12/14 14:16:43 ouster Exp Locker: douglis $
+a178 1
+	$(XLD) -s $(.ALLSRC)
+d181 1
+@
+
+
+1.5
+log
+@Mods to support making with version.c and version.h
+@
+text
+@d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.4 88/11/27 16:25:39 ouster Exp Locker: ouster $
+d53 3
+a55 3
+MISCLIBDIR	= /sprite/lib/misc
+BINDIR		= /sprite/cmds.$(MACHINE)
+TMINSTALLDIR	= $(INSTALLDIR).$(TM)
+@
+
+
+1.4
+log
+@Changes to allow commands to extend some standard targets.
+@
+text
+@d23 3
+d27 1
+a27 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.3 88/11/23 17:28:27 ouster Exp $
+d53 1
+a53 1
+MISCLIBDIR	= /sprite/src/lib/misc
+d218 3
+d222 1
+d259 4
+@
+
+
+1.3
+log
+@Revisions to make "make newtm" work.
+@
+text
+@d24 1
+a24 1
+# $Header: /sprite/lib/pmake/RCS/command.mk,v 1.2 88/11/23 09:52:17 ouster Exp Locker: ouster $
+d78 1
+a78 1
+PASSVARS	= 'INSTALLDIR=$(INSTALLDIR)' $(.MAKEFLAGS)
+d217 1
+a217 1
+clean			! .NOEXPORT
+d238 1
+a238 1
+mkmf			! .SILENT
+d241 1
+a241 1
+newtm			! .SILENT
+@
+
+
+1.2
+log
+@Major changes to finalize the new C library (move include.new to
+include, etc.).
+@
+text
+@d24 1
+a24 1
+# $Header: /sprite/lib/pmake/RCS/command2.mk,v 1.38 88/11/06 11:43:42 ouster Exp $
+d28 8
+d241 8
+a248 3
+newtm			! .IGNORE
+	mkdir $(TM).md
+	mkmf
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 1
+a5 1
+#	PROGRAM		program to be created
+a30 2
+.PATH.a		:
+.PATH.a		: /sprite/lib/$(TM).md
+d32 1
+a32 2
+.PATH.h		: $(TM).md /sprite/lib/include.new \
+			/sprite/lib/include.new/$(TM).md
+d44 1
+d52 1
+a52 1
+AS		?= /sprite/cmds/as
+d60 1
+a60 1
+MKVERSION	?= /sprite/cmds/mkversion
+d88 4
+a91 1
+#include	<tmflags.mk>
+d94 7
+a100 1
+CFLAGS		+= $(TMCFLAGS) -I. $(.INCLUDES) $(XCFLAGS)
+a101 2
+LINTFLAGS	?= -S
+INSTALLFLAGS	?=
+d120 1
+a120 1
+	$(CPP) $(CFLAGS:M-[ID]*) $(.IMPSRC) > $(.PREFIX).pp
+d156 2
+a157 2
+# The sources are installed in $(INSTALLDIR).$(TM) and backed-up to
+# $(INSTALLDIR).$(TM).old
+d160 1
+a160 1
+BACKUP		= -b $(INSTALLDIR).$(TM).old
+d170 1
+a170 1
+		$(INSTALLDIR).$(TM)/$(PROGRAM)
+d174 1
+a174 1
+		$(INSTALLDIR).$(TM)/$(PROGRAM)
+d200 1
+a200 1
+#if !defined(no_targets) && defined(PROGRAM)
+d206 2
+a207 2
+default			: $(TM).md/$(PROGRAM)
+$(TM).md/$(PROGRAM)	: $(OBJS) $(LIBS) MAKECMDNOVERS
+d209 9
+d224 1
+a224 1
+install			:: $(TM).md/$(PROGRAM) MAKEINSTALL
+d230 2
+a231 3
+DEPFILE = $(TM).md/dependencies.mk
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+d233 3
+a235 4
+clean			! .NOEXPORT
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:M*.o:S/.o$/.po/g) \
+		$(TM).md/$(PROGRAM) y.tab.c lex.yy.c core \
+		a.out *~ $(TM).md/*~ version.h
+d242 1
+a242 3
+#endif no_targets && PROGRAM
+
+mkmf makemake	:: .NOTMAIN	# Does nothing. Says nothing
+@

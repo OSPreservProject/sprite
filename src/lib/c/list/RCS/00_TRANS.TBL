@@ -1,0 +1,8 @@
+F LIST.G_V;1                        	List.g,v
+F LIST.MAN;1                        	List.man,v
+F LIST_INI.C_V;1                    	List_Init.c,v
+F LIST_INS.C_V;1                    	List_Insert.c,v
+F LIST_LIS.C_V;1                    	List_ListInsert.c,v
+F LIST_MOV.C_V;1                    	List_Move.c,v
+F LIST_REM.C_V;1                    	List_Remove.c,v
+F LOCAL.MK_;1                       	local.mk,v

@@ -1,0 +1,264 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     89.10.17.08.06.46;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.09.11.10.39.14;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.23.16.48.27;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.23.15.51.04;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Raw printing of VM statistics
+@
+
+
+1.4
+log
+@pass X to VmMach_PrintStats
+@
+text
+@/* 
+ * rawvm.c --
+ *
+ *	Print raw format VM statistics.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawvm.c,v 1.3 89/09/11 10:39:14 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "stdio.h"
+#include "vmStat.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawVmStat --
+ *
+ *	Prints out statistics for the VM system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawVmStat(X)
+    Vm_Stat *X;
+{
+    printf("Vm_Stat\n");
+	ZeroPrint("numPhysPages   %8u\n", X->numPhysPages);
+	ZeroPrint("numFreePages   %8u\n", X->numFreePages);
+	ZeroPrint("numDirtyPages  %8u\n", X->numDirtyPages);
+	ZeroPrint("numReservePages %8u\n", X->numReservePages);
+	ZeroPrint("numUserPages   %8u\n", X->numUserPages);
+	ZeroPrint("kernStackPages %8u\n", X->kernStackPages);
+	ZeroPrint("kernMemPages   %8u\n", X->kernMemPages);
+	ZeroPrint("totalFaults    %8u\n", X->totalFaults);
+	ZeroPrint("totalUserFaults %8u\n", X->totalUserFaults);
+	ZeroPrint("zeroFilled     %8u\n", X->zeroFilled);
+	ZeroPrint("fsFilled       %8u\n", X->fsFilled);
+	ZeroPrint("psFilled       %8u\n", X->psFilled);
+	ZeroPrint("collFaults     %8u\n", X->collFaults);
+	ZeroPrint("quickFaults    %8u\n", X->quickFaults);
+	ZeroPrint("codeFaults     %8u\n", X->codeFaults);
+	ZeroPrint("heapFaults     %8u\n", X->heapFaults);
+	ZeroPrint("stackFaults    %8u\n", X->stackFaults);
+	ZeroPrint("numAllocs      %8u\n", X->numAllocs);
+	ZeroPrint("gotFreePage    %8u\n", X->gotFreePage);
+	ZeroPrint("pageAllocs     %8u\n", X->pageAllocs);
+	ZeroPrint("gotPageFromFS  %8u\n", X->gotPageFromFS);
+	ZeroPrint("numListSearches %8u\n", X->numListSearches);
+	ZeroPrint("usedFreePage   %8u\n", X->usedFreePage);
+	ZeroPrint("lockSearched   %8u\n", X->lockSearched);
+	ZeroPrint("refSearched    %8u\n", X->refSearched);
+	ZeroPrint("dirtySearched  %8u\n", X->dirtySearched);
+	ZeroPrint("reservePagesUsed %8u\n", X->reservePagesUsed);
+	ZeroPrint("pagesWritten   %8u\n", X->pagesWritten);
+	ZeroPrint("cleanWait      %8u\n", X->cleanWait);
+	ZeroPrint("pageoutWakeup  %8u\n", X->pageoutWakeup);
+	ZeroPrint("pageoutNoWork  %8u\n", X->pageoutNoWork);
+	ZeroPrint("pageoutWait    %8u\n", X->pageoutWait);
+	ZeroPrint("mapPageWait    %8u\n", X->mapPageWait);
+	ZeroPrint("accessWait     %8u\n", X->accessWait);
+
+	ZeroPrint("minVMPages     %8u\n", X->minVMPages);
+	ZeroPrint("fsAsked        %8u\n", X->fsAsked);
+	ZeroPrint("haveFreePage   %8u\n", X->haveFreePage);
+	ZeroPrint("fsMap          %8u\n", X->fsMap);
+	ZeroPrint("fsUnmap        %8u\n", X->fsUnmap);
+	ZeroPrint("maxFSPages     %8u\n", X->maxFSPages);
+	ZeroPrint("minFSPages     %8u\n", X->minFSPages);
+	ZeroPrint("numCOWHeapPages %8u\n", X->numCOWHeapPages);
+	ZeroPrint("numCOWStkPages %8u\n", X->numCOWStkPages);
+	ZeroPrint("numCORHeapPages %8u\n", X->numCORHeapPages);
+	ZeroPrint("numCORStkPages %8u\n", X->numCORStkPages);
+	ZeroPrint("numCOWHeapFaults %8u\n", X->numCOWHeapFaults);
+	ZeroPrint("numCOWStkFaults %8u\n", X->numCOWStkFaults);
+	ZeroPrint("quickCOWFaults %8u\n", X->quickCOWFaults);
+	ZeroPrint("numCORHeapFaults %8u\n", X->numCORHeapFaults);
+	ZeroPrint("numCORStkFaults %8u\n", X->numCORStkFaults);
+	ZeroPrint("quickCORFaults %8u\n", X->quickCORFaults);
+	ZeroPrint("swapPagesCopied %8u\n", X->swapPagesCopied);
+	ZeroPrint("numCORCOWHeapFaults %8u\n", X->numCORCOWHeapFaults);
+	ZeroPrint("numCORCOWStkFaults %8u\n", X->numCORCOWStkFaults);
+	ZeroPrint("potModPages    %8u\n", X->potModPages);
+	ZeroPrint("notModPages    %8u\n", X->notModPages);
+	ZeroPrint("notHardModPages %8u\n", X->notHardModPages);
+	ZeroPrint("codePrefetches %8u\n", X->codePrefetches);
+	ZeroPrint("heapSwapPrefetches %8u\n", X->heapSwapPrefetches);
+	ZeroPrint("heapFSPrefetches %8u\n", X->heapFSPrefetches);
+	ZeroPrint("stackPrefetches %8u\n", X->stackPrefetches);
+	ZeroPrint("codePrefetchHits %8u\n", X->codePrefetchHits);
+	ZeroPrint("heapSwapPrefetchHits %8u\n", X->heapSwapPrefetchHits);
+	ZeroPrint("heapFSPrefetchHits %8u\n", X->heapFSPrefetchHits);
+	ZeroPrint("stackPrefetchHits %8u\n", X->stackPrefetchHits);
+	ZeroPrint("prefetchAborts %8u\n", X->prefetchAborts);
+
+	VmMach_PrintStats(X);
+
+}
+@
+
+
+1.3
+log
+@Updated to new typedefs
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawvm.c,v 1.2 89/06/23 16:48:27 brent Exp $ SPRITE (Berkeley)";
+d107 1
+a107 1
+	VmMach_PrintStats();
+@
+
+
+1.2
+log
+@Chagned to unsigned print format to handle large numbers
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawvm.c,v 1.1 89/06/23 15:51:04 brent Exp Locker: brent $ SPRITE (Berkeley)";
+a73 3
+	ZeroPrint("stealContext   %8u\n", X->machDepStat.stealContext);
+	ZeroPrint("stealPmeg      %8u\n", X->machDepStat.stealPmeg);
+
+d106 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rpcstat/RCS/rpcstat.c,v 1.16 89/06/23 13:41:16 brent Exp $ SPRITE (Berkeley)";
+d39 34
+a72 34
+	ZeroPrint("numPhysPages   %8d\n", X->numPhysPages);
+	ZeroPrint("numFreePages   %8d\n", X->numFreePages);
+	ZeroPrint("numDirtyPages  %8d\n", X->numDirtyPages);
+	ZeroPrint("numReservePages %8d\n", X->numReservePages);
+	ZeroPrint("numUserPages   %8d\n", X->numUserPages);
+	ZeroPrint("kernStackPages %8d\n", X->kernStackPages);
+	ZeroPrint("kernMemPages   %8d\n", X->kernMemPages);
+	ZeroPrint("totalFaults    %8d\n", X->totalFaults);
+	ZeroPrint("totalUserFaults %8d\n", X->totalUserFaults);
+	ZeroPrint("zeroFilled     %8d\n", X->zeroFilled);
+	ZeroPrint("fsFilled       %8d\n", X->fsFilled);
+	ZeroPrint("psFilled       %8d\n", X->psFilled);
+	ZeroPrint("collFaults     %8d\n", X->collFaults);
+	ZeroPrint("quickFaults    %8d\n", X->quickFaults);
+	ZeroPrint("codeFaults     %8d\n", X->codeFaults);
+	ZeroPrint("heapFaults     %8d\n", X->heapFaults);
+	ZeroPrint("stackFaults    %8d\n", X->stackFaults);
+	ZeroPrint("numAllocs      %8d\n", X->numAllocs);
+	ZeroPrint("gotFreePage    %8d\n", X->gotFreePage);
+	ZeroPrint("pageAllocs     %8d\n", X->pageAllocs);
+	ZeroPrint("gotPageFromFS  %8d\n", X->gotPageFromFS);
+	ZeroPrint("numListSearches %8d\n", X->numListSearches);
+	ZeroPrint("usedFreePage   %8d\n", X->usedFreePage);
+	ZeroPrint("lockSearched   %8d\n", X->lockSearched);
+	ZeroPrint("refSearched    %8d\n", X->refSearched);
+	ZeroPrint("dirtySearched  %8d\n", X->dirtySearched);
+	ZeroPrint("reservePagesUsed %8d\n", X->reservePagesUsed);
+	ZeroPrint("pagesWritten   %8d\n", X->pagesWritten);
+	ZeroPrint("cleanWait      %8d\n", X->cleanWait);
+	ZeroPrint("pageoutWakeup  %8d\n", X->pageoutWakeup);
+	ZeroPrint("pageoutNoWork  %8d\n", X->pageoutNoWork);
+	ZeroPrint("pageoutWait    %8d\n", X->pageoutWait);
+	ZeroPrint("mapPageWait    %8d\n", X->mapPageWait);
+	ZeroPrint("accessWait     %8d\n", X->accessWait);
+d74 2
+a75 2
+	ZeroPrint("stealContext   %8d\n", X->machDepStat.stealContext);
+	ZeroPrint("stealPmeg      %8d\n", X->machDepStat.stealPmeg);
+d77 32
+a108 32
+	ZeroPrint("minVMPages     %8d\n", X->minVMPages);
+	ZeroPrint("fsAsked        %8d\n", X->fsAsked);
+	ZeroPrint("haveFreePage   %8d\n", X->haveFreePage);
+	ZeroPrint("fsMap          %8d\n", X->fsMap);
+	ZeroPrint("fsUnmap        %8d\n", X->fsUnmap);
+	ZeroPrint("maxFSPages     %8d\n", X->maxFSPages);
+	ZeroPrint("minFSPages     %8d\n", X->minFSPages);
+	ZeroPrint("numCOWHeapPages %8d\n", X->numCOWHeapPages);
+	ZeroPrint("numCOWStkPages %8d\n", X->numCOWStkPages);
+	ZeroPrint("numCORHeapPages %8d\n", X->numCORHeapPages);
+	ZeroPrint("numCORStkPages %8d\n", X->numCORStkPages);
+	ZeroPrint("numCOWHeapFaults %8d\n", X->numCOWHeapFaults);
+	ZeroPrint("numCOWStkFaults %8d\n", X->numCOWStkFaults);
+	ZeroPrint("quickCOWFaults %8d\n", X->quickCOWFaults);
+	ZeroPrint("numCORHeapFaults %8d\n", X->numCORHeapFaults);
+	ZeroPrint("numCORStkFaults %8d\n", X->numCORStkFaults);
+	ZeroPrint("quickCORFaults %8d\n", X->quickCORFaults);
+	ZeroPrint("swapPagesCopied %8d\n", X->swapPagesCopied);
+	ZeroPrint("numCORCOWHeapFaults %8d\n", X->numCORCOWHeapFaults);
+	ZeroPrint("numCORCOWStkFaults %8d\n", X->numCORCOWStkFaults);
+	ZeroPrint("potModPages    %8d\n", X->potModPages);
+	ZeroPrint("notModPages    %8d\n", X->notModPages);
+	ZeroPrint("notHardModPages %8d\n", X->notHardModPages);
+	ZeroPrint("codePrefetches %8d\n", X->codePrefetches);
+	ZeroPrint("heapSwapPrefetches %8d\n", X->heapSwapPrefetches);
+	ZeroPrint("heapFSPrefetches %8d\n", X->heapFSPrefetches);
+	ZeroPrint("stackPrefetches %8d\n", X->stackPrefetches);
+	ZeroPrint("codePrefetchHits %8d\n", X->codePrefetchHits);
+	ZeroPrint("heapSwapPrefetchHits %8d\n", X->heapSwapPrefetchHits);
+	ZeroPrint("heapFSPrefetchHits %8d\n", X->heapFSPrefetchHits);
+	ZeroPrint("stackPrefetchHits %8d\n", X->stackPrefetchHits);
+	ZeroPrint("prefetchAborts %8d\n", X->prefetchAborts);
+@

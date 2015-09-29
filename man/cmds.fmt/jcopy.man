@@ -1,0 +1,132 @@
+
+
+
+jcopy                     User Commands                     jcopy
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jcopy - Perform volume-to-volume copy on Jaquith system
+
+SSYYNNOOPPSSIISS
+     jjccooppyy  [--ssrrccvvooll  _v_o_l_u_m_e_I_d]  [--ddeessttvvooll  _v_o_l_u_m_e_I_d]   [--vv]   [--
+     mmggrrsseerrvveerr  _h_o_s_t_n_a_m_e] [--mmggrrppoorrtt _p_o_r_t] [--uuppddaatteeffrreeqq _f_i_l_e_c_o_u_n_t]
+     [--bbuuffssiizzee yytteess]
+
+OOPPTTIIOONNSS
+     --ssrrccvvooll       The source volume Id.
+
+     --ddeessttvvooll      The destination volume Id.
+
+     --vv            Turn on verbose mode which prints status  dur-
+                   ing operation.
+
+     --mmggrrSSeerrvveerr _h_o_s_t_n_a_m_e
+                   Specifies host where Jmgr server is running.
+
+     --mmggrrPPoorrtt _p_o_r_t Specifies port number  where  Jmgr  server  is
+                   running.
+
+     --uuppddaatteeffrreeqq _f_i_l_e_c_o_u_n_t
+                   Report progress every  _f_i_l_e_c_o_u_n_t  files.  This
+                   parameter is ignored if the --vv is not given.
+
+     --bbuuffssiizzee _b_y_t_e_s
+                   Transfer data in units of size _b_y_t_e_s.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJccooppyy is volume-to-volume utility for the Jaquith system.
+
+
+     Jcopy copies one Jaquith volume to another, in its entirety.
+     The  assumption  is  that the source tape is growing old and
+     that the data is being rolled forward to a new tape.  There-
+     fore,  Jcopy  attempts  to  keep Jaquith's view of the world
+     up-to-date by editing various configuration files.  The user
+     is prompted about these changes at the appropriate time.
+
+
+     Omitting the --ddeessttvvooll option entirely will  cause  jcopy  to
+     obtain a volume from Jaquith's free volume list.
+
+
+     Jcopy negotiates with jmgr to mount the volumes. This  means
+     that jcopy can run while the system is publicly available.
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jcopy                     User Commands                     jcopy
+
+
+
+     Jcopy does not connect to the public  port  managed  by  the
+     Jaquith  process  to discourage its use as a client program.
+     This is because Jcopy makes no attempt  to  obtain  the  two
+     devices  atomically.   Therefore it's possible for two jcopy
+     processes to deadlock, each holding 1 device and  unable  to
+     get the other.
+
+
+BBUUGGSS
+     None known.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jls jstat jput jget jctrl jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

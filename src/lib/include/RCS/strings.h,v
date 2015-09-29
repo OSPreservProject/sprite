@@ -1,0 +1,118 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     90.06.27.13.29.37;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.23.11.30.31;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.29.14.58.00;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.17.23.03;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Updated to new Unix version of strings.h.
+@
+text
+@/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@@(#)strings.h	5.3 (Berkeley) 11/18/87
+ */
+
+#ifndef _STRINGS
+#define _STRINGS
+
+/*
+ * External function definitions
+ * for routines described in string(3).
+ */
+char	*strcat();
+char	*strncat();
+int	strcmp();
+int	strncmp();
+int	strcasecmp();
+int	strncasecmp();
+char	*strcpy();
+char	*strncpy();
+int	strlen();
+char	*index();
+char	*rindex();
+
+/* S5 compatibility */
+char	*memccpy();
+char	*memchr();
+int	memcmp();
+char	*memcpy();
+char	*memset();
+char	*strchr();
+char	*strdup();
+char	*strrchr();
+char	*strpbrk();
+char	*strsep();
+int	strspn();
+int	strcspn();
+char	*strtok();
+
+/* Routines from ANSI X3J11 */
+char	*strerror();
+
+#endif /* _STRINGS */
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d29 5
+d35 1
+d38 1
+d42 3
+@
+
+
+1.2
+log
+@Add ifdefs so that file can't be processed twice.
+@
+text
+@d36 1
+a36 1
+#endif _STRINGS
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 3
+d35 2
+@

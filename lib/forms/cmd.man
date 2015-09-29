@@ -1,0 +1,38 @@
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.4 92/03/02 15:20:18 bmiller Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS PROGNAME cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+progName \- Short description of what program does
+.SH SYNOPSIS
+\fBprogName\fR [\fIoptions\fR] \fIfile file ...\fR
+.SH OPTIONS
+.IP "\fB\-b \fIdirectory\fR" 15
+Documentation for the \fB\-b\fR option, where the following argument,
+\fIdirectory\fR is somehow used to control the option.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit without updating
+any targets.
+.BE
+
+.SH DESCRIPTION
+.PP
+In this section you describe how to use the program.  The description
+should be relatively complete, but terse.  For complex programs
+use multiple sections, each describing some aspect of the program.
+See \fIThe Sprite Engineering Manual\fR for general information on writing
+manual pages, and the \fBman\fR manual entry in the \fBfiles\fR manual section
+for details on all the macros that are available.
+
+.SH KEYWORDS
+form, manual

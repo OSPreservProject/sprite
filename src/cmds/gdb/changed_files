@@ -1,0 +1,5 @@
+core.c:	symbolic link to sprite/core.c
+main.c:	symbolic link to sprite/main.c - jhh changes for mips. (minor)
+valops.c:	symbolic link to sprite/valops.c - KGDB - Remote  calls.
+values.c:	symbolic link to sprite/values.c - KGDB fixes (alignment stuff)
+sun4.md/param.h:	symbolic link to ../sprite/m-sun4sprite.h

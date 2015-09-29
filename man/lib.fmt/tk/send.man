@@ -1,0 +1,66 @@
+
+
+
+send                      User Commands                      send
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     send - Execute a command in a different interpreter
+
+SSYYNNOOPPSSIISS
+     sseenndd _i_n_t_e_r_p _c_m_d ?_a_r_g _a_r_g ...?
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command arranges for _c_m_d (and _a_r_gs) to be  executed  in
+     the  interpreter  named by _i_n_t_e_r_p.  It returns the result or
+     error from that command execution.  _I_n_t_e_r_p must be the  name
+     of  an interpreter registered on the display associated with
+     the interpreter in which the command is  invoked;   it  need
+     not  be  within  the same process or application.  If no _a_r_g
+     arguments are present, then the command to  be  executed  is
+     contained  entirely within the _c_m_d argument.  If one or more
+     _a_r_gs are present, they are concatenated to form the  command
+     to be executed, just as for the eevvaall Tcl command.
+
+
+KKEEYYWWOORRDDSS
+     interpreter, remote execution, send
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

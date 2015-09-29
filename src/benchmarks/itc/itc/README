@@ -1,0 +1,45 @@
+##############################################
+# Benchmark  to exercise a file system       #
+# Distribution Version: 14 June 1985         #
+#					     #
+#	M. Satyanarayanan		     #
+#	Information Technology Center	     #
+#	Carnegie-Mellon University	     #
+#					     #
+# Modified by John Ousterhout (U.C. Berkeley)#
+# to make it machine-independent so that     #
+# results of running it on different machines#
+# may be compared directly.		     #
+##############################################
+
+I have used this benchmark extensively as a standard for comparing Unix file system performance.
+The benchmark has been run on Unix 4.1BSD and Unix 4.2BSD and should run without modification on 
+other versions of Unix, though I have not actually confirmed this.
+Sites outside CMU  may freely use this benchmark provided a brief acknowledgement is made of the author
+and ITC/CMU in reporting results.
+
+All the files involved in the benchmark are within the subdirectory fscript.  The ONLY external files needed are
+the executable modules for the programs  such as cc, make, find, etc.  
+
+There are number of phases to the benchmark, each exercising a different aspect of the file system:
+	1. Phase I:   many subdirectories are recursively created.
+	2. Phase II:  stresses the file system's ability to transfer large amounts of data by copying files.
+	3. Phase III: recursively examines the status of every file in fscript, without actually
+		      examining the data in the files.
+	4. Phase IV:  examines every byte of every file in fscript.
+	5. Phase V:   is computationally intensive.
+
+The output of the benchmark contains embedded timestamps after each phase, and these are used to calculate the time
+taken for the individual phases and the overall benchmark time.  Depending on the file system you are benchmarking,
+you may also have auxiliary instrumentation to give you detailied data on the file system during the benchmark.
+
+I intend to examine  the Unix system calls generated during the execution of the benchmark.
+This will serve as a characterization of the benchmark and will give us information such as the number of Opens, Reads,
+Writes, etc.
+
+When running this benchmark be sure to replicate each experiment a number of times to obtain mean and standard 
+deviations.  I  have seen significant variability in  experiments, especially when the file system in
+question makes network accesses.
+
+
+The instructions for running the benchmark are at the beginning of Makefile.

@@ -1,0 +1,235 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.02.16.17.40.23;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original X11R4 distribution
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@.\" $XConsortium: Xsun.man,v 1.12 89/12/21 10:06:58 rws Exp $
+.TH XSUN 1 "Release 4" "X Version 11"
+.SH NAME
+Xsun \- Sun server for X Version 11
+.SH SYNOPSIS
+.B Xsun
+[ option ] ...
+.SH DESCRIPTION
+.I Xsun
+is the server for Version 11 of the X window system on Sun hardware.
+It will normally be started by the \fIxdm(1)\fP daemon or by a script
+that runs the program \fIxinit(1)\fP.
+.SH CONFIGURATIONS
+.PP
+.I Xsun
+operates under SunOS versions 3.2, 3.4, and 4.0, on the Sun-2, Sun-3, Sun-4,
+and SPARCstation architectures.  If a specific framebuffer device file isn't
+specified on the command line with the \fI\-dev\fP switch, the server will look
+for the following framebuffers (the \fIconstype(1)\fP program may be used
+to tell which type of display is attached as the console):
+.TP 8
+.B /dev/bwtwo0
+This monochrome display is available on Sun-3/50, Sun-3/75, Sun-3/140, 
+Sun-3/260, and Sun-3/280 platforms with both the 1152x900 and 1600x1280 
+screen sizes.
+.TP 8
+.B /dev/cgtwo0
+This color display is available on 3/160C, 3/260C, and 4/260C platforms.
+It may also be used as a monochrome-only display with the \fI-mono\fP switch.
+.TP 8
+.B /dev/cgthree0
+This color display is available on both the Sun386i and SPARCstation 1 
+platforms.
+.TP 8
+.B /dev/cgfour0
+This display is available on Sun-3/60, Sun-3/110, and Sun-4/110 
+platforms.  It provides both color and monochrome screens (numbered 0 and 1,
+respectively by default) on the same
+monitor by toggling between them whenever the mouse goes off the left or
+right edges of the screen.
+.TP 8
+.B /dev/cgsix0
+This color display is available on SPARCstation 1 platforms with the 
+GX graphics accelerator (which is \fBnot\fP used by the server).
+.PP
+Finally, if no specific framebuffers are found,
+the generic framebuffer interface \fI/dev/fb\fP is used.
+.PP
+Note that the server does not support the GP,  GP+,  or GP2 graphics
+coprocessors.  On these platforms, the \fBcgtwo\fP framebuffer should be
+used instead (either by creating it or specifying \fI-dev /dev/cgtwo0\fP
+on the server command line).
+.SH OPTIONS
+In addition to the normal server options described in the \fIXserver(1)\fP
+manual page, \fIXsun\fP accepts the following command line switches:
+.TP 8
+.B "\-ar1 \fImilliseconds\fP"
+This option specifies amount of time in milliseconds before which a pressed
+key should begin to autorepeat.
+.TP 8
+.B "\-ar2\fP \fImilliseconds\fP"
+This option specifies the internal in milliseconds between autorepeats of
+pressed keys.
+.TP 8
+.B \-mono
+When used with the \fBcgtwo\fP, this option indicates that the server should
+emulate a monochrome framebuffer instead of the normal color framebuffer.
+When used with the \fBcgfour\fP, this option indicates that the monochrome
+screen should be numbered 0 and the color screen numbered 1 (instead of the
+other way around).
+.TP 8
+.B \-zaphod
+This option disables switching between screens by sliding the mouse off the
+left or right edges.  With this disabled, a window manager function must be 
+used to switch between screens.
+.TP 8
+.B \-debug
+This option indicates that the server is being run from a debugger,
+and that it should \fBnot\fP
+put its standard input,  output and error files into non-blocking mode.
+.TP 8
+.B "\-dev \fIfilename\fP"
+This option specifies the name of the framebuffer device file to be used
+instead of the built-in defaults described above.
+.SH "STARTING THE SERVER WITH XDM"
+.PP
+If X is to be used all of the time, the \fIxdm(1)\fP display manager should
+be used to start the server.  In addition to the normal configuration, the
+\fIXreset\fP script for the display should run the \fIkbd_mode\fP program
+to restore the keyboard should something happen to the server.  This can be
+done by editing the following line to the \fIxdm-config\fP file (usually
+found in the directory \fI/usr/lib/X11/xdm\fP, this is the file that is
+specified to \fIxdm\fP with the \fI-config\fP switch):
+.sp
+.in +0.5in
+.nf
+DisplayManager..0.reset:  /usr/lib/X11/xdm/Xreset.sun
+.fi
+.in -0.5in
+.sp
+and then copying the \fIXreset\fP script to \fI/usr/lib/X11/Xreset.sun\fP
+and adding the following line at the bottom:
+.sp
+.in +0.5in
+.nf
+kbd_mode -a
+.fi
+.in -0.5in
+.sp
+.SH "STARTING THE SERVER WITH XINIT"
+.PP
+If other window systems besides X are used, the system administrator should
+provide a script (such as \fI/usr/bin/X11/startx\fP) that runs the \fIxinit\fP 
+program to start the server.  This script will generally have the form:
+.sp
+.in +0.5in
+.nf
+xinit $firstclienttorun -- $serverarguments
+kbd_mode -a
+.ni
+.in -0.5in
+.sp
+.SH "USE WITH SUNWINDOWS OR NeWS"
+.PP
+The server can be run from outside 
+.BR suntools ,
+in which case it configures for all available displays (unless overridden
+by
+.B -dev
+options).
+Otherwise,  it can be run ``on top of'' either
+.B suntools
+or
+.BR NeWS .
+In this case,  it takes over the entire screen it was invoked from.
+.PP
+If you have multiple displays,  you can run
+.B suntools
+on both,  use
+.B adjacentscreens
+to move the mouse between them,
+and then run
+.I Xsun
+on top of one of the desktops.
+.B Adjacentscreens
+will still be in effect,  so you can move between window systems
+by sliding the mouse from one screen to another.
+.SH ENVIRONMENT
+.TP 8
+\fBXDEVICE\fP
+If present,  and if no explicit
+.B -dev
+options are given,  specifies the (colon separated) list of display devices
+to use.
+.TP 8
+\fBWINDOW_PARENT\fP
+If present,  specifies the
+.I /dev/win
+file of the
+.B suntools
+desktop.
+.SH "SEE ALSO"
+.PP
+X(1), Xserver(1), xdm(1), xinit(1)
+.SH BUGS
+If the server crashes,  it may leave the keyboard in a non-blocking mode,
+requiring the \fIkbd_mode -a\fP program be run as root.  This is usually
+put into the \fIxdm\fP reset script or the end of the \fIxinit\fP script
+used to start the server.
+.PP
+The auto-configuration depends on there being appropriate
+special files in the
+.I /dev
+directory for the framebuffers which are to be used.  Extra
+entries can confuse the server.
+For example,  the X/160C in fact has the hardware for a monochrome
+.B bwtwo0
+on the CPU board.  So if 
+.I /dev
+has a special file for
+.IR /dev/bwtwo0 ,
+the server will use it,  even though there is no monitor attached to the
+monochrome framebuffer.
+The server will appear to start,  but not to paint a cursor,  because the
+cursor is on the monochrome frame buffer.  The solution is to remove the
+.I /dev
+entries for any device you don't have a monitor for.
+.PP
+There is a bug in pre-FCS operating systems for the Sun-4
+which causes the server to crash driving a \fBcgtwo\fP.
+.PP
+There is a race condition that sometimes happens when running
+``on top of'' NeWS.  The symptom is that parts of NeWS show through,
+and that the keyboard is in a non-useful state.  There is no
+simple work-around.
+.PP
+Colon separated devices names do not work.
+.SH AUTHORS
+.TP 8
+U. C. Berkeley
+Adam de Boor.
+.TP 8
+Sun Microsystems
+David Rosenthal,  Stuart Marks,  Robin Schaufler,  Mike Schwartz,
+Frances Ho,  Geoff Lee,  and Mark Opperman.
+.TP 8
+MIT Laboratory for Computer Science
+.br
+Bob Scheifler, Keith Packard
+@

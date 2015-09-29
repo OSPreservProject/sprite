@@ -1,0 +1,14 @@
+local.mk
+sys.h
+sysCalls.c
+sysCode.c
+sysInt.h
+sysPrintf.c
+sysStubs.c
+sysSubr.s.old
+sysSysCall.c
+sysSysCall.h
+sysSysCallParam.h
+sysTestCall.c
+sysTestCall.h
+sysUnixSyscall.c

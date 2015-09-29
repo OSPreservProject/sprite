@@ -1,0 +1,64 @@
+     VARIABLE SUBSTITUTION WITH $
+          The dollar sign ($) may be used as a special shorthand  form
+          for  substituting  variable  values.   If  $  appears  in an
+          argument  that  isn't  enclosed  in  braces  then   variable
+          substitution  will occur.  The characters after the $, up to
+          the  first  character  that  isn't  a  number,  letter,   or
+          underscore,  are  taken  as  a  variable name and the string
+          value of that variable is substituted  for  the  name.   For
+          example,  if  variable  foo  has  the  value  test, then the
+          command                                                     
+
+               set a $foo.c                                           
+
+          is equivalent to the command                                
+
+               set a test.c                                           
+
+
+          There are two special forms for variable  substitution.   If
+          the next character after the name of the variable is an open
+          parenthesis, then the variable is assumed  to  be  an  array
+          name, and all of the characters between the open parenthesis
+          and the next close parenthesis are taken as  an  index  into
+          the array.  Command substitutions and variable substitutions
+          are performed on the  information  between  the  parentheses
+          before it is used as an index.  For example, if the variable
+          x is an array with one element named first and value 87  and
+          another element named 14 and value more, then the command   
+
+               set a xyz$x(first)zyx                                  
+          is equivalent to the command                                
+
+               set a xyz87zyx                                         
+
+          If the variable index has the value 14, then the command    
+
+               set a xyz$x($index)zyx                                 
+          is equivalent to the command                                
+
+               set a xyzmorezyx                                       
+
+          For more information on arrays,  see  VARIABLES  AND  ARRAYS
+          below.                                                      
+
+          The second special form for variables occurs when the dollar
+          sign  is  followed by an open curly brace.  In this case the
+          variable name consists of all the characters up to the  next
+          curly  brace.   Array  references  are  not possible in this
+          form:  the name between braces is  assumed  to  refer  to  a
+          scalar variable.  For example, if variable foo has the value
+          test, then the command                                      
+
+               set a abc${foo}bar                                     
+          is equivalent to the command                                
+
+               set a abctestbar                                       
+
+          Variable substitution does not occur in arguments  that  are
+          enclosed  in  braces:  the dollar sign and variable name are
+          passed through to the argument verbatim.
+
+          The dollar sign abbreviation is simply a shorthand form.  $a
+          is  completely  equivalent  to  [set a]; it is provided as a
+          convenience to reduce typing.

@@ -1,0 +1,51 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header$
+'/" 
+.so \*(]ltmac.sprite
+.HS RESTORE cmds
+.BS
+.SH NAME
+restore \- Restore a file, or set of files from a dump archive.
+.SH SYNOPSIS
+\fBrestore\fR [\fIoptions\fR] \fIpath1 path2 ...\fR
+.SH OPTIONS
+.IP "\fB\-f \fIfilename\fR" 15
+Use \fIfilename\fR as the name of the dump archive instead of the default.
+.IP "\fB\-help \fR" 15
+Print a help message.
+.IP "\fB\-n filenumber\fR" 15
+If there are multiple files in the archive, use file number \fBfilenumber\fR.
+.IP "\fB\-r \fR" 15
+Restore using relative pathnames.  The leading '/' is stripped off.
+.IP "\fB\-t \fR" 15
+Print the table of contents for the dump archive.
+.IP "\fB\-v \fR" 15
+Verbose.  The name of each file is listed as it is dumped.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBrestore\fR command is used to restore a file or set of files
+from a dump archive.  The dump archive is created by the \fBdump\fR
+command.  If a specified path is a single file, then that file
+is restored.  If it is a directory, all files contained in that
+directory will be recursively restored.  If the path is a 
+shell syntax regular expression, then all files in the dump archive
+matching the expression will be restored.
+
+All the specified paths should be absolute, hard paths.  I.e., they
+should start with the root directory, and should not contain any
+symbolic links.  Be especially careful when restoring something to
+your home directory because most home directories on Sprite are symbolic
+links from the /users directory.
+
+.SH KEYWORDS
+dump, restore, tape, backup, tar
+

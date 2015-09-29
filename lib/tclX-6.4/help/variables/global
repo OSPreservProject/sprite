@@ -1,0 +1,8 @@
+          global varname ?varname ...?
+               This command is ignored unless a Tcl procedure is being
+               interpreted.    If  so,  then  it  declares  the  given
+               varname's to be  global  variables  rather  than  local
+               ones.   For  the duration of the current procedure (and
+               only while executing in  the  current  procedure),  any
+               reference  to  any  of  the varnames will be bound to a
+               global variable instead of a local one.

@@ -1,0 +1,11 @@
+
+
+          alarm seconds
+               Instructs the system to send a SIGALRM signal in the
+               specified number of seconds.  This is a floating point
+               number, so fractions of a section may be specified.  If
+               seconds is 0.0, any previous alarm request is canceled.
+               Only one alarm at a time may be active; the command
+               returns the number of seconds left in the previous
+               alarm.  On systems without the setitimer system call,
+               seconds is rounded up to an even number of seconds.

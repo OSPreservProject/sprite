@@ -1,0 +1,111 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @@;
+
+
+9.4
+date     91.09.10.18.45.04;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.11.30.17.43.26;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.08.13.18.46;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.02.10.39.45;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.14;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.04.15.20.24;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+PUBHDRS		+= bf.h byte.h hash.h trace.h dump.h
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+9.3
+log
+@Added trace routines to list of headers.
+@
+text
+@d8 1
+a8 1
+PUBHDRS		+= bf.h byte.h hash.h trace.h dump.h sospRecord.h traceLog.h
+@
+
+
+9.2
+log
+@Added dump.h to directory list.
+@
+text
+@d8 1
+a8 1
+PUBHDRS		+= bf.h byte.h hash.h trace.h dump.h
+@
+
+
+9.1
+log
+@updated PUBHDRS
+@
+text
+@d8 1
+a8 1
+PUBHDRS		+= bf.h byte.h hash.h trace.h 
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+PUBHDRS		+= byte.h
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

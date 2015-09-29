@@ -1,0 +1,32 @@
+Sept. 15, 1989
+
+Using pdev /hosts/fenugreek/./pdevD1
+Write 1 bytes 1000 times , time =    3.890
+Write 2 bytes 1000 times , time =    3.730
+Write 4 bytes 1000 times , time =    3.790
+Write 8 bytes 1000 times , time =    3.760
+Write 16 bytes 1000 times , time =    3.760
+Write 32 bytes 1000 times , time =    3.790
+Write 64 bytes 1000 times , time =    3.750
+Write 128 bytes 1000 times , time =    3.790
+Write 256 bytes 1000 times , time =    3.880
+Write 512 bytes 1000 times , time =    3.920
+Write 1024 bytes 1000 times , time =    4.40 
+Write 2048 bytes 1000 times , time =    4.240
+Write 4096 bytes 1000 times , time =    4.900
+Write 8192 bytes 1000 times , time =    6.30
+Read 1 bytes 1000 times , time =    3.730
+Read 2 bytes 1000 times , time =    3.810
+Read 4 bytes 1000 times , time =    3.810
+Read 8 bytes 1000 times , time =    3.980
+Read 16 bytes 1000 times , time =    3.800
+Read 32 bytes 1000 times , time =    3.700
+Read 64 bytes 1000 times , time =    3.760
+Read 128 bytes 1000 times , time =    3.770
+Read 256 bytes 1000 times , time =    3.860
+Read 512 bytes 1000 times , time =    3.840
+Read 1024 bytes 1000 times , time =    3.900
+Read 2048 bytes 1000 times , time =    4.120
+Read 4096 bytes 1000 times , time =    4.530
+Read 8192 bytes 1000 times , time =    5.280
+Software termination

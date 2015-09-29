@@ -1,0 +1,162 @@
+.\"
+.\" Keylist.man
+.\"
+.\" Extended Tcl binary file search command.
+.\"----------------------------------------------------------------------------
+.\" Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+.\"
+.\" Permission to use, copy, modify, and distribute this software and its
+.\" documentation for any purpose and without fee is hereby granted, provided
+.\" that the above copyright notice appear in all copies.  Karl Lehenbauer and
+.\" Mark Diekhans make no representations about the suitability of this
+.\" software for any purpose.  It is provided "as is" without express or
+.\" implied warranty.
+.\"----------------------------------------------------------------------------
+.\" $Id: Keylist.man,v 2.0 1992/10/16 04:49:06 markd Rel $
+.\"----------------------------------------------------------------------------
+.\"
+.TH "Tcl_GetKeyedListKeys" TCL "" "Tcl"
+.ad b
+.SH NAME
+Tcl_GetKeyedListKeys, Tcl_GetKeyedListField, Tcl_SetKeyedListField, Tcl_DeleteKeyedListField - Keyed list management routines.
+.SH SYNOPSIS
+.PP
+.nf
+.ft CW
+#include <tclExtend.h>
+
+int
+Tcl_GetKeyedListKeys (Tcl_Interp  *interp,
+                      const char  *subFieldName,
+                      const char  *keyedList,
+                      int         *keyesArgcPtr,
+                      char      ***keyesArgvPtr);
+
+int
+Tcl_GetKeyedListField (Tcl_Interp  *interp,
+                       const char  *fieldName,
+                       const char  *keyedList,
+                       char       **fieldValuePtr);
+
+char *
+Tcl_SetKeyedListField (Tcl_Interp  *interp,
+                       const char  *fieldName,
+                       const char  *fieldvalue,
+                       const char  *keyedList);
+
+char *
+Tcl_DeleteKeyedListField (Tcl_Interp  *interp,
+                          const char  *fieldName,
+                          const char  *keyedList);
+.ft R
+.fi
+'
+.SH DESCRIPTION
+.PP
+These routines perform operations on keyed lists.  See the \fIExtended Tcl\fR 
+man page for a description of keyed lists.
+'
+.SS Tcl_GetKeyedListKeys
+.PP
+Retrieve a list of keyes from a keyed list.  The list is walked rather
+than converted to a argv for increased performance.
+.PP
+Parameters:
+.RS 2
+\fBo \fIinterp\fR - Error message will be return in result if there is an
+error.
+.br
+\fBo subFieldName\fR - If "" or NULL, then the keys are retreved for
+the top level of the list.  If specified, it is name of the field who's
+subfield keys are to be retrieve.
+.br
+\fBo \fIkeyedList\fR - The list to search for the field.
+.br
+\fBo \fIkeyesArgcPtr\fR - The number of keys in the keyed list is returned
+here.
+.br
+\fBo \fIkeyesArgvPtr\fR - An argv containing the key names.  It is dynamically
+allocated, containing both the array and the strings. A single call
+to ckfree will release it.
+.RE
+.PP
+Returns:
+.RS 2
+TCL_OK if a list of keys is returned, TCL_BREAK if the field was not found, or
+TCL_ERROR if an error occured.
+.RE
+'
+.SS Tcl_GetKeyedListField
+.PP
+Retrieve a field value from a keyed list.  The list is walked rather than
+converted to a argv for increased performance.  This if the name contains
+sub-fields, this function recursive.
+.PP
+Parameters:
+.RS 2
+\fBo \fIinterp\fR - Error message will be return in result if there is an
+error.
+.br
+\fBo \fIfieldName\fR - The name of the field to extract.  Will recusively
+process sub-field names seperated by `.'.
+.br
+\fBo \fIkeyedList\fR - The list to search for the field.
+.br
+\fBo \fIfieldValuePtr\fR - If the field is found, a pointer to a dynamicly
+allocated string containing the value is returned here.  If NULL is
+specified, then only the presence of the field is validated, the
+value is not returned.
+.RE
+.PP
+Returns:
+.RS 2
+TCL_OK if the field was found,  TCL_BREAK if the field was not found or
+TCL_ERROR if an error occured.
+.RE
+'
+.SS Tcl_SetKeyedListField
+.PP
+Set a field value in keyed list.
+.PP
+Parameters:
+.RS 2
+\fBo \fIinterp\fR - Error message will be return in result if there is an
+error.
+.br
+\fBo \fIfieldName\fR - The name of the field to extract.  Will recusively
+process sub-field names seperated by `.'.
+.br
+\fBo \fIfieldValue\fR - The value to set for the field.
+.br
+\fBo \fIkeyedList\fR - The keyed list to set a field value in, may be an
+NULL or an empty list to create a new keyed list.
+.RE
+.PP
+Returns:
+.RS 2
+A pointer to a dynamically allocated string, or NULL if an error
+occured.
+.RE
+'
+.SS Tcl_DeleteKeyedListField
+.PP
+Delete a field value in keyed list.
+.PP
+Parameters:
+.RS 2
+\fBo \fIinterp\fR - Error message will be return in result if there is an
+error.
+.br
+\fBo \fIfieldName\fR - The name of the field to extract.  Will recusively
+process sub-field names seperated by `.'.
+.br
+\fBo \fIfieldValue\fR - The value to set for the field.
+.br
+\fBo \fIkeyedList\fR - The keyed list to delete the field from.
+.RE
+.PP
+Returns:
+.RS 2
+A pointer to a dynamically allocated string containing the new list, or
+NULL if an error occured.
+.RE

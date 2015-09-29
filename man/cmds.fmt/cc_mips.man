@@ -1,0 +1,660 @@
+
+
+
+cc                        User Commands                        cc
+
+
+
+NNaammee
+     cc - RISC C compiler
+
+SSyynnttaaxx
+     cccc [ _o_p_t_i_o_n ] ... _f_i_l_e
+
+DDeessccrriippttiioonn
+     The command invokes the RISC _u_c_o_d_e C compiler.  It produces
+     RISC object code in RISC extended _c_o_f_f format (the default),
+     binary or symbolic _u_c_o_d_e, _u_c_o_d_e object files and binary or
+     symbolic assembly language.
+
+     The command accepts the following arguments:
+
+     o+    Arguments ending in .c are interpreted as C source pro-
+          grams.  They are compiled, and the resulting object
+          file has the same name as the source program except .o
+          is substituted for .c.  If a single C source program is
+          compiled and loaded at once, the .o file is deleted.
+
+     o+    Arguments ending in .s are interpreted as assembly
+          source programs.  When they are assembled, they produce
+          a .o file.
+
+     o+    Arguments ending in .i are interpreted as C source
+          after being processed by the C preprocessor.  They are
+          compiled without being processed by the C preprocessor.
+
+     If the highest level of optimization is specified (with the
+     --OO33 flag) or only _u_c_o_d_e object files are to be produced
+     (with the --jj flag) each C source file is compiled into a
+     _u_c_o_d_e object file. The _u_c_o_d_e object file is left in a file
+     whose name consists of the last component of the source with
+     .u substituted for .c.
+
+     The following suffixes aid compiler development, but are not
+     generally used: .B, .O., .S, and .M.  These arguments are
+     interpreted as binary _u_c_o_d_e, produced by the front end,
+     optimizer, ucode object file splitter, and ucode merger
+     respectively.  Arguments whose names end with .U are assumed
+     to be symbolic _u_c_o_d_e.  Arguments whose names end with .G are
+     assumed to be binary assembly language, which is produced by
+     the code generator and the symbolic to binary assembler.
+
+     Files that are assumed to be binary _u_c_o_d_e, symbolic _u_c_o_d_e,
+     or binary assembly language by the suffix conventions are
+     also assumed to have their corresponding symbol table in a
+     file with a .T suffix.
+
+     The command always defines the C preprocessor macro
+     LLAANNGGUUAAGGEE__CC when a .c file is being compiled.  The command
+     defines the C preprocessor macro LLAANNGGUUAAGGEE__AASSSSEEMMBBLLYY when a .s
+
+
+
+Sprite v1.0                   RISC                              1
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+     file is compiled.
+
+OOppttiioonnss
+     The following options are interpreted by See for load-time
+     options.
+
+     --cc             Suppress the loading phase of the compilation
+                    and force an object file to be produced even
+                    if only one program is compiled.
+
+     --gg00            Do not produce symbol table information for
+                    symbolic debugging.  This is the default.
+
+     --gg11            Produce debugger symbol table information.
+                    This option limits optimization, but some
+                    optimizations that affect debugger accuracy
+                    might be performed. The debugger symbol table
+                    is built before optimizations and cannot
+                    reflect the optimizations.
+
+     --gg or --gg22      Produce debugger symbol table information and
+                    inhibit optimizations that limit full sym-
+                    bolic debugging. The debugger symbol table is
+                    accurate.
+
+     --gg33            Produce debugger symbol table. This option
+                    does not limit optimizations, so the symbol
+                    table may be inaccurate. The symbol table is
+                    built before optimizations and cannot reflect
+                    the optimizations.
+
+     --LL             Change the algorithm of searching for lliibb_x..aa
+                    or lliibb_x..bb to nneevveerr look in the default direc-
+                    tories.  This is useful when the default
+                    directories for libraries should not be
+                    searched and only the directories specified
+                    by the option --LL_d_i_r are to be searched.
+
+     --ww             Suppress warning messages.
+
+     --pp00            Do not permit profiling.  This is the
+                    default.  If loading happens, the standard
+                    runtime startup routine (ccrrtt00..oo) is used and
+                    the profiling libraries are not searched.
+
+     --pp11 or --pp      Set up for profiling by periodically sampling
+                    the value of the program counter.  This
+                    option only affects the loading.  When load-
+                    ing happens, this option replaces the stan-
+                    dard runtime startup routine with the profil-
+                    ing runtime startup routine (mmccrrtt00..oo) and
+                    searches the level 1 profiling library
+
+
+
+Sprite v1.0                   RISC                              2
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+                    (lliibbpprrooff11..aa).  When profiling happens, the
+                    startup routine calls and produces a file
+                    _m_o_n._o_u_t that contains execution-profiling
+                    data for use with the postprocessor
+
+     --OO00            Turn off all optimizations.
+
+     --OO11            Turn on all optimizations that complete fast.
+                    This is the default.
+
+     --OO or --OO22      Invoke the global _u_c_o_d_e optimizer.
+
+     --OO33            Perform all optimizations, including global
+                    register allocation.  This option must pre-
+                    cede all source file arguments.  With this
+                    option, a _u_c_o_d_e object file is created for
+                    each C source file and left in a .u file.
+                    The newly created ucode object files, the
+                    ucode object files specified on the command
+                    line, the runtime startup routine, and all
+                    the runtime libraries are ucode linked.
+                    Optimization is performed on the resulting
+                    ucode linked file and then it is linked as
+                    normal producing an a.out file. A resulting
+                    .o file is not left from the ucode linked
+                    result.  In fact --cc cannot be specified with
+                    --OO33.
+
+     --ffeeeeddbbaacckk _f_i_l_e Use with the --ccoorrdd option to specify the
+                    feedback file.  This _f_i_l_e is produced by with
+                    its --ffeeeeddbbaacckk option from an execution of the
+                    program produced by
+
+     --ccoorrdd          Run the procedure-rearranger on the resulting
+                    file after linking.  The rearrangement is
+                    performed to reduce the cache conflicts of
+                    the program's text.  The output is left in
+                    the file specified by the --oo _o_u_t_p_u_t option or
+                    a.out by default.  At least one --ffeeeeddbbaacckk
+                    _f_i_l_e must be specified.
+
+     --jj             Compile the specified source programs, and
+                    leave the _u_c_o_d_e object file output in
+                    corresponding files with the .u suffix.
+
+     --kkoo _o_u_t_p_u_t     Name the output file created by the ucode
+                    loader as _o_u_t_p_u_t. This file is not removed.
+                    If this file is compiled, the object file is
+                    left in a file whose name consists of _o_u_t_p_u_t
+                    with the suffix changed to an .o.  If _o_u_t_p_u_t
+                    has no suffix, an .o suffix is appended to
+                    _o_u_t_p_u_t.
+
+
+
+Sprite v1.0                   RISC                              3
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+     --kk             Pass options that start with a --kk to the
+                    ucode loader.  This option is used to specify
+                    ucode libraries (with --kkll_x ) and other ucode
+                    loader options.
+
+     --SS             Compile the specified source programs and
+                    leave the symbolic assembly language output
+                    in corresponding files suffixed with .s.
+
+     --PP             Run only the C macro preprocessor and put the
+                    result for each source file using suffix con-
+                    vention (for example, .c and .s) in a
+                    corresponding .i file.  The .i file does not
+                    have number lines (#) in it.  This sets the
+                    --ccpppp option.
+
+     --EE             Run only the C macro preprocessor on the
+                    files (regardless of any suffix or not), and
+                    send the result to the standard output.  This
+                    sets the --ccpppp option.
+
+     --EEmm            Runs only the macro preprocessor on the named
+                    C programs and produces the makefile depen-
+                    dencies.
+
+     --oo _o_u_t_p_u_t      Name the final output file _o_u_t_p_u_t.  If this
+                    option is used, the file a.out is unaffected.
+
+     --DD_n_a_m_e=_d_e_f
+     --DD_n_a_m_e         Define the _n_a_m_e to the C macro preprocessor,
+                    as if by `#define'.  If a definition is not
+                    given, the name is defined as 1.
+
+     --UU_n_a_m_e         Remove any initial definition of _n_a_m_e.
+
+     --II_d_i_r          Search for #include files whose names do not
+                    begin with a slash (/) in the following
+                    order: (1) in the directory of the _d_i_r argu-
+                    ment, (2) in the directories specified by --II
+                    options, (3) in the standard directory
+                    (//uussrr//iinncclluuddee).
+
+     --II             Do not search for #include in the standard
+                    directory (//uussrr//iinncclluuddee).
+
+     --MM             Specifies the floating point type to be used
+                    for double-precision floating point and is
+                    passed on to as the map option.
+
+     --WW11,,MM          Same a -M, except it is POSIX compliant.
+
+     --GG _n_u_m         Specify the maximum size, in bytes, of a data
+
+
+
+Sprite v1.0                   RISC                              4
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+                    item that is to be accessed from the global
+                    pointer.  The _n_u_m argument is interpreted as
+                    a decimal number.  If _n_u_m is zero, data is
+                    not accessed from the global pointer.  The
+                    default value for _n_u_m is 8 bytes.
+
+     --vv             Print the passes as they execute with their
+                    arguments and their input and output files.
+                    Also prints resource usage in the C shell
+                    _t_i_m_e format.
+
+     --VV             Print the version of the driver and the ver-
+                    sions of all passes.  This is done with the
+                    command.
+
+     --ssttdd           Produce warnings for things that are not
+                    standard in the language.
+
+     --YY_e_n_v_i_r_o_n_m_e_n_t  Compiles C programs for _e_n_v_i_r_o_n_m_e_n_t.  If
+                    _e_n_v_i_r_o_n_m_e_n_t is SYSTEM_FIVE or is omitted, it
+                    defines SYSTEM_FIVE for the preprocessor, If
+                    the loader is invoked, it specifies that the
+                    System V version of the C runtime library is
+                    used.  Also, if the math library is specified
+                    with the --llmm option, the System V version is
+                    used.  If _e_n_v_i_r_o_n_m_e_n_t is POSIX, it defines
+                    POSIX for the preprocessor.  If the environ-
+                    ment variable PROG_ENV has the value
+                    SYSTEM_FIVE or POSIX, the effect is the same
+                    as when specifying the corresponding --YY_e_n_-
+                    _v_i_r_o_n_m_e_n_t option to The --YY option overrides
+                    the PROG_ENV variable; --YYBBSSDD can be used to
+                    override all special actions.
+
+     --ccpppp           Run the C macro preprocessor on C and assem-
+                    bly source files before compiling.  This is
+                    the default for
+
+     --nnooccpppp         Do not run the C macro preprocessor on C and
+                    assembly source files before compiling.
+
+     --OOlliimmiitt _n_u_m    Specify the maximum size, in basic blocks, of
+                    a routine that will be optimized by the glo-
+                    bal optimizer.  If a routine has more than
+                    the specified number of basic blocks, it can-
+                    not be optimized and a message is printed.  A
+                    --OO,, --OO22,, or --OO33 must be used to specify the
+                    global optimizer.  The argument must also be
+                    specified. The argument _n_u_m is interpreted as
+                    a decimal number.  The default value for _n_u_m
+                    is 500 basic blocks.
+
+
+
+
+Sprite v1.0                   RISC                              5
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+     --ssiiggnneedd        Causes all _c_h_a_r declarations to be _s_i_g_n_e_d
+                    _c_h_a_r declarations. This is the default.
+
+     --uunnssiiggnneedd      Causes all _c_h_a_r declarations to be _u_n_s_i_g_n_e_d
+                    _c_h_a_r declarations.
+
+     --vvoollaattiillee      Causes all variables to be treated as _v_o_l_a_-
+                    _t_i_l_e.
+
+     --vvaarraarrggss       Prints warnings for lines that may require
+                    the _v_a_r_a_r_g_s._h macros.
+
+     --ff             Causes the compiler not to promote expres-
+                    sions of type _f_l_o_a_t to type _d_o_u_b_l_e.
+
+     --ffllooaatt         Same as the --ff option.
+
+     --ffiillll _n_u_m_b_e_r   Set the fill pattern for ``holes'' within an
+                    output section. The _n_u_m_b_e_r argument is a four
+                    byte hex constant.  The --EEBB and --EELL options
+                    are needed only when compiling for RISC
+                    machines from vendors other than Digital.
+                    The default target byte ordering matches the
+                    machine where the compiler is running.  The
+                    options --EEBB and --EELL specify the target byte
+                    ordering (big-endian and little-endian,
+                    respectively).  The compiler also defines a C
+                    preprocessor macro for the target byte order-
+                    ing.  These C preprocessor macros are MMIIPPSSEEBB
+                    and MMIIPPSSEELL for big-endian and little-endian
+                    byte ordering respectively.
+
+     If the specified target byte ordering does not match the
+     machine where the compiler is running, then the runtime
+     startups and libraries come from //uussrr//lliibbeebb for big-endian
+     runtimes on a little-endian machine and from //uussrr//lliibbeell for
+     little-endian runtimes on a big-endian machine.
+
+     --EEBB            Produce object files targeted for big-endian
+                    byte ordering.  The C preprocessor macro MMIIPP--
+                    SSEEBB is defined by the compiler.
+
+     --EELL            Produce object files targeted for little-
+                    endian byte ordering.  The C preprocessor
+                    macro MMIIPPSSEELL is defined by the compiler.
+
+     The following options primarily aid compiler development and
+     are not generally used:
+
+     --HH_c            Halt compiling after the pass specified by
+                    the character _c, producing an intermediate
+                    file for the next pass.  The _c can be [[
+
+
+
+Sprite v1.0                   RISC                              6
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+                    ffjjuussmmooccaa ]].. It selects the compiler pass in
+                    the same way as the --tt option.  If this
+                    option is used, the symbol table file pro-
+                    duced and used by the passes is the last com-
+                    ponent of the source file with the suffix
+                    changed to .T.  It is not removed.
+
+     --KK             Build and use intermediate file names with
+                    the last component of the source file's  name
+                    replacing its suffix with the conventional
+                    suffix for the type of file (for example, .B
+                    file for binary _u_c_o_d_e, produced by the front
+                    end).  These intermediate files are never
+                    removed even when a pass encounters a fatal
+                    error.  When ucode linking is performed and
+                    the --KK option is specified, the base name of
+                    the files created after the ucode link is
+                    u.out by default.  If --kkoo _o_u_t_p_u_t is speci-
+                    fied, the base name of the object file is
+                    _o_u_t_p_u_t without the suffix.  Suffixes are
+                    appended to _o_u_t_p_u_t if it does not have a suf-
+                    fix.
+
+     --##             Converts binary _u_c_o_d_e files (.B) or optimized
+                    binary ucode files (.O) to symbolic _u_c_o_d_e (a
+                    .U file).  If a symbolic ucode file is to be
+                    produced by converting the binary _u_c_o_d_e from
+                    the C compiler front end then the front end
+                    option --XXuu iiss uusseedd..
+
+     --WW_c[_c...],_a_r_g_1[,_a_r_g_2...]
+                    Pass the argument[s] _a_r_g_i to the compiler
+                    pass[es] _c[_c..]. The _c'_s are one of [[
+                    ppffjjuussmmooccaabbllyyzz ]].. The c's selects the compiler
+                    pass in the same way as the --tt option.
+
+     The options --tt[hhppffjjuussmmooccaabbllyyzzrrnntt], --hh_p_a_t_h, and --BB_s_t_r_i_n_g
+     select a name to use for a particular pass, startup routine,
+     or standard library.  These arguments are processed from
+     left to right so their order is significant.  When the --BB
+     option is encountered, the selection of names takes place
+     using the last --hh and --tt options.  Therefore, the --BB option
+     is always required when using --hh or --tt.  Sets of these
+     options can be used to select any combination of names.
+
+     The --EEBB or --EELL options and the --pp[[0011]] options must precede
+     all --BB options because they can affect the location of run-
+     time libraries and which runtime libraries are used.
+
+     --tt[hhppffjjuussmmooccaabbllyyzzrrnntt]
+                    Select the names.  The names must be selected
+                    from the options in the following table:
+
+
+
+Sprite v1.0                   RISC                              7
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+                    Name      Character
+                    include     h  (see note below)
+                    cpp         p
+                    ccom        f
+                    ujoin       j
+                    uld         u
+                    usplit      s
+                    umerge      m
+                    uopt        o
+                    ugen        c
+                    as0         a
+                    as1         b
+                    ld          l
+                    ftoc        y
+                    cord        z
+                    [m]crt0.o   r
+                    libprof1.a  n
+                    btou, utob  t
+                    If the character h is in the --tt argument then
+                    a directory is added to the list of direc-
+                    tories to be used in searching for #include
+                    files.  This directory name has the form
+                    COMP_TARGET_ROOT/usr/include_s_t_r_i_n_g . This
+                    directory is to contain the include files for
+                    the _s_t_r_i_n_g release of the compiler.  The
+                    standard directory is still searched.
+
+     --hh_p_a_t_h         Use _p_a_t_h rather than the directory where the
+                    name is normally found.
+
+     --BB_s_t_r_i_n_g       Append _s_t_r_i_n_g to all names specified by the
+                    --tt option.  If the --tt option has not been
+                    processed before the --BB,, the --tt option is
+                    assumed to be the following: hpfjusmocab-
+                    lyzrnt.  This list designates all names.  If
+                    the --tt argument has not been processed before
+                    the --BB argument, --BB_s_t_r_i_n_g is passed to the
+                    loader to use with its --ll_x arguments.
+
+     Invoking the compiler with a name of the form cccc_s_t_r_i_n_g has
+     the same effect as using a --BB_s_t_r_i_n_g option on the command
+     line.
+
+     If the environment variable COMP_HOST_ROOT is set, the value
+     is used as the root directory for all pass names rather than
+     the default slash (/).  If the environment variable
+     COMP_TARGET_ROOT is set, the value is used as the root
+     directory for all include and library names rather than the
+     default slash (/).  This affects the standard directory for
+     #include files, /usr/include, and the standard library,
+     /usr/lib/libc.a.  If this is set then the only directory
+     that is searched for libraries, using the --ll_x option, is
+
+
+
+Sprite v1.0                   RISC                              8
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+     COMP_TARGET_ROOT/usr/lib .
+
+     If the environment variable TMPDIR is set, the value is used
+     as the directory to place any temporary files rather than
+     the default //ttmmpp// ..
+
+     If the environment variable RLS_ID_OBJECT is set, the value
+     is used as the name of an object to link in if a link takes
+     place.  This is used to add release identification informa-
+     tion to objects.  It is always the last object specified to
+     the loader.
+
+     Other arguments are assumed to be either loader options or
+     C-compatible object files, typically produced by an earlier
+     run, or perhaps libraries of C-compatible routines.  These
+     files, together with the results of any compilations speci-
+     fied, are loaded in the order given, producing an executable
+     program with the default name aa..oouutt..
+
+OOppttiioonnss
+     The ULTRIX C compiler provides the following default symbols
+     for your use.  These symbols are useful in ifdef statements
+     to isolate code for one of the particular cases.  Thus,
+     these symbols can be useful for ensuring portable code.
+
+     unix           Any UNIX system
+
+     bsd4_2         Berkeley UNIX Version 4.2
+
+     ultrix         ULTRIX only
+
+     mips           Any RISC architecture
+
+     MIPSEL         Little endian variant of MIPS architecture
+
+     host_mips      Native compilation environment (as opposed to
+                    cross-compiler)
+
+RReessttrriiccttiioonnss
+     The standard library, /usr/lib/libc.a, is loaded by using
+     the -lc loader option and not a full path name. The wrong
+     library may be loaded if there are files with the name
+     libc.a_s_t_r_i_n_g in the directories specified with the --LL loader
+     option or in the default directories searched by the loader.
+
+     The handling of include directories and libc.a is confusing.
+
+FFiilleess
+     file.c               input file
+     file.o               object file
+     a.out                loaded output
+     /tmp/ctm?            temporary
+
+
+
+Sprite v1.0                   RISC                              9
+
+
+
+
+
+
+cc                        User Commands                        cc
+
+
+
+     /usr/lib/cpp         C macro preprocessor
+     /usr/lib/ccom        C front end
+     /usr/lib/ujoin       binary ucode and symbol table joiner
+     /usr/bin/uld         ucode loader
+     /usr/lib/usplit      binary ucode and symbol table splitter
+     /usr/lib/umerge      procedure intergrator
+     /usr/lib/uopt        optional global ucode optimizer
+     /usr/lib/ugen        code generator
+     /usr/lib/as0         symbolic to binary assembly language
+     translator
+     /usr/lib/as1         binary assembly language assembler and
+     reorganizer
+     /usr/lib/crt0.o      runtime startup
+     /usr/lib/mcrt0.o     startup for profiling
+     /usr/lib/libc.a      standard library, see intro(3)
+     /usr/lib/libprof1.a  level 1 profiling library
+     /usr/include         standard directory for #include files
+     /usr/bin/ld          MIPS loader
+     /usr/lib/ftoc        interface between and cord
+     /usr/lib/cord        procedure-rearranger
+     /usr/bin/btou        binary to symbolic ucode translator
+     /usr/bin/utob        symbolic to binary ucode translator
+     mon.out              file produced for analysis by
+
+     Runtime startups and libraries for the opposite byte sex of
+     machine the compiler is running on have the same names but
+     are located in different directories.  For big-endian run-
+     times on a little-endian machine the directory is /usr/libeb
+     and for little-endian runtimes on a big-endian machine the
+     directory is /usr/libel.
+
+SSeeee AAllssoo
+     dbx(1), ld(1), pixie(1), prof(1), what(1), monitor(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                   RISC                             10
+
+
+

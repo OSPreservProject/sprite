@@ -1,0 +1,2862 @@
+
+ar.h,0
+
+assert.h,149
+#define _assert(32,785
+#define _assert(37,932
+#define _assert(48,1210
+#define _assert(54,1373
+# define _assert(64,1613
+# define assert(62,1559
+
+bit.h,270
+#define Bit_Alloc(39,1059
+#define Bit_Clear(54,1567
+#define Bit_Copy(61,1796
+#define Bit_Free(43,1221
+#define Bit_IsClear(58,1709
+#define Bit_IsSet(50,1427
+#define Bit_NumBytes(36,988
+#define Bit_NumInts(33,896
+#define Bit_Set(46,1288
+#define Bit_Zero(65,1935
+
+bstring.h,0
+
+cfuncproto.h,112
+#define	_ARGS_(63,1725
+#define	_ARGS_(65,1751
+typedef void *_VoidPtr;75,1877
+typedef char *_VoidPtr;77,1907
+
+ckalloc.h,225
+#define ckalloc(49,1494
+#define ckalloc(61,1924
+#define ckalloc(69,2066
+#define ckfree(50,1552
+#define ckfree(62,1958
+#define ckfree(70,2095
+#define ckstrdup(51,1617
+#define ckstrdup(63,2001
+#define ckstrdup(71,2121
+
+cthreads.h,1456
+#define	ASSERT(536,13922
+#define	ASSERT(555,14193
+#define	C_ARG_DECLS(176,6152
+#define	C_ARG_DECLS(184,6303
+typedef void *any_t;179,6219
+typedef char *any_t;187,6365
+#define	condition_alloc(349,9973
+#define	condition_broadcast(375,10602
+#define	condition_clear(357,10286
+#define	condition_free(362,10394
+#define	condition_init(350,10052
+#define	condition_name(356,10224
+#define	condition_set_name(355,10173
+#define	condition_signal(368,10494
+} *condition_t;345,9876
+#define	cthread_assoc(459,12183
+typedef any_t (*cthread_fn_t)395,10918
+typedef int	cthread_key_t;504,13243
+#define	cthread_queue_alloc(235,7195
+#define	cthread_queue_deq(259,7924
+#define	cthread_queue_enq(239,7392
+#define	cthread_queue_free(237,7343
+#define	cthread_queue_head(257,7872
+#define	cthread_queue_init(236,7285
+} *cthread_queue_item_t;229,7059
+#define	cthread_queue_map(266,8108
+#define	cthread_queue_preq(249,7645
+} *cthread_queue_t;225,6968
+#define	cthread_self(461,12307
+} *cthread_t;414,11274
+#define	mutex_alloc(305,8890
+#define	mutex_clear(314,9210
+#define	mutex_free(315,9247
+#define	mutex_init(306,8957
+#define mutex_lock(324,9471
+#define	mutex_name(313,9152
+#define	mutex_set_name(312,9105
+} *mutex_t;301,8780
+#define mutex_try_lock(323,9419
+#define mutex_unlock(330,9588
+#define spin_lock(291,8582
+#define	ur_cthread_ptr(449,11877
+#define	ur_cthread_ptr(452,11978
+#define	ur_cthread_self(457,12125
+} *ur_cthread_t;439,11752
+
+ctype.h,301
+#define isalnum(44,1314
+#define isalpha(47,1407
+#define isascii(77,2150
+#define iscntrl(50,1488
+#define isdigit(53,1557
+#define isgraph(56,1624
+#define islower(59,1729
+#define isprint(62,1796
+#define ispunct(65,1863
+#define isspace(68,1930
+#define isupper(71,1997
+#define isxdigit(74,2064
+
+db.h,66
+} Db_Handle;69,2698
+} Db_LockHow;52,2054
+} Db_LockWhen;38,1478
+
+errno.h,0
+
+fcntl.h,0
+
+fmt.h,31
+typedef int Fmt_Format;35,864
+
+fs.h,906
+} Fs_Attributes;155,5624
+} Fs_Device;607,20928
+} Fs_DomainInfo;547,18895
+} Fs_FileID;265,9681
+} Fs_IOVector;584,19969
+typedef char Fs_PathName[617,21082
+} Fs_Prefix;565,19447
+typedef ClientData Fs_TimeoutHandler;612,20995
+} Fs_TwoPaths;530,18247
+} Fs_UserIDs;277,10088
+} Ioc_LockArgs;405,14220
+} Ioc_MapArgs;429,14801
+} Ioc_MmapInfoArgs;458,15735
+} Ioc_Owner;418,14603
+} Ioc_PrefixArgs;436,14979
+} Ioc_RepositionArgs;343,12212
+} Ioc_WriteBackArgs;449,15461
+extern 619,21134
+extern 620,21166
+extern 621,21208
+extern 622,21252
+extern 623,21298
+extern 624,21350
+extern 625,21386
+extern 626,21420
+extern 627,21464
+extern 628,21498
+extern 629,21553
+extern 631,21600
+extern 632,21645
+extern 633,21689
+extern 634,21733
+extern 635,21773
+extern 636,21812
+extern 637,21859
+extern 638,21902
+extern 639,21948
+extern 640,21992
+extern 641,22036
+extern 642,22080
+extern 643,22122
+
+fsCmd.h,59
+} Fs_PrefixControl;153,6088
+} Fs_PrefixLoadInfo;161,6366
+
+grp.h,0
+
+hash.h,159
+} Hash_Entry;51,1543
+#define Hash_GetValue(106,3201
+} Hash_Search;95,3103
+#define Hash_SetValue(114,3322
+#define	Hash_Size(120,3470
+} Hash_Table;83,2685
+
+host.h,46
+} Host_Entry;78,2646
+} Host_NetType;62,2044
+
+list.h,382
+#define LIST_AFTER(272,8826
+#define LIST_ATFRONT(276,8946
+#define LIST_ATREAR(278,9006
+#define LIST_BEFORE(274,8880
+#define LIST_FORALL(143,4860
+#define List_First(195,6283
+#define List_InitElement(111,3792
+#define List_IsAtEnd(178,5854
+#define List_IsEmpty(161,5389
+#define List_Last(210,6681
+} List_Links;79,2897
+#define List_Next(242,7634
+#define List_Prev(226,7160
+
+mach.h,0
+
+mach_error.h,0
+
+mach_init.h,198
+#define	current_task(94,2751
+#define mach_host_priv_self(83,2507
+#define mach_master_device_port(84,2554
+#define	mach_task_self(92,2709
+#define round_page(125,3421
+#define trunc_page(124,3371
+
+math.h,216
+#define _POLY1(48,1696
+#define _POLY2(49,1744
+#define _POLY3(50,1802
+#define _POLY4(51,1860
+#define _POLY5(52,1918
+#define _POLY6(53,1976
+#define _POLY7(54,2034
+#define _POLY8(55,2092
+#define _POLY9(56,2150
+
+mig.h,211
+} Mig_ArchStats;326,12206
+} Mig_IdleRequest;198,7457
+} Mig_Info;128,4805
+} Mig_InfoRequest;183,7041
+} Mig_LoadVector;110,4177
+} Mig_StatTotals;305,11345
+} Mig_Stats;356,13561
+} Mig_SystemParms;398,15126
+
+mig_errors.h,0
+
+ndbm.h,172
+} DBM;32,981
+} datum;50,1455
+#define dbm_clearerr(41,1241
+#define dbm_dirfno(44,1332
+#define dbm_error(39,1150
+#define dbm_pagfno(45,1372
+#define dbm_rdonly(37,1094
+
+net.h,348
+#define NET_ADDRESS_COMPARE(41,1153
+} Net_Address;36,1085
+} Net_GenericAddress;167,4441
+} Net_Header;93,2237
+#define Net_HostToNetInt(224,6669
+#define Net_HostToNetShort(227,6744
+#define Net_NetToHostInt(223,6633
+#define Net_NetToHostShort(226,6706
+typedef int Net_NetworkType;75,1772
+} Net_RouteInfo;129,3693
+} Net_SpriteRoute;185,5022
+
+netEther.h,1379
+#define	NET_ETHER_ADDR_BYTE1(78,2214
+#define	NET_ETHER_ADDR_BYTE2(79,2258
+#define	NET_ETHER_ADDR_BYTE3(80,2302
+#define	NET_ETHER_ADDR_BYTE4(81,2346
+#define	NET_ETHER_ADDR_BYTE5(82,2390
+#define	NET_ETHER_ADDR_BYTE6(83,2434
+#define	NET_ETHER_ADDR_COPY(86,2491
+#define	NET_ETHER_ADDR_COPY(94,2725
+#define	NET_ETHER_COMPARE(41,1303
+#define	NET_ETHER_COMPARE(56,1754
+#define	NET_ETHER_COMPARE_PTR(48,1469
+#define	NET_ETHER_COMPARE_PTR(58,1835
+#define	NET_ETHER_HDR_COPY(133,3735
+#define	NET_ETHER_HDR_DESTINATION(125,3432
+#define	NET_ETHER_HDR_DESTINATION_PTR(129,3576
+#define	NET_ETHER_HDR_SOURCE(126,3487
+#define	NET_ETHER_HDR_SOURCE_PTR(130,3636
+#define	NET_ETHER_HDR_TYPE(127,3533
+#define	NET_ETHER_HDR_TYPE_PTR(131,3687
+} Net_EtherAddress;76,2193
+} Net_EtherHdr;123,3415
+			(bcopy(109,3124
+typedef unsigned char 99,2794
+typedef unsigned char 137,3797
+#define	101,2838
+#define	102,2879
+#define	103,2920
+#define	104,2961
+#define	105,3002
+#define	106,3043
+#define	108,3085
+#define	139,3838
+#define	140,3899
+#define	141,3958
+#define	143,4021
+#define	144,4086
+#define	145,4149
+#define	147,4216
+#define	157,4541
+#define	158,4572
+#define 164,4706
+#define 165,4737
+#define 166,4777
+#define 167,4811
+#define 168,4841
+#define 169,4872
+#define 170,4909
+#define 171,4942
+#define 172,4979
+#define 173,5018
+#define 174,5051
+#define 175,5084
+
+netInet.h,836
+#define NET_INET_CLASS_A_ADDR(102,3201
+#define NET_INET_CLASS_B_ADDR(108,3415
+#define NET_INET_CLASS_C_ADDR(114,3638
+#define NET_INET_CLASS_D_ADDR(123,3922
+#define NET_INET_CLASS_E_ADDR(130,4091
+#define NET_IP_OPT_CLASS(300,9214
+#define NET_IP_OPT_COPIED(299,9167
+#define NET_IP_OPT_NUMBER(301,9260
+}  Net_ArpHeader;51,1552
+} Net_ArpPacket;75,2524
+} Net_ICMPDataInfoEcho;497,14744
+} Net_ICMPDataMask;507,14941
+} Net_ICMPDataMisc;466,14009
+} Net_ICMPDataParam;488,14500
+} Net_ICMPDataRedir;476,14231
+} Net_ICMPDataTime;518,15176
+} Net_ICMPHeader;455,13748
+} Net_ICMPPacket;540,15926
+} Net_IPHeader;175,5513
+} Net_IPPseudoHdr;187,5934
+} Net_IPTimestampHdr;342,10431
+} Net_InetSocketAddr;591,17946
+typedef int Net_InetTime;355,10734
+} Net_TCPHeader;382,11638
+} Net_UDPHeader;431,12787
+typedef unsigned int 30,818
+
+netUltra.h,196
+} Net_UltraAddress;49,1583
+#define Net_UltraAddressGet(38,1247
+#define Net_UltraAddressSet(31,967
+} Net_UltraHeader;109,4080
+} Net_UltraTLAddress;74,2800
+#define Net_UltraTLWildcard(82,3029
+
+netdb.h,0
+
+option.h,78
+#define OPT_CONSTANT(104,4138
+#define Opt_Number(143,5051
+} Option;37,1367
+
+pdev.h,150
+} Pdev_CallBacks;51,1716
+extern	int 		      (*Pdev_SetHandler(80,2573
+} Pdev_Stream;64,2258
+typedef char *Pdev_Token;66,2274
+#define max(72,2423
+
+pfs.h,103
+} Pfs_CallBacks;51,1710
+extern	int		       (*Pfs_SetHandler(65,1974
+typedef char *Pfs_Token;58,1852
+
+proc.h,517
+} Proc_DebugReq;296,9340
+} Proc_DebugState;330,10568
+} Proc_EnvironVar;339,10749
+typedef int Proc_Flags;210,6906
+#define Proc_In_A_Family(109,3134
+typedef Proc_StringOffset *Proc_OffsetTable;546,17365
+} Proc_PCBArgString;535,17073
+} Proc_PCBInfo;474,15433
+typedef unsigned int 74,2373
+#define	Proc_PIDToIndex(94,2779
+} Proc_ResUsage;280,9048
+} Proc_State;150,4403
+typedef int Proc_StringOffset;545,17334
+typedef char *Proc_Strings;547,17410
+} Proc_TimerInterval;517,16550
+typedef unsigned int 74,2373
+
+pwd.h,0
+
+rpc.h,73
+} Rpc_CltStat;107,4409
+} Rpc_EchoArgs;171,7201
+} Rpc_SrvStat;151,6645
+
+sched.h,28
+} Sched_Instrument;33,1036
+
+sgtty.h,0
+
+sig.h,83
+} Sig_Action;72,2034
+		Sig_Context 63,1797
+typedef int (*Sig_HandleProc)62,1729
+
+signal.h,26
+#define sigmask(132,4168
+
+sprite.h,127
+typedef char *Address;83,2072
+typedef int Boolean;35,958
+typedef int *ClientData;92,2328
+typedef int  ReturnStatus;42,1096
+
+spriteEmu.h,0
+
+spriteTime.h,226
+} Time;36,971
+#define Time_Average(186,4733
+#define Time_EQ(133,3380
+#define Time_GE(137,3514
+#define Time_GT(142,3701
+#define Time_LE(128,3193
+#define Time_LT(123,3006
+} Time_Parts;49,1171
+#define Time_ToMs(165,4232
+
+status.h,91
+#define STAT_IS_PRIVATE(50,1550
+#define STAT_MODULE(51,1606
+#define STAT_MSGNUM(52,1665
+
+stddef.h,112
+#define offsetof(33,781
+typedef int ptrdiff_t;21,637
+typedef int size_t;26,716
+typedef short wchar_t;22,660
+
+stdio.h,227
+typedef int *ClientData;45,1300
+} FILE;142,5160
+#define feof(241,8013
+#define ferror(240,7971
+#define getc(196,6641
+#define getchar(214,7298
+#define putc(203,6881
+#define putchar(216,7329
+typedef char *va_list;51,1387
+
+stdlib.h,137
+} Mem_TraceInfo;126,3678
+} div_t;170,4945
+#define		free(84,2404
+#define		free(86,2440
+} ldiv_t;175,5009
+typedef	int	size_t;44,1478
+
+string.h,0
+
+strings.h,0
+
+swapBuffer.h,0
+
+sync.h,188
+#define Sync_Broadcast(189,6449
+} Sync_Condition;60,2158
+typedef Sync_UserLock Sync_Lock;39,1363
+} Sync_LockStat;93,3385
+typedef int Sync_UserLock;36,1293
+#define Sync_Wait(163,5749
+
+sys.h,52
+} Sys_MachineInfo;62,1620
+} Sys_PanicLevel;30,825
+
+sysStats.h,193
+} Sys_DiskStats;305,13203
+} Sys_SchedOverallTimes;315,13367
+} Sys_SospNameStats;328,13640
+} Sys_TracelogHeader;265,11854
+} Sys_TracelogHeaderKern;279,12428
+} Sys_TracelogRecord;235,10478
+
+syslog.h,131
+#define LOG_FAC(35,1376
+#define	LOG_MAKEPRI(53,2012
+#define	LOG_MASK(62,2193
+#define LOG_PRI(51,1949
+#define	LOG_UPTO(63,2257
+
+td.h,156
+} Td_BaudRate;74,2052
+} Td_FlowChars;62,1718
+typedef struct Td_Pdev *Td_Pdev;27,869
+} Td_Signal;93,2481
+typedef struct Td_Terminal *Td_Terminal;26,828
+
+test.h,162
+typedef char Test_MessageBuffer[30,788
+extern 32,840
+extern 33,871
+extern 34,898
+extern 35,927
+extern 36,958
+extern 37,986
+extern 38,1016
+extern 40,1047
+
+testRedef.h,190
+#define Test_GetString(37,1257
+#define Test_PutDecimal(32,1016
+#define Test_PutHex(33,1065
+#define Test_PutMessage(35,1160
+#define Test_PutOctal(34,1112
+#define Test_PutString(36,1209
+
+time.h,57
+typedef	long	clock_t;20,391
+typedef	long	time_t;16,329
+
+tzfile.h,25
+#define	isleap(100,2516
+
+ulog.h,21
+} Ulog_Data;67,2164
+
+unistd.h,27
+typedef int size_t;36,857
+
+utmp.h,0
+
+vm.h,0
+
+vmStat.h,20
+} Vm_Stat;104,3755
+
+vmTypes.h,62
+typedef int Vm_SegmentID;148,4839
+} Vm_SegmentInfo;180,6098
+
+arpa/inet.h,0
+
+dev/audio.h,0
+
+dev/graphics.h,1632
+#define DEV_EVROUND(195,5888
+} DevBox;234,6681
+} DevColorMap;341,10387
+} DevCursor;224,6534
+} DevEvent;167,5144
+} DevEventQueue;216,6432
+} DevKpCmd;244,6956
+} DevPCCRegs;117,3993
+} DevScreenInfo;276,8220
+} DevScreenInfoExt;331,10224
+} DevTimeCoord;201,6013
+} DevVDACRegs;154,4709
+typedef volatile struct 84,3059
+typedef volatile struct 122,4037
+    unsigned 85,3085
+    unsigned 86,3136
+    unsigned 87,3161
+    unsigned 88,3204
+    unsigned 89,3229
+    unsigned 90,3272
+    unsigned 91,3297
+    unsigned 92,3323
+    unsigned 93,3348
+    unsigned 94,3374
+    unsigned 95,3399
+    unsigned 96,3425
+    unsigned 97,3450
+    unsigned 98,3476
+    unsigned 99,3501
+    unsigned 100,3529
+    unsigned 101,3560
+    unsigned 102,3588
+    unsigned 103,3619
+    unsigned 104,3647
+    unsigned 105,3678
+    unsigned 106,3706
+    unsigned 107,3737
+    unsigned 108,3763
+    unsigned 109,3788
+    unsigned 110,3814
+    unsigned 111,3839
+    unsigned 112,3865
+    unsigned 113,3890
+    unsigned 114,3916
+    unsigned 115,3941
+    unsigned 116,3968
+    unsigned 123,4063
+    unsigned 124,4090
+    unsigned 125,4116
+    unsigned 127,4143
+    unsigned 128,4168
+    unsigned 129,4194
+    unsigned 131,4221
+    unsigned 132,4247
+    unsigned 133,4273
+    unsigned 135,4300
+    unsigned 136,4327
+    unsigned 137,4353
+    unsigned 139,4380
+    unsigned 140,4408
+    unsigned 141,4434
+    unsigned 143,4461
+    unsigned 144,4487
+    unsigned 145,4514
+    unsigned 147,4542
+    unsigned 148,4572
+    unsigned 149,4599
+    unsigned 151,4627
+    unsigned 152,4655
+    unsigned 153,4682
+
+dev/net.h,52
+} Net_LingerInfo;157,5412
+} Net_SendInfo;191,6322
+
+dev/pdev.h,379
+} Pdev_BufPtrs;318,12338
+typedef Fs_IOCParam Pdev_IOCParam;139,5338
+} Pdev_Notify;109,4568
+typedef int Pdev_Op;87,3893
+} Pdev_OpenParam;127,5151
+typedef Fs_IOParam Pdev_RWParam;133,5243
+} Pdev_Reply;200,7501
+} Pdev_ReplyData;221,8245
+} Pdev_Request;180,6744
+} Pdev_RequestHdr;169,6462
+} Pdev_SetAttrParam;151,5722
+} Pdev_SetBufArgs;300,11612
+} Pdev_Signal;328,12531
+
+dev/pfs.h,51
+} Pfs_Request;99,3462
+} Pfs_SetAttrData;114,3937
+
+dev/tty.h,135
+typedef struct sgttyb Tty_BasicParams;74,2643
+typedef struct tchars Tty_Chars;76,2683
+typedef struct ltchars Tty_LocalChars;78,2717
+
+device/device.h,0
+
+device/device_reply.h,0
+
+device/device_request.h,0
+
+device/device_types.h,405
+#define	143,3625
+#	define	144,3650
+#	define	145,3705
+#define	146,3763
+typedef	int	dev_mode_t;108,2768
+typedef	char	dev_name_t[103,2667
+typedef int		dev_status_data_t[136,3468
+typedef int		*dev_status_t;133,3343
+typedef	mach_port_t	device_t;96,2592
+typedef	unsigned int	128,3268
+typedef char 	io_buf_ptr_inband_t[123,3167
+typedef char *	io_buf_ptr_t;117,3022
+typedef	int		io_return_t;151,3823
+
+device/net_status.h,182
+#define	NETF_ARG(149,4864
+#define	NETF_OP(150,4904
+typedef filter_t	*filter_array_t;142,4704
+typedef struct net_rcv_msg 	*net_rcv_msg_t;212,6800
+typedef	unsigned short	141,4671
+
+device/tape_status.h,0
+
+device/tty_status.h,0
+
+ds3100.md/a.out.h,27
+#define N_TXTOFF(157,5286
+
+ds3100.md/limits.h,0
+
+ds3100.md/machSignal.h,0
+
+ds3100.md/machparam.h,0
+
+ds3100.md/nlist.h,0
+
+ds3100.md/regdef.h,0
+
+ds3100.md/reloc.h,84
+#define ISTVRELOC(170,4015
+#define ISTVRELOC(173,4101
+#define ISTVRELOC(176,4175
+
+ds3100.md/setjmp.h,64
+extern 130,4926
+extern 131,4963
+typedef	int	jmp_buf[128,4888
+
+ds3100.md/sigMach.h,0
+
+ds3100.md/syms.h,176
+#define  BTYPE(218,5815
+#define  DECREF(238,6335
+#define  INCREF(236,6253
+#define  ISARY(230,6071
+#define  ISFCN(226,5978
+#define  ISPTR(222,5884
+#define ISTAG(234,6186
+
+ds3100.md/varargs.h,125
+#define va_arg(26,951
+#define va_arg(30,1035
+#define va_end(22,862
+typedef char *va_list;17,753
+#define va_start(21,813
+
+kernel/bf.h,1333
+#define BfByteQx(310,7558
+#define BfByteRx(289,7107
+#define BfByteSetx(405,9595
+#define BfByteSx(201,5269
+#define BfByteTestx(445,10618
+#define BfByteVx(331,8045
+#define BfByteZx(379,8973
+#define BfDx(155,4189
+#define BfHalfwordQx(311,7626
+#define BfHalfwordRx(290,7164
+#define BfHalfwordSetx(412,9809
+#define BfHalfwordSx(204,5379
+#define BfHalfwordTestx(448,10711
+#define BfHalfwordVx(335,8164
+#define BfHalfwordZx(382,9066
+#define BfIx(360,8659
+#define BfMask(136,3894
+#define BfMin(116,3510
+#define BfS0(174,4566
+#define BfS1(176,4623
+#define BfS2(178,4701
+#define BfS3(180,4779
+#define BfS4(182,4857
+#define BfSumByteSx(260,6528
+#define BfSumHalfwordSx(265,6653
+#define BfSumS0(228,5877
+#define BfSumS1(231,5921
+#define BfSumS2(234,5981
+#define BfSumS3(237,6044
+#define BfSumS4(240,6107
+#define BfSumWordSx(269,6747
+#define BfWordQx(312,7704
+#define BfWordRx(291,7229
+#define BfWordSetx(419,10035
+#define BfWordSx(207,5464
+#define BfWordTestx(451,10816
+#define BfWordVx(339,8299
+#define BfWordZx(385,9168
+#define Bf_ByteGet(552,13320
+#define Bf_ByteSet(471,11235
+#define Bf_ByteTest(512,12224
+#define Bf_HalfwordGet(561,13704
+#define Bf_HalfwordSet(481,11489
+#define Bf_HalfwordTest(522,12579
+#define Bf_WordGet(567,13970
+#define Bf_WordSet(488,11674
+#define Bf_WordTest(528,12786
+
+kernel/byte.h,97
+#define Byte_AlignAddr(41,1137
+#define Byte_EmptyBuffer(31,825
+#define Byte_FillBuffer(27,713
+
+kernel/compatInt.h,0
+
+kernel/dbg.h,0
+
+kernel/dev.h,0
+
+kernel/devBlockDevice.h,145
+} DevBlockDeviceHandle;120,5092
+} DevBlockDeviceRequest;83,3415
+#define	Dev_BlockDeviceIO(213,8877
+#define	Dev_BlockDeviceIOControl(216,8991
+
+kernel/devDiskLabel.h,241
+#define	DISK_IS_PARTITIONED(181,6373
+#define	DISK_PARTITION(182,6437
+} Dec_BootMap;105,3767
+} Dec_DiskBoot;148,5191
+} Dec_DiskLabel;132,4557
+} Dec_DiskMap;100,3621
+} DevDiskMap;194,6953
+} Sun_DiskLabel;63,2482
+} Sun_DiskMap;34,1026
+
+kernel/devFsOpTable.h,58
+#define	DEV_TYPE_INDEX(163,6714
+} DevFsTypeOps;153,6501
+
+kernel/devSyslog.h,0
+
+kernel/devTypes.h,0
+
+kernel/dump.h,0
+
+kernel/fs.h,311
+#define FsSetIOParam(306,12815
+} Fs_HandleHeader;112,4190
+} Fs_IOCParam;365,15065
+} Fs_IOParam;301,12736
+} Fs_IOReply;334,13979
+} Fs_NameInfo;137,5163
+typedef Address Fs_NotifyToken;390,15687
+} Fs_PageType;382,15459
+} Fs_ProcessState;80,2833
+} Fs_Stream;175,6941
+#define LRU_LINKS_TO_HANDLE(114,4210
+
+kernel/fsNameOps.h,443
+} Fs_2PathData;232,7818
+} Fs_2PathParams;227,7685
+} Fs_2PathRedirectInfo;267,9278
+} Fs_2PathReply;240,8145
+} Fs_AttrOps;92,3032
+} Fs_AttrOps;101,3315
+} Fs_DomainLookupOps;311,11502
+} Fs_GetAttrResults;191,6916
+} Fs_GetAttrResultsParam;202,7166
+} Fs_LookupArgs;183,6707
+} Fs_MakeDeviceArgs;219,7528
+} Fs_OpenArgs;143,4982
+} Fs_OpenArgsSOSP;158,5649
+} Fs_OpenResults;170,6160
+} Fs_RedirectInfo;254,8686
+} Fs_SetAttrArgs;211,7375
+
+kernel/fsStat.h,559
+} Fs_AllocStats;228,9417
+} Fs_BlockCacheStats;202,8350
+} Fs_ConsistStats;361,15311
+} Fs_GeneralStats;64,2604
+} Fs_HandleStats;271,11397
+} Fs_HistGroupInfo;483,20672
+} Fs_LookupStats;304,12907
+} Fs_MigStats;429,18339
+} Fs_NameCacheStats;239,9774
+} Fs_NameOpStats;41,1567
+} Fs_NewStats;594,23855
+} Fs_ObjectStats;323,13581
+} Fs_PrefixStats;286,12028
+} Fs_RecoveryStats;342,14402
+} Fs_RemoteIOStats;394,16861
+} Fs_SospMigStats;559,22879
+#define Fs_StatAdd(547,22553
+} Fs_Stats;453,19461
+} Fs_TypeStats;535,22192
+} Fs_WriteBackStats;371,15639
+
+kernel/fsUnixStubs.h,0
+
+kernel/fscache.h,494
+#define FSCACHE_DEBUG_PRINT(426,16295
+#define FSCACHE_DEBUG_PRINT(443,16728
+#define FSCACHE_DEBUG_PRINT1(430,16383
+#define FSCACHE_DEBUG_PRINT2(434,16484
+#define FSCACHE_DEBUG_PRINT2(445,16807
+#define FSCACHE_DEBUG_PRINT3(438,16597
+} Fscache_Attributes;49,1510
+} Fscache_Backend;405,15609
+} Fscache_BackendRoutines;391,15115
+} Fscache_Block;227,8465
+#define	Fscache_BlockAddress(303,11561
+} Fscache_ExtraStats;188,6814
+} Fscache_FileInfo;84,3122
+} Fscache_ReadAheadInfo;421,16202
+
+kernel/fscacheBlocks.h,111
+#define DIRTY_LINKS_TO_BLOCK(39,1184
+#define FILE_LINKS_TO_BLOCK(44,1339
+#define USE_LINKS_TO_BLOCK(41,1247
+
+kernel/fsconsist.h,123
+} Fsconsist_ClientInfo;113,4335
+} Fsconsist_Info;92,3495
+#define INSERT_CLIENT(118,4436
+#define REMOVE_CLIENT(135,5044
+
+kernel/fsdm.h,142
+} Fsdm_DiskHeader;94,3767
+} Fsdm_DiskPartition;46,1500
+} Fsdm_Domain;289,11530
+} Fsdm_DomainOps;375,14876
+} Fsdm_FileDescriptor;171,7288
+
+kernel/fsio.h,282
+} FsioStreamClient;377,16900
+#define Fsio_MapLclToRmtType(114,4494
+#define Fsio_MapRmtToLclType(121,4777
+} Fsio_MigInfo;35,1218
+} Fsio_RecovTestInfo;409,17746
+typedef struct Fsio_Request *Fsio_RequestToken;396,17346
+} Fsio_StreamTypeOps;370,16686
+} Fsio_UseCounts;390,17278
+
+kernel/fsioDevice.h,89
+} Fsio_DeviceIOHandle;50,1903
+} Fsio_DeviceMigData;57,2058
+} Fsio_DeviceState;67,2424
+
+kernel/fsioFile.h,114
+} Fsio_FileIOHandle;103,3907
+} Fsio_FileReopenParams;63,2258
+} Fsio_FileState;52,1812
+} Fsio_OpenOps;138,5270
+
+kernel/fsioLock.h,26
+} Fsio_LockState;32,1150
+
+kernel/fsioPipe.h,62
+} Fsio_PipeIOHandle;41,1529
+} Fsio_PipeReopenParams;52,1881
+
+kernel/fsioRpc.h,0
+
+kernel/fslcl.h,62
+} Fslcl_DirEntry;38,1241
+#define Fslcl_DirRecLength(56,1940
+
+kernel/fspdev.h,157
+} Fspdev_CircBuffer;118,5055
+} Fspdev_ClientIOHandle;194,8790
+} Fspdev_ControlIOHandle;104,4441
+} Fspdev_ServerIOHandle;182,8399
+} Fspdev_State;59,2332
+
+kernel/fsprefix.h,20
+} Fsprefix;69,2926
+
+kernel/fsrmt.h,56
+} Fsrmt_FileIOHandle;64,2233
+} Fsrmt_IOHandle;46,1553
+
+kernel/fsrmtDomain.h,453
+#define FSRMT_RPC_DEBUG_PRINT(86,2465
+#define FSRMT_RPC_DEBUG_PRINT(107,3040
+#define FSRMT_RPC_DEBUG_PRINT1(90,2554
+#define FSRMT_RPC_DEBUG_PRINT2(94,2656
+#define FSRMT_RPC_DEBUG_PRINT2(109,3123
+#define FSRMT_RPC_DEBUG_PRINT3(98,2770
+#define FSRMT_RPC_DEBUG_PRINT4(102,2896
+#define FSRMT_RPC_DEBUG_PRINT4(111,3231
+} FsrmtRemoteBlockCopyParams;78,2387
+} FsrmtRemoteIOCParam;69,2132
+} FsrmtRemoteIOParam;42,1209
+} FsrmtSpriteIOCParams;58,1791
+
+kernel/fsrmtRpcStubs.h,0
+
+kernel/fsutil.h,394
+} Fsutil_FsRecovNamedStats;99,3466
+#define Fsutil_HandleDupType(130,4201
+#define Fsutil_HandleFetchType(127,4108
+#define Fsutil_HandleLock(133,4309
+#define Fsutil_HandleName(145,4725
+#define Fsutil_HandleRelease(139,4509
+#define Fsutil_HandleRemove(142,4626
+#define Fsutil_HandleUnlock(136,4404
+} Fsutil_RecoveryInfo;85,2942
+#define	Fsutil_StringNCopy(120,3907
+#define mnew(151,4975
+
+kernel/fsutilTrace.h,510
+#define FSUTIL_TRACE(106,2993
+#define FSUTIL_TRACE(165,4993
+#define FSUTIL_TRACE_BLOCK(143,4251
+#define FSUTIL_TRACE_IO(111,3124
+#define FSUTIL_TRACE_NAME(122,3500
+#define FSUTIL_TRACE_NAME(127,3665
+#define FSUTIL_TRACE_NAME(167,5081
+#define	FSUTIL_TRACE_READ_AHEAD(154,4704
+#define	FSUTIL_TRACE_READ_AHEAD(169,5170
+} Fsutil_TraceBlockRec;90,2719
+} Fsutil_TraceHdrRec;84,2601
+} Fsutil_TraceIORec;78,2482
+		FST_HANDLE, FST_RA, FST_BLOCK } Fsutil_TraceRecType 72,2332
+} Fsutil_TraceRecord;100,2924
+
+kernel/hash.h,181
+} Hash_Bucket;26,548
+} Hash_Entry;49,1228
+#define Hash_GetValue(107,3050
+} Hash_Search;96,2959
+#define Hash_SetValue(115,3162
+#define	Hash_Size(121,3300
+} Hash_Table;82,2439
+
+kernel/lfs.h,29
+#define Lfs_Command(97,3644
+
+kernel/machCalls.h,0
+
+kernel/main.h,0
+
+kernel/net.h,0
+
+kernel/netArp.h,272
+#define ARP_SRC_ETHER_ADDR(51,1882
+#define ARP_SRC_PROTO_ADDR(52,1956
+#define	ARP_TARGET_ETHER_ADDR(54,2052
+#define	ARP_TARGET_PROTO_ADDR(58,2209
+} ArpInputQueue;117,4068
+} ArpOutputQueue;104,3760
+} ArpState;78,2923
+} ArpStatistics;91,3342
+} NetSpriteArp;41,1516
+
+kernel/netRoute.h,45
+} NetHostInfo;112,3834
+} Net_Route;74,2670
+
+kernel/netTypes.h,192
+} Net_EtherStats;106,3624
+} Net_GenStats;137,4686
+} Net_Interface;230,7945
+typedef int Net_PacketType;55,1395
+} Net_ScatterGather;74,1975
+} Net_Stats;148,4843
+} Net_UltraStats;120,4113
+
+kernel/proc.h,455
+#define PROC_GET_VALID_PCB(56,1469
+#define Proc_AssertLocked(131,3644
+#define Proc_ComparePIDs(48,1190
+#define	Proc_GetActualProc(69,1902
+#define Proc_GetCurrentLock(89,2487
+#define Proc_GetEffectiveProc(169,5255
+#define	Proc_GetHostID(66,1779
+#define Proc_GetPCB(50,1239
+#define			Proc_MigUpdateInfo(208,7103
+#define Proc_SetState(105,2918
+#define	Proc_UseRpcBuffer(79,2242
+#define Proc_UseRpcBuffer(81,2284
+#define Proc_ValidatePID(52,1306
+
+kernel/procMigrate.h,407
+#define PROC_GET_MIG_PCB(54,1559
+#define PROC_MIG_DEC_STAT(260,8230
+#define PROC_MIG_INC_STAT(258,8128
+#define PROC_MIG_TIME_FOR_STATS(182,5084
+} Proc_CommandTrace;141,4016
+} Proc_DestroyMigProcData;273,8647
+} Proc_MigBuffer;83,2399
+} Proc_MigStats;252,8046
+} Proc_MigVarStats;210,6291
+} Proc_ParamInfo;73,2180
+} Proc_RemoteCall;99,2802
+} Proc_SysCallTrace;136,3942
+} Proc_TraceRecord;152,4185
+
+kernel/procServer.h,94
+} FuncInfo;49,1372
+} ProcFcnCallTime;113,3260
+} QueueElement;62,1783
+} ServerInfo;83,2328
+
+kernel/procTypes.h,323
+typedef int ProcExitFlags;94,2764
+} ProcTaskInfo;179,5242
+} Proc_CallInfo;121,3486
+} Proc_ControlBlock;475,15695
+} Proc_EnvironInfo;132,3774
+} Proc_LockStackElement;165,4795
+} Proc_LockedPCB;489,16132
+} Proc_ObjInfo;508,16881
+} Proc_PCBLink;147,4193
+typedef void (*Proc_ProcessRoot)107,3116
+} Proc_Time;160,4690
+
+kernel/procUnixStubs.h,0
+
+kernel/recov.h,135
+#define RECOV_TRACE(166,5561
+#define RECOV_TRACE(175,5780
+} RecovTraceRecord;139,4708
+} Recov_State;36,983
+} Recov_Stats;194,6557
+
+kernel/rpc.h,24
+} Rpc_ReplyMem;51,1396
+
+kernel/rpcCall.h,0
+
+kernel/rpcClient.h,49
+} RpcClientChannel;169,5388
+} RpcConst;73,2327
+
+kernel/rpcCltStat.h,0
+
+kernel/rpcHistogram.h,183
+#define RPC_CALL_TIMING_END(62,2126
+#define RPC_CALL_TIMING_START(58,1994
+#define RPC_SERVICE_TIMING_END(70,2395
+#define RPC_SERVICE_TIMING_START(66,2254
+} Rpc_Histogram;41,1462
+
+kernel/rpcPacket.h,40
+} RpcHdr;79,3069
+} RpcHdrNew;136,5591
+
+kernel/rpcServer.h,164
+typedef ReturnStatus (*IntProc)205,6623
+} NackData;148,4429
+#define	RPC_IS_BROADCAST(227,7159
+} RpcServerState;135,3876
+} RpcService;210,6811
+			int 206,6699
+
+kernel/rpcSrvStat.h,0
+
+kernel/rpcTrace.h,233
+#define RPC_NIL_TRACE(46,1050
+#define RPC_NIL_TRACE(55,1284
+#define RPC_TRACE(50,1162
+#define RpcTrace(38,843
+} Rpc_Trace;67,1719
+typedef Rpc_TraceHdr2 Rpc_TraceFileHdr;89,2141
+} Rpc_TraceHdr1;76,1885
+} Rpc_TraceHdr2;87,2123
+
+kernel/rpcTypes.h,81
+} RpcBufferSet;44,1479
+} RpcServerUserStateInfo;56,1747
+} Rpc_Storage;91,3129
+
+kernel/sig.h,29
+#define Sig_Pending(46,1056
+
+kernel/sigTypes.h,43
+} Sig_Context;32,810
+} Sig_Stack;46,1312
+
+kernel/spriteSrv.h,0
+
+kernel/sync.h,939
+#define SyncDeadlockPanic(504,13864
+#define SyncDeadlockPanic(510,14000
+#define SyncDeleteCurrent(474,13240
+#define SyncDeleteCurrent(479,13365
+#define SyncMergePrior(443,12564
+#define SyncMergePrior(449,12729
+#define Sync_AddPrior(412,11920
+#define Sync_AddPrior(419,12110
+#define Sync_IsRegistered(317,10076
+#define Sync_IsRegistered(322,10172
+#define Sync_LockClear(379,11321
+#define Sync_LockClear(388,11470
+#define Sync_LockInitStatic(266,8831
+#define Sync_LockInitStatic(273,8969
+#define Sync_LockInitStatic(282,9201
+#define Sync_LockInitStatic(289,9414
+#define Sync_LockRegister(346,10703
+#define Sync_LockRegister(355,10870
+#define Sync_MasterWait(97,3097
+#define Sync_RecordHit(538,14674
+#define Sync_RecordHit(542,14728
+#define Sync_RecordMiss(565,15161
+#define Sync_RecordMiss(569,15216
+#define Sync_StoreDbgInfo(595,15927
+#define Sync_StoreDbgInfo(599,16007
+#define UNLOCK_MONITOR_AND_SWITCH(205,7003
+
+kernel/syncTypes.h,265
+} Sync_ListInfo;100,3445
+typedef Sync_KernelLock Sync_Lock;134,4368
+typedef int Sync_PCBFlags;68,2016
+} Sync_RegElement;157,5252
+} Sync_RemoteWaiter;175,5694
+typedef Sync_Lock Sync_Semaphore;138,4456
+typedef struct semid_ds Sync_SysVSem;163,5319
+} 130,4332
+
+kernel/sys.h,50
+} Sys_CallCount;52,1565
+} Sys_MsgBuffer;42,1255
+
+kernel/sysCallNums.h,0
+
+kernel/timer.h,110
+#define Timer_GetCurrentTicks(99,3220
+#define Timer_GetRealTimeOfDay(101,3325
+} Timer_QueueElement;89,3046
+
+kernel/timerStat.h,28
+} Timer_Statistics;47,1706
+
+kernel/timerTick.h,591
+#define Timer_AddIntervalToTicks(71,1902
+#define Timer_AddTicks(42,1055
+#define Timer_AddTicks(49,1304
+#define Timer_SubtractTicks(45,1170
+#define Timer_SubtractTicks(50,1355
+#define Timer_TickEQ(100,2673
+#define Timer_TickEQ(106,2984
+#define Timer_TickGE(101,2745
+#define Timer_TickGE(107,3023
+#define Timer_TickGT(102,2817
+#define Timer_TickGT(108,3062
+#define Timer_TickLE(99,2601
+#define Timer_TickLE(105,2945
+#define Timer_TickLT(98,2529
+#define Timer_TickLT(104,2906
+typedef Time Timer_Ticks;34,974
+#define Timer_TicksToTime(57,1500
+#define Timer_TimeToTicks(58,1542
+
+kernel/trace.h,48
+} Trace_Header;34,1170
+} Trace_Record;56,1717
+
+kernel/utils.h,0
+
+kernel/vm.h,184
+#define Vm_BootAlloc(123,2890
+#define Vm_ByteToPage(52,1350
+#define Vm_PageToByte(74,1904
+#define Vm_RawAlloc(124,2937
+#define Vm_RoundPage(94,2306
+#define Vm_TruncPage(116,2764
+
+kernel/vmSwapDir.h,0
+
+kernel/vmTypes.h,356
+} VmCodeSegInfo;142,5178
+} VmFileMap;60,1847
+} VmHeapSegInfo;119,4388
+} VmMappedSegment;338,13899
+} VmPerTypeInfo;152,5372
+} VmStackSegInfo;132,4878
+typedef int Vm_Accessibility;358,14702
+} Vm_Segment;286,11318
+typedef int Vm_SegmentFlags;197,7139
+typedef int Vm_SegmentState;166,5840
+typedef int Vm_SegmentType;95,3586
+} Vm_TaskInfo;347,14349
+
+mach/boolean.h,0
+
+mach/boot_info.h,0
+
+mach/bootstrap.h,0
+
+mach/default_pager.h,0
+
+mach/default_pager_types.h,281
+typedef char default_pager_filename_t[68,2128
+} default_pager_info_t;51,1666
+typedef default_pager_object_t *default_pager_object_array_t;59,1879
+} default_pager_object_t;57,1852
+typedef default_pager_page_t *default_pager_page_array_t;66,2069
+} default_pager_page_t;64,2044
+
+mach/error.h,271
+#define err_get_code(105,3041
+#define err_get_sub(104,2996
+#define err_get_system(103,2949
+#define err_sub(101,2910
+#define	err_system(100,2870
+typedef mach_error_t	(* mach_error_fn_t)129,3878
+typedef	kern_return_t	mach_error_t;128,3842
+#define	unix_err(126,3788
+
+mach/exc.h,0
+
+mach/exception.h,0
+
+mach/host_info.h,673
+#define 94,2813
+#define 97,2898
+#define 103,3031
+#define 104,3075
+#define 105,3135
+#define	106,3184
+typedef	struct host_basic_info	host_basic_info_data_t;116,3511
+typedef struct host_basic_info	*host_basic_info_t;117,3566
+typedef int	host_info_data_t[92,2767
+typedef int	*host_info_t;89,2660
+typedef struct host_load_info	host_load_info_data_t;136,4150
+typedef struct host_load_info	*host_load_info_t;137,4203
+typedef	struct host_sched_info	host_sched_info_data_t;126,3840
+typedef struct host_sched_info	*host_sched_info_t;127,3895
+	int	109,3267
+typedef char	kernel_boot_info_t[98,2934
+typedef char	kernel_version_t[95,2846
+	int	109,3267
+struct 108,3242
+
+mach/kern_return.h,0
+
+mach/mach.h,0
+
+mach/mach_host.h,0
+
+mach/mach_interface.h,0
+
+mach/mach_param.h,0
+
+mach/mach_port.h,0
+
+mach/mach_traps.h,0
+
+mach/mach_types.h,753
+typedef vm_offset_t	*emulation_vector_t;184,5882
+typedef mach_port_t	host_priv_t;177,5604
+typedef mach_port_t	host_t;176,5576
+typedef task_t		ipc_space_t;173,5483
+typedef struct xmm_obj	*mach_xmm_obj_t;166,5287
+typedef mach_port_t	*processor_array_t;179,5670
+typedef mach_port_t	*processor_set_array_t;182,5789
+typedef mach_port_t	*processor_set_name_array_t;183,5833
+typedef mach_port_t	processor_set_name_t;181,5747
+typedef mach_port_t	processor_set_t;180,5710
+typedef mach_port_t	processor_t;178,5637
+typedef task_t		*task_array_t;171,5425
+typedef	mach_port_t	task_t;170,5397
+typedef	thread_t	*thread_array_t;175,5542
+typedef	mach_port_t	thread_t;174,5512
+typedef	vm_offset_t	vm_address_t;194,6084
+typedef	task_t		vm_task_t;172,5456
+
+mach/machine.h,293
+typedef int	cpu_subtype_t;138,4125
+typedef int	cpu_type_t;137,4101
+typedef struct machine_info	machine_info_data_t;135,4039
+typedef struct machine_info	*machine_info_t;134,3994
+typedef struct machine_slot	machine_slot_data_t;156,4598
+typedef struct machine_slot	*machine_slot_t;155,4553
+
+mach/memory_object.h,248
+typedef	mach_port_t	memory_object_control_t;96,2792
+typedef	int		memory_object_copy_strategy_t;104,3054
+typedef	mach_port_t	memory_object_name_t;100,2927
+typedef	int		memory_object_return_t;118,3581
+typedef	mach_port_t	memory_object_t;90,2579
+
+mach/memory_object_default.h,0
+
+mach/memory_object_user.h,0
+
+mach/message.h,1102
+#define MACH_MSGH_BITS(129,4584
+#define	MACH_MSGH_BITS_LOCAL(133,4738
+#define	MACH_MSGH_BITS_OTHER(137,4903
+#define	MACH_MSGH_BITS_PORTS(135,4824
+#define	MACH_MSGH_BITS_REMOTE(131,4657
+#define MACH_MSG_TYPE_PORT_ANY(304,10513
+#define	MACH_MSG_TYPE_PORT_ANY_RIGHT(312,10763
+#define	MACH_MSG_TYPE_PORT_ANY_SEND(308,10637
+#define MSG_TYPE_PORT_ANY(582,19423
+#define 89,2795
+typedef unsigned int 82,2642
+typedef unsigned int 166,6146
+typedef	unsigned int 167,6184
+typedef unsigned int 168,6222
+typedef unsigned int 224,8243
+typedef unsigned int 225,8286
+typedef unsigned int 226,8329
+typedef	unsigned int	485,16577
+typedef	unsigned int	589,19540
+} mach_msg_header_t;178,6498
+typedef int mach_msg_id_t;169,6261
+typedef int mach_msg_option_t;316,10893
+typedef kern_return_t mach_msg_return_t;346,11892
+} mach_msg_type_long_t;243,8714
+} mach_msg_type_t;236,8550
+} msg_header_t;495,16788
+typedef	int		msg_option_t;598,19724
+#define msg_return_rcv(651,21751
+#define msg_return_send(636,21212
+typedef	int		msg_return_t;619,20424
+} msg_type_long_t;544,18494
+} msg_type_t;537,18325
+
+mach/mig_errors.h,189
+} death_pill_t;152,4446
+142,4282
+137,4153
+} mig_reply_header_t;116,3656
+typedef	void	(*mig_routine_t)135,4074
+typedef	void	(*mig_routine_t)138,4169
+} mig_symtab_t;127,3859
+140,4208
+
+mach/msg_type.h,0
+
+mach/norma_special_ports.h,322
+#define norma_get_device_port(75,2185
+#define norma_get_host_port(81,2411
+#define norma_get_host_priv_port(87,2629
+#define norma_get_nameserver_port(93,2867
+#define norma_set_device_port(78,2305
+#define norma_set_host_port(84,2527
+#define norma_set_host_priv_port(90,2755
+#define norma_set_nameserver_port(96,2995
+
+mach/notify.h,290
+} mach_dead_name_notification_t;122,3821
+} mach_msg_accepted_notification_t;100,3206
+} mach_no_senders_notification_t;112,3563
+} mach_port_deleted_notification_t;94,3031
+} mach_port_destroyed_notification_t;106,3384
+} mach_send_once_notification_t;116,3649
+} notification_t;146,4475
+
+mach/notify_user.h,0
+
+mach/policy.h,32
+#define invalid_policy(70,1896
+
+mach/port.h,1038
+#define MACH_PORT_TYPE(128,4198
+#define	MACH_PORT_VALID(103,3240
+#define 118,3767
+#define 119,3821
+#define 120,3878
+#define 121,3936
+#define 122,3993
+#define 123,4051
+typedef unsigned int 88,2695
+typedef unsigned int 116,3726
+typedef unsigned int 125,4108
+typedef unsigned int 157,5449
+typedef unsigned int 162,5610
+typedef unsigned int 163,5673
+typedef unsigned int 164,5737
+typedef unsigned int 165,5801
+typedef mach_port_t *mach_port_array_t;89,2729
+typedef int mach_port_delta_t;158,5489
+} mach_port_status_t;177,6403
+typedef mach_port_type_t *mach_port_type_array_t;126,4147
+} old_mach_port_status_t;196,7131
+typedef	port_t		port_all_t;223,8024
+typedef	port_t		*port_array_t;224,8091
+typedef port_name_t	*port_name_array_t;205,7341
+typedef int 		port_name_t;203,7226
+typedef	port_t		port_own_t;222,7962
+typedef	port_t		port_rcv_t;221,7902
+typedef port_name_t	port_set_name_t;204,7280
+typedef	port_name_t	port_t;220,7844
+typedef port_type_t	*port_type_array_t;208,7440
+typedef int		port_type_t;207,7382
+
+mach/processor_info.h,762
+	boolean_t	95,2749
+	cpu_subtype_t	94,2700
+	cpu_type_t	93,2660
+#define	90,2573
+	int	96,2796
+typedef	struct processor_basic_info	processor_basic_info_data_t;100,2891
+typedef struct processor_basic_info	*processor_basic_info_t;101,2956
+typedef int	processor_info_data_t[79,2288
+typedef int	*processor_info_t;76,2173
+typedef	struct processor_set_basic_info	processor_set_basic_info_data_t;121,3489
+typedef struct processor_set_basic_info	*processor_set_basic_info_t;122,3562
+typedef int	processor_set_info_data_t[85,2468
+typedef int	*processor_set_info_t;82,2345
+typedef	struct processor_set_sched_info	processor_set_sched_info_data_t;133,3919
+typedef struct processor_set_sched_info	*processor_set_sched_info_t;134,3992
+	int	96,2796
+struct 92,2630
+
+mach/std_types.h,39
+typedef	vm_offset_t	pointer_t;70,1952
+
+mach/syscall_sw.h,395
+kernel_trap(99,2842
+kernel_trap(101,2903
+kernel_trap(103,2974
+kernel_trap(106,3043
+kernel_trap(108,3097
+kernel_trap(115,3225
+kernel_trap(117,3299
+kernel_trap(120,3380
+kernel_trap(122,3462
+kernel_trap(125,3558
+kernel_trap(127,3656
+kernel_trap(137,3985
+kernel_trap(139,4047
+kernel_trap(141,4105
+kernel_trap(148,4234
+kernel_trap(150,4295
+kernel_trap(152,4357
+kernel_trap(154,4426
+
+mach/task_info.h,539
+#define	76,2238
+	int	79,2315
+struct 78,2290
+	int	79,2315
+typedef struct task_basic_info		task_basic_info_data_t;89,2701
+typedef struct task_basic_info		*task_basic_info_t;90,2757
+typedef struct task_events_info		task_events_info_data_t;106,3342
+typedef struct task_events_info		*task_events_info_t;107,3400
+typedef	int	task_info_data_t[71,2140
+typedef	int	*task_info_t;68,2030
+typedef struct task_thread_times_info	task_thread_times_info_data_t;121,3836
+typedef struct task_thread_times_info	*task_thread_times_info_t;122,3905
+
+mach/task_special_ports.h,318
+#define task_get_bootstrap_port(91,2761
+#define task_get_exception_port(85,2541
+#define task_get_kernel_port(79,2333
+#define task_get_notify_port(105,3136
+#define task_set_bootstrap_port(94,2871
+#define task_set_exception_port(88,2651
+#define task_set_kernel_port(82,2437
+#define task_set_notify_port(108,3240
+
+mach/thread_info.h,447
+	int	91,2707
+#define 86,2532
+	int	91,2707
+struct 88,2586
+typedef struct thread_basic_info	thread_basic_info_data_t;101,3092
+typedef struct thread_basic_info	*thread_basic_info_t;102,3151
+typedef	int	thread_info_data_t[81,2441
+typedef	int	*thread_info_t;78,2327
+typedef struct thread_sched_info	thread_sched_info_data_t;142,4246
+typedef struct thread_sched_info	*thread_sched_info_t;143,4305
+	time_value_t	89,2613
+	time_value_t	90,2658
+
+mach/thread_special_ports.h,245
+#define thread_get_exception_port(84,2523
+#define thread_get_kernel_port(78,2295
+#define thread_get_reply_port(98,2915
+#define thread_set_exception_port(87,2643
+#define thread_set_kernel_port(81,2409
+#define thread_set_reply_port(101,3027
+
+mach/thread_status.h,96
+#define	91,2758
+typedef	int	thread_state_data_t[89,2706
+typedef	int		*thread_state_t;86,2589
+
+mach/thread_switch.h,37
+#define valid_switch_option(66,1845
+
+mach/time_value.h,149
+} mapped_time_value_t;107,2930
+#define	time_value_add(85,2335
+#define	time_value_add_usec(77,2132
+typedef	struct time_value	time_value_t;69,1943
+
+mach/vm_attributes.h,130
+#define	62,1788
+#define 63,1829
+#define	64,1872
+typedef unsigned int	60,1742
+typedef int		vm_machine_attribute_val_t;69,1981
+
+mach/vm_inherit.h,35
+typedef int		vm_inherit_t;67,1841
+
+mach/vm_param.h,0
+
+mach/vm_prot.h,32
+typedef int		vm_prot_t;74,2184
+
+mach/vm_statistics.h,174
+typedef struct pmap_statistics	*pmap_statistics_t;109,3351
+typedef struct vm_statistics	vm_statistics_data_t;91,2898
+typedef struct vm_statistics	*vm_statistics_t;90,2851
+
+net/af.h,0
+
+net/if.h,195
+#define	IF_ADJ(123,4699
+#define	IF_DEQUEUE(143,5142
+#define	IF_DEQUEUEIF(132,4888
+#define	IF_DROP(100,4024
+#define	IF_ENQUEUE(101,4067
+#define	IF_PREPEND(110,4258
+#define	IF_QFULL(99,3963
+
+net/if_arp.h,0
+
+net/netisr.h,56
+#define	schednetisr(41,1396
+#define	setsoftnet(27,934
+
+net/raw_cb.h,27
+#define	sotorawcb(43,1390
+
+net/route.h,78
+#define	RTFREE(71,2338
+#define RTHASHMOD(83,2542
+#define RTHASHMOD(85,2593
+
+netinet/icmp_var.h,0
+
+netinet/if_ether.h,0
+
+netinet/in.h,296
+#define	IN_BADCLASS(93,2578
+#define	IN_CLASSA(72,1879
+#define	IN_CLASSB(78,2058
+#define	IN_CLASSC(84,2248
+#define	IN_CLASSD(89,2408
+#define	IN_EXPERIMENTAL(92,2510
+#define	IN_MULTICAST(90,2471
+#define htonl(125,3314
+#define htons(126,3342
+#define ntohl(123,3258
+#define ntohs(124,3286
+
+netinet/in_pcb.h,27
+#define	sotoinpcb(43,1507
+
+netinet/in_systm.h,94
+typedef u_long	n_long;32,1025
+typedef u_short n_short;31,962
+typedef	u_long	n_time;34,1087
+
+netinet/in_var.h,24
+#define	IA_SIN(42,1515
+
+netinet/ip.h,89
+#define	IPOPT_CLASS(58,1718
+#define	IPOPT_COPIED(57,1682
+#define	IPOPT_NUMBER(59,1753
+
+netinet/ip_icmp.h,61
+#define	ICMP_ADVLEN(77,2310
+#define	ICMP_INFOTYPE(111,3780
+
+netinet/ip_var.h,0
+
+netinet/tcp.h,32
+typedef	u_long	tcp_seq;34,1059
+
+netinet/tcp_debug.h,0
+
+netinet/tcp_fsm.h,68
+#define	TCPS_HAVERCVDFIN(41,1566
+#define	TCPS_HAVERCVDSYN(40,1511
+
+netinet/tcp_seq.h,159
+#define	SEQ_GEQ(26,865
+#define	SEQ_GT(25,824
+#define	SEQ_LEQ(24,781
+#define	SEQ_LT(23,740
+#define	tcp_rcvseqinit(33,1036
+#define	tcp_sendseqinit(36,1113
+
+netinet/tcp_timer.h,31
+#define	TCPT_RANGESET(97,4050
+
+netinet/tcp_var.h,56
+#define	intotcpcb(148,5085
+#define	sototcpcb(149,5140
+
+netinet/tcpip.h,0
+
+netinet/udp.h,0
+
+netinet/udp_var.h,0
+
+sprited/bf.h,1333
+#define BfByteQx(310,7558
+#define BfByteRx(289,7107
+#define BfByteSetx(405,9595
+#define BfByteSx(201,5269
+#define BfByteTestx(445,10618
+#define BfByteVx(331,8045
+#define BfByteZx(379,8973
+#define BfDx(155,4189
+#define BfHalfwordQx(311,7626
+#define BfHalfwordRx(290,7164
+#define BfHalfwordSetx(412,9809
+#define BfHalfwordSx(204,5379
+#define BfHalfwordTestx(448,10711
+#define BfHalfwordVx(335,8164
+#define BfHalfwordZx(382,9066
+#define BfIx(360,8659
+#define BfMask(136,3894
+#define BfMin(116,3510
+#define BfS0(174,4566
+#define BfS1(176,4623
+#define BfS2(178,4701
+#define BfS3(180,4779
+#define BfS4(182,4857
+#define BfSumByteSx(260,6528
+#define BfSumHalfwordSx(265,6653
+#define BfSumS0(228,5877
+#define BfSumS1(231,5921
+#define BfSumS2(234,5981
+#define BfSumS3(237,6044
+#define BfSumS4(240,6107
+#define BfSumWordSx(269,6747
+#define BfWordQx(312,7704
+#define BfWordRx(291,7229
+#define BfWordSetx(419,10035
+#define BfWordSx(207,5464
+#define BfWordTestx(451,10816
+#define BfWordVx(339,8299
+#define BfWordZx(385,9168
+#define Bf_ByteGet(552,13320
+#define Bf_ByteSet(471,11235
+#define Bf_ByteTest(512,12224
+#define Bf_HalfwordGet(561,13704
+#define Bf_HalfwordSet(481,11489
+#define Bf_HalfwordTest(522,12579
+#define Bf_WordGet(567,13970
+#define Bf_WordSet(488,11674
+#define Bf_WordTest(528,12786
+
+sprited/byte.h,97
+#define Byte_AlignAddr(41,1137
+#define Byte_EmptyBuffer(31,825
+#define Byte_FillBuffer(27,713
+
+sprited/compatInt.h,0
+
+sprited/dbg.h,0
+
+sprited/dev.h,0
+
+sprited/devBlockDevice.h,145
+} DevBlockDeviceHandle;120,5092
+} DevBlockDeviceRequest;83,3415
+#define	Dev_BlockDeviceIO(213,8877
+#define	Dev_BlockDeviceIOControl(216,8991
+
+sprited/devDiskLabel.h,241
+#define	DISK_IS_PARTITIONED(181,6373
+#define	DISK_PARTITION(182,6437
+} Dec_BootMap;105,3767
+} Dec_DiskBoot;148,5191
+} Dec_DiskLabel;132,4557
+} Dec_DiskMap;100,3621
+} DevDiskMap;194,6953
+} Sun_DiskLabel;63,2482
+} Sun_DiskMap;34,1026
+
+sprited/devFsOpTable.h,58
+#define	DEV_TYPE_INDEX(163,6714
+} DevFsTypeOps;153,6501
+
+sprited/devSyslog.h,0
+
+sprited/devTypes.h,0
+
+sprited/dump.h,0
+
+sprited/fs.h,311
+#define FsSetIOParam(306,12815
+} Fs_HandleHeader;112,4190
+} Fs_IOCParam;365,15065
+} Fs_IOParam;301,12736
+} Fs_IOReply;334,13979
+} Fs_NameInfo;137,5163
+typedef Address Fs_NotifyToken;390,15687
+} Fs_PageType;382,15459
+} Fs_ProcessState;80,2833
+} Fs_Stream;175,6941
+#define LRU_LINKS_TO_HANDLE(114,4210
+
+sprited/fsNameOps.h,443
+} Fs_2PathData;232,7818
+} Fs_2PathParams;227,7685
+} Fs_2PathRedirectInfo;267,9278
+} Fs_2PathReply;240,8145
+} Fs_AttrOps;92,3032
+} Fs_AttrOps;101,3315
+} Fs_DomainLookupOps;311,11502
+} Fs_GetAttrResults;191,6916
+} Fs_GetAttrResultsParam;202,7166
+} Fs_LookupArgs;183,6707
+} Fs_MakeDeviceArgs;219,7528
+} Fs_OpenArgs;143,4982
+} Fs_OpenArgsSOSP;158,5649
+} Fs_OpenResults;170,6160
+} Fs_RedirectInfo;254,8686
+} Fs_SetAttrArgs;211,7375
+
+sprited/fsStat.h,559
+} Fs_AllocStats;228,9417
+} Fs_BlockCacheStats;202,8350
+} Fs_ConsistStats;361,15311
+} Fs_GeneralStats;64,2604
+} Fs_HandleStats;271,11397
+} Fs_HistGroupInfo;483,20672
+} Fs_LookupStats;304,12907
+} Fs_MigStats;429,18339
+} Fs_NameCacheStats;239,9774
+} Fs_NameOpStats;41,1567
+} Fs_NewStats;594,23855
+} Fs_ObjectStats;323,13581
+} Fs_PrefixStats;286,12028
+} Fs_RecoveryStats;342,14402
+} Fs_RemoteIOStats;394,16861
+} Fs_SospMigStats;559,22879
+#define Fs_StatAdd(547,22553
+} Fs_Stats;453,19461
+} Fs_TypeStats;535,22192
+} Fs_WriteBackStats;371,15639
+
+sprited/fsUnixStubs.h,0
+
+sprited/fscache.h,494
+#define FSCACHE_DEBUG_PRINT(426,16295
+#define FSCACHE_DEBUG_PRINT(443,16728
+#define FSCACHE_DEBUG_PRINT1(430,16383
+#define FSCACHE_DEBUG_PRINT2(434,16484
+#define FSCACHE_DEBUG_PRINT2(445,16807
+#define FSCACHE_DEBUG_PRINT3(438,16597
+} Fscache_Attributes;49,1510
+} Fscache_Backend;405,15609
+} Fscache_BackendRoutines;391,15115
+} Fscache_Block;227,8465
+#define	Fscache_BlockAddress(303,11561
+} Fscache_ExtraStats;188,6814
+} Fscache_FileInfo;84,3122
+} Fscache_ReadAheadInfo;421,16202
+
+sprited/fscacheBlocks.h,111
+#define DIRTY_LINKS_TO_BLOCK(39,1184
+#define FILE_LINKS_TO_BLOCK(44,1339
+#define USE_LINKS_TO_BLOCK(41,1247
+
+sprited/fsconsist.h,123
+} Fsconsist_ClientInfo;113,4335
+} Fsconsist_Info;92,3495
+#define INSERT_CLIENT(118,4436
+#define REMOVE_CLIENT(135,5044
+
+sprited/fsdm.h,142
+} Fsdm_DiskHeader;94,3767
+} Fsdm_DiskPartition;46,1500
+} Fsdm_Domain;289,11530
+} Fsdm_DomainOps;375,14876
+} Fsdm_FileDescriptor;171,7288
+
+sprited/fsio.h,282
+} FsioStreamClient;377,16900
+#define Fsio_MapLclToRmtType(114,4494
+#define Fsio_MapRmtToLclType(121,4777
+} Fsio_MigInfo;35,1218
+} Fsio_RecovTestInfo;409,17746
+typedef struct Fsio_Request *Fsio_RequestToken;396,17346
+} Fsio_StreamTypeOps;370,16686
+} Fsio_UseCounts;390,17278
+
+sprited/fsioDevice.h,89
+} Fsio_DeviceIOHandle;50,1903
+} Fsio_DeviceMigData;57,2058
+} Fsio_DeviceState;67,2424
+
+sprited/fsioFile.h,114
+} Fsio_FileIOHandle;103,3907
+} Fsio_FileReopenParams;63,2258
+} Fsio_FileState;52,1812
+} Fsio_OpenOps;138,5270
+
+sprited/fsioLock.h,26
+} Fsio_LockState;32,1150
+
+sprited/fsioPipe.h,62
+} Fsio_PipeIOHandle;41,1529
+} Fsio_PipeReopenParams;52,1881
+
+sprited/fsioRpc.h,0
+
+sprited/fslcl.h,62
+} Fslcl_DirEntry;38,1241
+#define Fslcl_DirRecLength(56,1940
+
+sprited/fspdev.h,157
+} Fspdev_CircBuffer;118,5055
+} Fspdev_ClientIOHandle;194,8790
+} Fspdev_ControlIOHandle;104,4441
+} Fspdev_ServerIOHandle;182,8399
+} Fspdev_State;59,2332
+
+sprited/fsprefix.h,20
+} Fsprefix;69,2926
+
+sprited/fsrmt.h,56
+} Fsrmt_FileIOHandle;64,2233
+} Fsrmt_IOHandle;46,1553
+
+sprited/fsrmtDomain.h,453
+#define FSRMT_RPC_DEBUG_PRINT(86,2465
+#define FSRMT_RPC_DEBUG_PRINT(107,3040
+#define FSRMT_RPC_DEBUG_PRINT1(90,2554
+#define FSRMT_RPC_DEBUG_PRINT2(94,2656
+#define FSRMT_RPC_DEBUG_PRINT2(109,3123
+#define FSRMT_RPC_DEBUG_PRINT3(98,2770
+#define FSRMT_RPC_DEBUG_PRINT4(102,2896
+#define FSRMT_RPC_DEBUG_PRINT4(111,3231
+} FsrmtRemoteBlockCopyParams;78,2387
+} FsrmtRemoteIOCParam;69,2132
+} FsrmtRemoteIOParam;42,1209
+} FsrmtSpriteIOCParams;58,1791
+
+sprited/fsrmtRpcStubs.h,0
+
+sprited/fsutil.h,394
+} Fsutil_FsRecovNamedStats;99,3466
+#define Fsutil_HandleDupType(130,4201
+#define Fsutil_HandleFetchType(127,4108
+#define Fsutil_HandleLock(133,4309
+#define Fsutil_HandleName(145,4725
+#define Fsutil_HandleRelease(139,4509
+#define Fsutil_HandleRemove(142,4626
+#define Fsutil_HandleUnlock(136,4404
+} Fsutil_RecoveryInfo;85,2942
+#define	Fsutil_StringNCopy(120,3907
+#define mnew(151,4975
+
+sprited/fsutilTrace.h,510
+#define FSUTIL_TRACE(106,2993
+#define FSUTIL_TRACE(165,4993
+#define FSUTIL_TRACE_BLOCK(143,4251
+#define FSUTIL_TRACE_IO(111,3124
+#define FSUTIL_TRACE_NAME(122,3500
+#define FSUTIL_TRACE_NAME(127,3665
+#define FSUTIL_TRACE_NAME(167,5081
+#define	FSUTIL_TRACE_READ_AHEAD(154,4704
+#define	FSUTIL_TRACE_READ_AHEAD(169,5170
+} Fsutil_TraceBlockRec;90,2719
+} Fsutil_TraceHdrRec;84,2601
+} Fsutil_TraceIORec;78,2482
+		FST_HANDLE, FST_RA, FST_BLOCK } Fsutil_TraceRecType 72,2332
+} Fsutil_TraceRecord;100,2924
+
+sprited/hash.h,181
+} Hash_Bucket;26,548
+} Hash_Entry;49,1228
+#define Hash_GetValue(107,3050
+} Hash_Search;96,2959
+#define Hash_SetValue(115,3162
+#define	Hash_Size(121,3300
+} Hash_Table;82,2439
+
+sprited/lfs.h,29
+#define Lfs_Command(97,3644
+
+sprited/machCalls.h,0
+
+sprited/main.h,0
+
+sprited/net.h,0
+
+sprited/netArp.h,272
+#define ARP_SRC_ETHER_ADDR(51,1882
+#define ARP_SRC_PROTO_ADDR(52,1956
+#define	ARP_TARGET_ETHER_ADDR(54,2052
+#define	ARP_TARGET_PROTO_ADDR(58,2209
+} ArpInputQueue;117,4068
+} ArpOutputQueue;104,3760
+} ArpState;78,2923
+} ArpStatistics;91,3342
+} NetSpriteArp;41,1516
+
+sprited/netRoute.h,45
+} NetHostInfo;112,3834
+} Net_Route;74,2670
+
+sprited/netTypes.h,192
+} Net_EtherStats;106,3624
+} Net_GenStats;137,4686
+} Net_Interface;230,7945
+typedef int Net_PacketType;55,1395
+} Net_ScatterGather;74,1975
+} Net_Stats;148,4843
+} Net_UltraStats;120,4113
+
+sprited/proc.h,455
+#define PROC_GET_VALID_PCB(56,1469
+#define Proc_AssertLocked(131,3644
+#define Proc_ComparePIDs(48,1190
+#define	Proc_GetActualProc(69,1902
+#define Proc_GetCurrentLock(89,2487
+#define Proc_GetEffectiveProc(169,5255
+#define	Proc_GetHostID(66,1779
+#define Proc_GetPCB(50,1239
+#define			Proc_MigUpdateInfo(208,7103
+#define Proc_SetState(105,2918
+#define	Proc_UseRpcBuffer(79,2242
+#define Proc_UseRpcBuffer(81,2284
+#define Proc_ValidatePID(52,1306
+
+sprited/procMigrate.h,407
+#define PROC_GET_MIG_PCB(54,1559
+#define PROC_MIG_DEC_STAT(260,8230
+#define PROC_MIG_INC_STAT(258,8128
+#define PROC_MIG_TIME_FOR_STATS(182,5084
+} Proc_CommandTrace;141,4016
+} Proc_DestroyMigProcData;273,8647
+} Proc_MigBuffer;83,2399
+} Proc_MigStats;252,8046
+} Proc_MigVarStats;210,6291
+} Proc_ParamInfo;73,2180
+} Proc_RemoteCall;99,2802
+} Proc_SysCallTrace;136,3942
+} Proc_TraceRecord;152,4185
+
+sprited/procServer.h,94
+} FuncInfo;49,1372
+} ProcFcnCallTime;113,3260
+} QueueElement;62,1783
+} ServerInfo;83,2328
+
+sprited/procTypes.h,323
+typedef int ProcExitFlags;94,2764
+} ProcTaskInfo;179,5242
+} Proc_CallInfo;121,3486
+} Proc_ControlBlock;475,15695
+} Proc_EnvironInfo;132,3774
+} Proc_LockStackElement;165,4795
+} Proc_LockedPCB;489,16132
+} Proc_ObjInfo;508,16881
+} Proc_PCBLink;147,4193
+typedef void (*Proc_ProcessRoot)107,3116
+} Proc_Time;160,4690
+
+sprited/procUnixStubs.h,0
+
+sprited/recov.h,135
+#define RECOV_TRACE(166,5561
+#define RECOV_TRACE(175,5780
+} RecovTraceRecord;139,4708
+} Recov_State;36,983
+} Recov_Stats;194,6557
+
+sprited/rpc.h,24
+} Rpc_ReplyMem;51,1396
+
+sprited/rpcCall.h,0
+
+sprited/rpcClient.h,49
+} RpcClientChannel;169,5388
+} RpcConst;73,2327
+
+sprited/rpcCltStat.h,0
+
+sprited/rpcHistogram.h,183
+#define RPC_CALL_TIMING_END(62,2126
+#define RPC_CALL_TIMING_START(58,1994
+#define RPC_SERVICE_TIMING_END(70,2395
+#define RPC_SERVICE_TIMING_START(66,2254
+} Rpc_Histogram;41,1462
+
+sprited/rpcPacket.h,40
+} RpcHdr;79,3069
+} RpcHdrNew;136,5591
+
+sprited/rpcServer.h,164
+typedef ReturnStatus (*IntProc)205,6623
+} NackData;148,4429
+#define	RPC_IS_BROADCAST(227,7159
+} RpcServerState;135,3876
+} RpcService;210,6811
+			int 206,6699
+
+sprited/rpcSrvStat.h,0
+
+sprited/rpcTrace.h,233
+#define RPC_NIL_TRACE(46,1050
+#define RPC_NIL_TRACE(55,1284
+#define RPC_TRACE(50,1162
+#define RpcTrace(38,843
+} Rpc_Trace;67,1719
+typedef Rpc_TraceHdr2 Rpc_TraceFileHdr;89,2141
+} Rpc_TraceHdr1;76,1885
+} Rpc_TraceHdr2;87,2123
+
+sprited/rpcTypes.h,81
+} RpcBufferSet;44,1479
+} RpcServerUserStateInfo;56,1747
+} Rpc_Storage;91,3129
+
+sprited/sig.h,29
+#define Sig_Pending(46,1056
+
+sprited/sigTypes.h,43
+} Sig_Context;32,810
+} Sig_Stack;46,1312
+
+sprited/spriteSrv.h,0
+
+sprited/sync.h,939
+#define SyncDeadlockPanic(504,13864
+#define SyncDeadlockPanic(510,14000
+#define SyncDeleteCurrent(474,13240
+#define SyncDeleteCurrent(479,13365
+#define SyncMergePrior(443,12564
+#define SyncMergePrior(449,12729
+#define Sync_AddPrior(412,11920
+#define Sync_AddPrior(419,12110
+#define Sync_IsRegistered(317,10076
+#define Sync_IsRegistered(322,10172
+#define Sync_LockClear(379,11321
+#define Sync_LockClear(388,11470
+#define Sync_LockInitStatic(266,8831
+#define Sync_LockInitStatic(273,8969
+#define Sync_LockInitStatic(282,9201
+#define Sync_LockInitStatic(289,9414
+#define Sync_LockRegister(346,10703
+#define Sync_LockRegister(355,10870
+#define Sync_MasterWait(97,3097
+#define Sync_RecordHit(538,14674
+#define Sync_RecordHit(542,14728
+#define Sync_RecordMiss(565,15161
+#define Sync_RecordMiss(569,15216
+#define Sync_StoreDbgInfo(595,15927
+#define Sync_StoreDbgInfo(599,16007
+#define UNLOCK_MONITOR_AND_SWITCH(205,7003
+
+sprited/syncTypes.h,265
+} Sync_ListInfo;100,3445
+typedef Sync_KernelLock Sync_Lock;134,4368
+typedef int Sync_PCBFlags;68,2016
+} Sync_RegElement;157,5252
+} Sync_RemoteWaiter;175,5694
+typedef Sync_Lock Sync_Semaphore;138,4456
+typedef struct semid_ds Sync_SysVSem;163,5319
+} 130,4332
+
+sprited/sys.h,50
+} Sys_CallCount;52,1565
+} Sys_MsgBuffer;42,1255
+
+sprited/sysCallNums.h,0
+
+sprited/timer.h,110
+#define Timer_GetCurrentTicks(99,3220
+#define Timer_GetRealTimeOfDay(101,3325
+} Timer_QueueElement;89,3046
+
+sprited/timerStat.h,28
+} Timer_Statistics;47,1706
+
+sprited/timerTick.h,591
+#define Timer_AddIntervalToTicks(71,1902
+#define Timer_AddTicks(42,1055
+#define Timer_AddTicks(49,1304
+#define Timer_SubtractTicks(45,1170
+#define Timer_SubtractTicks(50,1355
+#define Timer_TickEQ(100,2673
+#define Timer_TickEQ(106,2984
+#define Timer_TickGE(101,2745
+#define Timer_TickGE(107,3023
+#define Timer_TickGT(102,2817
+#define Timer_TickGT(108,3062
+#define Timer_TickLE(99,2601
+#define Timer_TickLE(105,2945
+#define Timer_TickLT(98,2529
+#define Timer_TickLT(104,2906
+typedef Time Timer_Ticks;34,974
+#define Timer_TicksToTime(57,1500
+#define Timer_TimeToTicks(58,1542
+
+sprited/trace.h,48
+} Trace_Header;34,1170
+} Trace_Record;56,1717
+
+sprited/utils.h,0
+
+sprited/vm.h,184
+#define Vm_BootAlloc(123,2890
+#define Vm_ByteToPage(52,1350
+#define Vm_PageToByte(74,1904
+#define Vm_RawAlloc(124,2937
+#define Vm_RoundPage(94,2306
+#define Vm_TruncPage(116,2764
+
+sprited/vmSwapDir.h,0
+
+sprited/vmTypes.h,356
+} VmCodeSegInfo;142,5178
+} VmFileMap;60,1847
+} VmHeapSegInfo;119,4388
+} VmMappedSegment;338,13899
+} VmPerTypeInfo;152,5372
+} VmStackSegInfo;132,4878
+typedef int Vm_Accessibility;358,14702
+} Vm_Segment;286,11318
+typedef int Vm_SegmentFlags;197,7139
+typedef int Vm_SegmentState;166,5840
+typedef int Vm_SegmentType;95,3586
+} Vm_TaskInfo;347,14349
+
+sun3.md/a.out.h,208
+#define	N_BADMAG(27,625
+#define N_BSSADDR(57,1494
+#define N_DATADDR(56,1425
+#define N_PAGSIZ(39,906
+#define	N_STROFF(46,1159
+#define N_SYMOFF(44,1068
+#define N_TXTADDR(55,1356
+#define N_TXTOFF(41,959
+
+sun3.md/limits.h,0
+
+sun3.md/machSignal.h,0
+
+sun3.md/machparam.h,0
+
+sun3.md/setjmp.h,58
+extern 17,310
+extern 18,347
+typedef int jmp_buf[15,284
+
+sun3.md/sigMach.h,0
+
+sun3.md/varargs.h,80
+# define va_end(28,832
+typedef char *va_list;23,721
+# define va_start(27,782
+
+sys/audioio.h,0
+
+sys/dir.h,89
+} DIR;72,2663
+#define DIRSIZ(60,2386
+#define dirfd(74,2671
+#define rewinddir(83,2845
+
+sys/errno.h,0
+
+sys/fb.h,95
+} fbcmap;101,3200
+} fbgattr;120,3811
+} fbinfo;88,2896
+} fbsattr;110,3501
+} fbtype;74,2475
+
+sys/fcntl.h,0
+
+sys/file.h,0
+
+sys/ioctl.h,148
+#define	IOCPARM_LEN(97,2345
+#define		UIOCCMD(235,9130
+#define	_IO(105,2776
+#define	_IOR(106,2821
+#define	_IOW(107,2899
+#define	_IOWR(109,3030
+
+sys/ipc.h,0
+
+sys/param.h,90
+#define MAX(79,2315
+#define MIN(78,2278
+#define dbtob(48,1506
+#define roundup(86,2442
+
+sys/resource.h,0
+
+sys/sem.h,0
+
+sys/signal.h,26
+#define sigmask(132,4168
+
+sys/socket.h,0
+
+sys/stat.h,229
+#define S_ISBLK(58,1590
+#define S_ISCHR(59,1639
+#define S_ISDIR(60,1688
+#define S_ISFIFO(61,1737
+#define S_ISLNK(64,1857
+#define S_ISPDEV(67,1981
+#define S_ISREG(62,1786
+#define S_ISRLNK(68,2031
+#define S_ISSOCK(65,1906
+
+sys/syslog.h,131
+#define LOG_FAC(38,1409
+#define	LOG_MAKEPRI(56,2045
+#define	LOG_MASK(65,2226
+#define LOG_PRI(54,1982
+#define	LOG_UPTO(66,2290
+
+sys/termios.h,0
+
+sys/time.h,82
+#define	timerclear(45,1259
+#define	timercmp(42,1115
+#define	timerisset(41,1056
+
+sys/times.h,0
+
+sys/ttychars.h,21
+#define	CTRL(32,930
+
+sys/ttydev.h,0
+
+sys/types.h,1211
+#define	FD_CLR(118,3151
+#define	FD_ISSET(119,3228
+#define	FD_SET(117,3075
+#define FD_ZERO(120,3305
+typedef	char *	caddr_t;68,1859
+typedef	unsigned char	35,1093
+typedef	long	clock_t;82,2144
+typedef	long	daddr_t;67,1837
+typedef	short	dev_t;84,2173
+typedef long	fd_mask;107,2842
+} fd_set;115,3064
+typedef	short	gid_t;87,2235
+#define	howmany(110,2941
+typedef	u_long	ino_t;70,1947
+typedef	unsigned int	37,1155
+typedef long	key_t;94,2467
+} label_t;45,1389
+} label_t;51,1517
+} label_t;58,1654
+typedef	unsigned long	38,1183
+#define	major(22,778
+#define	makedev(33,1045
+#define	minor(28,935
+typedef	long	off_t;85,2194
+typedef	struct	_physadr { int r[1]; } *physadr;42,1302
+typedef	struct	_physadr { short r[1]; } *physadr;48,1428
+typedef struct  _physadr { int r[1]; } *physadr;55,1554
+typedef int	pid_t;93,2448
+typedef	long *	qaddr_t;69,1883
+typedef struct _quad {long val[2]; } quad;64,1738
+typedef	unsigned short	36,1123
+typedef	unsigned short	39,1213
+typedef	int	size_t;74,2023
+typedef	long	swblk_t;71,1969
+typedef	long	time_t;78,2082
+typedef	struct	_uquad {unsigned long val[2]; } u_quad;65,1781
+typedef	short	uid_t;86,2214
+#define unix_major(24,835
+#define	unix_minor(30,977
+
+sys/uio.h,0
+
+sys/wait.h,165
+#define WEXITSTATUS(88,3123
+#define WIFEXITED(86,3008
+#define WIFSIGNALED(84,2870
+#define WIFSTOPPED(83,2801
+#define WSTOPSIG(90,3241
+#define WTERMSIG(89,3182
+
+user/ar.h,0
+
+user/assert.h,149
+#define _assert(32,785
+#define _assert(37,932
+#define _assert(48,1210
+#define _assert(54,1373
+# define _assert(64,1613
+# define assert(62,1559
+
+user/bit.h,270
+#define Bit_Alloc(39,1059
+#define Bit_Clear(54,1567
+#define Bit_Copy(61,1796
+#define Bit_Free(43,1221
+#define Bit_IsClear(58,1709
+#define Bit_IsSet(50,1427
+#define Bit_NumBytes(36,988
+#define Bit_NumInts(33,896
+#define Bit_Set(46,1288
+#define Bit_Zero(65,1935
+
+user/bstring.h,0
+
+user/cfuncproto.h,112
+#define	_ARGS_(63,1725
+#define	_ARGS_(65,1751
+typedef void *_VoidPtr;75,1877
+typedef char *_VoidPtr;77,1907
+
+user/ckalloc.h,225
+#define ckalloc(49,1494
+#define ckalloc(61,1924
+#define ckalloc(69,2066
+#define ckfree(50,1552
+#define ckfree(62,1958
+#define ckfree(70,2095
+#define ckstrdup(51,1617
+#define ckstrdup(63,2001
+#define ckstrdup(71,2121
+
+user/cthreads.h,1456
+#define	ASSERT(536,13922
+#define	ASSERT(555,14193
+#define	C_ARG_DECLS(176,6152
+#define	C_ARG_DECLS(184,6303
+typedef void *any_t;179,6219
+typedef char *any_t;187,6365
+#define	condition_alloc(349,9973
+#define	condition_broadcast(375,10602
+#define	condition_clear(357,10286
+#define	condition_free(362,10394
+#define	condition_init(350,10052
+#define	condition_name(356,10224
+#define	condition_set_name(355,10173
+#define	condition_signal(368,10494
+} *condition_t;345,9876
+#define	cthread_assoc(459,12183
+typedef any_t (*cthread_fn_t)395,10918
+typedef int	cthread_key_t;504,13243
+#define	cthread_queue_alloc(235,7195
+#define	cthread_queue_deq(259,7924
+#define	cthread_queue_enq(239,7392
+#define	cthread_queue_free(237,7343
+#define	cthread_queue_head(257,7872
+#define	cthread_queue_init(236,7285
+} *cthread_queue_item_t;229,7059
+#define	cthread_queue_map(266,8108
+#define	cthread_queue_preq(249,7645
+} *cthread_queue_t;225,6968
+#define	cthread_self(461,12307
+} *cthread_t;414,11274
+#define	mutex_alloc(305,8890
+#define	mutex_clear(314,9210
+#define	mutex_free(315,9247
+#define	mutex_init(306,8957
+#define mutex_lock(324,9471
+#define	mutex_name(313,9152
+#define	mutex_set_name(312,9105
+} *mutex_t;301,8780
+#define mutex_try_lock(323,9419
+#define mutex_unlock(330,9588
+#define spin_lock(291,8582
+#define	ur_cthread_ptr(449,11877
+#define	ur_cthread_ptr(452,11978
+#define	ur_cthread_self(457,12125
+} *ur_cthread_t;439,11752
+
+user/ctype.h,301
+#define isalnum(44,1314
+#define isalpha(47,1407
+#define isascii(77,2150
+#define iscntrl(50,1488
+#define isdigit(53,1557
+#define isgraph(56,1624
+#define islower(59,1729
+#define isprint(62,1796
+#define ispunct(65,1863
+#define isspace(68,1930
+#define isupper(71,1997
+#define isxdigit(74,2064
+
+user/db.h,66
+} Db_Handle;69,2698
+} Db_LockHow;52,2054
+} Db_LockWhen;38,1478
+
+user/errno.h,0
+
+user/fcntl.h,0
+
+user/fmt.h,31
+typedef int Fmt_Format;35,864
+
+user/fs.h,906
+} Fs_Attributes;155,5624
+} Fs_Device;607,20928
+} Fs_DomainInfo;547,18895
+} Fs_FileID;265,9681
+} Fs_IOVector;584,19969
+typedef char Fs_PathName[617,21082
+} Fs_Prefix;565,19447
+typedef ClientData Fs_TimeoutHandler;612,20995
+} Fs_TwoPaths;530,18247
+} Fs_UserIDs;277,10088
+} Ioc_LockArgs;405,14220
+} Ioc_MapArgs;429,14801
+} Ioc_MmapInfoArgs;458,15735
+} Ioc_Owner;418,14603
+} Ioc_PrefixArgs;436,14979
+} Ioc_RepositionArgs;343,12212
+} Ioc_WriteBackArgs;449,15461
+extern 619,21134
+extern 620,21166
+extern 621,21208
+extern 622,21252
+extern 623,21298
+extern 624,21350
+extern 625,21386
+extern 626,21420
+extern 627,21464
+extern 628,21498
+extern 629,21553
+extern 631,21600
+extern 632,21645
+extern 633,21689
+extern 634,21733
+extern 635,21773
+extern 636,21812
+extern 637,21859
+extern 638,21902
+extern 639,21948
+extern 640,21992
+extern 641,22036
+extern 642,22080
+extern 643,22122
+
+user/fsCmd.h,59
+} Fs_PrefixControl;153,6088
+} Fs_PrefixLoadInfo;161,6366
+
+user/grp.h,0
+
+user/hash.h,159
+} Hash_Entry;51,1543
+#define Hash_GetValue(106,3201
+} Hash_Search;95,3103
+#define Hash_SetValue(114,3322
+#define	Hash_Size(120,3470
+} Hash_Table;83,2685
+
+user/host.h,46
+} Host_Entry;78,2646
+} Host_NetType;62,2044
+
+user/list.h,382
+#define LIST_AFTER(272,8826
+#define LIST_ATFRONT(276,8946
+#define LIST_ATREAR(278,9006
+#define LIST_BEFORE(274,8880
+#define LIST_FORALL(143,4860
+#define List_First(195,6283
+#define List_InitElement(111,3792
+#define List_IsAtEnd(178,5854
+#define List_IsEmpty(161,5389
+#define List_Last(210,6681
+} List_Links;79,2897
+#define List_Next(242,7634
+#define List_Prev(226,7160
+
+user/mach.h,0
+
+user/mach_error.h,0
+
+user/mach_init.h,198
+#define	current_task(94,2751
+#define mach_host_priv_self(83,2507
+#define mach_master_device_port(84,2554
+#define	mach_task_self(92,2709
+#define round_page(125,3421
+#define trunc_page(124,3371
+
+user/math.h,216
+#define _POLY1(48,1696
+#define _POLY2(49,1744
+#define _POLY3(50,1802
+#define _POLY4(51,1860
+#define _POLY5(52,1918
+#define _POLY6(53,1976
+#define _POLY7(54,2034
+#define _POLY8(55,2092
+#define _POLY9(56,2150
+
+user/mig.h,211
+} Mig_ArchStats;326,12206
+} Mig_IdleRequest;198,7457
+} Mig_Info;128,4805
+} Mig_InfoRequest;183,7041
+} Mig_LoadVector;110,4177
+} Mig_StatTotals;305,11345
+} Mig_Stats;356,13561
+} Mig_SystemParms;398,15126
+
+user/mig_errors.h,0
+
+user/ndbm.h,172
+} DBM;32,981
+} datum;50,1455
+#define dbm_clearerr(41,1241
+#define dbm_dirfno(44,1332
+#define dbm_error(39,1150
+#define dbm_pagfno(45,1372
+#define dbm_rdonly(37,1094
+
+user/net.h,348
+#define NET_ADDRESS_COMPARE(41,1153
+} Net_Address;36,1085
+} Net_GenericAddress;167,4441
+} Net_Header;93,2237
+#define Net_HostToNetInt(224,6669
+#define Net_HostToNetShort(227,6744
+#define Net_NetToHostInt(223,6633
+#define Net_NetToHostShort(226,6706
+typedef int Net_NetworkType;75,1772
+} Net_RouteInfo;129,3693
+} Net_SpriteRoute;185,5022
+
+user/netEther.h,1379
+#define	NET_ETHER_ADDR_BYTE1(78,2214
+#define	NET_ETHER_ADDR_BYTE2(79,2258
+#define	NET_ETHER_ADDR_BYTE3(80,2302
+#define	NET_ETHER_ADDR_BYTE4(81,2346
+#define	NET_ETHER_ADDR_BYTE5(82,2390
+#define	NET_ETHER_ADDR_BYTE6(83,2434
+#define	NET_ETHER_ADDR_COPY(86,2491
+#define	NET_ETHER_ADDR_COPY(94,2725
+#define	NET_ETHER_COMPARE(41,1303
+#define	NET_ETHER_COMPARE(56,1754
+#define	NET_ETHER_COMPARE_PTR(48,1469
+#define	NET_ETHER_COMPARE_PTR(58,1835
+#define	NET_ETHER_HDR_COPY(133,3735
+#define	NET_ETHER_HDR_DESTINATION(125,3432
+#define	NET_ETHER_HDR_DESTINATION_PTR(129,3576
+#define	NET_ETHER_HDR_SOURCE(126,3487
+#define	NET_ETHER_HDR_SOURCE_PTR(130,3636
+#define	NET_ETHER_HDR_TYPE(127,3533
+#define	NET_ETHER_HDR_TYPE_PTR(131,3687
+} Net_EtherAddress;76,2193
+} Net_EtherHdr;123,3415
+			(bcopy(109,3124
+typedef unsigned char 99,2794
+typedef unsigned char 137,3797
+#define	101,2838
+#define	102,2879
+#define	103,2920
+#define	104,2961
+#define	105,3002
+#define	106,3043
+#define	108,3085
+#define	139,3838
+#define	140,3899
+#define	141,3958
+#define	143,4021
+#define	144,4086
+#define	145,4149
+#define	147,4216
+#define	157,4541
+#define	158,4572
+#define 164,4706
+#define 165,4737
+#define 166,4777
+#define 167,4811
+#define 168,4841
+#define 169,4872
+#define 170,4909
+#define 171,4942
+#define 172,4979
+#define 173,5018
+#define 174,5051
+#define 175,5084
+
+user/netInet.h,836
+#define NET_INET_CLASS_A_ADDR(102,3201
+#define NET_INET_CLASS_B_ADDR(108,3415
+#define NET_INET_CLASS_C_ADDR(114,3638
+#define NET_INET_CLASS_D_ADDR(123,3922
+#define NET_INET_CLASS_E_ADDR(130,4091
+#define NET_IP_OPT_CLASS(300,9214
+#define NET_IP_OPT_COPIED(299,9167
+#define NET_IP_OPT_NUMBER(301,9260
+}  Net_ArpHeader;51,1552
+} Net_ArpPacket;75,2524
+} Net_ICMPDataInfoEcho;497,14744
+} Net_ICMPDataMask;507,14941
+} Net_ICMPDataMisc;466,14009
+} Net_ICMPDataParam;488,14500
+} Net_ICMPDataRedir;476,14231
+} Net_ICMPDataTime;518,15176
+} Net_ICMPHeader;455,13748
+} Net_ICMPPacket;540,15926
+} Net_IPHeader;175,5513
+} Net_IPPseudoHdr;187,5934
+} Net_IPTimestampHdr;342,10431
+} Net_InetSocketAddr;591,17946
+typedef int Net_InetTime;355,10734
+} Net_TCPHeader;382,11638
+} Net_UDPHeader;431,12787
+typedef unsigned int 30,818
+
+user/netUltra.h,196
+} Net_UltraAddress;49,1583
+#define Net_UltraAddressGet(38,1247
+#define Net_UltraAddressSet(31,967
+} Net_UltraHeader;109,4080
+} Net_UltraTLAddress;74,2800
+#define Net_UltraTLWildcard(82,3029
+
+user/netdb.h,0
+
+user/option.h,78
+#define OPT_CONSTANT(104,4138
+#define Opt_Number(143,5051
+} Option;37,1367
+
+user/pdev.h,150
+} Pdev_CallBacks;51,1716
+extern	int 		      (*Pdev_SetHandler(80,2573
+} Pdev_Stream;64,2258
+typedef char *Pdev_Token;66,2274
+#define max(72,2423
+
+user/pfs.h,103
+} Pfs_CallBacks;51,1710
+extern	int		       (*Pfs_SetHandler(65,1974
+typedef char *Pfs_Token;58,1852
+
+user/proc.h,517
+} Proc_DebugReq;296,9340
+} Proc_DebugState;330,10568
+} Proc_EnvironVar;339,10749
+typedef int Proc_Flags;210,6906
+#define Proc_In_A_Family(109,3134
+typedef Proc_StringOffset *Proc_OffsetTable;546,17365
+} Proc_PCBArgString;535,17073
+} Proc_PCBInfo;474,15433
+typedef unsigned int 74,2373
+#define	Proc_PIDToIndex(94,2779
+} Proc_ResUsage;280,9048
+} Proc_State;150,4403
+typedef int Proc_StringOffset;545,17334
+typedef char *Proc_Strings;547,17410
+} Proc_TimerInterval;517,16550
+typedef unsigned int 74,2373
+
+user/pwd.h,0
+
+user/rpc.h,73
+} Rpc_CltStat;107,4409
+} Rpc_EchoArgs;171,7201
+} Rpc_SrvStat;151,6645
+
+user/sched.h,28
+} Sched_Instrument;33,1036
+
+user/sgtty.h,0
+
+user/sig.h,83
+} Sig_Action;72,2034
+		Sig_Context 63,1797
+typedef int (*Sig_HandleProc)62,1729
+
+user/signal.h,26
+#define sigmask(132,4168
+
+user/sprite.h,127
+typedef char *Address;83,2072
+typedef int Boolean;35,958
+typedef int *ClientData;92,2328
+typedef int  ReturnStatus;42,1096
+
+user/spriteEmu.h,0
+
+user/spriteTime.h,226
+} Time;36,971
+#define Time_Average(186,4733
+#define Time_EQ(133,3380
+#define Time_GE(137,3514
+#define Time_GT(142,3701
+#define Time_LE(128,3193
+#define Time_LT(123,3006
+} Time_Parts;49,1171
+#define Time_ToMs(165,4232
+
+user/status.h,91
+#define STAT_IS_PRIVATE(50,1550
+#define STAT_MODULE(51,1606
+#define STAT_MSGNUM(52,1665
+
+user/stddef.h,112
+#define offsetof(33,781
+typedef int ptrdiff_t;21,637
+typedef int size_t;26,716
+typedef short wchar_t;22,660
+
+user/stdio.h,227
+typedef int *ClientData;45,1300
+} FILE;142,5160
+#define feof(241,8013
+#define ferror(240,7971
+#define getc(196,6641
+#define getchar(214,7298
+#define putc(203,6881
+#define putchar(216,7329
+typedef char *va_list;51,1387
+
+user/stdlib.h,137
+} Mem_TraceInfo;126,3678
+} div_t;170,4945
+#define		free(84,2404
+#define		free(86,2440
+} ldiv_t;175,5009
+typedef	int	size_t;44,1478
+
+user/string.h,0
+
+user/strings.h,0
+
+user/swapBuffer.h,0
+
+user/sync.h,188
+#define Sync_Broadcast(189,6449
+} Sync_Condition;60,2158
+typedef Sync_UserLock Sync_Lock;39,1363
+} Sync_LockStat;93,3385
+typedef int Sync_UserLock;36,1293
+#define Sync_Wait(163,5749
+
+user/sys.h,52
+} Sys_MachineInfo;62,1620
+} Sys_PanicLevel;30,825
+
+user/sysStats.h,193
+} Sys_DiskStats;305,13203
+} Sys_SchedOverallTimes;315,13367
+} Sys_SospNameStats;328,13640
+} Sys_TracelogHeader;265,11854
+} Sys_TracelogHeaderKern;279,12428
+} Sys_TracelogRecord;235,10478
+
+user/syslog.h,131
+#define LOG_FAC(35,1376
+#define	LOG_MAKEPRI(53,2012
+#define	LOG_MASK(62,2193
+#define LOG_PRI(51,1949
+#define	LOG_UPTO(63,2257
+
+user/td.h,156
+} Td_BaudRate;74,2052
+} Td_FlowChars;62,1718
+typedef struct Td_Pdev *Td_Pdev;27,869
+} Td_Signal;93,2481
+typedef struct Td_Terminal *Td_Terminal;26,828
+
+user/test.h,162
+typedef char Test_MessageBuffer[30,788
+extern 32,840
+extern 33,871
+extern 34,898
+extern 35,927
+extern 36,958
+extern 37,986
+extern 38,1016
+extern 40,1047
+
+user/testRedef.h,190
+#define Test_GetString(37,1257
+#define Test_PutDecimal(32,1016
+#define Test_PutHex(33,1065
+#define Test_PutMessage(35,1160
+#define Test_PutOctal(34,1112
+#define Test_PutString(36,1209
+
+user/time.h,57
+typedef	long	clock_t;20,391
+typedef	long	time_t;16,329
+
+user/tzfile.h,25
+#define	isleap(100,2516
+
+user/ulog.h,21
+} Ulog_Data;67,2164
+
+user/unistd.h,27
+typedef int size_t;36,857
+
+user/utmp.h,0
+
+user/vm.h,0
+
+user/vmStat.h,20
+} Vm_Stat;104,3755
+
+user/vmTypes.h,62
+typedef int Vm_SegmentID;148,4839
+} Vm_SegmentInfo;180,6098

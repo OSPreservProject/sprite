@@ -1,0 +1,130 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.03.27.13.29.58;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.22.16.06.45;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.25.13.25.44;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@A few little optimizations.
+@
+text
+@/* 
+ * strcmp.c --
+ *
+ *	Source code for the "strcmp" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strcmp.c,v 1.2 89/03/22 16:06:45 rab Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <string.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * strcmp --
+ *
+ *	Compare two strings lexicographically.
+ *
+ * Results:
+ *	The return value is 0 if the strings are identical, 1
+ *	if the first string is greater than the second, and 
+ *	-1 if the first string is less than the second.  If one
+ *	string is a prefix of the other then it is considered
+ *	to be less (the terminating zero byte participates in the
+ *	comparison).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+strcmp(s1, s2)
+    register char *s1, *s2;		/* Strings to compare. */
+{
+    int c1, c2;
+
+    while (1) {
+	c1 = *s1++;
+	c2 = *s2++;
+	if (c1 != c2) {
+	    return c1 - c2;
+	}
+	if (c1 == 0) {
+	    return 0;
+	}
+    }
+}
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strcmp.c,v 1.1 88/04/25 13:25:44 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+d47 2
+d50 4
+a53 6
+	if (*s1 != *s2) {
+	    if (*s1 > *s2) {
+		return 1;
+	    } else {
+		return -1;
+	    }
+d55 1
+a55 1
+	if (*s1++ == 0) {
+a57 1
+	s2 += 1;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 4
+a20 2
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+@

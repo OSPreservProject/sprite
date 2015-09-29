@@ -1,0 +1,39 @@
+Fri Jul 26 09:15:58 1991  Johan Vromans  (jv at largo)
+
+	* Released to USEnet (patch). Official version is 4.010.2.1.
+
+	* ch04: typo: | -> || (two locations)
+
+	* parr: slightly increase $topmargin for US paper.
+
+	* ch06: typo: log or/and | & -> || &&
+
+Thu Jul 25 11:11:24 1991  Johan Vromans  (jv at largo)
+
+	* Makefile/README: Clarify the use of guide-{odd,even?}.ps.
+
+	* parr: Suppress extraneous %%Page comments to obtain more
+	  conformant PostScript. Some PS viewers and printers (or
+	  print-spoolers) seem to choke in these extraneous comments.
+
+	  Set $leftmargin to 0 for US-Letter format. According to most
+	  respondents this seems to be the correct value.
+
+Tue Jul 23 18:32:54 1991  Johan Vromans  (jv at largo)
+
+	* Makefile: allow MASTER=test for testing.
+
+	* ch03: typo: $var -> $#var is last element of array.
+
+	* ch00: move front page info a bit down/right.
+
+Mon Jul 22 22:05:57 1991  Johan Vromans  (jv at pronto)
+
+	* ch00: typo: deigned -> designed.
+
+Sat Jul 20 00:31:47 1991  Johan Vromans  (jv at pronto)
+
+	* Released to USEnet. Official version is 4.010.1.8.
+
+	* This is a brand new version.
+

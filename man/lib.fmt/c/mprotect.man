@@ -1,0 +1,66 @@
+
+
+
+MPROTECT              C Library Procedures               MPROTECT
+
+
+
+NNAAMMEE
+     mprotect - set protection of memory mapping
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//mmmmaann..hh>>
+     mmpprrootteecctt((aaddddrr,, lleenn,, pprroott))
+     ccaaddddrr__tt aaddddrr;; iinntt lleenn,, pprroott;;
+
+DDEESSCCRRIIPPTTIIOONN
+     mmpprrootteecctt(()) changes the access protections on the mappings
+     specified by the range [_a_d_d_r, _a_d_d_r + _l_e_n) to be that speci-
+     fied by _p_r_o_t.  Legitimate values for _p_r_o_t are the same as
+     those permitted for mmmmaapp(2).
+
+RREETTUURRNN VVAALLUUEE
+     mmpprrootteecctt(()) returns 0 on success, -1 on failure.
+
+EERRRROORRSS
+     mmpprrootteecctt(()) will fail if:
+
+     EACCES              _p_r_o_t specifies a protection which
+                         violates the access permission the pro-
+                         cess has to the underlying memory
+                         object.
+
+     EINVAL              _a_d_d_r is not a multiple of the page size
+                         as returned by ggeettppaaggeessiizzee(2).
+
+     ENOMEM              Addresses in the range [_a_d_d_r, _a_d_d_r +
+                         _l_e_n) are invalid for the address space
+                         of a process, or specify one or more
+                         pages which are not mapped.
+
+     When mmpprrootteecctt(()) fails for reasons other than EINVAL, the
+     protections on some of the pages in the range [_a_d_d_r, _a_d_d_r +
+     _l_e_n) will have been changed.  If the error occurs on some
+     page at address _a_d_d_r_2, then the protections of all whole
+     pages in the range [_a_d_d_r, _a_d_d_r_2) have been modified.
+
+SSEEEE AALLSSOO
+     ggeettppaaggeessiizzee(2), mmmmaapp(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             25 September 1987                       1
+
+
+

@@ -1,0 +1,66 @@
+#!/sprite/cmds/csh -f
+#
+# A script to generate (or regenerate) a Makefile for the topmost directory
+# of a library that is divided up into subdirectories.  This direcctory is
+# little more than a container for lots of subdirectories that have the
+# interesting stuff in them.
+#
+# We assume we were invoked from mkmf.
+#
+# Parameters passed in from mkmf as environment variables:
+#
+#	MKMFDIR		directory containing prototype makefiles
+#	MAKEFILE	name of makefile to create
+#	MACHINES	list of machine names (e.g. "sun2 sun3"), for
+#			which there are machine-dependent subdirectories
+#			(sun3.md, spur.md, etc.) of this directory.
+#	SUBTYPE		what sort of library this is:  "sprite", "x", etc.
+#			Used to determine where to install things.
+#
+# $Header: /sprite/lib/mkmf/RCS/mkmf.biglibtop,v 1.8 91/04/11 12:53:33 kupfer Exp $ (SPRITE) Berkeley
+#
+
+#
+# Argument processing.  (Generalized form, even though just one flag so far.)
+#
+while ($#argv >= 1)
+    if ("$1" == '-x') then
+	set echo
+    endif
+    shift
+end
+
+set subtype=$SUBTYPE
+set lib=$cwd:t
+set machines=($MACHINES)
+set makefile=$MAKEFILE
+set distdir=($DISTDIR)
+
+if (-e $makefile.proto) then
+	set proto=$makefile.proto
+else
+	set proto="${MKMFDIR}/Makefile.biglibtop"
+endif
+
+echo "Generating $makefile for $cwd using $proto"
+
+set subDirs="`find * -type d ! -name \*.md ! -name RCS -prune -print`"
+if ("$subDirs" == "") then
+	echo "No subdirectories found."
+endif
+
+set nonomatch
+set manPages = (*.man)
+if ("$manPages" == "*.man") set manPages=()
+
+cat $proto | sed \
+	-e "s,@(DATE),`date`,g" \
+	-e "s,@(MAKEFILE),$makefile,g" \
+	-e "s,@(MANPAGES),$manPages,g" \
+	-e "s,@(MACHINES),$machines,g" \
+	-e "s,@(NAME),$lib,g" \
+	-e "s,@(SUBDIRS),$subDirs,g" \
+	-e "s,@(TEMPLATE),$proto,g" \
+	-e "s,@(TYPE),$subtype,g" \
+	-e "s,@(DISTDIR),$distdir,g" \
+	> $makefile

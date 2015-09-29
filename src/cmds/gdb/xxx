@@ -1,0 +1,827 @@
+# 1 "inflow.c"
+ 
+# 1 "/sprite/lib/include/stdio.h" 1
+ 
+ 
+# 1 "/sprite/lib/include/cfuncproto.h" 1
+ 
+ 
+typedef char *_VoidPtr;
+# 32 "/sprite/lib/include/stdio.h" 2
+typedef int *ClientData;
+ 
+typedef struct _file {
+    unsigned char *lastAccess;	 
+    int readCount;		 
+    int writeCount;		 
+    unsigned char *buffer;	 
+    int bufSize;		 
+    void (*readProc)() ;
+				 
+    void (*writeProc)() ;
+				 
+    int (*closeProc)() ;
+				 
+    ClientData clientData;	 
+    int status;			 
+    int flags;			 
+    struct _file *nextPtr;	 
+} FILE;
+ 
+
+ 
+
+ 
+
+ 
+ 
+extern FILE stdioInFile, stdioOutFile, stdioErrFile;
+ 
+ 
+ 
+
+ 
+        extern  void	clearerr () ;
+        extern  int	fclose () ;
+        extern  FILE *	fdopen () ;
+        extern  int	fflush () ;
+        extern  int	fgetc () ;
+        extern  char *	fgets () ;
+        extern  int	fileno () ;
+        extern  FILE *	fopen () ;
+        extern  int	fputc () ;
+        extern  int	fputs () ;
+        extern  int	fread () ;
+        extern  FILE *	freopen () ;
+        extern  long	fseek () ;
+        extern  long	ftell () ;
+        extern  int	fwrite () ;
+        extern  char *	gets () ;
+        extern  int	getw () ;
+        extern  void	perror () ;
+        extern  FILE *	popen () ;
+        extern  int	pclose () ;
+        extern  int      remove () ;
+        extern  int      rename () ;
+# 333 "/sprite/lib/include/stdio.h"
+ 
+        extern  int	printf () ;
+        extern  int	fprintf () ;
+        extern  int	scanf () ;
+        extern  char *	sprintf () ;
+        extern  int	sscanf () ;
+        extern  int	fscanf () ;
+        extern  int	vfprintf () ;
+        extern  int	vfscanf () ;
+        extern  int	vprintf () ;
+        extern  char *	vsprintf () ;
+        extern  int	puts () ;
+        extern  int	putw () ;
+        extern  void	rewind () ;
+        extern  void	setbuf () ;
+        extern  void	setbuffer () ;
+        extern  void	setlinebuf () ;
+        extern  int	setvbuf () ;
+        extern  FILE *	tmpfile () ;
+        extern  char *	tmpnam () ;
+        extern  char *	tempnam () ;
+        extern  int	ungetc () ;
+        extern  void	_cleanup () ;
+        extern  void	Stdio_Setup () ;
+# 20 "inflow.c" 2
+# 1 "dist/defs.h" 1
+ 
+extern char *savestring ();
+extern char *concat ();
+extern char *xmalloc (), *xrealloc ();
+extern int parse_escape ();
+extern char *reg_names[];
+ 
+extern int quit_flag;
+extern int immediate_quit;
+ 
+enum command_class
+{
+  no_class = -1, class_run = 0, class_vars, class_stack,
+  class_files, class_support, class_info, class_breakpoint,
+  class_alias, class_obscure, class_user,
+};
+ 
+struct cleanup
+{
+  struct cleanup *next;
+  void (*function) ();
+  int arg;
+};
+extern void do_cleanups ();
+extern void discard_cleanups ();
+extern struct cleanup *make_cleanup ();
+extern struct cleanup *save_cleanups ();
+extern void restore_cleanups ();
+extern void free_current_contents ();
+extern void reinitialize_more_filter ();
+extern void fputs_filtered ();
+extern void fprintf_filtered ();
+extern void printf_filtered ();
+extern void print_spaces_filtered ();
+extern char *tilde_expand ();
+ 
+struct command_line
+{
+  struct command_line *next;
+  char *line;
+};
+struct command_line *read_command_lines ();
+ 
+char *current_directory;
+# 21 "inflow.c" 2
+# 1 "symm.md/param.h" 1
+ 
+ 
+ 
+# 1 "dist/m-i386.h" 1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+# 352 "dist/m-i386.h"
+
+# 394 "dist/m-i386.h"
+# 30 "symm.md/param.h" 2
+# 22 "inflow.c" 2
+# 1 "dist/frame.h" 1
+ 
+ 
+ 
+typedef struct frame_info *FRAME;
+typedef unsigned int 	FRAME_ADDR;
+ 
+struct frame_info
+  {
+     
+    FRAME_ADDR frame;
+     
+    unsigned int  pc;
+     
+    FRAME_ADDR next_frame;
+     
+     
+    FRAME next, prev;
+  };
+ 
+struct frame_saved_regs
+  {
+     
+    unsigned int  regs[16 ];
+  };
+ 
+extern FRAME selected_frame;
+extern struct frame_info *get_frame_info ();
+extern struct frame_info *get_prev_frame_info ();
+extern FRAME create_new_frame ();
+extern void get_frame_saved_regs ();
+extern FRAME get_prev_frame ();
+extern FRAME get_current_frame ();
+extern FRAME get_next_frame ();
+extern struct block *get_frame_block ();
+extern struct block *get_current_block ();
+extern struct block *get_selected_block ();
+extern struct symbol *get_frame_function ();
+extern struct symbol *get_pc_function ();
+ 
+extern FRAME find_relative_frame ();
+ 
+# 23 "inflow.c" 2
+# 1 "dist/inferior.h" 1
+ 
+ 
+struct inferior_status {
+  int pc_changed;
+  int stop_signal;
+  int stop_pc;
+  int stop_frame_address;
+  int stop_breakpoint;
+  int stop_step;
+  int stop_stack_dummy;
+  int stopped_by_random_signal;
+  int trap_expected;
+  unsigned int  step_range_start;
+  unsigned int  step_range_end;
+  FRAME_ADDR step_frame_address;
+  int step_over_calls;
+  unsigned int  step_resume_break_address;
+  int stop_after_trap;
+  int stop_after_attach;
+  FRAME_ADDR selected_frame_address;
+  int selected_level;
+  struct command_line *breakpoint_commands;
+  char stop_registers[(16  * 4) ];
+  int restore_stack_info;
+};
+void save_inferior_status (), restore_inferior_status ();
+ 
+extern char *inferior_io_terminal;
+ 
+extern int inferior_pid;
+ 
+extern int remote_debugging;
+ 
+int remote_read_inferior_memory ();
+int remote_write_inferior_memory ();
+ 
+extern int stop_signal;
+ 
+extern unsigned int  stop_pc;
+ 
+extern FRAME_ADDR stop_frame_address;
+ 
+extern int stop_breakpoint;
+ 
+extern int stop_step;
+ 
+extern int stop_stack_dummy;
+ 
+extern int stopped_by_random_signal;
+ 
+extern unsigned int  step_range_start;  
+extern unsigned int  step_range_end;  
+ 
+extern FRAME_ADDR step_frame_address;
+ 
+extern int step_over_calls;
+ 
+extern int step_multi;
+ 
+extern char stop_registers[(16  * 4) ];
+ 
+extern int pc_changed;
+long read_memory_integer ();
+# 24 "inflow.c" 2
+# 1 "/sprite/lib/include/sys/types.h" 1
+ 
+ 
+ 
+ 
+ 
+typedef	unsigned char	u_char;
+typedef	unsigned short	u_short;
+typedef	unsigned int	u_int;
+typedef	unsigned long	u_long;
+typedef	unsigned short	ushort;		 
+typedef	struct	_quad { long val[2]; } quad;
+typedef	long	daddr_t;
+typedef	char *	caddr_t;
+typedef	long *	qaddr_t;	 
+typedef	u_long	ino_t;
+typedef	long	swblk_t;
+typedef	int	size_t;
+typedef	long	time_t;
+typedef	long	clock_t;
+typedef	short	dev_t;
+typedef	long	off_t;
+typedef	short	uid_t;
+typedef	short	gid_t;
+typedef long	key_t;		 
+ 
+typedef long	fd_mask;
+typedef	struct fd_set {
+	fd_mask	fds_bits[(((256 )+(( (sizeof(fd_mask) * 8		)	)-1))/( (sizeof(fd_mask) * 8		)	)) ];
+} fd_set;
+# 27 "inflow.c" 2
+ 
+# 1 "/sprite/lib/include/fcntl.h" 1
+ 
+ 
+					 
+ 
+ 
+# 32 "inflow.c" 2
+# 1 "/sprite/lib/include/sys/param.h" 1
+ 
+# 1 "/sprite/lib/include/sys/types.h" 1
+ 
+# 99 "/sprite/lib/include/sys/types.h"
+# 26 "/sprite/lib/include/sys/param.h" 2
+# 1 "/sprite/lib/include/signal.h" 1
+ 
+ 
+void	(*signal())();
+ 
+struct	sigvec {
+	void	(*sv_handler)();	 
+	int	sv_mask;		 
+	int	sv_flags;		 
+};
+ 
+struct	sigstack {
+	char	*ss_sp;			 
+	int	ss_onstack;		 
+};
+ 
+struct	sigcontext {
+	int	sc_onstack;		 
+	int	sc_mask;		 
+	int	sc_sp;			 
+	int	sc_fp;			 
+	int	sc_ap;			 
+	int	sc_pc;			 
+	int	sc_ps;			 
+};
+ 
+# 27 "/sprite/lib/include/sys/param.h" 2
+# 1 "/sprite/lib/include/symm.md/machparam.h" 1
+ 
+# 1 "/sprite/lib/include/symm.md/limits.h" 1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+# 38 "/sprite/lib/include/symm.md/machparam.h" 2
+ 
+ 
+ 
+ 
+ 
+# 28 "/sprite/lib/include/sys/param.h" 2
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+# 34 "inflow.c" 2
+# 1 "/sprite/lib/include/sys/dir.h" 1
+ 
+# 1 "/sprite/lib/include/sys/types.h" 1
+ 
+# 99 "/sprite/lib/include/sys/types.h"
+# 12 "/sprite/lib/include/sys/dir.h" 2
+ 
+ 
+struct	direct {
+	u_long	d_ino;			 
+	u_short	d_reclen;		 
+	u_short	d_namlen;		 
+	char	d_name[255  + 1];	 
+};
+ 
+ 
+typedef struct _dirdesc {
+	int	dd_fd;
+	long	dd_loc;
+	long	dd_size;
+	char	dd_buf[512  ];
+} DIR;
+extern	DIR *opendir();
+extern	struct direct *readdir();
+extern	long telldir();
+extern	void seekdir();
+extern	void closedir();
+# 35 "inflow.c" 2
+# 1 "/sprite/lib/include/signal.h" 1
+ 
+# 114 "/sprite/lib/include/signal.h"
+# 36 "inflow.c" 2
+# 47 "inflow.c"
+# 1 "/sprite/lib/include/sys/ioctl.h" 1
+ 
+# 1 "/sprite/lib/include/sys/ttychars.h" 1
+ 
+ 
+struct ttychars {
+	char	tc_erase;	 
+	char	tc_kill;	 
+	char	tc_intrc;	 
+	char	tc_quitc;	 
+	char	tc_startc;	 
+	char	tc_stopc;	 
+	char	tc_eofc;	 
+	char	tc_brkc;	 
+	char	tc_suspc;	 
+	char	tc_dsuspc;	 
+	char	tc_rprntc;	 
+	char	tc_flushc;	 
+	char	tc_werasc;	 
+	char	tc_lnextc;	 
+};
+ 
+# 13 "/sprite/lib/include/sys/ioctl.h" 2
+# 1 "/sprite/lib/include/sys/ttydev.h" 1
+ 
+ 
+ 
+# 16 "/sprite/lib/include/sys/ioctl.h" 2
+# 1 "/sprite/lib/include/sys/fb.h" 1
+ 
+ 
+ 
+ 
+ 
+ 
+typedef struct	fbtype {
+	int	fb_type;	 
+	int	fb_height;	 
+	int	fb_width;	 
+	int	fb_depth;	 
+	int	fb_cmsize;	 
+	int	fb_size;	 
+} fbtype;
+ 
+typedef struct	fbinfo {
+	int		fb_physaddr;	 
+	int		fb_hwwidth;	 
+	int		fb_hwheight;	 
+	int		fb_addrdelta;	 
+	unsigned char	*fb_ropaddr;	 
+	int		fb_unit;	 
+} fbinfo;
+ 
+typedef struct	fbcmap {
+	int		index;		 
+	int		count;		 
+	unsigned char	*red;		 
+	unsigned char	*green;		 
+	unsigned char	*blue;		 
+} fbcmap;
+typedef struct fbsattr {
+	int	flags;			 
+	int	emu_type;		 
+	int	dev_specific[8	];	 
+} fbsattr;
+typedef struct fbgattr {
+	int	real_type;		 
+	int	owner;			 
+	struct	fbtype fbtype;		 
+	struct	fbsattr sattr;		 
+	int	emu_types[4	];	 
+						 
+} fbgattr;
+struct	fbpixrect {
+    struct pixrect	*fbpr_pixrect;	 
+};
+# 20 "/sprite/lib/include/sys/ioctl.h" 2
+ 
+struct tchars {
+	char	t_intrc;	 
+	char	t_quitc;	 
+	char	t_startc;	 
+	char	t_stopc;	 
+	char	t_eofc;		 
+	char	t_brkc;		 
+};
+struct ltchars {
+	char	t_suspc;	 
+	char	t_dsuspc;	 
+	char	t_rprntc;	 
+	char	t_flushc;	 
+	char	t_werasc;	 
+	char	t_lnextc;	 
+};
+ 
+struct sgttyb {
+	char	sg_ispeed;		 
+	char	sg_ospeed;		 
+	char	sg_erase;		 
+	char	sg_kill;		 
+	short	sg_flags;		 
+};
+ 
+struct winsize {
+	unsigned short	ws_row;			 
+	unsigned short	ws_col;			 
+	unsigned short	ws_xpixel;		 
+	unsigned short	ws_ypixel;		 
+};
+ 
+struct ttysize {
+	unsigned short	ts_lines;
+	unsigned short	ts_cols;
+	unsigned short	ts_xxx;
+	unsigned short	ts_yyy;
+};
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+# 48 "inflow.c" 2
+ 
+# 1 "/sprite/lib/include/sgtty.h" 1
+ 
+# 50 "inflow.c" 2
+extern int errno;
+ 
+int attach_flag;
+
+ 
+static struct sgttyb  sg_inferior;
+static struct sgttyb  sg_ours;
+static int tflags_inferior;
+static int tflags_ours;
+static struct tchars tc_inferior;
+static struct tchars tc_ours;
+static struct ltchars ltc_inferior;
+static struct ltchars ltc_ours;
+static int lmode_inferior;
+static int lmode_ours;
+static int pgrp_inferior;
+static int pgrp_ours;
+ 
+static char *inferior_thisrun_terminal;
+static void terminal_ours_1 ();
+ 
+static int terminal_is_ours;
+ 
+void
+terminal_init_inferior ()
+{
+  if (remote_debugging)
+    return;
+  sg_inferior = sg_ours;
+  tflags_inferior = tflags_ours;
+  tc_inferior = tc_ours;
+  ltc_inferior = ltc_ours;
+  lmode_inferior = lmode_ours;
+  pgrp_inferior = inferior_pid;
+  terminal_is_ours = 1;
+}
+ 
+void
+terminal_inferior ()
+{
+  if (remote_debugging)
+    return;
+  if (terminal_is_ours)    
+    {
+      fcntl (0, 4	, tflags_inferior);
+      fcntl (0, 4	, tflags_inferior);
+      ioctl (0, ((int) (	0x80000000	|((sizeof(struct sgttyb)&0x1fff		)<<16)|('t'<<8)|10))  , &sg_inferior);
+      ioctl (0, ((int) (	0x80000000	|((sizeof(struct tchars)&0x1fff		)<<16)|('t'<<8)|17))  , &tc_inferior);
+      ioctl (0, ((int) (	0x80000000	|((sizeof(struct ltchars)&0x1fff		)<<16)|('t'<<8)|117))  , &ltc_inferior);
+      ioctl (0, ((int) (	0x80000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 125)) 	, &lmode_inferior);
+      ioctl (0, ((int) (	0x80000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 118)) 	, &pgrp_inferior);
+    }
+  terminal_is_ours = 0;
+}
+ 
+void
+terminal_ours_for_output ()
+{
+  if (remote_debugging)
+    return;
+  terminal_ours_1 (1);
+}
+ 
+void
+terminal_ours ()
+{
+  if (remote_debugging)
+    return;
+  terminal_ours_1 (0);
+}
+static void
+terminal_ours_1 (output_only)
+     int output_only;
+{
+   
+  int (*osigttou) ();
+  if (!terminal_is_ours)   
+    {
+      terminal_is_ours = 1;
+      osigttou = (int (*) ()) signal (22	, 	(void (*)())1 );
+      ioctl (0, ((int) (	0x40000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 119)) 	, &pgrp_inferior);
+      ioctl (0, ((int) (	0x80000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 118)) 	, &pgrp_ours);
+      signal (22	, osigttou);
+      tflags_inferior = fcntl (0, 3	, 0);
+      ioctl (0, ((int) (	0x40000000	|((sizeof(struct sgttyb)&0x1fff		)<<16)|('t'<<8)| 8))  , &sg_inferior);
+      ioctl (0, ((int) (	0x40000000	|((sizeof(struct tchars)&0x1fff		)<<16)|('t'<<8)|18))  , &tc_inferior);
+      ioctl (0, ((int) (	0x40000000	|((sizeof(struct ltchars)&0x1fff		)<<16)|('t'<<8)|116))  , &ltc_inferior);
+      ioctl (0, ((int) (	0x40000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 124)) 	, &lmode_inferior);
+    }
+  sg_ours.sg_flags &= ~	0x00000020	 & ~	0x00000002	;
+  if (output_only)
+    sg_ours.sg_flags |= (	0x00000020	 | 	0x00000002	) & sg_inferior.sg_flags;
+  fcntl (0, 4	, tflags_ours);
+  fcntl (0, 4	, tflags_ours);
+  ioctl (0, ((int) (	0x80000000	|((sizeof(struct sgttyb)&0x1fff		)<<16)|('t'<<8)|10))  , &sg_ours);
+  ioctl (0, ((int) (	0x80000000	|((sizeof(struct tchars)&0x1fff		)<<16)|('t'<<8)|17))  , &tc_ours);
+  ioctl (0, ((int) (	0x80000000	|((sizeof(struct ltchars)&0x1fff		)<<16)|('t'<<8)|117))  , &ltc_ours);
+  ioctl (0, ((int) (	0x80000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 125)) 	, &lmode_ours);
+  sg_ours.sg_flags &= ~	0x00000020	 & ~	0x00000002	;
+}
+static void
+term_status_command ()
+{
+  register int i;
+  if (remote_debugging)
+    {
+      printf_filtered ("No terminal status when remote debugging.\n");
+      return;
+    }
+  printf_filtered ("Inferior's terminal status (currently saved by GDB):\n");
+# 298 "inflow.c"
+  printf_filtered ("fcntl flags = 0x%x, sgttyb.sg_flags = 0x%x, owner pid = %d.\n",
+	  tflags_inferior, sg_inferior.sg_flags, pgrp_inferior);
+  printf_filtered ("tchars: ");
+  for (i = 0; i < sizeof (struct tchars); i++)
+    printf_filtered ("0x%x ", ((char *)&tc_inferior)[i]);
+  printf_filtered ("\n");
+  printf_filtered ("ltchars: ");
+  for (i = 0; i < sizeof (struct ltchars); i++)
+    printf_filtered ("0x%x ", ((char *)&ltc_inferior)[i]);
+  printf_filtered ("\n");
+  ioctl (0, ((int) (	0x80000000	|((sizeof(struct ltchars)&0x1fff		)<<16)|('t'<<8)|117))  , &ltc_ours);
+  
+  printf_filtered ("lmode:  %x\n", lmode_inferior);
+}
+
+static void
+new_tty (ttyname)
+     char *ttyname;
+{
+  register int tty;
+  register int fd;
+   
+  tty = open("/dev/tty", 	002		);
+  if (tty > 0)
+    {
+      ioctl(tty, ((int) (0x20000000	|('t'<<8)| 113)) 		, 0);
+      close(tty);
+    }
+   
+  tty = open(ttyname, 	002		);
+  if (tty == -1)
+    _exit(1);
+   
+  if (tty != 0)
+    { close (0); dup (tty); }
+  if (tty != 1)
+    { close (1); dup (tty); }
+  if (tty != 2)
+    { close (2); dup (tty); }
+  if (tty > 2)
+    close(tty);
+}
+
+ 
+int
+create_inferior (allargs, env)
+     char *allargs;
+     char **env;
+{
+  int pid;
+  char *shell_command;
+  extern int sys_nerr;
+  extern char *sys_errlist[];
+  extern int errno;
+   
+  shell_command = allargs;
+   
+  close_exec_file ();
+  pid = fork ();
+  if (pid < 0)
+    perror_with_name ("vfork");
+  if (pid == 0)
+    {
+       
+      setpgrp (getpid (), getpid ());
+# 420 "inflow.c"
+      inferior_thisrun_terminal = inferior_io_terminal;
+      if (inferior_io_terminal != 0)
+	new_tty (inferior_io_terminal);
+ 
+ 
+ 
+       
+      signal (3	, 	(void (*)())0 );
+      signal (2	, 	(void (*)())0 );
+      call_ptrace (0);
+      execle ("/bin/sh" , "sh", "-c", shell_command, 0, env);
+      fprintf ((&stdioErrFile) , "Cannot exec %s: %s.\n", "/bin/sh" ,
+	       errno < sys_nerr ? sys_errlist[errno] : "unknown error");
+      fflush ((&stdioErrFile) );
+      _exit (0177);
+    }
+  return pid;
+}
+ 
+static void
+kill_command ()
+{
+  if (remote_debugging)
+    return;
+  if (inferior_pid == 0)
+    error ("The program is not being run.");
+  if (!query ("Kill the inferior process? "))
+    error ("Not confirmed.");
+  kill_inferior ();
+}
+void
+inferior_died ()
+{
+  inferior_pid = 0;
+  attach_flag = 0;
+  mark_breakpoints_out ();
+  select_frame ((FRAME) 0, -1);
+  reopen_exec_file ();
+  if (have_core_file_p ())
+    set_current_frame ( create_new_frame (read_register (5		),
+					  read_pc ()));
+  else
+    set_current_frame (0);
+}
+
+# 523 "inflow.c"
+
+void
+_initialize_inflow ()
+{
+  add_com ("term-status", class_obscure, term_status_command,
+	   "Print info on inferior's saved terminal status.");
+  add_com ("kill", class_run, kill_command,
+	   "Kill execution of program being debugged.");
+  inferior_pid = 0;
+  ioctl (0, ((int) (	0x40000000	|((sizeof(struct sgttyb)&0x1fff		)<<16)|('t'<<8)| 8))  , &sg_ours);
+  fcntl (0, 3	, tflags_ours);
+  ioctl (0, ((int) (	0x40000000	|((sizeof(struct tchars)&0x1fff		)<<16)|('t'<<8)|18))  , &tc_ours);
+  ioctl (0, ((int) (	0x40000000	|((sizeof(struct ltchars)&0x1fff		)<<16)|('t'<<8)|116))  , &ltc_ours);
+  ioctl (0, ((int) (	0x40000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 124)) 	, &lmode_ours);
+  ioctl (0, ((int) (	0x40000000	|((sizeof( int)&0x1fff		)<<16)|('t'<<8)| 119)) 	, &pgrp_ours);
+  terminal_is_ours = 1;
+}

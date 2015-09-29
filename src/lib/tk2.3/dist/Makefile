@@ -1,0 +1,115 @@
+#
+# This is a simplified Makefile for use in Tk distributions.  Before using
+# it to compile Tk, you may wish to reset some of the following variables:
+#
+# TCL_DIR -		Name of directory holding tcl.h and tcl.a.
+# XLIB -		Name of archive containing Xlib binaries.
+#
+
+# You may also wish to add some of the following switches to the CFLAGS
+# variable:
+#
+# -DX11R3		Causes code that depends on R4 facilities not to
+#			be compiled.  I haven't tested Tk with R3 in quite
+#			a while, so this switch may not be enough to
+#			generate a working R3 version of Tk.  Furthermore,
+#			use of this switch will disable some of the facilities
+#			of Tk related to window managers.
+# -DNO_PROTOTYPE	Turns off ANSI-style procedure prototypes and the
+#			corresponding compile-time checks.  Without this
+#			defininition, prototypes will be turned on if the
+#			compiler supports ANSI C by defining __STDC__.
+# -DTK_LIBRARY=\"dir\"	Arranges for dir, which must be the name of a
+#			directory, to be the library directory for Tk scripts.
+#			This value gets put into the variable $tk_library
+#			when a new application is created.  The library
+#			defaults to /usr/local/lib/tk, so you don't need the
+#			switch unless your library is in a non-standard place.
+#
+
+TCL_DIR		=
+XLIB		= -lX11
+CC		= cc
+CFLAGS		= -I. -I$(TCL_DIR) -O -DTK_VERSION=\"2.3\" -DTK_LIBRARY=\"/sprite/lib/tcl\"
+
+default : wish
+
+LIBS = libtk.a -ltcl
+
+WIDGOBJS = tkButton.o tkEntry.o tkFrame.o tkListbox.o \
+	tkMenu.o tkMenubutton.o tkMessage.o tkScale.o \
+	tkScrollbar.o
+
+CANVOBJS = tkCanvas.o tkCanvArc.o tkCanvBmap.o tkCanvLine.o \
+	tkCanvPoly.o tkCanvText.o tkCanvWind.o tkRectOval.o \
+	tkTrig.o
+
+TEXTOBJS = tkText.o tkTextBTree.o tkTextDisp.o tkTextIndex.o tkTextTag.o
+
+OBJS = tk3d.o tkArgv.o tkAtom.o tkBind.o tkBitmap.o \
+        tkCmds.o tkColor.o tkConfig.o tkCursor.o tkError.o \
+        tkEvent.o tkFont.o tkGet.o tkGC.o tkGeometry.o tkGrab.o \
+        tkOption.o tkPack.o tkPlace.o tkPreserve.o tkSelect.o \
+        tkSend.o tkShare.o tkWindow.o tkWm.o $(WIDGOBJS) \
+	$(CANVOBJS) $(TEXTOBJS)
+
+WIDGSRCS = tkButton.c tkEntry.c tkFrame.c tkListbox.c \
+	tkMenu.c tkMenubutton.c tkMessage.c tkScale.c \
+	tkScrollbar.c tkText.c tkTextBTree.c tkTextDisp.c \
+	tkTextIndex.c
+
+CANVSRCS = tkCanvas.c tkCanvArc.c tkCanvBmap.c tkCanvLine.c \
+	tkCanvPoly.c tkCanvText.c tkCanvWind.c tkRectOval.c \
+	tkTrig.c
+
+TEXTSRCS = tkText.c tkTextBTree.c tkTextDisp.c tkTextIndex.c tkTextTag.c
+
+SRCS = tk3d.c tkArgv.c tkAtom.c tkBind.c tkBitmap.c \
+        tkCmds.c tkColor.c tkConfig.c tkCursor.c tkError.c \
+        tkEvent.c tkFont.c tkGet.c tkGC.c tkGeometry.c tkGrab.c \
+        tkOption.c tkPack.c tkPlace.c tkPreserve.c tkSelect.c \
+        tkSend.c tkShare.c tkWindow.c tkWm.c $(WIDGSRCS) \
+	$(CANVSRCS) $(TEXTSRCS)
+
+wish: main.o $(LIBS)
+	$(CC) $(CFLAGS) main.o $(LIBS) $(XLIB) -lm -o wish
+
+libtk.a: $(OBJS)
+	rm -f libtk.a
+	ar cr libtk.a $(OBJS)
+	ranlib libtk.a
+
+$(TCL_DIR)/libtcl.a:
+	cd $(TCL_DIR); make libtcl.a
+
+clean:
+	rm -f $(OBJS) main.o libtk.a wish	
+
+$(OBJS): tk.h tkInt.h tkConfig.h
+$(WIDGOBJS): default.h
+$(CANVOBJS): default.h tkCanvas.h
+main.o: tk.h tkInt.h
+
+#
+# Sprite additions
+#
+
+HDRS = tk.h tkCanvas.h tkConfig.h tkText.h
+
+install: installlib installscripts installman installwish installhdrs
+
+installlib : libtk.a
+	update libtk.a /sprite/lib
+
+installscripts :
+	update -l library/demos /sprite/lib/tcl/demos
+	update -l library/. /sprite/lib/tcl
+
+installman :
+	update -l doc/. /sprite/man/lib/tk
+
+installwish : wish
+	update wish /sprite/cmds
+
+installhdrs : $(HDRS)
+	update -l $(HDRS) /sprite/lib/include

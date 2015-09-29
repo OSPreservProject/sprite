@@ -1,0 +1,39 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.1 89/02/23 13:08:24 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS UPDATEBOOTCMDS cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+updatebootcmds \- Keep /boot/cmds updated.
+.SH SYNOPSIS
+\fBupdatebootcmds\fR [\fIdirectory directory ...\fR]
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBUpdatebootcmds\fR is a script that keeps boot commands up-to-date. 
+It does this by updating the commands from either
+\fI/sprite/cmds.$MACHINE\fR or \fI/sprite/admin.$MACHINE\fR to 
+\fIboot/cmds.$MACHINE\fR.
+Only those commands that already exist in boot/cmds.$MACHINE are updated.
+If you want to add a new command to the boot commands you have to copy 
+it there manually.
+Updatebootcmds will update the commands in all cmds.$MACHINE directories
+found under the boot directory.
+If \fBupdatebootcmds\fR is run without any options it will update 
+\fI/boot\fR and \fI/t1/boot\fR.
+If the command is followed by directory names only those boot directories
+will be updated.
+
+.SH KEYWORDS
+boot
+

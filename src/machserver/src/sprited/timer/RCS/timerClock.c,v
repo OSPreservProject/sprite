@@ -1,0 +1,399 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  srv030:1.6 srv028:1.6 srv027:1.6 srv026:1.6 srv024:1.6 srv022:1.6 srv021:1.6 srv019:1.6 srv018:1.6 srv016:1.6 srv015:1.6 srv014:1.6 srv012:1.6 srv011:1.6 srv010:1.6 srv008:1.6 srv007:1.6 srv006:1.6 srv005:1.6 srv004:1.6 srv003:1.6 srv002:1.5 srv001:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     92.04.29.22.07.48;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.04.16.11.46.52;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.12.12.21.12.21;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.11.14.10.03.10;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.07.14.07.52;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.04.11.43.01;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Move mach_host_self() prototype into a header file.
+@
+text
+@/* 
+ * timerClock.c --
+ *
+ *	Utility routines for dealing with the clock.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/timer/RCS/timerClock.c,v 1.5 92/04/16 11:46:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <mach.h>
+#include <device/device.h>
+#include <device/device_types.h>
+#include <mach/mach_host.h>
+#include <mach_error.h>
+#include <spriteTime.h>
+
+#include <dev.h>
+#include <machCalls.h>
+#include <sync.h>
+#include <sys.h>
+#include <timer.h>
+
+/* 
+ * This is the format that a mapped time-of-day clock uses.  This is 
+ * equivalent to the Mach mapped_time_value (<mach/time_value.h>), which 
+ * unfortunately isn't in the MK43 sources.
+ */
+typedef struct {
+    long seconds;
+    long microseconds;
+    long checkSeconds;		/* check value so can read w/o lock */
+} TimerMappedTime;
+
+/* 
+ * The monitor lock is to ensure that access to the time of day and various 
+ * state variables is done atomically.
+ */
+
+static Sync_Lock clockLock = Sync_LockInitStatic("clockLock");
+#define	LOCKPTR &clockLock
+
+/* 
+ * If we are able to map the timer into our VM, the variable points to it.  
+ */
+static volatile TimerMappedTime *mappedTimePtr = NULL;
+
+/* 
+ *  timerUniversalToLocalOffset is used to convert from universal time
+ *  to local time. It is the number of minutes to add to universal time
+ *  to compute the local time. For example, timerLocalOffset for the 
+ *  Pacific time zone is -480 minutes. The local time of day is computed 
+ *  by multiplying timerUniversalToLocalOffset by 60 and adding the result 
+ *  to the universal time (in seconds).  Default to Pacific time, at least 
+ *  for now.
+ */
+int 		timerUniversalToLocalOffset = -480;
+
+/* 
+ *  timerDSTAllowed is a flag to indicate if Daylight Savings Time is allowed.
+ *  A few states, such as Arizona, do not have DST.
+ *  (TRUE == DST is allowed, FALSE == DST is not allowed).
+ */
+Boolean 	timerDSTAllowed = TRUE;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerClock_Init --
+ *
+ *	Map the time-of-day clock into our memory and initialize any 
+ *	necessary data structures.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     If mappedTimePtr is non-NULL, it means we were able to map in the 
+ *     clock.  Otherwise we must ask the host whenever we want to know the 
+ *     current time. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TimerClock_Init()
+{
+    kern_return_t kernStatus;
+    mach_port_t clockPort;	/* handle for the clock */
+    mach_port_t clockPager;	/* memory object to map the clock */ 
+    
+    /* 
+     * Get a memory object for the clock and use it to map in the clock.
+     */
+    kernStatus = device_open(dev_ServerPort, 0, "time", &clockPort);
+    if (kernStatus != D_SUCCESS) {
+	printf("TimerClock_Init: can't open clock device: %s\n",
+	       mach_error_string(kernStatus));
+	return;
+    }
+    kernStatus = device_map(clockPort, VM_PROT_READ, 0,
+			    sizeof(*mappedTimePtr), &clockPager, 0);
+    if (kernStatus != D_SUCCESS) {
+	printf("TimerClock_Init: can't map clock device: %s\n",
+	       mach_error_string(kernStatus));
+	return;
+    }
+    if (clockPager == MACH_PORT_NULL) {
+	printf("TimerClock_Init: can't map clock device.\n");
+	return;
+    }
+    kernStatus = vm_map(mach_task_self(), (vm_address_t *)&mappedTimePtr,
+			sizeof(*mappedTimePtr), 0, TRUE, clockPager, 0, FALSE,
+			VM_PROT_READ, VM_PROT_READ, VM_INHERIT_NONE);
+    if (kernStatus != D_SUCCESS) {
+	printf("TimerClock_Init: can't vm_map clock: %s\n",
+	       mach_error_string(kernStatus));
+    }
+    if (mappedTimePtr == 0) {
+	panic("%s: mapping succeeded but gave us null pointer.\n",
+	      "TimerClock_Init");
+    }
+    
+    /* 
+     * We don't need the pager anymore, so get rid of it.
+     */
+    (void)mach_port_deallocate(mach_task_self(), clockPager);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_GetRealTimeFromTicks --
+ *
+ *	Routine for source compatibility with native Sprite code.
+ *
+ * Results:
+ *	Returns the given ticks value as a time.  These are different units 
+ *	in native Sprite but the same thing in the Sprite server.  If the 
+ *	local offset or DST pointers are non-nil, stores the local offset 
+ *	from GMT or the "DST allowed" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_GetRealTimeFromTicks(ticks, timePtr, timerLocalOffsetPtr, DSTPtr)
+    Timer_Ticks	ticks;		/* Ticks value to convert to time. */
+    Time *timePtr;		/* OUT: Buffer to hold time value. */
+    int  *timerLocalOffsetPtr;	/* OUT: optional buffer to hold local offset */
+    Boolean *DSTPtr;		/* OUT: Optional buffer for DST allowed flag */
+{
+    /*
+     * No masterlock, since we can be called from a call-back and get deadlock.
+     */
+
+    *timePtr = ticks;
+    if (timerLocalOffsetPtr != (int *) NIL) {
+	*timerLocalOffsetPtr = timerUniversalToLocalOffset;
+    }
+    if (DSTPtr != (Boolean *) NIL) {
+	*DSTPtr = timerDSTAllowed;
+    }
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_GetTimeOfDay --
+ *
+ *	Get the time of day.
+ *
+ * Results:
+ *	Fills in the time of day, local offset (from Universal Time), and 
+ *	"DST allowed" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_GetTimeOfDay(timePtr, timerLocalOffsetPtr, DSTPtr)
+    Time *timePtr;		/* OUT: Buffer to hold TOD. */
+    int  *timerLocalOffsetPtr;	/* OUT: buffer to hold local offset (may be 
+				 * nil) */
+    Boolean *DSTPtr;		/* OUT: buffer to hold DST allowed flag 
+				 * (may be nil) */
+{
+    kern_return_t kernStatus;
+
+    /* 
+     * Only use the monitor lock to protect the local offset from GMT and 
+     * the daylight savings flag.  Rely on Mach to provide adequate 
+     * protection for the time-of-day service that it provides.
+     */
+    if (mappedTimePtr != NULL) {
+	do {
+	    timePtr->seconds = mappedTimePtr->seconds;
+	    timePtr->microseconds = mappedTimePtr->microseconds;
+	} while (timePtr->seconds != mappedTimePtr->checkSeconds);
+    } else {
+	kernStatus = host_get_time(mach_host_self(), (time_value_t *)timePtr);
+	if (kernStatus != KERN_SUCCESS) {
+	    panic("Timer_GetTimeOfDay: couldn't get time: %s\n",
+		  mach_error_string(kernStatus));
+	}
+    }
+
+    if (timerLocalOffsetPtr == (int *)NIL &&
+	    DSTPtr == (Boolean *)NIL) {
+	return;
+    }
+
+    LOCK_MONITOR;
+    if (timerLocalOffsetPtr != (int *) NIL) {
+	*timerLocalOffsetPtr = timerUniversalToLocalOffset;
+    }
+    if (DSTPtr != (Boolean *) NIL) {
+	*DSTPtr = timerDSTAllowed;
+    }
+    UNLOCK_MONITOR;
+}
+@
+
+
+1.5
+log
+@Don't use the monitor lock to protect the mapped clock register.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/timer/RCS/timerClock.c,v 1.4 91/12/12 21:12:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d29 1
+a43 6
+
+/* 
+ * XXX - this is in mach_traps.h, but there's a cpp problem including both 
+ * mach.h and mach_traps.h. 2-Oct-91.
+ */
+extern mach_port_t mach_host_self _ARGS_((void));
+@
+
+
+1.4
+log
+@Give timerUniversalToLocalOffset correct value for Pacific time.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/timer/RCS/timerClock.c,v 1.3 91/11/14 10:03:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d31 1
+d216 5
+a220 1
+    LOCK_MONITOR;
+a228 1
+	    UNLOCK_MONITOR;
+d234 6
+@
+
+
+1.3
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/timer/RCS/timerClock.c,v 1.2 91/10/07 14:07:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d68 2
+a69 1
+ *  to the universal time.  Default to Pacific time, at least for now.
+d71 1
+a71 1
+int 		timerUniversalToLocalOffset = -8;
+@
+
+
+1.2
+log
+@Add support for mapping time-of-day clock into server's address space.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/timer/RCS/timerClock.c,v 1.1 91/10/04 11:43:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d33 11
+d60 1
+a60 1
+static Time *mappedTimePtr = NULL;
+d115 2
+a116 2
+    kernStatus = device_map(clockPort, VM_PROT_READ, 0, sizeof(Time),
+			    &clockPager, 0);
+d127 1
+a127 1
+			sizeof(Time), 0, TRUE, clockPager, 0, FALSE,
+d143 39
+d183 2
+d186 1
+d216 4
+a219 1
+	*timePtr = *mappedTimePtr;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d22 2
+d28 1
+d30 1
+d47 5
+d72 65
+d150 1
+a150 1
+    
+d162 9
+a170 5
+    kernStatus = host_get_time(mach_host_self(), (time_value_t *)timePtr);
+    if (kernStatus != KERN_SUCCESS) {
+	UNLOCK_MONITOR;
+	panic("Timer_GetTimeOfDay: couldn't get time: %s\n",
+	      mach_error_string(kernStatus));
+@

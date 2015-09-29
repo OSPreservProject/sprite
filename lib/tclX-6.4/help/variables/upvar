@@ -1,0 +1,34 @@
+          upvar ?level? otherVar myVar ?otherVar myVar ...?
+               This command arranges for one or more  local  variables
+               in  the  current  procedure to refer to variables in an
+               enclosing procedure call or to global variables.  Level
+               may  have  any  of  the forms permitted for the uplevel
+               command, and may be omitted if the first letter of  the
+               first  otherVar  isn't # or a digit (it defaults to 1).
+               For each otherVar argument, upvar makes the variable by
+               that  name in the procedure frame given by level (or at
+               global level, if level is #0) accessible in the current
+               procedure  by the name given in the corresponding myVar
+               argument.  The variable  named  by  otherVar  need  not
+               exist  at the time of the call;  it will be created the
+               first time myVar is referenced, just like  an  ordinary
+               variable.   Upvar  may  only  be  invoked  from  within
+               procedures.  Neither otherVar or myVar may refer to  an
+               element of an array.  Upvar returns an empty string.
+
+               The upvar  command  simplifies  the  implementation  of
+               call-by-name procedure calling and also makes it easier
+               to build new control constructs as Tcl procedures.  For
+               example, consider the following procedure:
+
+                    proc add2 name {
+                        upvar $name x
+                        set x [expr $x+2]
+                    }
+
+               Add2 is invoked with an argument giving the name  of  a
+               variable,  and  it  adds  two  to  the  value  of  that
+               variable.  Although add2 could  have  been  implemented
+               using  uplevel instead of upvar, upvar makes it simpler
+               for  add2  to  access  the  variable  in  the  caller's
+               procedure frame.

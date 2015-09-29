@@ -1,0 +1,3102 @@
+head     1.21;
+branch   ;
+access   ;
+symbols  sprited:1.15.1;
+locks    jhh:1.21; strict;
+comment  @ * @;
+
+
+1.21
+date     92.06.23.12.08.36;  author jhh;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     92.06.23.11.40.18;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     92.06.23.11.37.52;  author jhh;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     92.06.23.11.31.04;  author jhh;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     92.03.25.21.19.40;  author voelker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.02.14.19.11.29;  author jhh;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.02.14.19.10.50;  author jhh;  state Exp;
+branches 1.15.1.1;
+next     1.14;
+
+1.14
+date     90.12.01.21.00.48;  author jhh;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.09.26.12.12.21;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.09.14.13.16.43;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.07.07.14.46.58;  author mendel;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.06.29.10.26.03;  author mendel;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.08.11.55.25;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.04.23.16.25.47;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.04.23.16.21.39;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.12.22.13.12.04;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.11.12.12.06.18;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.03.31.10.06.42;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.10.06.13.01.46;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.09.30.21.52.46;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.08.05.22.20.53;  author andrew;  state Exp;
+branches ;
+next     ;
+
+1.15.1.1
+date     92.03.26.17.16.54;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@initial check-in.
+@
+
+
+1.21
+log
+@use whatever the default host file is, rather than setting one
+@
+text
+@/* 
+ * netroute.c --
+ *
+ *	User program to install routes to Sprite Hosts.  'route' is a misnomer
+ *	because the information also includes the hosts name and its
+ *	machine type.  Plus, the route is just a local address. 
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute/RCS/netroute.c,v 1.20 92/06/23 11:40:18 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <stdlib.h>
+#include <string.h>
+#include <bstring.h>
+#include <fs.h>
+#include <net.h>
+#include <host.h>
+#include <kernel/netTypes.h>
+#include <stdio.h>
+#include <option.h>
+#include <rpc.h>
+#include <kernel/rpcPacket.h>
+#include <sysStats.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <sys/time.h>
+#include <gate.h>
+
+Net_NetworkType rankedInterfaceTypes[HOST_MAX_INTERFACES] =
+    { NET_ADDRESS_ETHER, NET_ADDRESS_FDDI, NET_ADDRESS_ULTRA };
+
+static char *rankedInterfaceNames[HOST_MAX_INTERFACES] =
+    { "ether", "fddi", "ultra" };
+
+static char *netTypeNames[NET_NUM_NETWORK_TYPES] = 
+    { "Ethernet", "UltraNet", "FDDI" };
+
+#define NUM_NET_ADDRS	5
+static char *netAddressNames[NUM_NET_ADDRS] =
+    { "No Address", "Ethernet", "UltraNet", "FDDI", "Internet" };
+
+static char *netProtocolNames[NET_MAX_PROTOCOLS] = 
+    { "raw", "inet" };
+
+/*
+ * Parameters set by the command line
+ */
+char   *inputFilename = NULL;
+char   *hostName = NULL;
+int     first = -1;
+int     last = -1;
+
+char   *gateFilename;
+
+Boolean install = TRUE;
+int delete  = -1;
+Boolean print   = FALSE;
+
+char   *favorName = NULL;
+char   *disfavorName = NULL;
+
+char   *etherString = NULL;
+char   *ultraString = NULL;
+char   *fddiString = NULL;
+
+Boolean verbose = FALSE;
+Boolean execute = FALSE;
+char   *machType;
+int     hostID = -1;
+
+Option optionArray[] = {
+    {OPT_DOC, "\0", (Address)NULL, "  Hosts:"},
+    {OPT_STRING, "f", (Address)&inputFilename, 
+	 "Specifies the host database file."},
+    {OPT_STRING, "h", (Address)&hostName, 
+	 "Use Sprite host with given name or Sprite ID"},
+    {OPT_STRING, "g", (Address)&gateFilename,
+	 "Specifies the gateway database file."},
+    {OPT_DOC, "\0", (Address)NULL, "  Actions:"},
+    {OPT_TRUE, "i", (Address)&install,
+	 "Install route(s)."},
+    {OPT_INT, "d", (Address)&delete,
+	 "Delete route."},
+    {OPT_TRUE, "p", (Address)&print,
+	 "Print routes."},
+    {OPT_DOC, "\0", (Address)NULL, "  Interface favoring:"},
+    {OPT_STRING, "favor", (Address)&favorName,
+	 "Try to install route(s) using this type of network interface."},
+    {OPT_STRING, "disfavor", (Address)&disfavorName,
+	 "Try not to install route(s) using this type of network interface."},
+    {OPT_DOC, "\0", (Address)NULL, "\tCurrently (from first to last):"},
+    {OPT_DOC, "\0", (Address)NULL, "\t0. ether"},
+    {OPT_DOC, "\0", (Address)NULL, "\t1. fddi"},
+    {OPT_DOC, "\0", (Address)NULL, "\t2. ultra"},
+    {OPT_DOC, "\0", (Address)NULL, "  Address overriding:"},
+    {OPT_STRING, "ether", (Address)&etherString,
+	 "Ethernet address for host. (ff:oo:oo:bb:aa:rr@@aa.bb.cc.dd)"},
+    {OPT_STRING, "ultra", (Address)&ultraString,
+	 "Ethernet address for host. (hh/ii@@aa.bb.cc.dd)"},
+    {OPT_STRING, "fddi", (Address)&fddiString,
+	 "Ethernet address for host. (qq:ww:ee:rr:tt:yy@@aa.bb.cc.dd)"},
+    {OPT_DOC, "\0", (Address)NULL, "  Misc:"},
+    {OPT_TRUE, "v", (Address)&verbose, 
+	 "Print out verbose messages"},
+    {OPT_TRUE, "n", (Address)&execute, 
+	 "Do not execute commands.  Just print what would be done."},
+    {OPT_STRING, "m", (Address)&machType, 
+	 "Machine type (sun2, spur, etc.)"},
+};
+int numOptions = Opt_Number(optionArray);
+
+/*
+ * In kernel module net/netTypes.h
+ */
+#ifndef NET_NUM_SPRITE_HOSTS
+#define NET_NUM_SPRITE_HOSTS 200
+#endif
+
+/*
+ * This is a hack. The subnet mask should be read in from a configuration 
+ * file. 
+ */
+
+#define SUBNET_MASK 0xFFFFFF00
+#define SAME_SUBNET(addr1, addr2) \
+    (((addr1) & SUBNET_MASK) == ((addr2) & SUBNET_MASK))
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRoutes --
+ *
+ *	Print the routes.
+ *
+ * Results:
+ *	FAILURE if there was a problem getting the routes, SUCCESS
+ *      otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PrintRoutes()
+{
+    Net_Route    routes[NET_NUM_SPRITE_HOSTS];
+    Net_Route    *ptr;
+    ReturnStatus status;
+    int          i;
+    int          count;
+    char         buffer[64];
+
+    status = Net_GetRoutes(-1, -1, sizeof(Net_Route), routes, &count);
+    if (status != SUCCESS) {
+	printf("Net_GetRoutes returned 0x%x: %s\n", status, 
+	    Stat_GetMsg(status));
+	return FAILURE;
+    }
+
+    for (i = 0; i < count; i++) {
+	ptr = &routes[i];
+	if (ptr->version != NET_ROUTE_VERSION) {
+	    fprintf(stderr, "Route `%s' has invalid version number. ", 
+		    ptr->desc);
+	    fprintf(stderr, "It is %d, and should be %d.\n", ptr->version,
+		    NET_ROUTE_VERSION);
+	    continue;
+	}
+	if (!(ptr->flags & NET_FLAGS_VALID)) {
+	    continue;
+	}
+	printf("%3d  %-20s %-8s\n", ptr->spriteID, ptr->hostname, 
+	    ptr->machType);
+	printf("\t0x%08x %-5s %-8s %s -> ", ptr->routeID, 
+	    netProtocolNames[ptr->protocol], netTypeNames[ptr->netType],
+	    Net_AddrToString(&ptr->interAddress, buffer));
+	printf("%s\n", 
+	    Net_AddrToString(&ptr->netAddress[NET_PROTO_RAW], buffer));
+	printf("\tPacket (%d, %d) RPC (%d, %d)\n", 
+	    ptr->minPacket, ptr->maxPacket, ptr->minRpc, ptr->maxRpc);
+    }
+    return SUCCESS;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OnSameNetworkType --
+ *
+ *      Determine if the two hosts are on the same type of network.
+ *
+ * Results:
+ *      TRUE if the hosts are on the same type of network, FALSE
+ *      otherwise.  If TRUE, then the given Host_NetInt pointers
+ *      will point to the corresponding Host_NetInt structures 
+ *      that enable the hosts to be on that network.  Those pointers
+ *      are only filled in if non-NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+OnSameNetworkType(type, srcPtr, srcIntPtrPtr, destPtr, destIntPtrPtr)
+    Net_NetworkType type;
+    Host_Entry      *srcPtr;
+    Host_NetInt     **srcIntPtrPtr;  /* (out) */
+    Host_Entry      *destPtr;
+    Host_NetInt     **destIntPtrPtr;  /* (out) */
+{
+    register int i;
+    register int j;
+
+    for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	if (srcPtr->nets[i].netAddr.type == type) {
+	    for (j = 0; j < HOST_MAX_INTERFACES; j++) {
+		if (destPtr->nets[j].netAddr.type == type) {
+		    if (srcIntPtrPtr != (Host_NetInt **)NULL) {
+			*srcIntPtrPtr = &srcPtr->nets[i];
+		    }
+		    if (destIntPtrPtr != (Host_NetInt **)NULL) {
+			*destIntPtrPtr = &destPtr->nets[j];
+		    }
+		    return TRUE;
+		}
+	    }
+	}
+    }
+    return FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InterfaceByType --
+ *
+ *      Find the network interface of the host that is of the
+ *      given type.
+ *
+ * Results:
+ *      The Host_NetInt structure of the given type, or NULL if
+ *      the host does not have a network interface of the given type.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Host_NetInt *
+InterfaceByType(hostPtr, netType)
+    Host_Entry      *hostPtr;
+    Net_AddressType netType;
+{
+    Host_NetInt *netIntPtr = NULL;
+    int i;
+
+    if (hostPtr == (Host_Entry *)NULL) {
+	return netIntPtr;
+    }
+
+    for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	netIntPtr = &hostPtr->nets[i];
+	if (netIntPtr->netAddr.type == netType) {
+	    return netIntPtr;
+	}
+    }
+    return (Host_NetInt *)NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishInternetRoute --
+ *
+ *      Establish an internet route between two hosts.
+ *
+ * Results:
+ *      SUCCESS iff the route was successfully established.  In this
+ *      case, the given route structure is filled in with the route
+ *      information.  Otherwise, FAILURE is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+EstablishInternetRoute(srcHostPtr, destHostPtr, routePtr)
+    Host_Entry *srcHostPtr;
+    Host_Entry *destHostPtr;
+    Net_Route  *routePtr;
+{
+    Host_NetInt     	*srcIntPtr;
+    Host_NetInt     	*destIntPtr;
+    Gate_Entry      	*gatePtr;
+    ReturnStatus    	status;
+    static Boolean	initialized = FALSE;
+    static int		numGates;
+#define MAX_GATES	5
+    static Gate_Entry	gates[MAX_GATES];
+    Boolean		found;
+    int			i,j;
+
+    if (!initialized) {
+	/*
+	 * Read the gateway information.
+	 */
+	status = Gate_Start();
+	if (status != SUCCESS) {
+	    printf("netroute: couldn't set gate file.\n");
+	    return FAILURE;
+	}
+	numGates = 0;
+	gatePtr = Gate_Next();
+	while (gatePtr != (Gate_Entry *)NULL) {
+	    if (numGates == MAX_GATES) {
+		fprintf(stderr, "netroute: too many gateways\n");
+		return FAILURE;
+	    }
+	    gates[numGates] = *gatePtr;
+	    gatePtr = Gate_Next();
+	    numGates++;
+	}
+	Gate_End();
+	initialized = TRUE;
+    }
+
+    /* 
+     * Go through the interfaces on the local host and find one that
+     * is connected to a gateway.
+     */
+    found = FALSE;
+    for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	srcIntPtr = InterfaceByType(srcHostPtr, rankedInterfaceTypes[i]);
+	if (srcIntPtr != NULL) {
+	    for (j = 0; j < numGates; j++) {
+		gatePtr = &gates[j];
+		if (SAME_SUBNET(Net_NetToHostInt(srcIntPtr->inetAddr), 
+			Net_NetToHostInt(gatePtr->inetAddr))) {
+		    found = TRUE;
+		    goto endloop;
+		}
+	    }
+	}
+    }
+endloop:
+    if (!found) {
+	if (verbose) {
+	    printf("Couldn't find a gateway to use\n");
+	}
+	return FAILURE;
+    }
+
+    /*
+     * Pick the best interface for the destination host. 
+     */
+    for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	destIntPtr = InterfaceByType(destHostPtr, rankedInterfaceTypes[i]);
+	if (destIntPtr != NULL) {
+	    break;
+	}
+    }
+    if (destIntPtr == NULL) {
+	if (verbose) {
+	    printf("Couldn't find an interface to use on the destination.\n");
+	}
+	return FAILURE;
+    }
+    routePtr->version = NET_ROUTE_VERSION;
+    routePtr->spriteID = destHostPtr->id;
+    routePtr->flags = NET_FLAGS_VALID;
+    strcpy(routePtr->hostname, destHostPtr->aliases[0]);
+    strcpy(routePtr->machType, destHostPtr->machType);
+    routePtr->minRpc = 0;
+    routePtr->maxRpc = RPC_MAX_SIZE;
+
+    /*
+     * The protocol for a host across a gateway is INET.  To set up the
+     * route's addresses correctly, the INET address gets set to the internet
+     * address of the ethernet network interface of the destination host.
+     * The RAW address gets set to the ethernet address of the gateway.
+     * And the route's `interAddress' gets set to the network address of
+     * the interface to use.
+     * Yahoo!  Sheer simplicity.
+     */
+    routePtr->protocol = NET_PROTO_INET;
+    routePtr->netAddress[NET_PROTO_RAW] = gatePtr->netAddr;
+    routePtr->interAddress = srcIntPtr->netAddr;
+    status = Net_SetAddress(NET_ADDRESS_INET, (Address) &destIntPtr->inetAddr, 
+		&routePtr->netAddress[NET_PROTO_INET]);
+    if (status != SUCCESS) {
+	fprintf(stderr, "netroute: Net_SetAddress failed: %s\n",
+	    Stat_GetMsg(status));
+	return FAILURE;
+    }
+    status = Net_InstallRoute(sizeof(Net_Route), routePtr);
+
+    if (status != SUCCESS) {
+	fprintf(stderr, "netroute: Net_InstallRoute failed (0x%x): %s\n",
+		status, Stat_GetMsg(status));
+	return FAILURE;
+    } else {
+	if (verbose) {
+	    printf("netroute: established internet %s route to %s.\n", 
+		   netAddressNames[destIntPtr->netAddr.type], 
+		   *destHostPtr->aliases);
+	}
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishLocalRoute --
+ *
+ *      Establish an local route between two hosts.
+ *
+ * Results:
+ *      SUCCESS iff the route was successfully established.  In this
+ *      case, the given route structure is filled in with the route
+ *      information.  Otherwise, FAILURE is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+EstablishLocalRoute(srcHostPtr, destHostPtr, routePtr)
+    Host_Entry *srcHostPtr;
+    Host_Entry *destHostPtr;
+    Net_Route  *routePtr;
+{
+    register int i;
+    Host_NetInt  *destIntPtr = NULL;
+    Host_NetInt  *srcIntPtr = NULL;
+    ReturnStatus result;
+    Boolean found;
+
+    routePtr->version = NET_ROUTE_VERSION;
+    routePtr->spriteID = destHostPtr->id;
+    routePtr->flags = NET_FLAGS_VALID;
+    strcpy(routePtr->hostname, destHostPtr->aliases[0]);
+    strcpy(routePtr->machType, destHostPtr->machType);
+    routePtr->minRpc = 0;
+    routePtr->maxRpc = RPC_MAX_SIZE;
+
+    /*
+     * See if the machines are connected to the same local network.
+     * If so, use it.
+     */
+    found = FALSE;
+    for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	if (OnSameNetworkType(rankedInterfaceTypes[i], srcHostPtr, &srcIntPtr, 
+			      destHostPtr, &destIntPtr)) {
+	    if (SAME_SUBNET(Net_NetToHostInt(srcIntPtr->inetAddr), 
+		    Net_NetToHostInt(destIntPtr->inetAddr))) {
+		found = TRUE;
+		break;
+	    }
+	}
+    }
+    if (!found) {
+	return FAILURE;
+    }
+    if (verbose) {
+	printf("%s and %s are on the same %s \n",
+	    srcHostPtr->name, destHostPtr->name, rankedInterfaceNames[i]);
+    }
+    /*
+     * Local machines use the RAW protocol.  The network address of the
+     * destination host is placed in the route's RAW protocol slot, and
+     * the network address of the source host is placed in the route's
+     * interface address slot.
+     */
+    routePtr->protocol = NET_PROTO_RAW;
+    routePtr->netAddress[NET_PROTO_RAW] = destIntPtr->netAddr;
+    routePtr->interAddress = srcIntPtr->netAddr;
+
+    result = Net_InstallRoute(sizeof(Net_Route), routePtr);
+
+    if (result != SUCCESS) {
+	fprintf(stderr, "netroute: Net_InstallRoute failed (0x%x): %s\n",
+		result, Stat_GetMsg(result));
+	return FAILURE;
+    } else {
+	if (verbose) {
+	    printf("netroute: established raw %s route to %s.\n", 
+		   netAddressNames[destIntPtr->netAddr.type], 
+		   *destHostPtr->aliases);
+	}
+	return SUCCESS;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishRoute --
+ *
+ *      Establish a route between two hosts.  If the two hosts
+ *      are across a gateway, then an internet route is established.
+ *      If they are not, then a local route is established.
+ *
+ * Results:
+ *      SUCCESS iff the route was successfully established.  In this
+ *      case, the given route structure is filled in with the route
+ *      information.  Otherwise, FAILURE is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+EstablishRoute(srcHostPtr, destHostPtr, routePtr)
+    Host_Entry *srcHostPtr;
+    Host_Entry *destHostPtr;
+    Net_Route  *routePtr;
+{
+    ReturnStatus status;
+
+    status = EstablishLocalRoute(srcHostPtr, destHostPtr, routePtr);
+    if (status == FAILURE) {
+	status = EstablishInternetRoute(srcHostPtr, destHostPtr, routePtr);
+    }
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CopyHost --
+ *
+ *      Copy the contents of the source host structure into the
+ *      destination host structure.
+ *
+ * Results:
+ *      SUCCESS iff the copy was successful, FAILURE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+CopyHost(srcHostPtr, destHostPtr)
+    Host_Entry *srcHostPtr;
+    Host_Entry *destHostPtr;
+{
+    bcopy((char *) srcHostPtr, (char *) destHostPtr, sizeof(Host_Entry));
+    destHostPtr->name = strdup(srcHostPtr->name);
+    destHostPtr->aliases = (char **)malloc(sizeof(char *) * 2);
+    *destHostPtr->aliases = strdup(*srcHostPtr->aliases);
+    *(destHostPtr->aliases + 1) = NULL;
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishLocalHost --
+ *
+ *      Determine the Host_Entry for this host, i.e., the host that
+ *      the routes are established from.  This information is needed
+ *      before routes can be established to determine whether gateways
+ *      are crossed, etc.
+ *
+ * Results:
+ *      SUCCESS iff the local host could be found, FAILURE otherwise.
+ *      If SUCCESS, then the given Host_Entry structure is filled in
+ *      with the host information.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+EstablishLocalHost(hostPtr)
+    Host_Entry *hostPtr;
+{
+    ReturnStatus 	result;
+    int          	localID;
+    Host_Entry   	*localPtr;
+    Net_Route    	route;
+    int			i;
+
+    result = Proc_GetHostIDs(NULL, &localID);
+    if (result != SUCCESS) {
+	fprintf(stderr, "netroute: could not get this host's sprite ID.\n");
+	return FAILURE;
+    }
+    localPtr = Host_ByID(localID);
+    if (localPtr == (Host_Entry *)NULL) {
+	fprintf(stderr, "netroute: couldn't find local host by its ID (%d)\n",
+		localID);
+	return FAILURE;
+    }
+    if (verbose) {
+	printf("netroute: establishing routes from %s.\n", localPtr->name);
+    }
+    result = CopyHost(localPtr, hostPtr);
+    if (result != SUCCESS) {
+	return result;
+    }
+    localPtr = hostPtr;
+    /*
+     * This ensures that we know about ourself by giving the net module
+     * our internet address for each interface.
+     * Check in netRoute.c:Net_InstallRoute() for the details.
+     */
+    bzero((char *)&route, sizeof(Net_Route));
+    route.version = NET_ROUTE_VERSION;
+    route.spriteID = hostPtr->id;
+    route.flags = NET_FLAGS_VALID;
+    strcpy(route.hostname, hostPtr->aliases[0]);
+    strcpy(route.machType, hostPtr->machType);
+    route.minRpc = 0;
+    route.maxRpc = RPC_MAX_SIZE;
+    route.protocol = NET_PROTO_INET;
+    for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	if (hostPtr->nets[i].netAddr.type != NET_ADDRESS_NONE) {
+	    route.netAddress[NET_PROTO_RAW] = hostPtr->nets[i].netAddr;
+	    route.interAddress = hostPtr->nets[i].netAddr;
+	    Net_SetAddress(NET_ADDRESS_INET, 
+		(Address) &hostPtr->nets[i].inetAddr, 
+		&route.netAddress[NET_PROTO_INET]);
+	    result = Net_InstallRoute(sizeof(Net_Route), &route);
+	    if (result != SUCCESS) {
+		fprintf(stderr, 
+			"netroute: Net_InstallRoute failed (0x%x): %s\n",
+			result, Stat_GetMsg(result));
+		return FAILURE;
+	    }
+	}
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishRoutesRange --
+ *
+ *      Establish routes to all hosts in a given range.  If the
+ *      endvalues of the range are both -1, then routes are established
+ *      to all hosts in the database file.
+ *
+ * Results:
+ *      SUCCESS iff the routes were established correctly, FAILURE
+ *      otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+EstablishRoutesRange(firstIDa, lastIDa)
+    int firstIDa;
+    int lastIDa;
+{
+    int result;
+    int count;
+    int firstID = firstIDa, lastID = lastIDa;
+    Host_Entry localHost;
+    Host_Entry *localPtr;
+    Host_Entry *hostPtr;
+    Net_Route route;
+    Net_Route oldRoutes[10];
+    int		i;
+
+    localPtr = &localHost;
+    result = EstablishLocalHost(localPtr);
+    if (result != SUCCESS) {
+	fprintf(stderr, "netroute: couldn't establish address of this host\n");
+	return FAILURE;
+    }
+
+    result = Host_Start();
+    if (result != SUCCESS) {
+	fprintf(stderr, "netroute: could not start host file.\n");
+	return FAILURE;
+    }
+    hostPtr = Host_Next();
+    while (hostPtr != (Host_Entry *)NULL) {
+	/*
+	 * If the host is outside of the given range, skip it.
+	 */
+	if ((firstID > 0) && (lastID > 0) && 
+	    ((hostPtr->id < firstID) || (hostPtr->id > lastID))) {
+	    hostPtr = Host_Next();
+	    continue;
+	}
+	if (localPtr->id == hostPtr->id) {
+	    hostPtr = Host_Next();
+	    continue;
+	}
+	result = Net_GetRoutes(hostPtr->id, hostPtr->id, sizeof(oldRoutes), 
+			       oldRoutes, &count);
+	if (result != SUCCESS) {
+	    count = 0;
+	}
+	route.userData = (ClientData) 0;
+	result = EstablishRoute(localPtr, hostPtr, &route);
+	if (result != SUCCESS) {
+	    return result;
+	}
+	/*
+	 * If we successfully established the route, then delete the
+	 * previous ones. We only delete a previous route if its 
+	 * userData is 0, meaning that it was installed by netroute
+	 * from the host file. A userData value of 1 indicates that
+	 * the route was installed by scratch (by the user) so we
+	 * don't delete it lest the user get mad at us.
+	 */
+	for (i = 0; i < count; i++) {
+	    if (oldRoutes[i].userData == (ClientData) 0) {
+		if (verbose) {
+		    printf("netroute: deleting previous route 0x%x\n", 
+			oldRoutes[i].routeID);
+		}
+		result = Net_DeleteRoute(oldRoutes[i].routeID);
+		if (result != SUCCESS) {
+		    fprintf(stderr, "netroute: could not delete route 0x%x\n",
+			oldRoutes[i].routeID);
+		    return FAILURE;
+		}
+	    }
+	}
+	hostPtr = Host_Next();
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishRouteScratch --
+ *
+ *      Establish a route to a host from scratch, i.e., from the
+ *      command line arguments.  
+ *
+ * Results:
+ *      SUCCESS iff the route was established correctly, FAILURE
+ *      otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+EstablishRouteScratch(spriteID)
+    int spriteID;
+{
+    int count;
+    ReturnStatus result;
+    Host_Entry tmpEntry;
+    Host_Entry *hostPtr;
+    Host_Entry *localPtr;
+    Host_Entry localHost;
+    Net_Route  route;
+
+    /*
+     * Fill in the info for this host, and ensure that it knows
+     * about itself.
+     */
+    localPtr = &localHost;
+    result = EstablishLocalHost(localPtr);
+    if (result != SUCCESS) {
+	fprintf(stderr, "netroute: couldn't find info for local host.\n");
+	return FAILURE;
+    }
+    /*
+     * Put together the destination host from scratch.
+     */
+    hostPtr = &tmpEntry;
+    bzero((char *)hostPtr, sizeof(Host_Entry));
+    hostPtr->id = spriteID;
+    hostPtr->machType = machType;
+    hostPtr->name = strdup(hostName);
+    hostPtr->aliases = (char **)malloc(sizeof(char *) * 2);
+    *hostPtr->aliases = strdup(hostName);
+    *(hostPtr->aliases + 1) = NULL;
+    count = ManageAddressOverride(hostPtr);
+    if (count == 0) {
+	fprintf(stderr, "netroute: no addresses specified for installing a ");
+	fprintf(stderr, "route from scratch.\n");
+	return FAILURE;
+    }
+    route.userData = (ClientData) 1;
+    result = EstablishRoute(localPtr, hostPtr, &route);
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeleteRouteByID --
+ *
+ *      Delete the route denoted by its ID.
+ *
+ * Results:
+ *      SUCCESS iff the route was deleted correctly, FAILURE
+ *      otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+DeleteRouteByID(routeID)
+    int routeID;
+{
+    ReturnStatus status;
+
+    if (verbose) {
+	printf("netroute: deleting route 0x%x/0x%x.\n", routeID,
+	       routeID >> 16);
+    }
+    status = Net_DeleteRoute(routeID);
+    if (status != SUCCESS) {
+	printf("Net_DeleteRoute returned 0x%x: %s\n", status,
+	       Stat_GetMsg(status));
+	return FAILURE;
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeleteRoutesRange --
+ *
+ *      Delete the routes to the hosts whose Sprite IDs fall within
+ *      a given range.
+ *
+ * Results:
+ *      SUCCESS iff the routes were deleted correctly, FAILURE
+ *      otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+DeleteRoutesRange(firstID, lastID)
+    int firstID;
+    int lastID;
+{
+    int          count;
+    int          i;
+    ReturnStatus status;
+    Net_Route    routes[NET_NUM_SPRITE_HOSTS];
+
+    status = Net_GetRoutes(firstID, lastID, sizeof(Net_Route), routes, &count);
+    if (status != SUCCESS) {
+	fprintf(stderr, "Net_GetRoutes returned 0x%x: %s\n", status, 
+		Stat_GetMsg(status));
+	return FAILURE;
+    }
+    for (i = 0; i < count; i++) {
+	status = Net_DeleteRoute(routes[i].routeID);
+	if (status != SUCCESS) {
+	    printf("Net_DeleteRoute returned 0x%x: %s\n", status,
+		   Stat_GetMsg(status));
+	    return FAILURE;
+	}
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SplitOffInternetAddress --
+ *
+ *      Take a command line argument of the form
+ *      "net_address@@internet_address", NULL the '@@', and
+ *      return a pointer to the "internet_address".
+ *      
+ *
+ * Results:
+ *      A pointer to the "internet_address", or NULL if it could not
+ *      be found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+SplitOffInternetAddress(addrString)
+    register char *addrString;
+{
+    while (*addrString != '\0') {
+	if (*addrString == '@@') {
+	    *addrString  = '\0';
+	    return (addrString + 1);
+	}
+	addrString++;
+    }
+    return NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ManageAddressOverride --
+ *
+ *      Take the addresses given on the command line and convert
+ *      them into Host_NetInt structures for the given host.
+ *
+ * Results:
+ *      The number of network addresses converted from the command
+ *      line.
+ *      
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ManageAddressOverride(hostPtr)
+    Host_Entry *hostPtr;
+{
+    char *inetStr;
+    int index = 0;
+    Host_NetInt *netIntPtr;
+    ReturnStatus result;
+
+    if (etherString != NULL) {
+	netIntPtr = &hostPtr->nets[index];
+	inetStr = SplitOffInternetAddress(etherString);
+	result = Net_StringToAddr(etherString, NET_ADDRESS_ETHER, 
+				     &netIntPtr->netAddr);
+	if (result != SUCCESS) {
+	    fprintf(stderr, "netroute: couldn't convert %s to an ethernet ",
+		    etherString);
+	    fprintf(stderr, "address for host %d.\n", hostPtr->id);
+	    return 0;
+	}
+	netIntPtr->inetAddr = Net_StringToInetAddr(inetStr);
+	index++;
+    }
+    if (ultraString != NULL) {
+	netIntPtr = &hostPtr->nets[index];
+	inetStr = SplitOffInternetAddress(ultraString);
+	result = Net_StringToAddr(ultraString, NET_ADDRESS_ULTRA, 
+				     &netIntPtr->netAddr);
+	if (result != SUCCESS) {
+	    fprintf(stderr, "netroute: couldn't convert %s to an ultranet ",
+		    ultraString);
+	    fprintf(stderr, "address for host %d.\n", hostPtr->id);
+	    return 0;
+	}
+	netIntPtr->inetAddr = Net_StringToInetAddr(inetStr);
+	index++;
+    }
+    if (fddiString != NULL) {
+	netIntPtr = &hostPtr->nets[index];
+	inetStr = SplitOffInternetAddress(fddiString);
+	result = Net_StringToAddr(fddiString, NET_ADDRESS_FDDI, 
+				     &netIntPtr->netAddr);
+	if (result != SUCCESS) {
+	    fprintf(stderr, "netroute: couldn't convert %s to an FDDI ",
+		    fddiString);
+	    fprintf(stderr, "address for host %d.\n", hostPtr->id);
+	    return 0;
+	}
+	netIntPtr->inetAddr = Net_StringToInetAddr(inetStr);
+	index++;
+    }
+    return index;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ManageFavorings --
+ *
+ *      Juggle the list of network types according to the favorings
+ *      in the command line.  The program is compiled with a default
+ *      list of network types that it will traverse when trying to
+ *      establish routes to a host, and it will establish the first one
+ *      that it can.  The user can change the list ordering
+ *      using the command line to change this behavior.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ManageFavorings()
+{
+    register int    i;
+    register int    j;
+    register char   *ptr;
+    Net_NetworkType type;
+
+    if (favorName != NULL) {
+	for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	    if (!strcmp(favorName, rankedInterfaceNames[i])) {
+		ptr = rankedInterfaceNames[i];
+		type = rankedInterfaceTypes[i];
+		for (j = i - 1; j >= 0; j--) {
+		    rankedInterfaceNames[j + 1] = rankedInterfaceNames[j];
+		    rankedInterfaceTypes[j + 1] = rankedInterfaceTypes[j];
+		}
+		rankedInterfaceNames[0] = ptr;
+		rankedInterfaceTypes[0] = type;
+		break;
+	    }
+	}
+    }
+    if (disfavorName != NULL) {
+	for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	    if (!strcmp(disfavorName, rankedInterfaceNames[i])) {
+		ptr = rankedInterfaceNames[i];
+		type = rankedInterfaceTypes[i];
+		for (j = i + 1; j < HOST_MAX_INTERFACES; j++) {
+		    rankedInterfaceNames[j - 1] = rankedInterfaceNames[j];
+		    rankedInterfaceTypes[j - 1] = rankedInterfaceTypes[j];
+		}
+		rankedInterfaceNames[HOST_MAX_INTERFACES - 1] = ptr;
+		rankedInterfaceTypes[HOST_MAX_INTERFACES - 1] = type;
+		break;
+	    }
+	}
+    }
+    if (verbose) {
+	printf("netroute: Interface Rankings: ");
+	for (i = 0; i < HOST_MAX_INTERFACES; i++) {
+	    printf("%d. %s ", i, rankedInterfaceNames[i]);
+	}
+	printf("\n");
+    }				   
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *      Establish, delete, or print routes to specified hosts.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    ReturnStatus result;
+    Host_Entry   *entryPtr;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+    if (first < 0 && last > -1) {
+	first = 0;
+    }
+    if (last < 0 && first > -1) {
+	last = NET_NUM_SPRITE_HOSTS;
+    }
+    if (last < first) {
+	fprintf(stderr, "netroute: `last' (%d) less than `first' (%d)\n", 
+		last, first);
+	exit(1);
+    }
+
+    if (print) {
+	install = FALSE;
+    }
+    if (inputFilename != NULL) {
+	Host_SetFile(inputFilename);
+	result = Host_Start();
+	if (result != SUCCESS) {
+	    fprintf(stderr, "netroute: could not open host file %s.\n",
+		    inputFilename);
+	    exit(1);
+	}
+    }
+
+    if (hostName != NULL) {
+	entryPtr = Host_ByName(hostName);
+	if (entryPtr == (Host_Entry *)NULL) {
+	    hostID = atoi(hostName);
+	    entryPtr = Host_ByID(hostID);
+	    if (entryPtr == (Host_Entry *)NULL) {
+		fprintf(stderr, "netroute: could not resolve host %s\n",
+			hostName);
+		exit(1);
+	    }
+	    hostName = strdup(entryPtr->name);
+	} else {
+	    hostID = entryPtr->id;
+	}
+    }
+
+    /*
+     * If a host is specified, then it overrides a range.
+     */
+    if (hostID > 0) {
+	first = hostID;
+	last = hostID;
+    }
+
+    if (delete != -1) {
+	result = DeleteRouteByID(delete);
+	if (result != SUCCESS) {
+	    fprintf(stderr, "netroute: failed to delete routes.\n");
+	    exit(1);
+	} else {
+	    printf("netroute: routes deleted.\n");
+	}
+	print = FALSE;
+    }
+
+    if (install) {
+	ManageFavorings();
+	if (etherString != NULL || ultraString != NULL || fddiString != NULL) {
+	    result = EstablishRouteScratch(hostID);
+	} else {
+	    result = EstablishRoutesRange(-1, -1);
+	}
+	if (result != SUCCESS) {
+	    fprintf(stderr, "netroute: failed installing routes.\n");
+	    exit(1);
+	} else {
+	    printf("netroute: routes installed.\n");
+	}
+	print = FALSE;
+    }
+
+    if (print) {
+	(void) PrintRoutes();
+    }
+    exit(0);
+}    
+@
+
+
+1.20
+log
+@print vs install was broken
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute/RCS/netroute.c,v 1.19 92/06/23 11:37:52 jhh Exp $ SPRITE (Berkeley)";
+d61 1
+a61 1
+char   *inputFilename = "/etc/spritehosts.new";
+@
+
+
+1.19
+log
+@cleaned up some lint
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute/RCS/netroute.c,v 1.18 92/06/23 11:31:04 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d1117 3
+@
+
+
+1.18
+log
+@uses new Host library, does deletion
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute.new/RCS/netroute.c,v 1.1 92/06/05 13:08:35 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a57 4
+Net_Address etherAddress;
+Net_Address ultraAddress;
+Net_Address fddiAddress;
+
+a77 1
+char   *inetString = NULL;
+a81 1
+int     routeID = -1;
+a314 1
+    Net_Address     	netAddr;
+d408 1
+a408 1
+    status = Net_SetAddress(NET_ADDRESS_INET, &destIntPtr->inetAddr, 
+d574 1
+a574 1
+    bcopy(srcHostPtr, destHostPtr, sizeof(Host_Entry));
+a610 2
+    int          	count = 0;
+    Host_NetInt     	*intPtr;
+a690 1
+    int routeID;
+d813 1
+a813 1
+    count = ManageAddressOverride();
+a845 1
+    Net_Route    route;
+a1101 1
+    int          usingHostfile = FALSE;
+a1124 1
+	usingHostfile = TRUE;
+d1165 1
+a1165 1
+	    result = EstablishRouteScratch();
+@
+
+
+1.17
+log
+@added access to FDDI routes...
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute/RCS/netroute.c,v 1.16 92/02/14 19:11:29 jhh Exp Locker: voelker $ SPRITE (Berkeley)";
+d34 1
+d40 1
+d42 20
+d65 19
+a83 15
+Boolean table = FALSE;
+Boolean keepDomain = FALSE;
+int hostID = -1;
+char *hostName;
+char *etherString;
+char *inetString;
+char *inputFile;
+char *machType;
+char *netTypeString = "ether";
+char *ultraString = NULL;
+char *fddiString = NULL;
+Boolean debug = FALSE;
+unsigned int interval = 105;
+unsigned int range = 30;
+Boolean daemon = FALSE;
+d85 4
+a88 1
+char *output = NULL;
+d91 3
+a93 8
+    {OPT_STRING, "f", (Address)&inputFile, "Specifies the host database file."},
+    {OPT_TRUE, "p", (Address)&table, "Print out the route table"},
+    {OPT_TRUE, "D", (Address)&keepDomain, "Keep domain suffix on host name"},
+    {OPT_TRUE, "k", (Address)&debug, "Print debugging information"},
+    {OPT_TRUE, "d", (Address)&daemon, 
+	    "Run as a daemon, downloading routes when the database changes."},
+    {OPT_INT, "T", (Address)&interval, 
+	    "Set the interval for the daemon to check the database (seconds)."},
+d95 33
+a127 18
+	    "Install route for Sprite host with given name or Sprite ID"},
+    {OPT_STRING, "i", (Address)&inetString, 
+	    "Internet address for route. (aa.bb.cc.dd)"},
+    {OPT_STRING, "e", (Address)&etherString, 
+	    "Ethernet address for host. (aa:bb:cc:dd:ee:ff)"},
+    {OPT_STRING, "u", (Address) &ultraString, 
+	    "Ultranet address for host. (a/b)"},
+    {OPT_STRING, "f", (Address) &fddiString, 
+	    "FDDI address for host. (qq:ww:ee:rr:tt:yy)"},
+    {OPT_INT, "n", (Address)&hostID, "Sprite ID for host."},
+    {OPT_STRING, "t", (Address)&netTypeString, "Specifies the type of route."},
+    {OPT_STRING, "m", (Address)&machType, "Machine type (sun2, spur, etc.)"},
+    {OPT_INT, "r", (Address)&range, 
+	"Range of random values to add to interval."},
+    {OPT_TRUE, "v", (Address)&verbose, "Print out verbose messages"},
+    {OPT_STRING, "o", (Address)&output, "Output file for daemon."},
+    {OPT_DOC, "\0", (Address)NULL, "If -h is not specified, routes are installed for all hosts in"},
+    {OPT_DOC, "\0", (Address)NULL, "the host database."},
+d131 15
+a145 16
+void			FixHostName _ARGS_((char *charPtr));
+ReturnStatus		InstallRoute _ARGS_((Host_Entry *hostPtr, 
+				Address addressData, int netType));
+ReturnStatus		DownloadFile _ARGS_((void));
+void			Daemon _ARGS_((unsigned int interval));
+
+extern	ReturnStatus	Proc_GetHostIDs _ARGS_((int *vID, int *pID));
+extern	void		sleep _ARGS_((unsigned seconds));
+
+char	*myname;
+
+/*
+ * These guys are global because Download() accesses them. 
+ */
+Net_UltraAddress	*ultraAddressPtr = NULL;
+Net_FDDIAddress         *fddiAddressPtr = (Net_FDDIAddress *) NULL;
+d151 7
+a157 1
+ * main --
+d159 2
+a160 1
+ *	Grab command line arguments and install routes.
+d164 41
+d206 28
+a233 4
+int
+main(argc, argv)
+    int	argc;
+    char *argv[];
+d235 16
+a250 38
+    ReturnStatus	status = SUCCESS;
+    Host_Entry		*host;
+    Host_Entry		tmpEntry;
+    Host_NetType	netType = HOST_ETHER;
+    Net_EtherAddress	*etherAddressPtr = (Net_EtherAddress *) 0;
+    Net_InetAddress	inetAddress = 0;
+    extern int		errno;
+    static Net_Address	netAddress;
+    Net_RouteInfo	routeInfo;
+    Boolean		newHost = FALSE;
+
+    myname = argv[0];
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, OPT_ALLOW_CLUSTERING);
+    /*
+     * Startup the host file.
+     */
+    if (inputFile != (char *)0) {
+	if (Host_SetFile(inputFile) < 0) {
+	    perror("Host_SetFile");
+	    exit(errno);
+	}
+	Host_End();
+    }
+    routeInfo.version = NET_ROUTE_VERSION;
+    bzero((char *) &netAddress, sizeof(netAddress));
+    /*
+     * Translate and validate the etherString, inetString, and netTypeString
+     * arguments.
+     */
+    if (etherString != (char *) 0) {
+	static Net_EtherAddress etherAddress;
+	static Net_EtherAddress zeroAddress;
+	etherAddressPtr = &etherAddress;
+	Net_StringToEtherAddr(etherString, etherAddressPtr);
+	if (NET_ETHER_COMPARE(zeroAddress,etherAddress)) {
+	    fprintf(stderr,"netroute: Malformed ether address %s\n",
+			etherString); 
+	    exit(1);
+d253 28
+d282 8
+a289 6
+    if (inetString != (char *) 0) {
+	inetAddress = Net_StringToInetAddr(inetString);
+	if (inetAddress == NET_INET_BROADCAST_ADDR) {
+	    fprintf(stderr,"netroute: Malformed inet address %s\n",
+			inetString); 
+	    exit(1);
+d292 43
+a334 4
+    if (ultraString != NULL) {
+	ultraAddressPtr = &netAddress.ultra;
+	status = Net_StringToAddr(ultraString, NET_PROTO_RAW, NET_NETWORK_ULTRA,
+			&netAddress);
+d336 40
+a375 3
+	    fprintf(stderr, "netroute: malformed ultranet address %s\n",
+		ultraString);
+	    exit(1);
+d377 1
+a378 2
+    if (fddiString != NULL) {
+	static Net_FDDIAddress zeroAddress;
+d380 12
+a391 6
+	fddiAddressPtr = &netAddress.fddi;
+	Net_StringToEtherAddr(fddiString, fddiAddressPtr);
+	if (NET_FDDI_COMPARE(zeroAddress, *fddiAddressPtr)) {
+	    fprintf(stderr,"netroute: Malformed FDDI address %s\n",
+		    fddiString); 
+	    exit(1);
+d393 28
+d422 6
+a427 12
+    if (strcmp(netTypeString, "ether") == 0) {
+	netType = HOST_ETHER;
+    } else if (strcmp(netTypeString, "inet") == 0) {
+	netType = HOST_INET;
+    } else if (strcmp(netTypeString, "ultra") == 0) {
+	/* 
+	 * TODO: fill this in.
+	 */
+    } else if (strcmp(netTypeString, "fddi") == 0) {
+	/* 
+	 * TODO: fill this in.
+	 */
+d429 5
+a433 2
+	fprintf(stderr, "netroute: Bad net type '%s', must be 'ether' or 'inet'.\n", 
+		netTypeString);
+d435 2
+d438 37
+a474 8
+    if (table) {
+	/*
+	 * Print out the route table.
+	 */
+	Net_RouteInfo route;
+	int spriteID;
+	char	buffer[100];
+	char	*typePtr;
+d476 11
+a486 6
+	printf("Sprite Route Table:\n");
+	Host_Start();
+	for (spriteID = 0; ; spriteID++) {
+
+	    status = Sys_Stats(SYS_NET_GET_ROUTE, spriteID, &route);
+	    if (status != SUCCESS) {
+d489 179
+a667 2
+	    if (route.version != NET_ROUTE_VERSION) {
+		exit(1);
+a668 43
+	    if (!(route.flags & NET_FLAGS_VALID)) {
+		continue;
+	    }
+	    host = Host_ByID(spriteID);
+	    if (host && !keepDomain) {
+		FixHostName(host->name);
+	    }
+	    printf("%5d %-20s", spriteID, 
+		(host != NULL ? host->name :
+		    (spriteID == NET_BROADCAST_HOSTID ? "BROADCAST" : "???")));
+	    printf("%-8s", (host != NULL ? host->machType :
+		    (spriteID == NET_BROADCAST_HOSTID ? "" : "???")));
+	    switch(route.netType) {
+		case NET_NETWORK_ETHER: 
+		    typePtr = "ether";
+		    break;
+		case NET_NETWORK_ULTRA:
+		    typePtr = "ultra";
+		    break;
+		case NET_NETWORK_FDDI:
+		    typePtr = "fddi";
+		    break;
+		default:
+		    typePtr = "unknown";
+	    }
+	    printf("%-8s", typePtr);
+	    (void) Net_AddrToString(&route.netAddress[NET_PROTO_RAW],
+		    NET_PROTO_RAW, route.netType, buffer);
+	    printf("%s\n", buffer);
+	    switch(route.protocol) {
+		case NET_PROTO_RAW: 
+		    break;
+		case NET_PROTO_INET: 
+		    (void) Net_AddrToString(&route.netAddress[NET_PROTO_INET],
+			NET_PROTO_INET, route.netType, buffer);
+		    printf("%34s%-8s%s\n", "", "inet", buffer);
+		    break;
+		default:
+		    printf("Unknown protocol %d\n", route.protocol);
+		    break;
+	    }
+	    printf("%10s flags = 0x%x, refCount = %d, maxBytes = %d\n", "", 
+		    route.flags, route.refCount, route.maxBytes);
+d670 45
+a714 18
+	Host_End();
+	if (status != SUCCESS) {
+	    exit(1);
+	}
+	exit(0);
+    } 
+    if (daemon) {
+	Daemon(interval, range);
+    } else if (hostName == (char *)0) {
+	DownloadFile();
+    }  else {
+	/*
+	 * Otherwise, Install a route for a single Sprite host. See if 
+	 * we can find the default values of the route from the Host 
+	 * database.  We know the user specified either a hostID or 
+	 * hostName so we lookup in the Host database until we find it.
+	 */
+	Host_Start();
+d716 7
+d724 1
+a724 1
+	 * First see if it is a valid hostname if not a name then a number.
+d726 18
+a743 4
+	host = Host_ByName(hostName);
+	if (host == (Host_Entry *)NULL) {
+	    hostID = atoi(hostName);
+	    host = Host_ByID(hostID);
+d746 115
+a860 64
+	 * Fill in hostID, hostName, and etherAddress letting the user
+	 * specified values override the values in the data base.
+	 */
+	if (hostID < 0) {
+	    if (host == (Host_Entry *)NULL) {
+		fprintf(stderr, "netroute: Can not compute spriteID for %s\n",
+			 hostName);
+		 status = FAILURE;
+	    }
+	    hostID = host->id;
+       }
+       if (host == NULL) {
+	    host = &tmpEntry;
+	    bzero((char *) host , sizeof(host));
+	    newHost = TRUE;
+       }
+       if (hostName != (char *) 0) {
+	   host->name = hostName;
+       } else if (newHost) {
+	    static char nameBuffer[64];
+	    sprintf(nameBuffer, "host%d", hostID);
+	    host->name = nameBuffer;
+	}
+    
+       if (etherAddressPtr != NULL) {
+	   bcopy((char *) etherAddressPtr, host->netAddr.etherAddr, 
+	       HOST_ETHER_ADDRESS_SIZE);
+       } else if (newHost) {
+	    fprintf(stderr, "%s: Need -e option.\n", argv[0]);
+	    status = FAILURE;
+       }
+       if (machType != NULL) {
+	  host->machType = machType;
+       } else if (newHost) {
+	    fprintf(stderr, "%s: Need -e option.\n", argv[0]);
+	    status = FAILURE;
+       }
+       if (inetAddress != 0) {
+	  bcopy(&inetAddress, &(host->inetAddr), sizeof(host->inetAddr));
+       } else if (newHost && (netType == HOST_INET)) {
+	    fprintf(stderr, "netroute: Need -i option.\n");
+	    status = FAILURE;
+	}
+       if (!keepDomain) {
+	    FixHostName(host->name);
+       }
+       if (status == SUCCESS) {
+	   if (etherAddressPtr != NULL) {
+	       status = InstallRoute(host, NULL,
+				     NET_NETWORK_ETHER);
+	   } else if (ultraAddressPtr != NULL) {
+	       status = InstallRoute(host, (Address) ultraAddressPtr, 
+				     NET_NETWORK_ULTRA);
+	   } else if (fddiAddressPtr != NULL) {
+	       status = InstallRoute(host, (Address) fddiAddressPtr,
+				     NET_NETWORK_FDDI);
+	   } else {
+	       status = FAILURE;
+	   }
+	   if (status != SUCCESS) {
+	       printf("Couldn't install route to host %s : %s\n", 
+		      host->name, Stat_GetMsg(status));
+	   }
+       }
+d862 1
+a862 1
+    Host_End();
+d864 3
+a866 1
+	exit(1);
+d868 1
+a868 1
+   return 0;
+d870 1
+d875 1
+a875 1
+ * FixHostName --
+d877 2
+a878 1
+ *	Remove the domain part from a host name.
+d881 2
+a882 1
+ *	None.
+d885 1
+a885 1
+ *	String is modified in place.
+d889 4
+a892 4
+
+void
+FixHostName(charPtr)
+     register char *charPtr;
+d894 4
+d899 12
+a910 4
+    for (; *charPtr != '\0' ; charPtr++) {
+	if (*charPtr == '.') {
+	    *charPtr = '\0';
+	    break;
+d913 1
+d915 1
+d920 1
+a920 1
+ * InstallRoute --
+d922 4
+a925 1
+ *	description.
+d928 16
+a943 56
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+InstallRoute(hostPtr, addressData, netType)
+    Host_Entry		*hostPtr;
+    Address             addressData;
+    int                 netType;
+{
+    Net_RouteInfo	routeInfo;
+    ReturnStatus	status = SUCCESS;
+    Net_InetAddress	inetAddress;
+    Net_UltraAddress    *ultraAddressPtr;
+    Net_FDDIAddress     *fddiAddressPtr;
+
+    bzero((char *) &routeInfo, sizeof(routeInfo));
+    routeInfo.spriteID = hostPtr->id;
+    routeInfo.version = NET_ROUTE_VERSION;
+    /*
+     * This is kind of a hack.  We have to be smarter about which
+     * interface the route is for.
+     */
+    routeInfo.interface = 0;
+    strncpy(routeInfo.hostname, hostPtr->name, sizeof(routeInfo.hostname));
+    routeInfo.hostname[sizeof(routeInfo.hostname)-1] = '\0';
+    strncpy(routeInfo.machType, hostPtr->machType, sizeof(routeInfo.machType));
+    routeInfo.machType[sizeof(routeInfo.machType)-1] = '\0';
+
+    switch(netType) {
+    case NET_NETWORK_ETHER:
+	hostPtr = (Host_Entry *)addressData;
+	routeInfo.netType = NET_NETWORK_ETHER;
+	if (hostPtr->netType == HOST_ETHER) {
+	    routeInfo.protocol = NET_PROTO_RAW;
+	    /*
+	     * This is a hack because the types don't match.
+	     */
+	    bcopy(&hostPtr->netAddr.etherAddr,
+		    &routeInfo.netAddress[NET_PROTO_RAW].ether, 6);
+	} else if (hostPtr->netType == HOST_INET) {
+    
+	    routeInfo.protocol = NET_PROTO_INET;
+	    bcopy(&hostPtr->netAddr.etherAddr,
+		    &routeInfo.netAddress[NET_PROTO_RAW].ether, 6);
+	    bcopy(&(hostPtr->inetAddr), &inetAddress, sizeof(hostPtr->inetAddr));
+	    inetAddress = Net_HostToNetInt(inetAddress);
+	    routeInfo.netAddress[NET_PROTO_INET].inet = inetAddress;
+	} else {
+	    fprintf(stderr, "Unknown net type %d for %s\n",
+		    hostPtr->netType, hostPtr->name);
+	    return status;
+d945 1
+a945 16
+	break;
+    case NET_NETWORK_ULTRA:
+	ultraAddressPtr = (Net_UltraAddress *)addressData;
+	routeInfo.netType = NET_NETWORK_ULTRA;
+	routeInfo.netAddress[NET_PROTO_RAW].ultra = *ultraAddressPtr;
+	routeInfo.protocol = NET_PROTO_RAW;
+	break;
+    case NET_NETWORK_FDDI:
+	fddiAddressPtr = (Net_FDDIAddress *)addressData;
+	routeInfo.netType = NET_NETWORK_FDDI;
+	routeInfo.netAddress[NET_PROTO_RAW].fddi = *fddiAddressPtr;
+	routeInfo.protocol = NET_PROTO_RAW;
+	break;
+    default:
+	fprintf(stderr, "netroute: unknown network type in InstallRoute.\n");
+	return FAILURE;
+d947 1
+a947 2
+    status = Net_InstallRoute(sizeof(Net_RouteInfo), &routeInfo);
+    return status;
+d949 1
+d954 1
+a954 1
+ * DownloadFile --
+d956 2
+a957 1
+ *	Installs all routes from the host database
+d960 3
+a962 1
+ *	SUCCESS if all routes were installed, FAILURE otherwise
+d969 3
+a971 3
+
+ReturnStatus
+DownloadFile()
+d973 4
+d978 27
+a1004 6
+    int			spriteID;
+    ReturnStatus	status;
+    Host_Entry		*hostPtr;
+
+    if (verbose) {
+	printf("netroute: Downloading routes from host database.\n");
+d1006 10
+a1015 35
+    /*
+     * First we try an internet route to ourselves.  This allows the
+     * kernel to know its internet address, which is needed to
+     * install internet routes to other machines.  If this step
+     * is skipped then the kernel will reverse arp for its address,
+     * but that can't always be guaranteed to work.
+     */
+    Host_Start();
+    status = Proc_GetHostIDs(NULL, &spriteID);
+    if (status != SUCCESS) {
+	printf("Couldn't get sprite ID of the current host.\n");
+    } else {
+	hostPtr = Host_ByID(spriteID);
+	if (hostPtr != NULL) {
+	    hostPtr->netType = HOST_INET;
+	    if (ultraAddressPtr != NULL) {
+		status = InstallRoute(hostPtr, ultraAddressPtr, 
+				      NET_NETWORK_ULTRA);
+	    } else if (fddiAddressPtr != NULL) {
+		status = InstallRoute(hostPtr, fddiAddressPtr, 
+				      NET_NETWORK_FDDI);
+	    } else {
+		status = InstallRoute(hostPtr, NULL, 
+				      NET_NETWORK_ETHER);
+	    }
+	    if (status != SUCCESS) {
+		printf("Couldn't install local inet route: %s\n", 
+		       Stat_GetMsg(status));
+	    }
+	}
+    }
+    Host_Start();
+    while ((hostPtr = Host_Next()) != (Host_Entry *)NULL) {
+	if (!keepDomain) {
+	    FixHostName(hostPtr->name);
+d1017 48
+a1064 6
+	if (ultraAddressPtr != NULL) {
+	    status = InstallRoute(hostPtr, ultraAddressPtr, NET_NETWORK_ULTRA);
+	} else if (fddiAddressPtr != NULL) {
+	    status = InstallRoute(hostPtr, fddiAddressPtr, NET_NETWORK_FDDI);
+	} else {
+	    status = InstallRoute(hostPtr, NULL, NET_NETWORK_ETHER);
+d1066 14
+a1079 3
+	if (status != SUCCESS) {
+	    printf("Couldn't install route to host %s : %s\n", 
+		hostPtr->name, Stat_GetMsg(status));
+d1083 6
+a1088 4
+	printf("netroute: Closing host database\n");
+    }
+    Host_End();
+    return status;
+d1090 1
+d1095 9
+a1103 1
+ * Daemon --
+d1105 79
+a1183 49
+ *	This procedure is a daemon that will check the status of the
+ *	host database every interval, and download the routes if
+ *	the database has been modified.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Daemon(interval, range)
+    unsigned int	interval;
+    unsigned int	range;
+{
+    struct stat		stats;
+    time_t		modifyTime;
+    Boolean		detach = TRUE;
+    int			spriteID;
+    struct timeval	bedtime, wakeup;
+    int			snooze;
+    FILE		*tmp;
+
+    bzero((char *) &stats, sizeof(stats));
+    bzero((char *) &modifyTime, sizeof(time_t));
+    srandom(getpid());
+    printf("Netroute daemon starting up.\n");
+    if (output != NULL) {
+	tmp = freopen(output, "w", stdout);
+	if (tmp == NULL) {
+	    printf("netroute: can't open output file \"%s\"\n", output);
+	}
+    }
+    while(1) {
+	if (debug) {
+	    printf("Checking host database.\n");
+	}
+	if (Host_Stat(&stats) != 0) {
+#if 0
+	    printf("%s: stat of host database file failed: %s\n", myname,
+		sys_errlist[errno]);
+	    /*
+	     * Don't exit because stat() will fail if the server is down.
+	     * Assume that the server is down and keep on going.
+	     */
+	    printf("%s exiting\n", myname);
+d1185 2
+a1186 24
+#endif
+	} else if (modifyTime != stats.st_mtime) {
+	    if (verbose) {
+		printf(
+		"netroute: spritehosts modified, old time %d, new time %d\n",
+		    modifyTime, stats.st_mtime);
+	    }
+	    DownloadFile();
+	    modifyTime = stats.st_mtime;
+	}
+	if (detach) {
+	    Proc_Detach(0);
+	    detach = FALSE;
+	}
+	snooze = interval +  (random() % range);
+	if (debug) {
+	    printf("Snoozing for %d seconds\n", snooze);
+	    gettimeofday(&bedtime, NULL);
+	}
+	sleep(snooze);
+	if (debug) {
+	    gettimeofday(&wakeup, NULL);
+	    printf("snooze = %d\n", snooze);
+	    printf("slept = %d\n", wakeup.tv_sec - bedtime.tv_sec);
+d1188 1
+a1189 1
+}
+d1191 5
+@
+
+
+1.16
+log
+@*** empty log message ***
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute/RCS/netroute.c,v 1.15 92/02/14 19:10:50 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d53 1
+d78 2
+d94 1
+a94 1
+				Net_UltraAddress *ultraAddressPtr));
+d102 4
+d107 1
+d179 1
+a179 1
+	    printf(stderr, "netroute: malformed ultranet address %s\n",
+d184 11
+d203 4
+d208 1
+a208 1
+	fprintf("netroute: Bad net type '%s', must be 'ether' or 'inet'.\n", 
+d251 3
+d351 12
+a362 1
+	   status = InstallRoute(host, ultraAddressPtr);
+d364 3
+a366 3
+		printf("Couldn't install route to host %s : %s\n", 
+		    host->name, Stat_GetMsg(status));
+	    }
+d422 1
+a422 1
+InstallRoute(hostPtr, ultraAddressPtr)
+d424 2
+a425 1
+    Net_UltraAddress	*ultraAddressPtr;
+d430 2
+a440 1
+    routeInfo.netType = NET_NETWORK_ETHER;
+d445 5
+a449 1
+    if (ultraAddressPtr == NULL) {
+d470 3
+a472 1
+    } else {
+d476 10
+d531 16
+a546 5
+	hostPtr->netType = HOST_INET;
+	status = InstallRoute(hostPtr, ultraAddressPtr);
+	if (status != SUCCESS) {
+	    printf("Couldn't install local inet route: %s\n", 
+		Stat_GetMsg(status));
+d554 7
+a560 1
+	status = InstallRoute(hostPtr, ultraAddressPtr);
+@
+
+
+1.15
+log
+@*** empty log message ***
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute.new/RCS/netroute.c,v 1.14 90/12/01 21:00:48 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+1.15.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute/RCS/netroute.c,v 1.15 92/02/14 19:10:50 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+1.14
+log
+@lots of changes,  made it a daemon
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/netroute.new/RCS/netroute.c,v 1.13 90/09/26 12:12:21 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d38 1
+d54 2
+a55 1
+unsigned int interval = 120;
+d57 2
+d80 4
+d257 1
+a257 1
+	Daemon(interval);
+d460 2
+a461 2
+    if (debug) {
+	printf("Downloading routes from host database.\n");
+d494 3
+d520 1
+a520 1
+Daemon(interval)
+d522 1
+a525 1
+    int	fd;
+d527 4
+d534 8
+d558 5
+d570 11
+a580 1
+	sleep(interval);
+@
+
+
+1.13
+log
+@new system call interface
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.12 89/09/14 13:16:43 douglis Exp $ SPRITE (Berkeley)";
+d23 15
+a37 9
+#include "sprite.h"
+#include "fs.h"
+#include "net.h"
+#include "host.h"
+#include "kernel/netRoute.h"
+#include "stdio.h"
+#include "option.h"
+#include "rpc.h"
+#include "sysStats.h"
+a43 1
+Boolean setInetAddress = FALSE;
+d52 3
+d60 13
+a72 4
+    {OPT_STRING, "h", (Address)&hostName, "Install route for Sprite host with given name or Sprite ID"},
+    {OPT_STRING, "i", (Address)&inetString, "Internet address for route. (aa.bb.cc.dd)"},
+    {OPT_STRING, "e", (Address)&etherString, "Ethernet address for host. (aa:bb:cc:dd:ee:ff)"},
+    {OPT_STRING, "u", (Address) &ultraString, "Ultranet address for host. (a/b)"},
+a75 1
+    {OPT_TRUE, "s", (Address)&setInetAddress, "Set internet address of host"},
+d81 12
+d104 1
+d111 2
+a112 1
+    Host_NetType	netType;
+d116 1
+d118 1
+a118 2
+    Net_UltraAddress	*ultraAddressPtr = NULL;
+    static Net_Address	netAddress;
+d120 1
+d130 1
+a130 2
+    } else {
+	Host_Start();
+d191 1
+d242 1
+d248 20
+a267 9
+    if (setInetAddress) {
+	int		junk;
+	NetInetRoute 	inetRoute;
+	extern int errno;
+	status = Proc_GetHostIDs(&junk, &hostID);
+	if (status != SUCCESS) {
+	    errno = Compat_MapCode(status);
+	    perror("Proc_GetHostIDs");
+	    exit(1);
+d269 5
+a273 2
+        if (inetAddress == 0) {
+	    host = Host_ByID(hostID);
+d275 3
+a277 4
+		fprintf(stderr,
+	"netroute: Can not set INET address: %d not in host database.\n", 
+		       hostID);
+		 exit(1);
+d279 13
+a291 5
+	    bcopy(&host->inetAddr, &inetRoute.inetAddr,
+		  sizeof(inetRoute.inetAddr));
+	} else {
+	    bcopy(&inetAddress, &inetRoute.inetAddr,
+		  sizeof(inetRoute.inetAddr));
+d293 19
+a311 11
+	routeInfo.spriteID = hostID;
+	routeInfo.interface = 0;
+	routeInfo.protocol = NET_PROTO_INET;
+	routeInfo.netType = NET_NETWORK_ETHER;
+	routeInfo.netAddress[NET_PROTO_RAW].ether = *etherAddressPtr;
+	routeInfo.netAddress[NET_PROTO_INET].inet = inetRoute.inetAddr;
+	strcpy(routeInfo.hostname, "Localhost");
+	strcpy(routeInfo.machType, "UnknownMachType");
+	status = Net_InstallRoute(sizeof(Net_RouteInfo), &routeInfo);
+	if (status != SUCCESS) {
+	    exit(1);
+d313 14
+a326 4
+	if (inputFile == (char *)0) {
+	    exit(1);
+	}
+	Host_Start();
+d328 23
+a350 15
+    /*
+     * If no host is specified then initialize the table from a file.
+     */
+    if (hostName == (char *)0) {
+	while ((host = Host_Next()) != (Host_Entry *)NULL) {
+	    if (!keepDomain) {
+		FixHostName(host->name);
+	    }
+	    routeInfo.spriteID = host->id;
+	    routeInfo.interface = 0;
+	    routeInfo.protocol = NET_PROTO_RAW;
+	    routeInfo.netType = NET_NETWORK_ETHER;
+	    strcpy(routeInfo.hostname, host->name);
+	    strcpy(routeInfo.machType, host->machType);
+	    if (host->netType == HOST_ETHER) {
+d352 4
+a355 27
+		routeInfo.protocol = NET_PROTO_RAW;
+		/*
+		 * This is a hack because the types don't match.
+		 */
+		bcopy(&host->netAddr.etherAddr,
+			&routeInfo.netAddress[NET_PROTO_RAW].ether, 6);
+		status = Net_InstallRoute(sizeof(Net_RouteInfo), &routeInfo);
+	    } else if (host->netType == HOST_INET) {
+		NetInetRoute 	inetRoute;
+		bcopy(&host->inetAddr, &inetRoute.inetAddr, 
+		      sizeof(inetRoute.inetAddr));
+		bcopy(&host->netAddr.etherAddr, 
+		      &inetRoute.gatewayAddress, 
+		      sizeof(Net_EtherAddress));
+		routeInfo.protocol = NET_PROTO_INET;
+		routeInfo.netAddress[NET_PROTO_RAW].ether = 
+			inetRoute.gatewayAddress;
+		routeInfo.netAddress[NET_PROTO_INET].inet =
+		    inetRoute.inetAddr;
+		status = Net_InstallRoute(sizeof(Net_RouteInfo), &routeInfo);
+	    } else {
+		fprintf(stderr, "Unknown net type %d for %s\n",
+			host->netType, host->name);
+	    }
+	    if (status != SUCCESS) {
+		exit(1);
+	    }
+a356 15
+	exit(1);
+    } 
+    /*
+     * Otherwise, Install a route for a single Sprite host. See if 
+     * we can find the default values of the route from the Host 
+     * database.  We know the user specified either a hostID or 
+     * hostName so we lookup in the Host database until we find it.
+     */
+    /*
+     * First see if it is a valid hostname if not a name then a number.
+     */
+    host = Host_ByName(hostName);
+    if (host == (Host_Entry *)NULL) {
+	hostID = atoi(hostName);
+	host = Host_ByID(hostID);
+d358 30
+d389 2
+a390 2
+     * Fill in hostID, hostName, and etherAddress letting the user
+     * specified values override the values in the data base.
+a391 50
+    if (hostID < 0) {
+	if (host == (Host_Entry *)NULL) {
+	    fprintf(stderr, "netroute: Can not compute spriteID for %s\n",
+		     hostName);
+	    exit(1);
+	}
+	hostID = host->id;
+   }
+   if (hostName == (char *) 0) {
+       if (host == (Host_Entry *)NULL) {
+	    static char nameBuffer[64];
+	    sprintf(nameBuffer, "host%d", hostID);
+	    hostName = nameBuffer;
+       } else {
+	    hostName = host->name;
+       }
+   }
+   if (etherAddressPtr == (Net_EtherAddress *) 0) {
+       if (host == (Host_Entry *)NULL) {
+	    fprintf(stderr, "netroute: Need -e option.\n");
+	    exit(1);
+       } else {
+	   etherAddressPtr = (Net_EtherAddress *) (host->netAddr.etherAddr);
+       }
+   }
+   if (machType == (char *) 0) {
+       if (host == (Host_Entry *)NULL) {
+	    fprintf(stderr, "netroute: Need -m option.\n");
+	    exit(1);
+       } else {
+	   machType = host->machType;
+       }
+   }
+   /*
+    * INET routes need the internet address.
+    */
+   if (netType == HOST_INET) {
+       if (inetAddress == 0) {
+	   if (host == (Host_Entry *)NULL) {
+		fprintf(stderr, "netroute: Need -i option.\n");
+		exit(1);
+	   }
+	   bcopy(&(host->inetAddr), &inetAddress, sizeof(host->inetAddr));
+       }
+   } 
+
+   if (!keepDomain) {
+	FixHostName(hostName);
+   }
+    routeInfo.spriteID = hostID;
+d393 7
+a399 7
+    strcpy(routeInfo.hostname, hostName);
+    strcpy(routeInfo.machType, machType);
+    if (ultraString == NULL) {
+	routeInfo.netType = NET_NETWORK_ETHER;
+	NET_ETHER_ADDR_COPY(*etherAddressPtr, 
+	    routeInfo.netAddress[NET_PROTO_RAW].ether);
+       if (netType == HOST_ETHER) {
+d401 6
+a406 5
+	    status = Net_InstallRoute(sizeof(Net_RouteInfo), &routeInfo);
+       } else { /* netType == HOST_INET */
+	    NetInetRoute 	inetRoute;
+	    inetRoute.inetAddr = inetAddress;
+	    NET_ETHER_ADDR_COPY(*etherAddressPtr,inetRoute.gatewayAddress);
+d409 4
+d414 5
+a418 2
+	    status = Net_InstallRoute(sizeof(Net_RouteInfo), &routeInfo);
+       }
+a422 1
+        status = Net_InstallRoute(sizeof(Net_RouteInfo), &routeInfo);
+d424 2
+a425 4
+   if (status != SUCCESS) {
+       exit(1);
+   }
+   exit (0);
+d431 63
+a493 1
+ * FixHostName --
+d495 3
+a497 1
+ *	Remove the domain part from a host name.
+d503 1
+a503 1
+ *	String is modified in place.
+d508 3
+a510 3
+
+FixHostName(charPtr)
+     register char *charPtr;
+d512 4
+d517 24
+a540 4
+    for (; *charPtr != '\0' ; charPtr++) {
+	if (*charPtr == '.') {
+	    *charPtr = '\0';
+	    break;
+d542 1
+@
+
+
+1.12
+log
+@check for bad status from Hos_SetFile
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.11 89/07/07 14:46:58 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d46 1
+d55 1
+d86 3
+a89 1
+
+d102 2
+d128 10
+a137 1
+
+d142 4
+d155 1
+a155 1
+	Net_SpriteRoute route;
+d157 2
+d162 1
+d167 6
+d177 26
+a202 20
+	    switch(route.type) {
+		case NET_ROUTE_ETHER: {
+		    printf("%5d %-20s", spriteID, (host != NULL ? host->name :
+						     (spriteID == 0 ?
+						      "BROADCAST" : "???")));
+		    printf("%-8s", (host != NULL ? host->machType :
+					    (spriteID == 0 ? "" : "???")));
+		    printf("ether %02x:%02x:%02x:%02x:%02x:%02x\n",
+			    NET_ETHER_ADDR_BYTE1( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE2( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE3( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE4( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE5( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE6( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff);
+d204 2
+a205 33
+		}
+		case NET_ROUTE_INET: {
+		    Net_EtherHdr *etherHdrPtr;
+		    Net_IPHeader ipHeader;
+		    unsigned int dest;
+		    char	inetBuffer[64];
+
+		    /*
+		     * Copy out the ipHeader because it is not word aligned.
+		     */
+		    bcopy(((char *)&route.route)+sizeof(Net_EtherHdr), 
+			  (char *) &ipHeader, sizeof(ipHeader));
+		    printf("%5d %-20s", spriteID, (host != NULL ? host->name :
+						     (spriteID == 0 ?
+						      "BROADCAST" : "???")));
+		    printf("%-8s", (host != NULL ? host->machType :
+					    (spriteID == 0 ? "" : "???")));
+		    Net_InetAddrToString(Net_NetToHostInt(ipHeader.dest), 
+					inetBuffer);
+		    printf("inet %s gateway %02x:%02x:%02x:%02x:%02x:%02x\n",
+			    inetBuffer,
+			    NET_ETHER_ADDR_BYTE1( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE2( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE3( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE4( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE5( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff,
+			    NET_ETHER_ADDR_BYTE6( NET_ETHER_HDR_DESTINATION(
+				route.route.etherHdr)) & 0xff);
+a206 1
+		}
+d208 2
+d211 4
+a214 1
+	exit(status);
+d240 12
+a251 2
+	status = Net_InstallRoute(hostID, 0, NET_ROUTE_INET, &inetRoute,
+			    "Localhost", "UnknownMachType");
+d253 1
+a253 1
+	    exit(status);
+d265 6
+d272 8
+a279 3
+		Net_InstallRoute(host->id, 0, NET_ROUTE_ETHER,
+				&host->netAddr.etherAddr,
+				host->name, host->machType);
+d287 6
+a292 2
+		Net_InstallRoute(host->id, 0, NET_ROUTE_INET, &inetRoute,
+				host->name, host->machType);
+d297 3
+d301 1
+a301 1
+	exit(status);
+d370 28
+a397 9
+   if (netType == HOST_ETHER) {
+       status = Net_InstallRoute(hostID, 0, NET_ROUTE_ETHER,
+				etherAddressPtr,  hostName, machType);
+   } else { /* netType == HOST_INET */
+	NetInetRoute 	inetRoute;
+	inetRoute.inetAddr = inetAddress;
+	NET_ETHER_ADDR_COPY(*etherAddressPtr,inetRoute.gatewayAddress);
+        status = Net_InstallRoute(hostID, 0, NET_ROUTE_INET, &inetRoute,
+			    hostName, machType);
+d399 1
+a399 1
+   exit (status);
+@
+
+
+1.11
+log
+@Rewind host file after each use.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.10 89/06/29 10:26:03 mendel Exp $ SPRITE (Berkeley)";
+d83 1
+d91 4
+a94 1
+	Host_SetFile(inputFile);
+@
+
+
+1.10
+log
+@Added set inetaddress code.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.9 89/06/08 11:55:25 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d234 1
+@
+
+
+1.9
+log
+@Rewrote to support inet routes.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.8 89/04/23 16:25:47 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d38 1
+d57 1
+d169 2
+a170 1
+		    Net_IPHeader *ipHeaderPtr;
+d173 5
+a177 2
+		    ipHeaderPtr = (Net_IPHeader *) 
+				(((char *)&route.route)+sizeof(Net_EtherHdr));
+d183 1
+a183 2
+
+		    Net_InetAddrToString(Net_NetToHostInt(ipHeaderPtr->dest), 
+d205 30
+@
+
+
+1.8
+log
+@use macros in netEther.h to access fields in ether header
+@
+text
+@d8 8
+a15 2
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.7 89/04/23 16:21:39 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+a37 1
+Boolean gateway = FALSE;
+d44 1
+d47 2
+a48 1
+    {OPT_TRUE, "t", (Address)&table, "Print out the route table"},
+d50 8
+a57 9
+    {OPT_INT, "h", (Address)&hostID, "Install route for Sprite host with given ID"},
+    {OPT_STRING, "m", (Address)&machType, "Machine type (sun2, spur, etc.) needed with -h"},
+    {OPT_STRING, "n", (Address)&hostName, "Install route for Sprite host with given name"},
+    {OPT_STRING, "i", (Address)&inetString, "Install route for host at the given Internet Address (aa.bb.cc.dd)"},
+    {OPT_STRING, "e", (Address)&etherString, "Ethernet Address for host specified with -h, -n or -i (aa:bb:cc:dd:ee:ff)"},
+    {OPT_TRUE, "G", (Address)&gateway, "Use these routes as gateways"},
+    {OPT_STRING, "f", (Address)&inputFile, "Specifies the host file to read info from."},
+    {OPT_DOC, "\0", (Address)NULL, "If none of -h, -n or -i is specified, routes are installed for all hosts in"},
+    {OPT_DOC, "\0", (Address)NULL, "the host database (or the input file if -f is given)"},
+d78 3
+d84 3
+a86 1
+
+d92 34
+d140 2
+a141 2
+	    if (!keepDomain) {
+		FixHostName(host);
+d144 1
+a144 1
+		case NET_ROUTE_ETHER:
+a163 21
+	    }
+	}
+    } else {
+	if ((hostID < 0) &&
+	    (hostName == (char *)0) &&
+	    (inetString == (char *)0)) {
+	    /*
+	     *  Initialize the table from a file.
+	     */
+		while ((host = Host_Next()) != (Host_Entry *)NULL) {
+		    if (!keepDomain) {
+			FixHostName(host);
+		    }
+		    if (host->netType == HOST_ETHER) {
+			Net_InstallRoute(host->id, 0, NET_ROUTE_ETHER,
+					&host->netAddr.etherAddr,
+					host->name, host->machType);
+		    } else {
+			fprintf(stderr, "Unknown net type for %s\n",
+					host->name);
+		    }
+d165 12
+a176 25
+	} else if (etherString != (char *)0) {
+	    /*
+	     * Install a route for a particular ethernet address.
+	     */
+	     
+	    if (hostID > 0) {
+		char name[50];
+		sprintf(name, "host%d", hostID);
+		if (machType == (char *)0) {
+		    fprintf(stderr, "Need -m <machType> with -h <ID>\n");
+		    status = FAILURE;
+		} else {
+		    status = DoEtherAddress(hostID, etherString, name,machType);
+		}
+	    } else if (hostName != (char *)0) {
+		host = Host_ByName(hostName);
+		if (host != (Host_Entry *)NULL) {
+		    status = DoEtherAddress(host->id, etherString, host->name,
+					host->machType);
+		} else {
+		    fprintf(stderr, "Unknown host %s\n", hostName);
+		    status = FAILURE;
+		}
+	    } else if (inetString != (char *)0) {
+		Net_InetAddress	inetAddr;
+d178 17
+a194 9
+		inetAddr = Net_StringToInetAddr(inetString);
+		host = Host_ByInetAddr(inetAddr);
+		if (host != (Host_Entry *)NULL) {
+		    status = DoEtherAddress(host->id, etherString, host->name,
+					host->machType);
+		} else {
+		    fprintf(stderr, "No Sprite host at %s\n",
+				    inetString);
+		    status = FAILURE;
+d197 28
+a224 2
+	} else {
+	    Opt_PrintUsage(argv[0], numOptions, optionArray);
+d226 15
+d242 64
+a305 48
+		
+    exit(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoEtherAddress --
+ *
+ *	Convert a string-format ethernet address to a structure
+ *	and then call Net_InstallRoute to install the address
+ *	into the kernel's routing table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+DoEtherAddress(hostID, etherString, name, machType)
+    int hostID;
+    char *etherString;
+    char *name;
+    char *machType;
+{
+    int byte1, byte2, byte3, byte4, byte5, byte6;
+    int numBytes;
+    Net_EtherAddress etherAddr;
+
+    numBytes = sscanf(etherString, "%x:%x:%x:%x:%x:%x",
+			&byte1, &byte2, &byte3, &byte4, &byte5, &byte6);
+    if (numBytes != 6) {
+	fprintf(stderr, "Garbled ethernet address \"%s\"\n",
+				  etherString);
+	return(FAILURE);
+    }
+    NET_ETHER_ADDR_BYTE1(etherAddr) = byte1 & 0xff;
+    NET_ETHER_ADDR_BYTE2(etherAddr) = byte2 & 0xff;
+    NET_ETHER_ADDR_BYTE3(etherAddr) = byte3 & 0xff;
+    NET_ETHER_ADDR_BYTE4(etherAddr) = byte4 & 0xff;
+    NET_ETHER_ADDR_BYTE5(etherAddr) = byte5 & 0xff;
+    NET_ETHER_ADDR_BYTE6(etherAddr) = byte6 & 0xff;
+    return(Net_InstallRoute(hostID, 0, NET_ROUTE_ETHER, &etherAddr,
+			    name, machType));
+d311 1
+a311 1
+ * DoInetAddress --
+d313 1
+a313 3
+ *	Convert a string-format inet address to a structure
+ *	and then call Net_InstallRoute to install the address
+ *	into the kernel's routing table.
+d319 1
+a319 1
+ *	None.
+a323 29
+ReturnStatus
+DoInetAddress(hostID, inetString, name, machType)
+    int hostID;
+    char *inetString;
+    char *name;
+    char *machType;
+{
+    int byte1, byte2, byte3, byte4;
+    int numBytes;
+    Net_InetAddress etherAddr;
+
+    numBytes = sscanf(etherString, "%x.%x.%x.%x",
+			&byte1, &byte2, &byte3, &byte4);
+    if (numBytes != 4) {
+	fprintf(stderr, "Garbled inet address \"%s\"\n",
+				  etherString);
+	return(FAILURE);
+    }
+#ifdef notdef
+    etherAddr.byte1 = byte1 & 0xff;
+    etherAddr.byte2 = byte2 & 0xff;
+    etherAddr.byte3 = byte3 & 0xff;
+    etherAddr.byte4 = byte4 & 0xff;
+    etherAddr.byte5 = byte5 & 0xff;
+    etherAddr.byte6 = byte6 & 0xff;
+#endif 
+    return(Net_InstallRoute(hostID, 0, NET_ROUTE_ETHER, &etherAddr,
+			    name, machType));
+}
+d325 2
+a326 2
+FixHostName(host)
+    Host_Entry *host;
+a327 1
+    register char *charPtr;
+d329 4
+a332 6
+    if (host != (Host_Entry *)0) {
+	for (charPtr = host->name; *charPtr != '\0' ; charPtr++) {
+	    if (*charPtr == '.') {
+		*charPtr = '\0';
+		break;
+	    }
+@
+
+
+1.7
+log
+@Added proper macro use
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.6 88/12/22 13:12:04 brent Exp $ SPRITE (Berkeley)";
+d106 12
+a117 12
+			    NET_ETHER_ADDR_BYTE1(
+				route.route.etherHdr.destination) & 0xff,
+			    NET_ETHER_ADDR_BYTE2(
+				route.route.etherHdr.destination) & 0xff,
+			    NET_ETHER_ADDR_BYTE3(
+				route.route.etherHdr.destination) & 0xff,
+			    NET_ETHER_ADDR_BYTE4(
+				route.route.etherHdr.destination) & 0xff,
+			    NET_ETHER_ADDR_BYTE5(
+				route.route.etherHdr.destination) & 0xff,
+			    NET_ETHER_ADDR_BYTE6(
+				route.route.etherHdr.destination) & 0xff);
+@
+
+
+1.6
+log
+@Ported to standard C library
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.5 88/11/12 12:06:18 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d32 1
+d48 1
+a80 5
+    /*
+     * Do one of three things, print the route table,
+     * initialize the route table from a file,
+     * or add a route using the command line arguments.
+     */
+d82 3
+d106 12
+a117 6
+			    route.route.etherHdr.destination.byte1 & 0xff,
+			    route.route.etherHdr.destination.byte2 & 0xff,
+			    route.route.etherHdr.destination.byte3 & 0xff,
+			    route.route.etherHdr.destination.byte4 & 0xff,
+			    route.route.etherHdr.destination.byte5 & 0xff,
+			    route.route.etherHdr.destination.byte6 & 0xff);
+d125 3
+d142 4
+d185 18
+d222 47
+d275 1
+@
+
+
+1.5
+log
+@Added machtype to Net_InstallRoute calls
+@
+text
+@d2 1
+a2 1
+ * netRoute.c --
+d4 3
+a6 1
+ *	User program to install routes to Sprite Hosts.
+d13 1
+a13 1
+static char rcsid[] = "$Header: netRoute.c,v 1.4 88/03/31 10:06:42 brent Exp $ SPRITE (Berkeley)";
+d22 1
+a22 1
+#include "io.h"
+d40 10
+a49 10
+    {OPT_TRUE, 't', (Address)&table, "Print out the route table"},
+    {OPT_TRUE, 'D', (Address)&keepDomain, "Keep domain suffix on host name"},
+    {OPT_INT, 'h', (Address)&hostID, "Install route for Sprite host with given ID"},
+    {OPT_STRING, 'm', (Address)&machType, "Machine type (sun2, spur, etc.) needed with -h"},
+    {OPT_STRING, 'n', (Address)&hostName, "Install route for Sprite host with given name"},
+    {OPT_STRING, 'i', (Address)&inetString, "Install route for host at the given Internet Address (aa.bb.cc.dd)"},
+    {OPT_STRING, 'e', (Address)&etherString, "Ethernet Address for host specified with -h, -n or -i (aa:bb:cc:dd:ee:ff)"},
+    {OPT_STRING, 'f', (Address)&inputFile, "Specifies the host file to read info from."},
+    {OPT_DOC, '\0', (Address)NULL, "If none of -h, -n or -i is specified, routes are installed for all hosts in"},
+    {OPT_DOC, '\0', (Address)NULL, "the host database (or the input file if -f is given)"},
+d72 1
+a72 1
+    Opt_Parse(&argc, argv, numOptions, optionArray);
+d88 1
+a88 1
+	Io_Print("Sprite Route Table:\n");
+d100 1
+a100 1
+		    Io_Print("%5d %-20s", spriteID, (host != NULL ? host->name :
+d103 1
+a103 1
+		    Io_Print("%-8s", (host != NULL ? host->machType :
+d105 1
+a105 1
+		    Io_Print("ether %02x:%02x:%02x:%02x:%02x:%02x\n",
+d128 1
+a128 1
+			Io_PrintStream(io_StdErr, "Unknown net type for %s\n",
+d135 1
+a135 1
+		Io_PrintString(name, "%d", hostID);
+d137 1
+a137 2
+		    Io_PrintStream(io_StdErr,
+			"Need -m <machType> with -h <ID>\n");
+d140 1
+a140 2
+		    status = DoEtherAddress(hostID, etherString, name,
+					    machType);
+d148 1
+a148 1
+		    Io_PrintStream(io_StdErr, "Unknown host %s\n", hostName);
+d160 1
+a160 1
+		    Io_PrintStream(io_StdErr, "No Sprite host at %s\n",
+d170 1
+a170 1
+    Proc_Exit(status);
+d184 1
+a184 1
+    numBytes = Io_ScanString(etherString, "%x:%x:%x:%x:%x:%x",
+d187 1
+a187 1
+	Io_PrintString(io_StdErr, "Garbled ethernet address \"%s\"\n",
+@
+
+
+1.4
+log
+@Changed Net_InstallRoute interface to include hostname
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netRoute.c,v 1.3 87/10/06 13:01:46 deboor Exp $ SPRITE (Berkeley)";
+d35 1
+d41 1
+d101 2
+d124 1
+a124 1
+					host->name);
+d134 8
+a141 1
+		status = DoEtherAddress(hostID, etherString, name);
+d145 2
+a146 1
+		    status = DoEtherAddress(host->id, etherString, host->name);
+d157 2
+a158 1
+		    status = DoEtherAddress(host->id, etherString, host->name);
+d174 1
+a174 1
+DoEtherAddress(hostID, etherString, name)
+d178 1
+d197 2
+a198 1
+    return(Net_InstallRoute(hostID, 0, NET_ROUTE_ETHER, &etherAddr, name));
+@
+
+
+1.3
+log
+@Adapted to new hostfile calls
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netRoute.c,v 1.2 87/09/30 21:52:46 deboor Exp $ SPRITE (Berkeley)";
+d29 1
+d38 1
+d91 3
+d114 3
+d119 2
+a120 1
+					&host->netAddr.etherAddr);
+d128 3
+a130 1
+		status = DoEtherAddress(hostID, etherString);
+d134 1
+a134 1
+		    status = DoEtherAddress(host->id, etherString);
+d145 1
+a145 1
+		    status = DoEtherAddress(host->id, etherString);
+d161 1
+a161 1
+DoEtherAddress(hostID, etherString)
+d164 1
+d183 1
+a183 1
+    return(Net_InstallRoute(hostID, 0, NET_ROUTE_ETHER, &etherAddr));
+d185 16
+@
+
+
+1.2
+log
+@Adapted to new Host functions
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netRoute.c,v 1.1 87/08/05 22:20:53 andrew Exp $ SPRITE (Berkeley)";
+d68 5
+a104 9
+	if (inputFile != (char *)0) {
+	    if (Host_SetFile(inputFile) != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Can't open \"%s\"\n", inputFile);
+		Proc_Exit(1);
+	    }
+	} else {
+	    Host_Start();
+	}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netTest.c,v 1.1 87/02/05 18:38:25 andrew Exp $ SPRITE (Berkeley)";
+d18 1
+d37 7
+a43 5
+    {OPT_INT, 'h', (Address)&hostID, "Sprite Host ID"},
+    {OPT_STRING, 'n', (Address)&hostName, "Sprite Host Name"},
+    {OPT_STRING, 'e', (Address)&etherString, "Ethernet Address, aa:bb:cc:dd:ee:ff"},
+    {OPT_STRING, 'i', (Address)&inetString, "Internet Address, aa.bb.cc.dd"},
+    {OPT_STRING, 'f', (Address)&inputFile, "Input filename"},
+d45 1
+a45 1
+int numOptions = sizeof(optionArray) / sizeof(Option);
+d63 1
+d65 1
+d83 1
+d86 3
+a88 1
+		    Io_Print("%5d ", spriteID);
+d99 6
+a104 7
+    } else if (inputFile != (char *)0) {
+	Io_Stream stream;
+	char buffer[128];
+
+	stream = Io_Open(inputFile, "r");
+	if (stream == (Io_Stream)NULL) {
+	    Io_PrintStream(io_StdErr, "Can't open \"%s\"\n", inputFile);
+d106 2
+a107 6
+	    while (Io_GetLine(stream, 128, buffer) != NULL) {
+		int numFields;
+		int hostID;
+		char typeName[40];
+		char addressName[40];
+		char name[40];
+d109 11
+a119 7
+		numFields = Io_ScanString(buffer, "%d %40s %40s %40s", &hostID,
+					      typeName, addressName, name);
+		if (numFields != 4) {
+		    Io_PrintStream(io_StdErr, 
+				"Garbled input line \"%s\"\n", buffer);
+		} else if (String_Compare(typeName, "ethernet") == 0) {
+		    status = DoEtherAddress(hostID, addressName);
+d121 23
+d145 1
+a145 4
+	}
+    } else {
+	if (hostID < 0) {
+	    Io_PrintStream(io_StdErr, "Need a host ID\n");
+a146 1
+	    Proc_Exit(1);
+a147 13
+	if (hostName != (char *)0) {
+	    Io_PrintStream(io_StdErr, "Hostname argument ignored\n");
+	}
+	if (inetString != (char *)0) {
+	    Io_PrintStream(io_StdErr, "Internet Address ignored\n");
+	}
+	if (etherString == (char *)0) {
+	    Io_PrintStream(io_StdErr, "Need an ethernet address\n");
+	    Opt_PrintUsage(argv[0], numOptions, optionArray);
+	    Proc_Exit(1);
+	} else {
+	    status = DoEtherAddress(hostID, etherString);
+	}
+d149 1
+@

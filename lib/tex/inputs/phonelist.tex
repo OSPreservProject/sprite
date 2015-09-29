@@ -1,0 +1,195 @@
+%
+% Copyright 1990, Daniel R. Greening.  Copying is permitted for any
+% non-commercial purpose as long as this copyright and the
+% documentation are retained on copies and derivative works.  No
+% warrantee is expressed or implied, and the author makes no claims
+% about the usefulness, applicability, or correctness of the program.
+%
+% Greening Phonelist TeX Format.
+%
+% This thing is pretty cool, if I do say so myself.  I've used it for
+% several years.  It formats phone numbers into a 9x9 block that looks
+% like the picture that follows.  The picture is simplified.  There is
+% enough room for decent sized names, long phone numbers (with area
+% or country-codes and extensions), and addresses with 9-digit
+% zipcodes.  Print out the phone list example included and you'll
+% see.
+%
+%     ------------------+------------------+------------------
+%    | sally W 784-7861	| dan   W 784-7861 | zeke  W 784-7861 |
+%    |       H 271-2629 |       H 271-2629 |       H 271-2629 |
+%    |   12 Foster Ct   |   12 Foster Ct   |   12 Foster Ct   |
+%    |   New York,NY 10 |   New York,NY 10 |   Topeka,KS 1054 |
+%    | georgeW 444-adff |                  | clem  W 444-adff |
+%    | schoolW 277-2222 |   KANSAS         | jethroW 277-2222 |
+%    | abe   W 331-3333 |                  | abigaiH 331-3333 |
+%    | ron   W 231-2341 | jeb   W 231-2341 | emmy  W 231-2341 |
+%    |  		|		   |	              |
+%     ------------------+------------------+------------------
+%    |   MICHIGAN       | dan   W 784-7861 |                  |
+%    | dan   H 463-5788 |       H 271-2629 |   WASHINGTON     |
+%    |   5582 Golfridge |   12 Foster Ct   |                  |
+%    |   Alma, MI,48801 |   Lansing,MI 432 | nancy W 234-2223 |
+%    |       W 623-3330 | georgeW 444-adff | georgeW 444-adff |
+%    | schoolW 277-2222 | schoolW 277-2222 | schoolW 277-2222 |
+%    | abe   W 331-3333 | abe   W 331-3333 | abe   W 331-3333 |
+%    | ron   W 231-2341 | ron   W 231-2341 | ron   W 231-2341 |
+%    |			|		   |	              |
+%     ------------------+------------------+------------------
+%    | jeff  W 784-7861 |       W 784-7861 | jack  W 784-7861 |
+%    |       H 271-2629 |       H 271-2629 |       H 271-2629 |
+%    |   12 Foster Ct   |   12 Foster Ct   |   12 Foster Ct   |
+%    |   New York,NY 10 |   New York,NY 10 |   New York,NY 10 |
+%    | georgeW 444-adff | georgeW 444-adff | georgeW 444-adff |
+%    | schoolW 277-2222 | schoolW 277-2222 | schoolW 277-2222 |
+%    | abe   W 331-3333 | abe   W 331-3333 | abe   W 331-3333 |
+%    | ron   W 231-2341 | ron   W 231-2341 | ron   W 231-2341 |
+%    |			|		   |		      |
+%     ------------------+------------------+------------------
+%
+% I typically take the output and cut it along the horizontal dividing
+% lines, then staple the thing together on the left.  If you fold it
+% in half, it fits in a pocket or a largish wallet.  If you want to
+% stick it in a smaller wallet (and you are patient), you can tape the
+% horizontal strips end-to-end and fan-fold it.  It then occupies the
+% space of a credit-card.
+%
+% HOW TO USE:
+%
+% Precede lines that contain a country, state or province header with 
+%  ``$''.  This is an example header for the sovereign state of California:
+%
+%    $ CALIFORNIA
+%
+% Lines which contain a phone number work like this:
+%
+%    person-name ; cat ; phone-number
+%
+% The ``cat'' is typically a one or two letter abbreviation, as in
+% ``W'' for work, ``H'' for home, ``FX'' for FAX, ``P'' for parents,
+% etc.  The phone-number field defined in this macro package is large
+% enough to accommodate the number ``999-999-9999x9999''.  Here is an
+% example: 
+%
+%    Alan Turing      ; W ; 213-825-2266
+%                     ; H ; 914-784-7861
+%
+% Finally, you indicate an address with the prefix ``>''.  This simply
+% indents the text which follows by one \quad.  Here's a bigger
+% example:
+%
+%    $ CALIFORNIA
+%
+%    Alan Turing      ; W ; 213-825-2266
+%    > UCLA Computer Science Dept.
+%    > Los Angeles, CA 90024-1647
+%
+%                     ; H ; 914-784-7861
+%    > 1243 Blenheim Lane
+%    > Los Angeles, CA 90025
+%    
+% Blank lines essentially mean nothing when the occur between these
+% three constructs.
+%
+% If you want to include formatted paragraphs, you can do so, but you
+% must terminate them with ``\par'' or with a blank line.
+%
+% Enjoy.  If you make any interesting modifications, let me know.
+%
+% Dan Greening / dgreen@cs.ucla.edu
+%
+\font\rm=cmr5
+\font\bf=cmbx5
+% The following produces 3 column, 3 row output.
+\hsize=2.0in
+\vsize=3.0in
+\voffset=-0.75in
+\hoffset=-0.5in
+\newdimen\fullhsize\global\fullhsize=7.5in
+\newdimen\fullvsize\global\fullvsize=10.5in
+\newdimen\hboxsize\global\hboxsize=\hsize\advance\hboxsize by 0.5in
+\newdimen\vboxsize\global\vboxsize=\vsize\advance\vboxsize by 0.5in
+\def\fullhbox{\hbox to\fullhsize}
+\def\fullvbox{\vbox to\fullvsize}
+\newcount\colcount \global\colcount=11
+\newcount\rowcount \global\rowcount=5
+\baselineskip=6 pt plus 1pt
+\parindent 0pt
+\newcount\boxnum
+%
+% Define argument to accept ^^M as a terminator for a macro (such as
+% ;, $, and >.
+%
+\def\parsearg #1{\let\next=#1\begingroup\obeylines\futurelet\temp\parseargx}
+\def\parseargx{%
+\ifx \obeyedspace\temp \aftergroup\parseargdiscardspace \else%
+\aftergroup \parseargline %
+\fi \endgroup}
+{\obeyspaces %
+\gdef\parseargdiscardspace {\begingroup\obeylines\futurelet\temp\parseargx}}
+\gdef\obeyedspace{\ }
+\def\parseargline{\begingroup \obeylines \parsearglinex}
+{\obeylines %
+\gdef\parsearglinex #1^^M{\endgroup \next {#1}}}
+%
+\def\initcolbox#1 {\global\setbox#1=\vbox to\vboxsize{\hrule\vss\hbox %
+to\hboxsize{\vrule height\vboxsize\hfil\vrule height\vboxsize}\vss\hrule}}
+\def\initcolboxes{ \initcolbox11  \initcolbox12  \initcolbox13 \initcolbox14
+                   \initcolbox15 \initcolbox16 \initcolbox17
+		   \initcolbox18 \initcolbox19 }
+\def\outputpage{\shipout\fullhbox{\fullvbox{\box11\vss\box14\vss\box17}\hss
+                                  \fullvbox{\box12\vss\box15\vss\box18}\hss
+                                  \fullvbox{\box13\vss\box16\vss\box19}}}
+\initcolboxes
+\output={
+  \global\setbox\colcount=\vbox to \vboxsize
+       {\hrule width\hboxsize\vss\hbox to \hboxsize
+           {\vrule height\vboxsize\hss\columnbox\hss\vrule height\vboxsize}
+           \vss\hrule width\hboxsize}
+% Current column is now saved.
+  \message{(\the\colcount)}
+  \ifnum\colcount=19
+        \global\colcount=11
+        \outputpage
+        \advancepageno
+	\initcolboxes
+     \else
+        \global\advance\colcount by 1
+     \fi
+% For the very end.
+  \ifnum\outputpenalty>-100000 \else
+     \supereject\outputpage\fi
+}
+\def\columnbox{\vbox to\vboxsize{\vfill\hbox{\vbox to\vsize{\unvbox255\vfill}}\vfill}}
+%
+% Here we define ``$'' ``>'' and ``;'' as active macro
+% characters.  They serve as separators for fields in our phone list.
+%
+\rm
+  \newdimen\widthb
+  \global\setbox0=\hbox{WE}
+  \widthb=\wd0
+  \newdimen\widthc
+  \global\setbox0=\hbox{999-999-9999x9999}
+  \widthc=\wd0
+%
+\catcode`\;=\active
+{
+  \catcode`\;=11
+  \gdef\phonelineyyy #1;#2;#3\finish{
+       \catcode`\;=\active\hfill
+       \hbox to\widthb{\hfil\ignorespaces #1\hfil}
+       \hbox to 0.05in{\hfil}
+       \hbox to\widthc{\ignorespaces #2\hfil}
+       \par}
+  \gdef\phoneline #1{\catcode`\;=11\phonelineyyy #1;;;\finish}
+}
+\outer\def;{\catcode`\;=11\parsearg\phoneline}
+%
+\catcode`\>=\active
+\def\addressline#1{\hbox to\hsize{\quad\ignorespaces #1\hfil}\par}
+\def>{\parsearg\addressline}
+%
+\catcode`\$=\active
+\def\arealine#1{\vbox to 1pt{\vfil}\hbox to\hsize{\hfil{\bf\ignorespaces #1}\hfil}\vbox to 1pt{\vfil}}
+\def${\parsearg\arealine}

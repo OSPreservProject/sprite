@@ -1,0 +1,450 @@
+/* 
+ * kmsg.c --
+ *
+ *	Program that sends debugging messages to a Sprite kernel.
+ *	Can be used to put a kernel into the debugger, query it,
+ *	and resume from the debugger.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/kmsg/ds3100.md/RCS/kmsg.c,v 1.2 91/05/12 17:57:38 jhh Exp Locker: mottsmth $ SPRITE (Berkeley)";
+#endif not lint
+
+/* 
+ * Include this while testing.
+ */
+#include </sprite/src/kernel/dbg.jhh/ds3100.md/dbg.h>
+
+#include <errno.h>
+#include <host.h>
+#include <net.h>
+#include <option.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/file.h>
+#include <kernel/dbg.h>
+
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <sgtty.h>
+
+/*
+ * Library imports:
+ */
+
+extern void panic();
+
+static	char		requestBuffer[DBG_MAX_REQUEST_SIZE];
+static  Dbg_Request 	*requestPtr = (Dbg_Request *) requestBuffer;
+static	char		replyBuffer[DBG_MAX_REPLY_SIZE];
+static  Dbg_Reply 	*replyPtr = (Dbg_Reply *) replyBuffer;
+static	int		reqNum = 0;
+static	int		reqSize;
+
+extern void	RecvReply();
+
+static	struct sockaddr_in	remote;
+int				kdbxTimeout = 1;
+static	int			netSocket;
+
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateSocket --
+ *
+ *	Creates a UDP socket connected to the Sprite host's kernel 
+ *	debugger port.
+ *
+ * Results:
+ *	The stream ID of the socket.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+CreateSocket(spriteHostName)
+    char	*spriteHostName;
+{
+    int			socketID;
+    struct hostent 	*hostPtr;
+
+    hostPtr = gethostbyname(spriteHostName);
+    if (hostPtr == (struct hostent *) NULL) {
+	(void) fprintf(stderr, "CreateSocket: unknown host \"%s\"\n",
+		spriteHostName);
+	exit(1);
+    }
+    if (hostPtr->h_addrtype != AF_INET) {
+	(void) fprintf(stderr, "CreateSocket: bad address type for host %s\n", 
+		spriteHostName);
+	exit(2);
+    }
+
+    socketID = socket(AF_INET, SOCK_DGRAM, 0);
+    if (socketID < 0) {
+	perror("CreateSocket: socket");
+	exit(3);
+    }
+
+    bzero((char *) &remote, sizeof(remote));
+    bcopy((char *) hostPtr->h_addr, (char *) &remote.sin_addr,
+	    hostPtr->h_length);
+    remote.sin_port = htons(DBG_UDP_PORT);
+    remote.sin_family = AF_INET;
+
+    if (connect(socketID, (struct sockaddr *) &remote, sizeof(remote)) < 0) {
+	perror("CreateSocket: connect");
+	exit(4);
+    }
+
+    return(socketID);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  SendRequest --
+ *
+ *     Send a request message to the kernel.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ * ----------------------------------------------------------------------------
+ */
+static void
+SendRequest(numBytes)
+    int	numBytes;	/* Number of bytes in request 
+			 * (including Request block). */
+{
+    reqSize = numBytes;
+    reqNum++;
+    requestPtr->num = reqNum;
+    if (write(netSocket, requestPtr, numBytes) < numBytes) {
+	panic("SendRequest: Couldn't write to the kernel socket\n");
+	return;
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  RecvReply --
+ *
+ *     Receive a reply from the kernel.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ * ----------------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static void
+RecvReply(request, numBytes, destAddr, readStatusPtr, timeout, varSize)
+    int		request;
+    int		numBytes;
+    char	*destAddr;
+    int		*readStatusPtr;
+    int		timeout;
+    int		varSize;
+{
+    int		status;
+    int		readMask;
+    struct	timeval	interval;
+    int		bytesRead;
+    int		copySize;
+
+
+    interval.tv_sec = kdbxTimeout;
+    interval.tv_usec = 0;
+    do {
+	if (timeout) {
+	    int	numTimeouts;
+
+	    numTimeouts = 0;
+	    /*
+	     * Loop timing out and sending packets until a new packet
+	     * has arrived.
+	     */
+	    do {
+		readMask = 1 << netSocket;
+		status = select(32, &readMask, (int *) NULL,
+			(int *) NULL, &interval);
+		if (status == 1) {
+		    break;
+		} else if (status == -1) {
+		    panic("RecvReply: Couldn't select on socket.\n");
+		} else if (status == 0) {
+		    SendRequest(reqSize);
+		    numTimeouts++;
+		    if (numTimeouts % 10 == 0) {
+			(void) fprintf(stderr, "Timing out and resending\n");
+			(void) fflush(stderr);
+		    }
+		}
+	    } while (1);
+	}
+	/*
+	 * Normal request so just read in the message which includes
+	 * the message number.
+	 */
+	bytesRead = read(netSocket, replyBuffer, numBytes);
+	if (bytesRead < 0) {
+	    panic("RecvReply: Error reading socket (2).");
+	}
+	/*
+	 * Check message number before size because it could be
+	 * an old packet.
+	 */
+	if (replyPtr->num != reqNum) {
+	    continue;
+	}
+	if (replyPtr->status == 0) {
+	    printf("Status from remote kernel indicates request failed.\n");
+	    return;
+	}
+	if ((!varSize) && (bytesRead < numBytes)) {
+	    (void) printf("RecvReply: Short read (2): op=%d exp=%d read=%d",
+		    request, numBytes, bytesRead);
+	}
+	copySize = MIN(bytesRead - 8, numBytes);
+	if (copySize > 0) {
+	    bcopy((char *) &replyPtr->data, destAddr, copySize);
+	}
+	return;
+    } while (1);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SendCommand --
+ *
+ *     Write the command over to the kernel.  
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+SendCommand(request, srcAddr, destAddr, numBytes)
+    int		request;		/* Which command */
+    char	*srcAddr;	/* Where to read data from */
+    char	*destAddr;	/* Where to write data to */
+    int		numBytes;	/* The number of bytes to read or write */
+{
+    bzero((char *) requestPtr, sizeof(*requestPtr));
+    requestPtr->request = request;
+
+    switch (request) {
+	case DBG_DETACH: {
+	    int dummy;
+	    SendRequest(sizeof(Dbg_Request));
+	    RecvReply(request, 4, (char *) &dummy, (int *) NULL, 1, 0);
+	    break;
+	}
+	case DBG_GET_VERSION_STRING:
+	    SendRequest(sizeof(Dbg_Request));
+	    RecvReply(request, numBytes, destAddr, (int *) NULL, 1, 1);
+	    break;
+	case DBG_REBOOT:
+	    if (numBytes > 0) {
+		(void) strcpy((char *) &requestPtr->data, (char *)srcAddr);
+	    }
+	    SendRequest(sizeof(Dbg_Request) + MAX(0, numBytes - 4));
+	    break;
+	default:
+	    (void) printf("Unknown request %d\n", request);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendDebug --
+ *
+ *	Given a host name, this procedure sends a command to that host
+ *	that causes it to enter the debugger.
+ *
+ * Results:
+ *	0 if everything went well, 1 if there was some sort of error
+ *	(in this case an error message is printed).
+ *
+ * Side effects:
+ *	The given host will enter the debugger, if the host exists and
+ *	is running Sprite.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+SendDebug(hostName)
+    char *hostName;		/* Name of Sprite host. */
+{
+    Host_Entry *host;
+    int streamID, amtWritten;
+
+    /*
+     * A debug packet contains the name of the host that is issuing
+     * the "enter debugger" command.
+     */
+
+#define MAX_NAME_LEN	100
+    struct {
+	Net_EtherHdr	etherHdr;
+	int 		nameLen;
+	char		name[MAX_NAME_LEN];
+    } packet;
+
+    /*
+     * Fill in our name in the debug packet.
+     */
+
+    if (gethostname(packet.name, MAX_NAME_LEN-1) != 0) {
+	(void) fprintf(stderr, "Couldn't find my host name: %s\n",
+		strerror(errno));
+	return 1;
+    }
+    packet.name[MAX_NAME_LEN-1] = 0;
+    packet.nameLen = strlen(packet.name);
+    if (strcmp(packet.name, hostName) == 0) {
+	(void) fprintf(stderr, "Can't send a debug packet to yourself.\n");
+	return 1;
+    }
+
+    /*
+     * Set up the ethernet packet header. The source address is filled
+     * in by the kernel.
+     */
+    host = Host_ByName(hostName);
+    if (host == (Host_Entry *)NULL) {
+	(void) fprintf(stderr, "Unknown host: %s\n", hostName);
+	return 1;
+    }
+    bcopy((char *) host->netAddr.etherAddr,
+	    (char *) &packet.etherHdr.destination, HOST_ETHER_ADDRESS_SIZE);
+    packet.etherHdr.type = htons(NET_ETHER_SPRITE_DEBUG);
+
+    streamID = open("/dev/etherSpriteDebug", O_WRONLY, 0666);
+    if (streamID < 0) {
+	(void) fprintf(stderr, "Couldn't open raw ethernet device: %s\n",
+		strerror(errno));
+	return 1;
+    }
+
+    amtWritten = write(streamID, (char *) &packet, sizeof(packet));
+    if (amtWritten < 0) {
+	(void) fprintf(stderr, "Error sending debug packet: %s\n",
+		strerror(errno));
+	return 1;
+    }
+    if (amtWritten != sizeof(packet)) {
+	(void) fprintf(stderr, "Short write for packet: %d\n", amtWritten);
+	return 1;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "kmsg".
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Causes things to happen in a target machine.  See the man page
+ *	for details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int	getVersion = 0;
+int	debug = 0;
+int	detach = 0;
+char	*versionString = (char *)NULL;
+int	reboot = 0;
+char	*rebootString = (char *)NULL;
+
+Option optionArray[] = {
+    {OPT_TRUE, "c", (char *) &detach,
+	"Continue the kernel"},
+    {OPT_TRUE, "d", (char *) &debug,
+	"Force kernel into the debugger"},
+    {OPT_TRUE, "r", (char *) &reboot,
+	"Reboot the machine using the empty string"},
+    {OPT_STRING, "R", (char *) &rebootString,
+	"Reboot the machine using the given string"},
+    {OPT_STRING, "s", (char *) &versionString,
+	"Version string to compare version of kernel to (implies -v)"},
+    {OPT_TRUE, "v", (char *) &getVersion,
+	"Print out the version of the kernel."},
+};
+
+main(argc, argv)
+    int		argc;
+    char	**argv;
+{
+    char	buffer[100];
+
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 0);
+    if (argc != 2) {
+	(void) fprintf(stderr, "Usage:  %s [options] hostname\n", argv[0]);
+	exit(1);
+    }
+    if (debug) {
+	if (SendDebug(argv[1]) != 0) {
+	    exit(1);
+	}
+    }
+    netSocket = CreateSocket(argv[1]);
+    if (detach) {
+	SendCommand(DBG_DETACH, NULL, (char *)NULL, 0);
+    }
+    if (getVersion || versionString != (char *)NULL) {
+	SendCommand(DBG_GET_VERSION_STRING, (char *)0, buffer, 100);
+	(void) printf("%s\n", buffer);
+	if (versionString != (char *)NULL) {
+	    exit(strcmp(buffer, versionString));
+	}
+    }
+    if (rebootString != (char *)NULL) {
+	SendCommand(DBG_REBOOT, rebootString, (char *)NULL,
+		    strlen(rebootString), 0);
+    } else if (reboot) {
+	SendCommand(DBG_REBOOT, (char *)NULL, (char *)NULL, 0);
+    }
+
+    exit(0);
+}

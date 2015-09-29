@@ -1,0 +1,689 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.09.12.13.36.52;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.10.45.24;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.23;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.15.19.16.54;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.04.21.17.35.13;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.43.30;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.19.14.00.45;  author mendel;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.15.18.15.43;  author nelson;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.12.16.45.08;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.11.19.28.40;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.30;  author brent;  state Stable;
+branches ;
+next     1.5;
+
+1.5
+date     88.07.12.19.54.39;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.22.17.18.05;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.22.16.36.47;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.22.16.12.26;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.20.17.55.51;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@VM tracing data structures.
+@
+
+
+9.2
+log
+@Changed includes from quotes to angles.
+@
+text
+@/*
+ * vmTrace.h --
+ *
+ *     Virtual memory data structures and procedure headers for tracing.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/RCS/vmTrace.h,v 9.1 90/09/11 10:45:24 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMTRACE
+#define _VMTRACE
+
+#ifdef KERNEL
+#include <vmMachTrace.h>
+#include <vmStat.h>
+#include <spriteTime.h>
+#else
+#include <kernel/vmMachTrace.h>
+#include <vmStat.h>
+#include <spriteTime.h>
+#endif
+
+/*
+ * Definition for the trace buffer.  The trace buffer is a circular buffer.
+ * The indices into the buffer are managed as if the buffer was infinite in
+ * size.  Thus when one of the indices is used it has to be done as
+ * (index & (VM_TRACE_BUFFER_SIZE - 1)).  vmTraceFirstByte contains the
+ * index of the first valid byte in the buffer and vmTraceNextByte contains
+ * the index of where the next byte is to be put.  In no case can
+ * vmTraceNextByte - vmTraceFirstByte exceed VM_TRACE_BUFFER_SIZE.
+ */
+#define	VM_TRACE_BUFFER_SIZE	(32 * 1024)
+#define	VM_TRACE_BUF_MASK	(~(VM_TRACE_BUFFER_SIZE - 1))
+extern	char		*vmTraceBuffer;
+extern	int		vmTraceFirstByte;
+extern	int		vmTraceNextByte;
+
+/*
+ * Macro to go from an infinite buffer index (i.e. vmTraceNextByte) to
+ * an index that fits in the buffer.
+ */
+#define	VM_GET_BUFFER_INDEX(index) (index & (VM_TRACE_BUFFER_SIZE - 1))
+
+/*
+ * Macro to get a pointer to the next trace record.
+ */
+#define	VM_GET_TRACE_BUFFER_PTR(type) \
+    (type *)(vmTraceBuffer + VM_GET_BUFFER_INDEX(vmTraceNextByte))
+
+/*
+ * Trace stats.
+ */
+typedef struct {
+    int			traceDumps;
+    int			traceDrops;
+    int			numTraces;
+    VmMach_TraceStats	machStats;
+} Vm_TraceStats;
+extern	Vm_TraceStats	vmTraceStats;
+
+/*
+ * The different record types.  The first short of each record determines its
+ * type.  If it is not one of the three types below then it is a page
+ * reference, modify record type since these types never have the sign bit set.
+ *
+ *	VM_TRACE_START_REC	A record of type Vm_TraceStart.
+ *	VM_TRACE_END_REC	A record of type Vm_TraceEnd.
+ *	VM_TRACE_TIME_REC	A record of type Vm_TraceTimeStamp
+ *	VM_TRACE_SEG		A record of type Vm_TraceSeg
+ *	VM_TRACE_SKIP_REC	This type means that should skip bytes up
+ *				until hit a multiple of VM_TRACE_BUFFER_SIZE.
+ *	VM_TRACE_STEAL_PMEG_REC	The following segment record relates to a
+ *				stolen PMEG.
+ *	VM_TRACE_SEG_CREATE_REC	A record of type Vm_TraceSegCreate.
+ *	VM_TRACE_SEG_DESTROY_REC A record of type Vm_TraceSegDestroy.
+ *	VM_TRACE_PTE_CHANGE_REC	A record of type Vm_TracePTEChangeRec.
+ *	VM_TRACE_CLEAR_COW_REC	A record of type Vm_TraceClearCOW
+ *	VM_TRACE_PAGE_FAULT_REC	A record of type Vm_TracePageFault
+ *	VM_TRACE_END_INIT_REC	Trace initialization has completed.
+ */
+#define	VM_TRACE_START_REC		-1
+#define	VM_TRACE_END_REC		-2
+#define	VM_TRACE_TIME_REC		-3
+#define	VM_TRACE_SEG_REC		-4
+#define	VM_TRACE_SKIP_REC		-5
+#define	VM_TRACE_STEAL_PMEG_REC		-6
+#define	VM_TRACE_SEG_CREATE_REC		-7
+#define	VM_TRACE_SEG_DESTROY_REC	-8
+#define	VM_TRACE_PTE_CHANGE_REC		-9
+#define	VM_TRACE_CLEAR_COW_REC		-10
+#define	VM_TRACE_PAGE_FAULT_REC		-11
+#define	VM_TRACE_END_INIT_REC		-12
+#define	VM_TRACE_MIN_REC_TYPE		-12
+
+/*
+ * Start trace record.
+ */
+typedef struct {
+    short	recType;		/* Always equals VM_TRACE_START_REC. */
+    int		hostID;			/* Sprite host number. */
+    int		pageSize;		/* The page size. */
+    int		numPages;		/* The number of physical pages. */
+    Address	codeStartAddr;		/* The starting address of the kernel's
+					 * code (runs up to dataStartAddr). */
+    Address	dataStartAddr;		/* The starting address of the kernel's
+					 * data (runs up to stackStartAddr). */
+    Address	stackStartAddr;		/* The start of the range of virtual
+					 * addresses that are used for kernel
+					 * stacks (runs up to mapStartAddr). */
+    Address	mapStartAddr;		/* The start of kernel virtual
+					 * addresses used for mapping stuff
+					 * (runs up to cacheStartAddr). */
+    Address	cacheStartAddr;		/* The start of the FS cache. */
+    Address	cacheEndAddr;		/* The end of the FS cache. */
+    Vm_Stat	startStats;		/* Stats at the start of the trace. */
+    int		tracesPerSecond;	/* The number of traces per second. */
+} Vm_TraceStart;
+
+/*
+ * End trace record.
+ */
+typedef struct {
+    short		recType;	/* Always equals VM_TRACE_END_REC. */
+    Vm_Stat		endStats;	/* Stats at the end of the trace. */
+    Vm_TraceStats	traceStats;	/* Trace stats. */
+} Vm_TraceEnd;
+
+/*
+ * Trace time stamp record.
+ */
+typedef struct {
+    short		recType;	/* Always equals VM_TRACE_TIME_REC. */
+    Time		time;
+} Vm_TraceTimeStamp;
+
+/*
+ * Segment trace begin record.
+ */
+typedef struct {
+    short		recType;	/* Always equals VM_TRACE_SEG_REC. */
+    unsigned	short	hardSegNum;	/* Which hardware segment.  Hardware
+					 * segments are a multiple of 32K on
+					 * Sun-2s and 128K on Sun3's. */
+    unsigned	short	softSegNum;	/* Which of the 256 software segments.*/
+    unsigned	char	segType;	/* One of VM_SYSTEM, VM_CODE, VM_HEAP,
+					 * VM_STACK. */
+    unsigned	char	refCount;	/* Number of processes that are using
+					 * the segment. */
+} Vm_TraceSeg;
+
+/*
+ * Page reference, modified trace record.  The lower 4 bits contain which
+ * page within the hardware segment that this page is and the high order byte
+ * contains info as to whether the page was referenced or modified.
+ */
+#define	VM_TRACE_REFERENCED	0x100
+#define	VM_TRACE_MODIFIED	0x200
+
+typedef unsigned short	Vm_TracePage;
+
+/*
+ * Segment creation record.
+ */
+typedef struct {
+    short	recType;	/* Always VM_TRACE_SEG_CREATE_REC. */
+    short	segNum;		/* The segment being created. */
+    short	parSegNum;	/* The parent segment. */
+    char	segType;	/* The type of segment. */
+    char	cor;		/* TRUE if the segment was created
+				 * copy-on-reference. */
+} Vm_TraceSegCreate;
+
+/*
+ * Segment destruction record.
+ */
+typedef struct {
+    short	recType;	/* Always VM_TRACE_SEG_DESTROY_REC. */
+    short	segNum;		/* The segment being destroyed. */
+} Vm_TraceSegDestroy;
+
+/*
+ * PTE Change record.
+ */
+typedef struct {
+    short		recType;	/* Always VM_TRACE_PTE_CHANGE_REC. */
+    char		softPTE;	/* TRUE if is the software page table
+					 * entry and FALSE if is the hardware
+					 * one. */
+    char		changeType;	/* Type	of pte change (defined below)*/
+    short		segNum;		/* The segment that the page is in. */
+    unsigned short	pageNum;	/* The virtual page number. */
+    unsigned int	beforePTE;	/* The PTE before the change. */
+    unsigned int	afterPTE;	/* The PTE after the change. */
+} Vm_TracePTEChange;
+
+/*
+ * Types of PTE changes.
+ *
+ *	VM_TRACE_CLEAR_REF_BIT		The reference bit was cleared.
+ *	VM_TRACE_CLEAR_MOD_BIT		The modified bit was cleared.
+ *	VM_TRACE_SET_PAGE_PROT		The page protection was set.
+ *	VM_TRACE_SET_SEG_PROT		The protection of the entire segment
+ *					was set.
+ *	VM_TRACE_VALIDATE_PAGE		A page was validated.
+ *	VM_TRACE_INVALIDATE_PAGE	A page was invalidated.
+ *	VM_TRACE_LAST_COR		The last copy-on-reference slave
+ *					was removed.
+ *	VM_TRACE_COW_TO_NORMAL		A page is being changed from COW to
+ *					normal protection because of a
+ *					copy-on-write fault.
+ *	VM_TRACE_GIVEN_FROM_MASTER	The master segment is invalidating
+ *					its copy of the page so that it can
+ *					give it to a slave.
+ *	VM_TRACE_TAKEN_BY_SLAVE		The slave segment took the page from
+ *					the master when the master gave it
+ *					away with VM_TRACE_GIVEN_FROM_MASTER.
+ *	VM_TRACE_COW_COR_CHANGE		A generic copy-on-write change.
+ */
+#define	VM_TRACE_CLEAR_REF_BIT		1
+#define	VM_TRACE_CLEAR_MOD_BIT		2
+#define	VM_TRACE_SET_PAGE_PROT		3
+#define	VM_TRACE_SET_SEG_PROT		4
+#define	VM_TRACE_VALIDATE_PAGE		5
+#define	VM_TRACE_INVALIDATE_PAGE	6
+#define	VM_TRACE_LAST_COR		7
+#define	VM_TRACE_COW_TO_NORMAL		8
+#define	VM_TRACE_GIVEN_FROM_MASTER	9
+#define	VM_TRACE_TAKEN_BY_SLAVE		10
+#define	VM_TRACE_COW_COR_CHANGE		11
+#define	VM_TRACE_MAX_PTE_CHANGE_TYPE	11
+
+/*
+ * Page fault type record.
+ */
+typedef struct {
+    short		recType;	/* Always VM_TRACE_PAGE_FAULT_REC. */
+    short		segNum;		/* The segment that the page is in. */
+    unsigned short	pageNum;	/* The virtual page number. */
+    short		faultType;	/* One of VM_TRACE_ZERO_FILL,
+					 * VM_TRACE_OBJ_FILE,
+					 * VM_TRACE_SWAP_FILE. */
+} Vm_TracePageFault;
+
+/*
+ * Different types of page faults:
+ *
+ *	VM_TRACE_ZERO_FILL	Page was zero filled.
+ *	VM_TRACE_OBJ_FILE	Page was demand loaded from the object file.
+ *	VM_TRACE_SWAP_FILE	Page was loaded in from the swap file.
+ */
+#define	VM_TRACE_ZERO_FILL	1
+#define	VM_TRACE_OBJ_FILE	2
+#define	VM_TRACE_SWAP_FILE	3
+
+/*
+ * Clear copy-on-write record.
+ */
+typedef struct {
+    short		recType;	/* Always VM_TRACE_CLEAR_COW_REC. */
+    short		segNum;		/* The segment that is being made to
+					 * be no longer copy-on-write. */
+} Vm_TraceClearCOW;
+
+/*
+ * Variable to indicate which trace iteration that this is.  Is incremented
+ * every time a trace is taken.
+ */
+extern	int		vmTraceTime;
+extern	Boolean		vmTraceNeedsInit;
+extern	int		vmTracesPerClock;
+extern	int		vmTracesToGo;
+extern	Fs_Stream	*vmTraceFilePtr;
+extern	char		*vmTraceFileName;
+extern	Boolean		vmTraceDumpStarted;
+
+/*
+ * The name of the trace file is the following followed by the host on
+ * which the trace is occuring.
+ */
+#define	VM_TRACE_FILE_NAME	"/sprite/vmtrace/tfile."
+
+/*
+ * Trace dump file and function to do the tracing.
+ */
+extern	Fs_Stream	*vmTraceFilePtr;
+extern	char		*vmTraceFileName;
+extern	Boolean		vmTraceDumpStarted;
+extern void VmTraceDump _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern void VmStoreTraceRec _ARGS_((int recType, int size, Address traceRecAddr, Boolean checkOverflow));
+extern void VmCheckTraceOverflow _ARGS_((void));
+
+#endif /* _VMTRACE */
+@
+
+
+9.1
+log
+@Added function prototyping.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmTrace.h,v 8.2 89/08/15 19:16:54 rab Exp $ SPRITE (Berkeley)
+d17 3
+a19 3
+#include "vmMachTrace.h"
+#include "vmStat.h"
+#include "spriteTime.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmTrace.h,v 8.2 89/08/15 19:16:54 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d291 3
+a293 3
+extern	void		VmTraceDump();
+extern	void		VmStoreTraceRec();
+extern	void		VmCheckTraceOverflow();
+@
+
+
+8.2
+log
+@Commented #endif labels.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmTrace.h,v 8.1 89/04/21 17:35:13 douglis Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@vmStat.h moved to user area.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmTrace.h,v 8.0 88/11/11 18:43:30 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d66 1
+a66 1
+ * type.  If it is not one of the three types below then it is a page 
+d113 1
+a113 1
+    Address	mapStartAddr;		/* The start of kernel virtual 
+d172 1
+a172 1
+    char	cor;		/* TRUE if the segment was created 
+d212 1
+a212 1
+ *					normal protection because of a 
+d242 2
+a243 2
+    short		faultType;	/* One of VM_TRACE_ZERO_FILL, 
+					 * VM_TRACE_OBJ_FILE, 
+d295 1
+a295 1
+#endif _VMTRACE
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmTrace.h,v 6.4 88/10/19 14:00:45 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d22 1
+a22 1
+#include <kernel/vmStat.h>
+@
+
+
+6.4
+log
+@Changed time.h to spriteTime.h
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 6.3 88/08/15 18:15:43 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+6.3
+log
+@Fixed lint errors and added some more tracing stuff for David Wood.
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 6.2 88/08/12 16:45:08 nelson Exp $ SPRITE (Berkeley)
+d19 1
+a19 1
+#include "time.h"
+d23 1
+a23 1
+#include <time.h>
+@
+
+
+6.2
+log
+@Made file user accessible with new library structur.
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 6.1 88/08/11 19:28:40 nelson Exp $ SPRITE (Berkeley)
+d82 1
+d95 2
+a96 1
+#define	VM_TRACE_MIN_REC_TYPE		-11
+d272 1
+a272 1
+
+@
+
+
+6.1
+log
+@Added more tracing info.
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 6.0 88/08/11 12:30:30 brent Stable $ SPRITE (Berkeley)
+d16 1
+d20 5
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 1.5 88/07/12 19:54:39 nelson Exp $ SPRITE (Berkeley)
+d53 1
+d75 1
+d87 1
+d111 1
+d225 24
+@
+
+
+1.5
+log
+@Lint error fixes and more tracing.
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 1.4 88/06/22 17:18:05 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 1.2 88/06/22 16:12:26 nelson Exp $ SPRITE (Berkeley)
+d17 2
+d48 10
+d62 2
+d70 4
+a73 1
+ *	VM_TRACE_START_REC	A record of type Vm_TraceStart
+d75 11
+a85 5
+#define	VM_TRACE_TIME_REC	-1
+#define	VM_TRACE_SEG_REC	-2
+#define	VM_TRACE_SKIP_REC	-3
+#define	VM_TRACE_STEAL_PMEG_REC	-4
+#define	VM_TRACE_START_REC	-5
+d88 1
+a88 1
+ * Trace begin time stamp record.
+d91 32
+d153 1
+a153 1
+ * Start trace record.
+d156 7
+a162 17
+    short	recType;		/* Always equals VM_TRACE_START_REC. */
+    int		hostID;			/* Sprite host number. */
+    int		pageSize;		/* The page size. */
+    int		numPages;		/* The number of physical pages. */
+    Address	codeStartAddr;		/* The starting address of the kernel's
+					 * code (runs up to dataStartAddr). */
+    Address	dataStartAddr;		/* The starting address of the kernel's
+					 * data (runs up to stackStartAddr). */
+    Address	stackStartAddr;		/* The start of the range of virtual
+					 * addresses that are used for kernel
+					 * stacks (runs up to mapStartAddr). */
+    Address	mapStartAddr;		/* The start of kernel virtual 
+					 * addresses used for mapping stuff
+					 * (runs up to cacheStartAddr). */
+    Address	cacheStartAddr;		/* The start of the FS cache. */
+    Address	cacheEndAddr;		/* The end of the FS cache. */
+} Vm_TraceStart;
+d165 67
+a236 1
+extern	Boolean		vmTracing;
+a243 10
+ * Trace stats.
+ */
+typedef struct {
+    int			traceDumps;
+    int			traceDrops;
+    VmMach_TraceStats	machStats;
+} VmTraceStats;
+extern	VmTraceStats	vmTraceStats;
+
+/*
+d256 3
+@
+
+
+1.3
+log
+@Comments.
+@
+text
+@d77 3
+a79 1
+    unsigned	short	hardSegNum;	/* 128Kbyte segment number. */
+d89 2
+a90 2
+ * page within the hardware segment that this page lies and the bytes contains
+ * info as to whether the page was referenced of modified.
+d106 1
+a106 1
+					 * code (runs up to dataStartAddr). * /
+@
+
+
+1.2
+log
+@Added trace start rec.
+@
+text
+@d10 1
+a10 1
+ * $Header: vmTrace.h,v 1.1 88/06/20 17:55:51 nelson Exp $ SPRITE (Berkeley)
+d99 16
+a114 10
+    short	recType;
+    int		hostID;
+    int		pageSize;
+    int		numPages;
+    Address	codeStartAddr;
+    Address	dataStartAddr;
+    Address	stackStartAddr;
+    Address	mapStartAddr;
+    Address	cacheStartAddr;
+    Address	cacheEndAddr;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: vm.h,v 5.11 88/06/17 15:26:52 nelson Exp $ SPRITE (Berkeley)
+d56 1
+d62 1
+d96 16
+d133 6
+@

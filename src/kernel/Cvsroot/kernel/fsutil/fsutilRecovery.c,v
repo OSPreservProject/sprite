@@ -1,0 +1,3983 @@
+head     9.23;
+branch   ;
+access   ;
+symbols  ds3100:9.22 sun3:9.22 sprited:9.16.1 sun4nw:9.16 symm:9.16 spur:9.16 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.23
+date     92.12.13.18.18.36;  author mgbaker;  state Exp;
+branches ;
+next     9.22;
+
+9.22
+date     92.10.28.18.17.53;  author mgbaker;  state Exp;
+branches ;
+next     9.21;
+
+9.21
+date     92.10.28.18.11.13;  author mgbaker;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     92.10.26.14.33.58;  author mgbaker;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     92.08.10.16.04.25;  author mgbaker;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     92.08.04.17.16.29;  author mgbaker;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     92.06.01.15.34.36;  author kupfer;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     91.03.30.17.17.05;  author mgbaker;  state Exp;
+branches 9.16.1.1;
+next     9.15;
+
+9.15
+date     90.10.19.15.51.20;  author mendel;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     90.10.08.13.19.02;  author mendel;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.05.14.14.41.26;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.02.07.13.00.21;  author douglis;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.01.29.19.30.13;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     89.12.15.12.49.05;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     89.12.12.18.05.08;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     89.12.11.11.24.33;  author brent;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     89.11.27.14.29.02;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     89.11.16.19.11.51;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.11.07.14.51.04;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.10.30.20.34.42;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.23.09.51.26;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.12.14.18.51;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.13.44.43;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.11.18;  author douglis;  state Stable;
+branches ;
+next     8.15;
+
+8.15
+date     89.08.21.15.29.54;  author mendel;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.08.10.17.11.20;  author brent;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.07.11.17.34.18;  author nelson;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.06.28.16.39.37;  author brent;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.05.30.16.12.09;  author jhh;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.03.18.13.56.28;  author mgbaker;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.03.15.20.45.08;  author brent;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.03.03.08.14.47;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.02.19.22.04.19;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.02.09.09.43.47;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.09.09.20.59;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.07.14.22.58;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.07.13.57.43;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.30.09.24.07;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.06.11.20.17;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.22.47;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.33.24;  author brent;  state Exp;
+branches ;
+next     6.12;
+
+6.12
+date     88.11.02.11.05.06;  author brent;  state Exp;
+branches ;
+next     6.11;
+
+6.11
+date     88.10.22.15.17.33;  author brent;  state Exp;
+branches ;
+next     6.10;
+
+6.10
+date     88.10.19.09.51.51;  author brent;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.10.16.10.17.02;  author brent;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.09.23.13.39.31;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.09.22.11.48.17;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.09.19.15.04.04;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.15.16.59.05;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.14.11.22.43;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.08.18.11.07;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.08.17.33.36;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.12.06.49;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.17.53;  author brent;  state Stable;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.04.15.05.23;  author mlgray;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.15.10.34.19;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.02.11.36.19;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.28.11.02.28;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.11.10.15.00;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.16.1.1
+date     91.11.15.17.03.18;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Filesystem recovery routines.
+@
+
+
+9.23
+log
+@Code to handle server-driven recovery.
+@
+text
+@/* 
+ * fsRecovery.c
+ *
+ *	Routines for filesytem recovery.  A file server keeps state about
+ *	client use, and this needs to be recovered after the server reboots.
+ *	The first routine, Fsutil_Reopen, goes through a sequence of steps that
+ *	a client makes in order to help the server in this way.  Other
+ *	routines are used by other parts of the filesystem to wait for
+ *	recovery to happen, and are typically invoked after a remote
+ *	operation fails due to a communication failure.  These are
+ *	Fsutil_WantRecovery, and Fsutil_WaitForRecovery.
+ *	The routine Fsutil_WaitForHost
+ *	is combines these two calls and is used by routines outside
+ *	the filesystem, i.e. when vm waits on swap files.
+ *
+ * Copyright 1987 Regents of the University of California.
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.22 92/10/28 18:17:53 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsprefix.h>
+#include <fsio.h>
+#include <fsrmt.h>
+#include <fsNameOps.h>
+#include <fsStat.h>
+#include <recov.h>
+#include <hash.h>
+#include <rpc.h>
+#include <vm.h>
+#include <rpcPacket.h>
+
+#include <string.h>
+#include <stdio.h>
+#include <devClientDev.h>
+
+
+static void ReopenHandles _ARGS_((int serverID));
+static void RecoveryComplete _ARGS_((Fsutil_RecoveryInfo *recovPtr, 
+			ReturnStatus status));
+static void RecoveryNotify _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+static Boolean RecoveryFailed _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+static Boolean OkToScavenge _ARGS_((register Fsutil_RecoveryInfo *recovPtr));
+static void RecoveryDone _ARGS_((int serverID));
+extern Boolean RemoteHandle _ARGS_((Fs_HandleHeader *hdrPtr));
+extern ReturnStatus RecoveryWait _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+
+static ReturnStatus DoBulkReopen _ARGS_((int serverID));
+static void FinishReopenHandles _ARGS_((void));
+static ReturnStatus AddReopenHandle _ARGS_((Fs_HandleHeader *hdrPtr));
+static void InitReopenHandles _ARGS_((void));
+
+/*
+ * The recovery state for each file is monitored.
+ */
+#define LOCKPTR (&recovPtr->lock)
+
+/*
+ * Flags for the recovery state.
+ *	RECOVERY_NEEDED		The handle needs to be re-opened at the server.
+ *	RECOVERY_COMPLETE	The recovery actions have been completed.
+ *	RECOVERY_FAILED		The last re-open attempt failed.
+ */
+#define RECOVERY_NEEDED		0x1
+#define RECOVERY_COMPLETE	0x2
+#define RECOVERY_FAILED		0x4
+
+/*
+ * A global counter of the clients active in recovery is kept.
+ * This is used to control print statements so we aren't noisey
+ * in the middle of recovery, but only at the beginning and end.
+ */
+int fsutil_NumRecovering = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_Reopen --
+ *
+ *	Re-establish state with a file server.  First the prefixes for
+ * 	the server are re-opened, then the handle table is scanned and
+ *	all handles from that server are re-opened.  We are called via
+ *	the recovery callbacks.  As a special favor to the VM module
+ *	we tell it after we have recovered state so that it can
+ *	recover after the swap server.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None by this routine itself, but when this returns the routines
+ *	it has called will have reestablished state with the server.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Fsutil_Reopen(serverID, clientData)
+    int serverID;		/* Server we are recovering with */
+    ClientData clientData;	/* IGNORED */
+{
+    Boolean		fastBoot;
+    Boolean		serverDriven;
+    unsigned int	state;
+
+printf("Fsutil_Reopen called\n");
+    /*
+     * Ensure only one instance of Fsutil_Reopen by doing a set-and-test.
+     */
+    if (Recov_SetClientState(serverID, SRV_RECOV_IN_PROGRESS)
+	    & SRV_RECOV_IN_PROGRESS) {
+printf("\tand returning due to already being called.\n");
+	return;
+    }
+    state = Recov_GetHostState(serverID);
+    fastBoot = state & RECOV_FAST_BOOT;
+    serverDriven = state & RECOV_SERVER_DRIVEN;
+printf("\tand is %s\n", serverDriven ? "server driven" : "NOT server driven");
+    if (fastBoot && serverDriven) {
+	printf(
+	"Fsutil_Reopen: %d server doing both transparent and driven recovery\n",
+		serverID);
+	printf("\tI'll just do server-driven.\n");
+	fastBoot = FALSE;
+    }
+    if (state & SRV_DRIVEN_IN_PROGRESS) {
+	panic("Fsutil_Reopen: server-driven recovery out of order.");
+    }
+    if (serverDriven) {
+	/*
+	 * We call back into the recovery module to wait for server rpc
+	 * to wake us.  This will also wake up after some amount of time
+	 * if we don't hear from server.
+	 */
+printf("\twaiting for server-driven RPC to wake us.\n");
+	Recov_WaitForServerDriven(serverID);
+    }
+    /*
+     * Recover the prefix table.
+     */
+    Fsprefix_Reopen(serverID);
+
+    if (!fastBoot || recov_ClientIgnoreTransparent) {
+	/*
+	 * Wait for opens in progress, then block opens.
+	 */
+	Fsprefix_RecoveryCheck(serverID);
+	/*
+	 * Recover file handles
+	 */
+	ReopenHandles(serverID);
+	/*
+	 * Tell the server we're done.
+	 */
+	RecoveryDone(serverID);
+	/*
+	 * Allow regular opens.
+	 */
+	Fsprefix_AllowOpens(serverID);
+    }
+    /*
+     * Clear the recovery bit before kicking processes.  Some processes
+     * may be locked down doing pseudo-device request/response, and the
+     * proc wakeup call will block on them.  To prevent deadlock we
+     * have to mark recovery as complete first.
+     */
+    Recov_ClearClientState(serverID, SRV_RECOV_IN_PROGRESS);
+    /*
+     * Tell VM that we have recovered in case this was the swap server.  
+     * This comes before we kick blocked processes, so that we can avoid a
+     * potential deadlock: if a process in the middle of forking hangs
+     * because the swap server is down, its child might be locked.  If this
+     * happens, the wakeup routine will hang waiting to unlock the child,
+     * which means the parent must be started first, so that the child will
+     * eventually be unlocked.  (See Sprite bug report 32338.)
+     */
+    Vm_Recovery();
+    /*
+     * Kick all processes in case any are blocking on I/O
+     */
+    Proc_WakeupAllProcesses();
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * ReopenHandles --
+ *
+ *	Called after the prefix table handles for the given server
+ *	have been recovered.  This scans the handle table twice
+ *	to recover I/O handles and streams.  The first pass re-opens
+ *	the I/O handles, and then streams are done.  A file-type specific
+ *	routine is called to do the reopen.  If the recovery fails this
+ *	logs a warning message and marks the handle as invalid.  A final
+ *	third pass over the handles is done to wakeup processes that are
+ *	waiting on recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This will invalidate handles for which recovery fails.  Invalid
+ *	I/O handles are removed from the handle table, while invalid
+ *	streams are left around because they get removed at close-time.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+static void
+ReopenHandles(serverID)
+    int		serverID;	/* The to re-establish contact with. */
+{
+    Hash_Search			hashSearch;
+    register	Fs_HandleHeader	*hdrPtr;
+    register	Fs_Stream	*streamPtr;
+    register	Fsrmt_IOHandle *rmtHandlePtr;
+    ReturnStatus		status = SUCCESS;
+    Boolean			printed = FALSE;
+    int				succeeded = fs_Stats.recovery.succeeded;
+    int				failed = fs_Stats.recovery.failed;
+					/* This boolean is only to retry
+					 * stuff with single rpc's if the
+					 * server doesn't recognize a
+					 * bulk rpc.   GET RID OF IT WHEN
+					 * ALL KERNELS HAVE BULK RPC'S. */
+    Boolean			doBulkRpc = TRUE;
+    ReturnStatus		checkStatus = FAILURE;
+
+printf("ReopenHandles called.\n");
+doSingleRpcsInstead:
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	InitReopenHandles();
+    }
+    if (!doBulkRpc) {
+	printf("Server %d couldn't do bulk reopen - starting again.\n",
+		serverID);
+    }
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	 if ((hdrPtr->fileID.type != FSIO_STREAM) &&
+		 (hdrPtr->fileID.serverID == serverID)) {
+	    if (!RemoteHandle(hdrPtr)) {
+		panic("ReopenHandles, local I/O handle at remote server?\n");
+	    }
+	    if (!printed) {
+		Net_HostPrint(serverID, "- recovering handles\n");
+		printed = TRUE;
+	    }
+#ifdef NOTDEF
+
+/*
+ * For debugging it would be nice to be able to check for this, but
+ * FS_HANDLE_INVALID isn't defined here.
+ */
+	    if (hdrPtr->flags & FS_HANDLE_INVALID) {
+		printf("Attempting to reopen invalid handle!!!\n");
+	    }
+#endif NOTDEF
+	    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+		status = AddReopenHandle(hdrPtr);
+		if (status != SUCCESS && status != FS_NO_HANDLE) {
+		    Fsutil_HandleUnlock(hdrPtr);
+		}
+	    } else {
+		status = (*fsio_StreamOpTable[hdrPtr->fileID.type].reopen)
+			(hdrPtr, rpc_SpriteID, (ClientData)NIL, (int *)NIL,
+			(ClientData *)NIL);
+		if (status == FS_RECOV_SKIP) {
+		    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
+				    SUCCESS);
+		} else {
+		    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
+				    status);
+		}
+		/*
+		 * If we removed the handle because it was no longer needed,
+		 * we can't try unlocking it.
+		 */
+		if (status != FS_NO_HANDLE) {
+		    Fsutil_HandleUnlock(hdrPtr);
+		}
+		switch (status) {
+		    case SUCCESS:
+			break;
+		    case FS_NO_HANDLE:
+			/* We didn't need to recover this. */
+			break;
+		    case RPC_SERVICE_DISABLED:
+		    case RPC_TIMEOUT:
+			goto reopenReturn;
+		    case FS_FILE_REMOVED:
+		    case FS_RECOV_SKIP:
+			/*
+			 * No noisy message, this is a common case.
+			 */
+			break;
+		    default:
+			Fsutil_FileError(hdrPtr, "Reopen failed ", status);
+			break;
+		}
+	    }
+	} else {
+	    Fsutil_HandleUnlock(hdrPtr);
+	}
+    }
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	status = DoBulkReopen(serverID);
+	FinishReopenHandles();
+	if (status == RPC_INVALID_RPC) {
+	    doBulkRpc = FALSE;
+	    goto doSingleRpcsInstead;
+	}
+	if (status != SUCCESS) {
+	    goto reopenReturn;
+	}
+    }
+    /*
+     * Now go through and recover streams, once we've gotten the regular
+     * I/O handles re-opened.  This ensures that the I/O handle will be
+     * around on the server when it re-creates our streams.  If recovery
+     * fails on a stream we invalidate its handle, but don't remove it
+     * because that happens in the top-level close routine.
+     */
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	InitReopenHandles();
+    }
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	checkStatus = FAILURE;
+	if ((hdrPtr->fileID.type == FSIO_STREAM) &&
+		 (hdrPtr->fileID.serverID == serverID)) {
+	    streamPtr = (Fs_Stream *)hdrPtr;
+	    rmtHandlePtr = (Fsrmt_IOHandle *)streamPtr->ioHandlePtr;
+
+	    if (rmtHandlePtr == (Fsrmt_IOHandle *)NIL) {
+		Fsutil_FileError((Fs_HandleHeader *)streamPtr,
+			"ReopenHandles: NIL I/O handle", 0);
+	    } else if (!RemoteHandle((Fs_HandleHeader *)rmtHandlePtr)) {
+		panic( "ReopenHandles: local I/O handle for remote stream?\n");
+	    } else if (RecoveryFailed(&rmtHandlePtr->recovery)) {
+		Fsutil_HandleInvalidate((Fs_HandleHeader *)streamPtr);
+	    } else {
+		if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+		    checkStatus =
+			    AddReopenHandle((Fs_HandleHeader *) streamPtr);
+		} else {
+		    status = Fsio_StreamReopen((Fs_HandleHeader *)streamPtr,
+				    rpc_SpriteID, (ClientData)NIL, (int *)NIL,
+				    (ClientData *)NIL);
+		    if (status != SUCCESS) {
+			Fsutil_FileError((Fs_HandleHeader *)streamPtr,
+			    "Reopen failed", status);
+			Fsutil_FileError(streamPtr->ioHandlePtr,"I/O handle",
+				    SUCCESS);
+			if ((status == RPC_TIMEOUT) ||
+			    (status == RPC_SERVICE_DISABLED)) {
+			    Fsutil_HandleUnlock(streamPtr);
+			    goto reopenReturn;
+			}
+			Fsutil_HandleInvalidate((Fs_HandleHeader *)streamPtr);
+		    }
+		}
+	    }
+	}
+	/*
+	 * The only time we don't unlock the handle in this loop is if
+	 * it was a stream handle we've put into the array for a bulk
+	 * reopen.  That's only the case if the AddReopenHandle called
+	 * returned with success.
+	 */
+	if (!(doBulkRpc && recov_BulkHandles && serverID == 53 &&
+		checkStatus == SUCCESS)) {	
+	    Fsutil_HandleUnlock(hdrPtr);
+	}
+    }
+
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	status = DoBulkReopen(serverID);
+	FinishReopenHandles();
+	if (status != SUCCESS) {
+	    if (status != RPC_TIMEOUT && status != RPC_SERVICE_DISABLED) {
+		panic("Bad status from DoBulkReopen should be rpc-related.");
+	    }
+	    goto reopenReturn;
+	}
+    }
+    /*
+     * Now we notify processes waiting on I/O handles, and invalidate
+     * those I/O handles which failed recovery.
+     */
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	 if (!RemoteHandle(hdrPtr)) {
+	     Fsutil_HandleUnlock(hdrPtr);
+	 } else {
+	     RecoveryNotify(&((Fsrmt_IOHandle *)hdrPtr)->recovery);
+	     if (RecoveryFailed(&((Fsrmt_IOHandle *)hdrPtr)->recovery)) {
+		 Fsutil_HandleInvalidate(hdrPtr);
+	     }
+	     Fsutil_HandleUnlock(hdrPtr);
+	 }
+    }
+reopenReturn:
+    if (status != SUCCESS) {
+	Net_HostPrint(serverID, "Recovery failed: ");
+	Fsutil_PrintStatus(status);
+	printf("\n");
+    } else if (printed) {
+	Net_HostPrint(serverID, "Recovery complete");
+	printf(" %d handles reopened", fs_Stats.recovery.succeeded - succeeded);
+	if (fs_Stats.recovery.failed - failed > 0) {
+	    printf(" %d failed reopens", fs_Stats.recovery.failed - failed);
+	}
+	printf("\n");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_RecoveryInit --
+ *
+ *	This routine is called to reset the recovery state for
+ *	a handle when it is first set up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Zero's out the struct.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsutil_RecoveryInit(recovPtr)
+    register Fsutil_RecoveryInfo	*recovPtr;	/* Recovery state */
+{
+    bzero((Address) recovPtr, sizeof(Fsutil_RecoveryInfo));
+    Sync_LockInitDynamic(&recovPtr->lock, "fs:recoveryLock");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_RecoverySyncLockCleanup --
+ *
+ *	This routine is called when removing a handle to .
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Zero's out the struct.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Fsutil_RecoverySyncLockCleanup(recovPtr)
+    Fsutil_RecoveryInfo	*recovPtr;	/* Recovery state */
+{
+    Sync_LockClear(&recovPtr->lock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RemoteHandle --
+ *
+ *	This checks the type of a handle to see if it is remote and thus
+ *	has a Fsrmt_IOHandle structure embedded into it.  Only these
+ *	kinds of handles are manipulated by the recovery routines.
+ *
+ * Results:
+ *	TRUE if the handle has a remote server.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+RemoteHandle(hdrPtr)
+    Fs_HandleHeader *hdrPtr;
+{
+    switch(hdrPtr->fileID.type) {
+	case FSIO_RMT_FILE_STREAM:
+	case FSIO_RMT_DEVICE_STREAM:
+	case FSIO_RMT_PIPE_STREAM:
+	case FSIO_RMT_PSEUDO_STREAM:
+	case FSIO_PFS_NAMING_STREAM:
+	case FSIO_RMT_PFS_STREAM:
+	case FSIO_CONTROL_STREAM:
+	case FSIO_PFS_CONTROL_STREAM:
+	    return(TRUE);
+	default:
+	    return(FALSE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_WaitForHost --
+ *
+ *	Wait until recovery actions have completed for the stream.
+ *	This will return failure codes if the recovery aborts.
+ *	If the non-blocking flag is passed in this just marks the
+ *	handle as needing recovery and returns SUCCESS.
+ *
+ * Results:
+ *	SUCCESS unless there was a recovery error.
+ *
+ * Side effects:
+ *	Block the process.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_WaitForHost(streamPtr, flags, rpcStatus)
+    Fs_Stream	*streamPtr;
+    int		flags;		/* 0 or FS_NON_BLOCKING */
+    ReturnStatus rpcStatus;	/* Status that caused us to need recovery. */
+{
+    register Fs_HandleHeader *hdrPtr = streamPtr->ioHandlePtr;
+    register ReturnStatus status;
+
+    Fsutil_WantRecovery(hdrPtr);
+    if (flags & FS_NON_BLOCKING) {
+	status = SUCCESS;
+    } else {
+	status = Fsutil_WaitForRecovery(hdrPtr, rpcStatus);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_WantRecovery --
+ *
+ *	This routine is called when an error has occurred trying to
+ *	contact the file's IO server indicating that recovery actions
+ *	should take place when the server comes back.  We depend on
+ *	recovery call-backs already being installed as we don't even
+ *	mention our need to the recovery module here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marks the handle as needing recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fsutil_WantRecovery(hdrPtr)
+    Fs_HandleHeader *hdrPtr;	/* Handle needing recovery. The handle should
+				 * start with a FsRemoteHandle struct. */
+{
+    register Fsutil_RecoveryInfo *recovPtr = &((Fsrmt_IOHandle *)hdrPtr)->recovery;
+    if (!RemoteHandle(hdrPtr)) {
+	printf( "Fsutil_WantRecovery: no recovery for %s handles\n",
+		Fsutil_FileTypeToString(hdrPtr->fileID.type));
+    } else {
+	/*
+	 * The monitor lock is embedded in RemoteIOHandles so we can
+	 * only lock/unlock with the right kind of handle.
+	 */
+	LOCK_MONITOR;
+	fs_Stats.recovery.wants++;
+	recovPtr->flags |= RECOVERY_NEEDED;
+	UNLOCK_MONITOR;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_AttemptRecovery --
+ *
+ *	Attempt recovery if the server appears up.  This is called
+ *	(in the background) by the block cleaner if it gets a stale
+ *	handle error on a write-back.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invokes the reopen procedure if the server responds to an RPC.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsutil_AttemptRecovery(data, callInfoPtr)
+    ClientData		data;		/* Ref to Fs_HandleHeader */
+    Proc_CallInfo	*callInfoPtr;
+{
+    register Fs_HandleHeader *hdrPtr =
+	    (Fs_HandleHeader *)data;
+
+    if (!RemoteHandle(hdrPtr)) {
+	/*
+	 * We get called on a local naming request-response stream after the
+	 * pseudo-filesystem server crashes.  There is no recovery possible
+	 * so we just return an error and the naming operation fails.
+	 */
+	printf( "Fsutil_AttemptRecovery, no recovery for type: %s\n",
+		Fsutil_FileTypeToString(hdrPtr->fileID.type));
+	return;
+    }
+    if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
+	Fsutil_Reopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+    }
+    callInfoPtr->interval = 0;	/* no more callbacks, please */
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_WaitForRecovery --
+ *
+ *	Wait until recovery actions have completed for the stream.
+ *	This will return failure codes if the recovery aborts.
+ *	The wait is interruptable by a signal so the user can abort.
+ *
+ * Results:
+ *	SUCCESS unless there was a recovery error or a signal came in.
+ *
+ * Side effects:
+ *	Block the process.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_WaitForRecovery(hdrPtr, rpcStatus)
+    register Fs_HandleHeader	*hdrPtr;
+    ReturnStatus		rpcStatus;	/* Status that caused us to
+						 * need recovery. */
+{
+    ReturnStatus		status = SUCCESS;
+
+    if (!RemoteHandle(hdrPtr)) {
+	/*
+	 * We get called on a local naming request-response stream after the
+	 * pseudo-filesystem server crashes.  There is no recovery possible
+	 * so we just return an error and the naming operation fails.
+	 */
+	printf( "Fsutil_WaitForRecovery, no recovery for type: %s\n",
+		Fsutil_FileTypeToString(hdrPtr->fileID.type));
+	return(FAILURE);
+    } else if (!Fsutil_HandleValid(hdrPtr)) {
+	/*
+	 * Handle has already failed recovery.
+	 */
+	return(FAILURE);
+    }
+    /*
+     * If our caller got a stale handle then the server is probably up
+     * we try to re-establish state with the server now.  Otherwise
+     * we depend on a reboot callback to invoke Fsutil_Reopen.
+     */
+    if (rpcStatus == FS_STALE_HANDLE) {
+	Fsutil_FileError(hdrPtr, "", rpcStatus);
+	if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
+	    Fsutil_Reopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+	}
+    }
+    status = RecoveryWait(&((Fsrmt_IOHandle *)hdrPtr)->recovery);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecoveryWait --
+ *
+ *	Wait until recovery actions have completed for the stream.
+ *	This will return failure codes if the recovery aborts.
+ *
+ * Results:
+ *	SUCCESS unless there was a recovery error.
+ *
+ * Side effects:
+ *	Block the process.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+RecoveryWait(recovPtr)
+    Fsutil_RecoveryInfo *recovPtr;
+{
+    register ReturnStatus status = SUCCESS;
+    LOCK_MONITOR;
+    while (recovPtr->flags & RECOVERY_NEEDED) {
+	if (Sync_Wait(&recovPtr->reopenComplete, TRUE)) {
+	    status = GEN_ABORTED_BY_SIGNAL;
+	    fs_Stats.recovery.waitAbort++;
+	    break;
+	}
+    }
+    if (recovPtr->flags & RECOVERY_FAILED) {
+	status = recovPtr->status;
+	fs_Stats.recovery.waitFailed++;
+    } else if (status == SUCCESS) {
+	fs_Stats.recovery.waitOK++;
+    }
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * RecoveryComplete --
+ *
+ *	Mark a remote handle as having competed recovery actions.  The waiting
+ *	process is not woken up yet, however, because it may also depend
+ *	on recovery of the shadow streams kept on the server.  FsHandleReopen
+ *	will call RecoveryNotify to poke waiters after all handles have been
+ *	recovered.  Note that this procedure won't mark the handle as
+ *	having completed recovery if the error status indicates a timeout.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The handle is marked as having competed recovery if the error
+ *	status does not indicate another communcation fail with the server.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY static void
+RecoveryComplete(recovPtr, status)
+    Fsutil_RecoveryInfo *recovPtr;
+    ReturnStatus status;
+{
+    LOCK_MONITOR;
+
+    recovPtr->status = status;
+    switch(status) {
+	case RPC_TIMEOUT:
+	case RPC_SERVICE_DISABLED:
+	    fs_Stats.recovery.timeout++;
+	    break;
+	case FS_FILE_REMOVED:
+	    recovPtr->flags |= RECOVERY_FAILED|RECOVERY_COMPLETE;
+	    fs_Stats.recovery.deleted++;
+	    break;
+	default:
+	    recovPtr->flags |= RECOVERY_FAILED|RECOVERY_COMPLETE;
+	    fs_Stats.recovery.failed++;
+	    break;
+	 case SUCCESS:
+	    recovPtr->flags |= RECOVERY_COMPLETE;
+	    fs_Stats.recovery.succeeded++;
+	    break;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * RecoveryNotify --
+ *
+ *	Wakeup processes waiting on recovery for a handle, if appropriate.
+ *	This is called from FsReopenHandle after all handles, both I/O
+ *	handles and top-level stream, have been recovered.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Processes waiting on the handle are awakened and the RECOVERY_NEEDED
+ *	flags is cleared from the recovery flags.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY static void
+RecoveryNotify(recovPtr)
+    register Fsutil_RecoveryInfo *recovPtr;
+{
+    LOCK_MONITOR;
+
+    if (recovPtr->flags & RECOVERY_COMPLETE) {
+	recovPtr->flags &= ~(RECOVERY_COMPLETE|RECOVERY_NEEDED);
+	Sync_Broadcast(&recovPtr->reopenComplete);
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_RecoveryNeeded --
+ *
+ *	Returns TRUE if recovery is pending for the handle.  This is
+ *	called when scavenging a remote file handle to make sure noone
+ *	is waiting for recovery on the handle.
+ *
+ * Results:
+ *	TRUE or FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Boolean
+Fsutil_RecoveryNeeded(recovPtr)
+    Fsutil_RecoveryInfo *recovPtr;
+{
+    register Boolean recovWanted;
+    LOCK_MONITOR;
+    recovWanted = (recovPtr->flags & RECOVERY_NEEDED);
+    UNLOCK_MONITOR;
+    return(recovWanted);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecoveryFailed --
+ *
+ *	Returns TRUE if recovery has failed on the handle.  This is
+ *	called when recovering streams to see if the I/O handle is ok.
+ *
+ * Results:
+ *	TRUE or FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static Boolean
+RecoveryFailed(recovPtr)
+    Fsutil_RecoveryInfo *recovPtr;
+{
+    register Boolean recovFailed;
+    LOCK_MONITOR;
+    recovFailed = (recovPtr->flags & RECOVERY_FAILED);
+    UNLOCK_MONITOR;
+    return(recovFailed);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FsRemoteHandleScavange --
+ *
+ *	Scavenging routine for remote handles, not including remote
+ *	file handles. This nukes the handle if there are no uses of
+ *	it and it doesn't need recovery.
+ *
+ * Results:
+ *	TRUE if the handle was removed.
+ *
+ * Side effects:
+ *	Either removes or unlocks the handle.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+Boolean
+Fsutil_RemoteHandleScavenge(hdrPtr)
+    Fs_HandleHeader *hdrPtr;
+{
+    if (OkToScavenge(&((Fsrmt_IOHandle *)hdrPtr)->recovery)) {
+	Fsutil_RecoverySyncLockCleanup(&((Fsrmt_IOHandle *)hdrPtr)->recovery);
+	Fsutil_HandleRemove(hdrPtr);
+	return(TRUE);
+    } else {
+	Fsutil_HandleUnlock(hdrPtr);
+	return(FALSE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * OkToScavenge --
+ *
+ *	Internal routine to check monitored state.  This returns TRUE if
+ *	the handle should be scavenged, in which case our caller can
+ *	remove the handle, or FALSE, in which our caller should just
+ *	unlock it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+static ENTRY Boolean
+OkToScavenge(recovPtr)
+    register Fsutil_RecoveryInfo *recovPtr;
+{
+    register Boolean okToScavenge = FALSE;
+    LOCK_MONITOR;
+    if (recovPtr->use.ref == 0 &&
+	(recovPtr->flags & RECOVERY_NEEDED) == 0) {
+	okToScavenge = TRUE;
+    }
+    UNLOCK_MONITOR;
+    return(okToScavenge);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_ClientCrashed --
+ *
+ *	Clean up state after a host goes down.  Mainly we want to close
+ *	files opened on that client.  We also take care to reset various
+ *	watchdogs like the bit that turns off opens until re-opens are done.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cleans up references the client had to files.  Clears the
+ *	CLT_RECOV_IN_PROGRESS bit from the client recovery state.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Fsutil_ClientCrashed(spriteID, clientData)
+    int spriteID;		/* Client that crashed */
+    ClientData clientData;	/* IGNORED */
+{
+    fs_Stats.recovery.clientCrashed++;
+    /*
+     * Reset the 'recovery in progress' bit (it would be set if the
+     * client crashed during recovery) so the client can open files
+     * the next time it boots.
+     */
+    Recov_ClearClientState(spriteID,
+	    CLT_RECOV_IN_PROGRESS | CLT_OLD_RECOV | CLT_DOING_SRV_RECOV);
+    /*
+     * Clean up references to our files.
+     */
+    Fsutil_RemoveClient(spriteID);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_RemoveClient --
+ *
+ *	Go through all of the handles and delete all references to the
+ *	handle for the client.  This is to be called when a client reboots.
+ *	The clientKill procedure for each I/O handle type must either
+ *	unlock the handle or remove it after cleaning up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls the stream-type-specific clientKill procedures.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+
+void
+Fsutil_RemoveClient(clientID)
+    int		clientID;	/* The client to remove the files for. */
+{
+    Hash_Search			hashSearch;
+    register	Fs_HandleHeader	*hdrPtr;
+
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	(*fsio_StreamOpTable[hdrPtr->fileID.type].clientKill)(hdrPtr, clientID);
+    }
+}
+
+
+#ifdef not_used
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsRecoveryStarting --
+ *
+ *	This tells the server that we are starting recovery so that it
+ *	can prevent open requests by us.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	An RPC to the server.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsRecoveryStarting(serverID)
+    int serverID;		/* Server we are recovering with */
+{
+    Rpc_Storage storage;
+    int flags = CLT_RECOV_IN_PROGRESS;
+
+    storage.requestParamPtr = (Address)&flags;
+    storage.requestParamSize = sizeof(int);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(serverID, RPC_FS_RECOVERY, &storage);
+    if (status != SUCCESS) {
+	printf( "FsRecoveryDone: got status %x\n", status);
+    }
+}
+#endif not_used
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecoveryDone --
+ *
+ *	This tells the server that we are done with recovery so that it
+ *	will start handling open requests from us.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	An RPC to the server.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static void
+RecoveryDone(serverID)
+    int serverID;		/* Server we are recovering with */
+{
+    Rpc_Storage storage;
+    ReturnStatus status;
+    int flags = 0;
+
+    storage.requestParamPtr = (Address)&flags;
+    storage.requestParamSize = sizeof(int);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(serverID, RPC_FS_RECOVERY, &storage);
+    if (status != SUCCESS) {
+	printf( "RecoveryDone: got status %x\n", status);
+    } else {
+	fs_Stats.recovery.number++;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_RpcRecovery --
+ *
+ *	Rpc server stub for RPC_FS_RECOVERY RPC.  The client us
+ *	before and after it is re-opening its files.  This lets us
+ *	block out regular open requests until the re-opening is done.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Maintains the "client is recovering" state bit.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fsutil_RpcRecovery(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    int *flagsPtr = (int *)storagePtr->requestParamPtr;
+    if (*flagsPtr & CLT_RECOV_IN_PROGRESS) {
+	if ((Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) == 0) {
+	    fsutil_NumRecovering++;
+	    if (fsutil_NumRecovering == 1) {
+		Net_HostPrint(clientID, "initiated client recovery\n");
+	    }
+	    Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
+	}
+	fs_Stats.recovery.clientRecovered++;
+    } else {
+	Recov_ClearClientState(clientID, CLT_RECOV_IN_PROGRESS);
+	fsutil_NumRecovering--;
+	if (fsutil_NumRecovering == 0) {
+	    Net_HostPrint(clientID, "completed client recovery\n");
+	}
+    }
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)())NIL, (ClientData)NIL);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FsRecovInfo --
+ *
+ *	Info, including file names, about recovery and file status for testing.
+ *
+ * Results:
+ *	SUCCESS or not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
+    int				length;		/* size of data buffer */
+    Fsutil_FsRecovNamedStats	*resultPtr;	/* data buffer */
+    int				*lengthNeededPtr;
+{
+    Hash_Search			hashSearch;
+    Fs_HandleHeader		*hdrPtr;
+    Fsutil_FsRecovNamedStats	*infoPtr;
+    int				numNeeded;
+    int				numAvail;
+    Fs_HandleHeader		*testHandlePtr;
+
+    if (resultPtr != (Fsutil_FsRecovNamedStats *) NIL) {
+	bzero((char *) resultPtr, length);
+    }
+    numNeeded = 0;
+    numAvail = length / sizeof (Fsutil_FsRecovNamedStats);
+
+    infoPtr = (Fsutil_FsRecovNamedStats *) resultPtr;
+
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+
+	numNeeded++;
+	if (numNeeded > numAvail) {
+	    Fsutil_HandleUnlock(hdrPtr);
+	    continue;
+	}
+	if (hdrPtr->fileID.type == FSIO_STREAM) {
+	    Fs_Stream	*streamPtr;
+
+	    streamPtr = (Fs_Stream *) hdrPtr;
+
+	    infoPtr->streamRefCount = hdrPtr->refCount;
+	    infoPtr->mode = streamPtr->flags;
+	    infoPtr->streamHandle = TRUE;
+
+	    testHandlePtr = streamPtr->ioHandlePtr;
+	} else {
+	    infoPtr->streamHandle = FALSE;
+	    testHandlePtr = hdrPtr;
+	}
+
+	if (testHandlePtr != (Fs_HandleHeader *) NIL) {
+	    infoPtr->fileID = testHandlePtr->fileID;
+
+	    if (fsio_StreamRecovTestFuncs[testHandlePtr->fileID.type].refFunc
+		    != (int ((*)())) NIL) {
+		infoPtr->refCount =
+		    (*(fsio_StreamRecovTestFuncs[
+		    testHandlePtr->fileID.type]).refFunc) (testHandlePtr);
+	    }
+	    if (fsio_StreamRecovTestFuncs[
+		    testHandlePtr->fileID.type].numBlocksFunc !=
+		    (int ((*)())) NIL) {
+		infoPtr->numBlocks =
+			(*(fsio_StreamRecovTestFuncs[
+			testHandlePtr->fileID.type]).numBlocksFunc)
+			(testHandlePtr);
+	    }
+	    if (fsio_StreamRecovTestFuncs[
+		    testHandlePtr->fileID.type].numDirtyBlocksFunc
+		    != (int ((*)())) NIL) {
+		infoPtr->numDirtyBlocks =
+			(*(fsio_StreamRecovTestFuncs[
+			testHandlePtr->fileID.type]).numDirtyBlocksFunc)
+			(testHandlePtr);
+	    }
+	    (void)strncpy(infoPtr->name, Fsutil_HandleName(testHandlePtr), 49);
+	    infoPtr->name[50] = '\0';
+	}
+	infoPtr++;
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+    *lengthNeededPtr = numNeeded * sizeof (Fsutil_FsRecovNamedStats);
+
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_TestForHandles --
+ *
+ *	Called to see if we still have handles for the given serverID.
+ *
+ * Results:
+ *	Number of file and device handles for server in question.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+int
+Fsutil_TestForHandles(serverID)
+    int		serverID;	/* Server we're interested in. */
+{
+    Hash_Search			hashSearch;
+    register	Fs_HandleHeader	*hdrPtr;
+    int				count = 0;
+
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	 if (hdrPtr->fileID.serverID == serverID) {
+	    switch(hdrPtr->fileID.type) {
+/*
+	    case FSIO_RMT_PSEUDO_STREAM:
+	    case FSIO_STREAM:
+*/
+	    case FSIO_RMT_FILE_STREAM:
+	    case FSIO_RMT_DEVICE_STREAM:
+		count++;
+		break;
+	    default:
+		break;
+	    }
+	}
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+    return count;
+}
+
+/* Number of handles to be put together. */
+int			numBulkHandles = 0;
+/* Current handle we're filling in. */
+int			nextHandleIndex = 0;
+/* Array of handle reopen information, etc. */
+static Fsutil_BulkHandle	*bulkHandleSpace = (Fsutil_BulkHandle *) NIL;
+/* Array of info returned from server for bulk reopen. */
+static Fsutil_BulkReturn	*bulkReturnSpace = (Fsutil_BulkReturn *) NIL;
+static Fsutil_BulkReopenOps	bulkReopenOps[FSIO_NUM_STREAM_TYPES];
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * InitReopenHandles --
+ *
+ *	Initialize memory for storing future reopen rpc info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory allocated.
+ *
+ *----------------------------------------------------------------------------
+ */
+static void
+InitReopenHandles()
+{
+    int 	i;
+
+    if (numBulkHandles < fs_Stats.handle.maxNumber) {
+	if (numBulkHandles > 0) {
+	    free((Address) bulkHandleSpace);
+	}
+	numBulkHandles = fs_Stats.handle.maxNumber;
+	bulkHandleSpace = (Fsutil_BulkHandle *)
+		malloc(numBulkHandles * sizeof (Fsutil_BulkHandle));
+	bulkReturnSpace = (Fsutil_BulkReturn *)
+		malloc(numBulkHandles * sizeof (Fsutil_BulkReturn));
+    }
+    /*
+     * Initialize all to be "empty."
+     */
+    for (i = 0; i < numBulkHandles; i++) {
+	bulkHandleSpace[i].type = -1;
+    }
+    nextHandleIndex = 0;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Dummy functions for bulk reopens - setup and finish --
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+ReturnStatus
+NoSetupFunc(hdrPtr, paramsPtr)
+    Fs_HandleHeader	*hdrPtr;
+    Address		paramsPtr;
+{
+    return FAILURE;
+}
+void
+NoFinishFunc(hdrPtr, statePtr, status)
+    Fs_HandleHeader	*hdrPtr;
+    Address		statePtr;
+    ReturnStatus	status;
+{
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_InitBulkReopenTables --
+ *
+ *	Initialize the bulk reopen ops to be ops used for when there is
+ *	no recovery for the handle type.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+void
+Fsutil_InitBulkReopenTables()
+{
+    int		i;
+
+    for (i = 0; i < FSIO_NUM_STREAM_TYPES; i++) {
+	/*
+	 * Check first to make sure it hasn't already been set with a valid
+	 * function.
+	 */
+	if ((int) (bulkReopenOps[i].setup) == 0) {
+	    bulkReopenOps[i].setup = NoSetupFunc;
+	    bulkReopenOps[i].finish = NoFinishFunc;
+	}
+    }
+    return;
+}
+
+int	reopensSkipped;
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_InitBulkReopenOps --
+ *
+ *	Copy a handle type's reopen ops to the array.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+void
+Fsutil_InitBulkReopenOps(type, reopenOpsPtr)
+    int				type;
+    Fsutil_BulkReopenOps	*reopenOpsPtr;
+{
+    if (type >= FSIO_NUM_STREAM_TYPES) {
+	panic("Fsutil_InitBulkReopenOps: bad handle type.");
+    }
+    bulkReopenOps[type].setup = reopenOpsPtr->setup;
+    bulkReopenOps[type].finish = reopenOpsPtr->finish;
+    reopensSkipped = 0;
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * AddReopenHandle --
+ *
+ *	Add a handle to the future reopen rpc info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+static ReturnStatus
+AddReopenHandle(hdrPtr)
+    Fs_HandleHeader	*hdrPtr;
+{
+    ReturnStatus	status;
+
+    status = (*bulkReopenOps[hdrPtr->fileID.type].setup) (hdrPtr,
+	    bulkHandleSpace[nextHandleIndex].reopenParams);
+    if (status == SUCCESS) {
+	bulkHandleSpace[nextHandleIndex].type = hdrPtr->fileID.type;
+	bulkHandleSpace[nextHandleIndex].serverID = hdrPtr->fileID.serverID;
+	bulkHandleSpace[nextHandleIndex].hdrPtr = hdrPtr;
+	nextHandleIndex++;
+	return SUCCESS;
+    }
+
+    if (hdrPtr->fileID.type != FSIO_STREAM) {
+	/*
+	 * NO_REFERENCE means that there is no current use of the handle,
+	 * so it shouldn't be reopened, but there was no failure either, so
+	 * don't mark it as a failed reopen.  FS_RECOV_SKIP means it
+	 * was a handle with no references but with some clean blocks in
+	 * the cache and we're currently skipping reopens on those handles.
+	 */
+	if (status == FS_RECOV_SKIP) {
+	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery), SUCCESS);
+	    reopensSkipped++;
+	    return status;
+	}
+	if (status == FS_NO_REFERENCE) {
+	    status = SUCCESS;
+	}
+	RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery), status);
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FinishReopenHandles --
+ *
+ *	Clean up, mark done with recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+static void
+FinishReopenHandles()
+{
+    int		i;
+    Fsutil_BulkHandle	*bulkHandlePtr;
+    Fsutil_BulkReturn	*returnInfoPtr;
+    Fs_HandleHeader	*hdrPtr;
+    ReturnStatus	status;
+
+    for (i = 0; i < nextHandleIndex; i++) {
+	bulkHandlePtr = &(bulkHandleSpace[i]);
+	returnInfoPtr = &(bulkReturnSpace[i]);
+	status = returnInfoPtr->status;
+	/*
+	 * If there was a bad return status, it's only safe to get header
+	 * info, etc., from the handle space and not the return info, because
+	 * the return info may not have been filled in on the server if
+	 * there was an error.
+	 */
+	hdrPtr = bulkHandlePtr->hdrPtr;
+
+	/* Does server recognize bulk rpc? */
+	if (status == RPC_INVALID_RPC) {
+	    Fsutil_HandleUnlock(hdrPtr);
+	    continue;
+	}
+
+	(*bulkReopenOps[bulkHandlePtr->type].finish)
+		(bulkHandlePtr->hdrPtr, returnInfoPtr->state,
+		returnInfoPtr->status);
+	if (bulkHandlePtr->type != FSIO_STREAM) {
+	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery), status);
+	}
+
+	if (bulkHandlePtr->type == FSIO_STREAM && status != SUCCESS) {
+	    if (status != RPC_TIMEOUT && status != RPC_SERVICE_DISABLED) {
+		Fsutil_HandleInvalidate(hdrPtr);
+	    }
+	}
+		
+	/*
+	 * If we removed the handle because it was no longer needed,
+	 * we can't try unlocking it.  Otherwise, unlock all I/O handles.
+	 */
+	if (status != FS_NO_HANDLE) {
+	    Fsutil_HandleUnlock(hdrPtr);
+	}
+    }
+    printf("Reopens skipped: %d\n", reopensSkipped);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * DoBulkReopen --
+ *
+ *	Do an RPC to send the collected reopen handles.
+ *
+ * Results:
+ *	Status is SUCCESS unless there's an rpc/network-type failure.
+ *
+ * Side effects:
+ *	RPC.  Status for each handle gets filled in.
+ *
+ *----------------------------------------------------------------------------
+ */
+static ReturnStatus
+DoBulkReopen(serverID)
+    int			serverID;
+{
+    int			inSize;
+    int			outSize;
+    int			i;
+    Fs_HandleHeader	*hdrPtr;
+    ReturnStatus	status;
+    int			numSent;
+    int			numSending;
+    int			maxSendHandles;
+
+    /*
+     * Unlock all the handles first.  Relock them afterwards.  (In case
+     * the server asks us to do an invalidate or write-back.
+     */
+    if (nextHandleIndex <= 0) {
+	return SUCCESS;
+    }
+    for (i = 0; i < nextHandleIndex; i++) {
+	hdrPtr = bulkHandleSpace[i].hdrPtr;
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+
+    /*
+     * How many handles can we send in one RPC?  We only want to do our
+     * own fragmentation when sending, so if the return information is
+     * larger, adjust for that on this end.
+     */
+    if (sizeof (Fsutil_BulkHandle) < sizeof (Fsutil_BulkReturn)) {
+	maxSendHandles = RPC_MAX_DATASIZE / sizeof (Fsutil_BulkReturn);
+    } else {
+	maxSendHandles = RPC_MAX_DATASIZE / sizeof (Fsutil_BulkHandle);
+    }
+    numSent = 0;
+    do {
+	numSending = nextHandleIndex - numSent;
+	if (numSending > maxSendHandles) {
+	    numSending = maxSendHandles;
+	} 
+	inSize = numSending *  sizeof (Fsutil_BulkHandle);
+	outSize = numSending * sizeof (Fsutil_BulkReturn);
+	status = FsrmtBulkReopen(serverID, inSize,
+		(Address) &(bulkHandleSpace[numSent]), &outSize,
+		(Address) &(bulkReturnSpace[numSent]));
+	if (status != SUCCESS) {
+	    break;
+	}
+	numSent += numSending;
+    } while (numSent < nextHandleIndex);
+
+    for (i = 0; i < nextHandleIndex; i++) {
+	hdrPtr = bulkHandleSpace[i].hdrPtr;
+	Fsutil_HandleLock(hdrPtr);
+	if (status != SUCCESS) {
+	    bulkReturnSpace[i].status = status;
+	}
+    }
+    /*
+     * A bad status will only be something like timeout or other rpc-type
+     * failure.
+     */
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_DoServerRecovery --
+ *
+ *	Do an RPC to client to start it recovering.  This is called from
+ *	a Proc_CallFunc from recovery device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Starts recovery.
+ *
+ *----------------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_DoServerRecovery(clientID)
+    int			clientID;
+{
+    ReturnStatus	status;
+
+    status = Fsrmt_ServerReopen(clientID);
+    if (status == RPC_INVALID_RPC) {
+	Recov_MarkOldClient(clientID);
+    }
+    /* Timeout on rpc should be handled automatically in Recov_HostDown. */
+
+    return status;
+}
+@
+
+
+9.22
+log
+@Fixed syntax ickiness.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.21 92/10/28 18:11:13 mgbaker Exp $ SPRITE (Berkeley)";
+d47 1
+a63 2
+void Fsutil_InitBulkReopenOps _ARGS_((int type,
+	Fsutil_BulkReopenOps *reopenOpsPtr));
+d116 2
+d119 1
+a119 1
+    fastBoot = Recov_GetHostState(serverID) & RECOV_FAST_BOOT;
+d125 1
+d128 23
+d242 1
+d967 2
+a968 1
+    Recov_ClearClientState(spriteID, CLT_RECOV_IN_PROGRESS);
+d1339 66
+d1636 31
+@
+
+
+9.21
+log
+@Fixed an error about a function return type, and got rid of an extremely
+noisy message.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.20 92/10/26 14:33:58 mgbaker Exp $ SPRITE (Berkeley)";
+d1368 1
+a1368 1
+	    &(bulkHandleSpace[nextHandleIndex].reopenParams));
+d1441 1
+a1441 1
+		(bulkHandlePtr->hdrPtr, &(returnInfoPtr->state),
+@
+
+
+9.20
+log
+@Support for bulk reopen rpcs.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.19 92/08/10 16:04:25 mgbaker Exp $ SPRITE (Berkeley)";
+d257 5
+a261 1
+		RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
+d263 1
+d281 1
+@
+
+
+9.19
+log
+@Clients can ignore the fast that a server is able to do transparent recovery.
+@
+text
+@d11 2
+a12 1
+ *	Fsutil_WantRecovery, and Fsutil_WaitForRecovery.  The routine Fsutil_WaitForHost
+d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.18 92/08/04 17:16:29 mgbaker Exp $ SPRITE (Berkeley)";
+d43 1
+d59 7
+d209 16
+a224 1
+
+d248 36
+a283 28
+	    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
+		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
+	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
+				status);
+	    /*
+	     * If we removed the handle because it was no longer needed,
+	     * we can't try unlocking it.
+	     */
+	    if (status != FS_NO_HANDLE) {
+		Fsutil_HandleUnlock(hdrPtr);
+	    }
+	    switch (status) {
+		case SUCCESS:
+		    break;
+		case FS_NO_HANDLE:
+		    /* We didn't need to recover this. */
+		    break;
+		case RPC_SERVICE_DISABLED:
+		case RPC_TIMEOUT:
+		    goto reopenReturn;
+		case FS_FILE_REMOVED:
+		    /*
+		     * No noisy message, this is a common case.
+		     */
+		    break;
+		default:
+		    Fsutil_FileError(hdrPtr, "Reopen failed ", status);
+		    break;
+d289 11
+d307 3
+d314 1
+d328 18
+a345 12
+		status = Fsio_StreamReopen((Fs_HandleHeader *)streamPtr,
+				rpc_SpriteID, (ClientData)NIL, (int *)NIL,
+				(ClientData *)NIL);
+		if (status != SUCCESS) {
+		    Fsutil_FileError((Fs_HandleHeader *)streamPtr,
+			"Reopen failed", status);
+		    Fsutil_FileError(streamPtr->ioHandlePtr,"I/O handle",
+				SUCCESS);
+		    if ((status == RPC_TIMEOUT) ||
+			(status == RPC_SERVICE_DISABLED)) {
+			Fsutil_HandleUnlock(streamPtr);
+			goto reopenReturn;
+a346 1
+		    Fsutil_HandleInvalidate((Fs_HandleHeader *)streamPtr);
+d350 21
+a370 1
+	Fsutil_HandleUnlock(hdrPtr);
+d1256 283
+@
+
+
+9.18
+log
+@Added option to skip recovery if doing transparent server recovery.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.17 92/06/01 15:34:36 kupfer Exp $ SPRITE (Berkeley)";
+d122 1
+a122 1
+    if (!fastBoot || !recov_Transparent) {
+@
+
+
+9.17
+log
+@In Fsutil_Reopen, call Vm_Recovery before Proc_WakeupAllProcesses, to
+avoid a deadlock when recovering with the swap server.
+
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.16 91/03/30 17:17:05 mgbaker Exp $ SPRITE (Berkeley)";
+d107 3
+d121 19
+a139 16
+    /*
+     * Wait for opens in progress, then block opens.
+     */
+    Fsprefix_RecoveryCheck(serverID);
+    /*
+     * Recover file handles
+     */
+    ReopenHandles(serverID);
+    /*
+     * Tell the server we're done.
+     */
+    RecoveryDone(serverID);
+    /*
+     * Allow regular opens.
+     */
+    Fsprefix_AllowOpens(serverID);
+@
+
+
+9.16
+log
+@Marking handles as invalid so they won't be re-recovered.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsutilRecovery.c,v 9.15 90/10/19 15:51:20 mendel Exp $ SPRITE (Berkeley)";
+d142 10
+a154 4
+    /*
+     * Tell VM that we have recovered in case this was the swap server.
+     */
+    Vm_Recovery();
+@
+
+
+9.16.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilRecovery.c,v 9.16 91/03/30 17:17:05 mgbaker Exp $ SPRITE (Berkeley)";
+@
+
+
+9.15
+log
+@Removed return statement included to disable Mary`s recovery tracing. 
+Recovery needs all the help it can get.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsutilRecovery.c,v 9.14 90/10/08 13:19:02 mendel Exp $ SPRITE (Berkeley)";
+d202 10
+d216 7
+a222 1
+	    Fsutil_HandleUnlock(hdrPtr);
+d225 3
+@
+
+
+9.14
+log
+@Changed name to fsutilRecovery.c
+Changed include to use <> rather than "" and added function prototypes.
+Fixed lint.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsRecovery.c,v 1.1 90/01/16 17:11:25 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d1129 1
+a1129 1
+    return 1;
+@
+
+
+9.13
+log
+@Added tracing and mousetrap to catch extra recovery unregisters.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.12 90/02/07 13:00:21 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d30 26
+a55 19
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsprefix.h"
+#include "fsio.h"
+#include "fsrmt.h"
+#include "fsNameOps.h"
+#include "fsStat.h"
+#include "recov.h"
+#include "hash.h"
+#include "rpc.h"
+#include "vm.h"
+
+static void		ReopenHandles();
+static void		RecoveryDone();
+static Boolean		RecoveryFailed();
+static void		RecoveryNotify();
+static void		RecoveryComplete();
+static Boolean		OkToScavenge();
+d341 1
+d1039 1
+a1039 1
+	bzero(resultPtr, length);
+d1096 1
+a1096 1
+	    strncpy(infoPtr->name, Fsutil_HandleName(testHandlePtr), 49);
+a1105 2
+
+
+a1127 6
+    register	Fs_Stream	*streamPtr;
+    register	Fsrmt_IOHandle *rmtHandlePtr;
+    ReturnStatus		status = SUCCESS;
+    Boolean			printed = FALSE;
+    int				succeeded = fs_Stats.recovery.succeeded;
+    int				failed = fs_Stats.recovery.failed;
+d1129 1
+a1129 1
+
+d1152 1
+@
+
+
+9.12
+log
+@added a space after "recovery failed" message :)
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.11 90/01/29 19:30:13 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d1097 54
+@
+
+
+9.11
+log
+@Minor bug fix to Recov_GetClientState call.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.10 89/12/15 12:49:05 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d282 1
+a282 1
+	Net_HostPrint(serverID, "Recovery failed");
+@
+
+
+9.10
+log
+@Added a check for NIL just for happiness' sake.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.9 89/12/12 18:05:08 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d982 1
+a982 1
+	if (Recov_GetClientState(clientID, CLT_RECOV_IN_PROGRESS) == 0) {
+@
+
+
+9.9
+log
+@Added more stuff for my recovinfo program.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.8 89/12/11 11:24:33 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d1030 3
+a1032 1
+    bzero(resultPtr, length);
+@
+
+
+9.8
+log
+@Mary checking this in for Brent.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.7 89/11/27 14:29:02 mgbaker Exp $ SPRITE (Berkeley)";
+d1053 1
+d1057 1
+a1085 3
+	    /*
+	     * For devices, I'll want name info from name server instead?
+	     */
+d1087 1
+@
+
+
+9.7
+log
+@Adding new stats syscall command.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.6 89/11/16 19:11:51 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d624 3
+a626 2
+	case FS_DOMAIN_UNAVAILABLE:
+	    fs_Stats.recovery.failed++;
+@
+
+
+9.6
+log
+@Saving current recovery stat info code before hacking on it.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.5 89/11/07 14:51:04 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a1005 112
+ *	Info about recovery and file status for testing.
+ *
+ * Results:
+ *	SUCCESS or not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_FsRecovInfo(length, resultPtr)
+    int				length;		/* size of data buffer */
+    Fsutil_FsRecovStats		*resultPtr;	/* data buffer */
+{
+    Hash_Search			hashSearch;
+    Fs_HandleHeader		*hdrPtr;
+
+    /*
+     * Other things we want eventually:
+     *	files read versus write
+     *	open files
+     *	writable but no blocks in cache
+     *	#blocks in cache, #dirty blocks in cache
+     *	how long has it been since used?
+     */
+    resultPtr->numHandles = 0;
+    resultPtr->numHandleRefCounts = 0;
+    resultPtr->numRead = 0;
+    resultPtr->numWrite = 0;
+    resultPtr->numExecute = 0;
+    resultPtr->numAppend = 0;
+    resultPtr->recovWanted = fs_Stats.recovery.number;
+    resultPtr->existingHandles = fs_Stats.handle.exists;
+    bzero((char *) (resultPtr->typeInfo),
+	    sizeof (resultPtr->typeInfo[0]) * FSIO_NUM_STREAM_TYPES);
+
+    /*
+     * How do I tell if it's open?  Handle also has a stream?
+     * How do I match these up?  Hash on something?  Yes - hash table is
+     * called fileHashTable, and pass it ptr to fileID.
+     */
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+
+	if (hdrPtr->fileID.type != FSIO_STREAM) {
+	    resultPtr->numHandles++;
+	    resultPtr->numHandleRefCounts += hdrPtr->refCount;
+	} else {
+	    Fs_Stream	*streamPtr;
+
+	    streamPtr = (Fs_Stream *) hdrPtr;
+	    resultPtr->typeInfo[FSIO_STREAM].num++;
+	    resultPtr->typeInfo[FSIO_STREAM].refCount += hdrPtr->refCount;
+
+	    if (streamPtr->flags & FS_READ) {
+		resultPtr->numRead++;
+	    }
+	    if (streamPtr->flags & FS_WRITE) {
+		resultPtr->numWrite++;
+	    }
+	    if (streamPtr->flags & FS_EXECUTE) {
+		resultPtr->numExecute++;
+	    }
+	    if (streamPtr->flags & FS_APPEND) {
+		resultPtr->numAppend++;
+	    }
+	    if (streamPtr->ioHandlePtr != (Fs_HandleHeader *) NIL) {
+		resultPtr->typeInfo[streamPtr->ioHandlePtr->fileID.type].num++;
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].refFunc !=
+			(int ((*)())) NIL) {
+		    resultPtr->typeInfo
+			    [streamPtr->ioHandlePtr->fileID.type].refCount
+			    += (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).refFunc)
+			    (streamPtr->ioHandlePtr);
+		}
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numBlocksFunc !=
+			(int ((*)())) NIL) {
+		    resultPtr->typeInfo
+			    [streamPtr->ioHandlePtr->fileID.type].numBlocks
+			    += (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).numBlocksFunc)
+			    (streamPtr->ioHandlePtr);
+		}
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numDirtyBlocksFunc
+			!= (int ((*)())) NIL) {
+		    resultPtr->typeInfo
+			    [streamPtr->ioHandlePtr->fileID.type].numDirtyBlocks
+			    += (*(fsio_StreamRecovTestFuncs[
+		    streamPtr->ioHandlePtr->fileID.type]).numDirtyBlocksFunc)
+			    (streamPtr->ioHandlePtr);
+		}
+	    }
+	}
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FsRecovNamedInfo --
+ *
+d1017 1
+a1017 1
+Fsutil_FsRecovNamedInfo(length, resultPtr, lengthNeededPtr)
+d1027 1
+d1040 5
+a1047 4
+	    numNeeded++;
+	    if (numNeeded > numAvail) {
+		continue;
+	    }
+d1053 4
+a1056 2
+	    if (streamPtr->ioHandlePtr != (Fs_HandleHeader *) NIL) {
+		infoPtr->type = streamPtr->ioHandlePtr->fileID.type;
+d1058 29
+a1086 31
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].refFunc !=
+			(int ((*)())) NIL) {
+		    infoPtr->refCount =
+			    (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).refFunc)
+			    (streamPtr->ioHandlePtr);
+		    }
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numBlocksFunc !=
+			(int ((*)())) NIL) {
+		    infoPtr->numBlocks =
+			    (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).numBlocksFunc)
+			    (streamPtr->ioHandlePtr);
+		}
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numDirtyBlocksFunc
+			!= (int ((*)())) NIL) {
+		    infoPtr->numDirtyBlocks =
+			    (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).
+			    numDirtyBlocksFunc) (streamPtr->ioHandlePtr);
+		}
+		/*
+		 * For devices, I'll want name info from name server instead?
+		 */
+		strncpy(infoPtr->name,
+			Fsutil_HandleName(streamPtr->ioHandlePtr), 49);
+	    }
+	    infoPtr++;
+d1088 1
+@
+
+
+9.5
+log
+@1. Brent tweaked print statements made during recovery
+2. Mary added a routine to return information about handles
+in order to answer "what if" questions.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.4 89/10/30 20:34:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d1019 1
+a1019 1
+    Fsutil_FsRecovStats		*resultPtr;		/* data buffer */
+d1077 118
+a1194 2
+	    resultPtr->typeInfo[streamPtr->ioHandlePtr->fileID.type].refCount
+		    += streamPtr->ioHandlePtr->refCount;
+d1196 1
+d1200 1
+@
+
+
+9.4
+log
+@Adding new stat routine.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.3 89/10/23 09:51:26 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d65 6
+d981 8
+a988 2
+	Net_HostPrint(clientID, "started recovery\n");
+	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
+a989 2
+	fs_Stats.recovery.clientRecovered++;
+	Net_HostPrint(clientID, "completed recovery\n");
+d991 4
+d1018 2
+a1019 2
+    int		length;
+    char	*resultPtr;
+d1021 63
+@
+
+
+9.3
+log
+@Removed lint
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.2 89/10/12 14:18:51 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d984 24
+@
+
+
+9.2
+log
+@Improved print statement.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 9.1 89/09/18 13:44:43 brent Exp $ SPRITE (Berkeley)";
+d330 1
+a330 1
+    register Fsutil_RecoveryInfo	*recovPtr;	/* Recovery state */
+d485 1
+@
+
+
+9.1
+log
+@Added Fsutil_AttemptRecovery
+which is used by the block cache
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 8.15 89/08/21 15:29:54 mendel Exp $ SPRITE (Berkeley)";
+d277 2
+a278 1
+	printf(" <%x>\n", status);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsRecovery.c,v 8.15 89/08/21 15:29:54 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d444 41
+@
+
+
+8.15
+log
+@
+
+
+Break up fs into many modules.    
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.14 89/08/10 17:11:20 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.14
+log
+@Fixed externs for sun4
+@
+text
+@d6 1
+a6 1
+ *	The first routine, FsReopen, goes through a sequence of steps that
+d11 1
+a11 1
+ *	FsWantRecovery, and FsWaitForRecovery.  The routine Fs_WaitForHost
+d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.13 89/07/11 17:34:18 nelson Exp $ SPRITE (Berkeley)";
+d32 5
+a36 4
+#include "fsInt.h"
+#include "fsRecovery.h"
+#include "fsPrefix.h"
+#include "fsOpTable.h"
+d70 1
+a70 1
+ * FsReopen --
+d90 1
+a90 1
+FsReopen(serverID, clientData)
+d95 1
+a95 1
+     * Ensure only one instance of FsReopen by doing a set-and-test.
+d104 1
+a104 1
+    FsPrefixReopen(serverID);
+d108 1
+a108 1
+    FsPrefixRecoveryCheck(serverID);
+d120 1
+a120 1
+    FsPrefixAllowOpens(serverID);
+d168 1
+a168 1
+    register	FsHandleHeader	*hdrPtr;
+d170 1
+a170 1
+    register	FsRemoteIOHandle *rmtHandlePtr;
+d173 2
+a174 2
+    int				succeeded = fsStats.recovery.succeeded;
+    int				failed = fsStats.recovery.failed;
+d177 4
+a180 4
+    for (hdrPtr = FsGetNextHandle(&hashSearch);
+	 hdrPtr != (FsHandleHeader *) NIL;
+         hdrPtr = FsGetNextHandle(&hashSearch)) {
+	 if ((hdrPtr->fileID.type != FS_STREAM) &&
+d189 1
+a189 1
+	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
+d191 1
+a191 1
+	    RecoveryComplete(&(((FsRemoteIOHandle *)hdrPtr)->recovery),
+d193 1
+a193 1
+	    FsHandleUnlock(hdrPtr);
+d206 1
+a206 1
+		    FsFileError(hdrPtr, "Reopen failed ", status);
+d210 1
+a210 1
+	    FsHandleUnlock(hdrPtr);
+d221 4
+a224 4
+    for (hdrPtr = FsGetNextHandle(&hashSearch);
+	 hdrPtr != (FsHandleHeader *) NIL;
+         hdrPtr = FsGetNextHandle(&hashSearch)) {
+	if ((hdrPtr->fileID.type == FS_STREAM) &&
+d227 1
+a227 1
+	    rmtHandlePtr = (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
+d229 2
+a230 2
+	    if (rmtHandlePtr == (FsRemoteIOHandle *)NIL) {
+		FsFileError((FsHandleHeader *)streamPtr,
+d232 1
+a232 1
+	    } else if (!RemoteHandle((FsHandleHeader *)rmtHandlePtr)) {
+d235 1
+a235 1
+		FsHandleInvalidate((FsHandleHeader *)streamPtr);
+d237 1
+a237 1
+		status = FsStreamReopen((FsHandleHeader *)streamPtr,
+d241 1
+a241 1
+		    FsFileError((FsHandleHeader *)streamPtr,
+d243 1
+a243 1
+		    FsFileError(streamPtr->ioHandlePtr,"I/O handle",
+d247 1
+a247 1
+			FsHandleUnlock(streamPtr);
+d250 1
+a250 1
+		    FsHandleInvalidate((FsHandleHeader *)streamPtr);
+d254 1
+a254 1
+	FsHandleUnlock(hdrPtr);
+d261 3
+a263 3
+    for (hdrPtr = FsGetNextHandle(&hashSearch);
+	 hdrPtr != (FsHandleHeader *) NIL;
+         hdrPtr = FsGetNextHandle(&hashSearch)) {
+d265 1
+a265 1
+	     FsHandleUnlock(hdrPtr);
+d267 3
+a269 3
+	     RecoveryNotify(&((FsRemoteIOHandle *)hdrPtr)->recovery);
+	     if (RecoveryFailed(&((FsRemoteIOHandle *)hdrPtr)->recovery)) {
+		 FsHandleInvalidate(hdrPtr);
+d271 1
+a271 1
+	     FsHandleUnlock(hdrPtr);
+d280 3
+a282 3
+	printf(" %d handles reopened", fsStats.recovery.succeeded - succeeded);
+	if (fsStats.recovery.failed - failed > 0) {
+	    printf(" %d failed reopens", fsStats.recovery.failed - failed);
+d291 1
+a291 1
+ * FsRecoveryInit --
+d305 2
+a306 2
+FsRecoveryInit(recovPtr)
+    register FsRecoveryInfo	*recovPtr;	/* Recovery state */
+d308 1
+a308 1
+    bzero((Address) recovPtr, sizeof(FsRecoveryInfo));
+d315 1
+a315 1
+ * FsRecoverySyncLockCleanup --
+d328 2
+a329 2
+FsRecoverySyncLockCleanup(recovPtr)
+    register FsRecoveryInfo	*recovPtr;	/* Recovery state */
+d340 1
+a340 1
+ *	has a FsRemoteIOHandle structure embedded into it.  Only these
+d353 1
+a353 1
+    FsHandleHeader *hdrPtr;
+d356 8
+a363 8
+	case FS_RMT_FILE_STREAM:
+	case FS_RMT_DEVICE_STREAM:
+	case FS_RMT_PIPE_STREAM:
+	case FS_RMT_PSEUDO_STREAM:
+	case FS_PFS_NAMING_STREAM:
+	case FS_RMT_PFS_STREAM:
+	case FS_CONTROL_STREAM:
+	case FS_PFS_CONTROL_STREAM:
+d373 1
+a373 1
+ * Fs_WaitForHost --
+d389 1
+a389 1
+Fs_WaitForHost(streamPtr, flags, rpcStatus)
+d394 1
+a394 1
+    register FsHandleHeader *hdrPtr = streamPtr->ioHandlePtr;
+d397 1
+a397 1
+    FsWantRecovery(hdrPtr);
+d401 1
+a401 1
+	status = FsWaitForRecovery(hdrPtr, rpcStatus);
+d409 1
+a409 1
+ * FsWantRecovery --
+d426 2
+a427 2
+FsWantRecovery(hdrPtr)
+    FsHandleHeader *hdrPtr;	/* Handle needing recovery. The handle should
+d430 1
+a430 1
+    register FsRecoveryInfo *recovPtr = &((FsRemoteIOHandle *)hdrPtr)->recovery;
+d432 2
+a433 2
+	printf( "FsWantRecovery: no recovery for %s handles\n",
+		FsFileTypeToString(hdrPtr->fileID.type));
+d440 1
+a440 1
+	fsStats.recovery.wants++;
+d449 1
+a449 1
+ * FsWaitForRecovery --
+d464 2
+a465 2
+FsWaitForRecovery(hdrPtr, rpcStatus)
+    register FsHandleHeader	*hdrPtr;
+d477 2
+a478 2
+	printf( "FsWaitForRecovery, no recovery for type: %s\n",
+		FsFileTypeToString(hdrPtr->fileID.type));
+d480 1
+a480 1
+    } else if (!FsHandleValid(hdrPtr)) {
+d489 1
+a489 1
+     * we depend on a reboot callback to invoke FsReopen.
+d492 1
+a492 1
+	FsFileError(hdrPtr, "", rpcStatus);
+d494 1
+a494 1
+	    FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+d497 1
+a497 1
+    status = RecoveryWait(&((FsRemoteIOHandle *)hdrPtr)->recovery);
+d519 1
+a519 1
+    FsRecoveryInfo *recovPtr;
+d526 1
+a526 1
+	    fsStats.recovery.waitAbort++;
+d532 1
+a532 1
+	fsStats.recovery.waitFailed++;
+d534 1
+a534 1
+	fsStats.recovery.waitOK++;
+d564 1
+a564 1
+    FsRecoveryInfo *recovPtr;
+d573 1
+a573 1
+	    fsStats.recovery.timeout++;
+d576 1
+a576 1
+	    fsStats.recovery.failed++;
+d580 1
+a580 1
+	    fsStats.recovery.failed++;
+d584 1
+a584 1
+	    fsStats.recovery.succeeded++;
+d612 1
+a612 1
+    register FsRecoveryInfo *recovPtr;
+d627 1
+a627 1
+ * FsRecoveryNeeded --
+d642 2
+a643 2
+FsRecoveryNeeded(recovPtr)
+    FsRecoveryInfo *recovPtr;
+d670 1
+a670 1
+    FsRecoveryInfo *recovPtr;
+d698 2
+a699 2
+FsRemoteHandleScavenge(hdrPtr)
+    FsHandleHeader *hdrPtr;
+d701 3
+a703 3
+    if (OkToScavenge(&((FsRemoteIOHandle *)hdrPtr)->recovery)) {
+	FsRecoverySyncLockCleanup(&((FsRemoteIOHandle *)hdrPtr)->recovery);
+	FsHandleRemove(hdrPtr);
+d706 1
+a706 1
+	FsHandleUnlock(hdrPtr);
+d732 1
+a732 1
+    register FsRecoveryInfo *recovPtr;
+d747 1
+a747 1
+ * FsClientCrashed --
+d764 1
+a764 1
+FsClientCrashed(spriteID, clientData)
+d768 1
+a768 1
+    fsStats.recovery.clientCrashed++;
+d778 1
+a778 1
+    FsRemoveClient(spriteID);
+d784 1
+a784 1
+ * FsRemoveClient --
+d802 1
+a802 1
+FsRemoveClient(clientID)
+d806 1
+a806 1
+    register	FsHandleHeader	*hdrPtr;
+d809 4
+a812 4
+    for (hdrPtr = FsGetNextHandle(&hashSearch);
+	 hdrPtr != (FsHandleHeader *) NIL;
+         hdrPtr = FsGetNextHandle(&hashSearch)) {
+	(*fsStreamOpTable[hdrPtr->fileID.type].clientKill)(hdrPtr, clientID);
+d895 1
+a895 1
+	fsStats.recovery.number++;
+d902 1
+a902 1
+ * Fs_RpcRecovery --
+d918 1
+a918 1
+Fs_RpcRecovery(srvToken, clientID, command, storagePtr)
+d935 1
+a935 1
+	fsStats.recovery.clientRecovered++;
+@
+
+
+8.13
+log
+@Declared static functions as static.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.12 89/06/28 16:39:37 brent Exp $ SPRITE (Berkeley)";
+a41 1
+#ifndef sun4
+a45 9
+#else
+/*
+ * The sun4 compiler doesn't seem to allow this sort of redeclaration.
+ */
+extern void		ReopenHandles();
+extern void		RecoveryDone();
+extern Boolean		RecoveryFailed();
+extern void		RecoveryNotify();
+#endif sun4
+@
+
+
+8.12
+log
+@Tweaked a print statement
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.11 89/05/30 16:12:09 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d172 1
+a172 1
+void
+d619 1
+a619 1
+ENTRY void
+d677 1
+a677 1
+ENTRY Boolean
+d883 1
+a883 1
+ENTRY void
+@
+
+
+8.11
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.10 89/03/18 13:56:28 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d192 1
+a192 1
+		panic( "ReopenHandles, local I/O handle at remote server?\n");
+@
+
+
+8.10
+log
+@The sun4 compiler doesn't seem to allow a routine to be declared as
+static and then redeclared as something else.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.9 89/03/15 20:45:08 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a318 1
+    Sync_LockRegister(&recovPtr->lock);
+@
+
+
+8.9
+log
+@Nuked printf regarding scavenging of remote handles.
+This happens after process migration.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.8 89/03/03 08:14:47 brent Exp $ SPRITE (Berkeley)";
+d42 1
+d47 9
+@
+
+
+8.8
+log
+@Fixed static procedure declarations
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.7 89/02/19 22:04:19 jhh Exp $ SPRITE (Berkeley)";
+a701 2
+	printf("FsRemoteHandleScavenge: removing handle for \"%s\"\n",
+	    FsHandleName(hdrPtr));
+@
+
+
+8.7
+log
+@Changes due to lock registration
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.6 89/02/09 09:43:47 brent Exp $ SPRITE (Berkeley)";
+d42 6
+a47 6
+void	ReopenHandles();
+void	RecoveryDone();
+Boolean	RecoveryFailed();
+void	RecoveryNotify();
+void	RecoveryComplete();
+Boolean	OkToScavenge();
+a358 1
+	case FS_RMT_NAMED_PIPE_STREAM:
+@
+
+
+8.6
+log
+@Changed  error handling to not remove a handle, but instead
+leave it around (although invalidated) so the type-specific
+scavenging routine can clean up and remove the handle.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.4 89/02/07 14:22:58 brent Exp $ SPRITE (Berkeley)";
+d309 1
+@
+
+
+8.5
+log
+@Added FsRecoverySyncLockCleanup
+@
+text
+@d246 1
+a246 1
+			FsHandleUnlock(hdrPtr);
+d249 1
+a249 1
+		    FsHandleInvalidate(hdrPtr);
+a268 3
+		 FsHandleRemove(hdrPtr);
+	     } else {
+		 FsHandleUnlock(hdrPtr);
+d270 1
+@
+
+
+8.4
+log
+@Removed Lint
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.3 89/02/07 13:57:43 brent Exp $ SPRITE (Berkeley)";
+a235 4
+		if (!printed) {
+		    Net_HostPrint(serverID, "- recovering handles\n");
+		    printed = TRUE;
+		}
+d310 1
+a310 1
+    SYNC_LOCK_INIT_DYNAMIC(&(recovPtr->lock));
+d316 22
+d577 3
+d704 3
+@
+
+
+8.3
+log
+@Added counters for recovery related events
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.2 89/01/30 09:24:07 brent Exp $ SPRITE (Berkeley)";
+d171 1
+a171 1
+    Boolean			printed;
+@
+
+
+8.2
+log
+@Changed scavenge routine to a Boolean
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 8.1 89/01/06 11:20:17 jhh Exp $ SPRITE (Berkeley)";
+d171 3
+a174 2
+    Net_HostPrint(serverID, "- recovering handles\n");
+
+d184 4
+d229 2
+a230 1
+		FsFileError((FsHandleHeader *)streamPtr, "NIL I/O handle", 0);
+d236 4
+d281 9
+a289 3
+	printf("Recovery failed <%x>\n", status);
+    } else {
+	printf("Recovery complete\n");
+d424 1
+d510 1
+d516 3
+d531 2
+a532 3
+ *	on recovery of the shadow streams kept on the server.  This is called
+ *	by file-type specific recovery procedures.  FsHandleReopen will
+ *	call RecoveryNotify to poke waiters after all handles have been
+d557 1
+d560 3
+a562 4
+	    recovPtr->flags |= RECOVERY_FAILED;
+	    /*
+	     * FALL THROUGH and mark recovery as complete.
+	     */
+d565 1
+d748 1
+d874 2
+d915 1
+@
+
+
+8.1
+log
+@new Sync_Lock definition
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 7.0 88/11/11 15:33:24 brent Exp $ SPRITE (Berkeley)";
+d649 1
+a649 1
+ *	None.
+d657 1
+a657 1
+void
+d663 1
+d666 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 7.0 88/11/11 15:33:24 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d297 2
+a298 1
+    bzero((Address) recovPtr, sizeof(FsRecoveryInfo)); 
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 6.12 88/11/02 11:05:06 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.12
+log
+@Tweaked recovery to handle failed local  pseudo-filesystem servers.
+It is conceivable to implement recovery for these guys.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 6.11 88/10/22 15:17:33 brent Exp $ SPRITE (Berkeley)";
+d168 2
+d181 1
+a181 1
+		Sys_Panic(SYS_FATAL, "ReopenHandles, local handle?\n");
+d194 5
+d220 2
+a221 3
+	    register Fs_Stream *streamPtr = (Fs_Stream *)hdrPtr;
+	    register FsRemoteIOHandle *handlePtr =
+		    (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
+d223 5
+a227 6
+	    if (!RemoteHandle(streamPtr->ioHandlePtr)) {
+		Sys_Panic(SYS_FATAL, "ReopenHandles: local I/O handle?\n");
+	    }
+	    if (RecoveryFailed(&handlePtr->recovery)) {
+		FsFileError((FsHandleHeader *)streamPtr,
+		    "Invalid I/O handle", SUCCESS);
+d271 1
+a271 1
+	Sys_Printf("Recovery failed <%x>\n", status);
+d273 1
+a273 1
+	Sys_Printf("Recovery complete\n");
+d297 1
+a297 1
+    Byte_Zero(sizeof(FsRecoveryInfo), (Address) recovPtr); 
+d399 1
+a399 1
+	Sys_Panic(SYS_WARNING, "FsWantRecovery: no recovery for %s handles\n",
+d443 1
+a443 1
+	Sys_Panic(SYS_WARNING, "FsWaitForRecovery, no recovery for type: %s\n",
+d808 1
+a808 1
+	Sys_Panic(SYS_WARNING, "FsRecoveryDone: got status %x\n", status);
+d848 1
+a848 1
+	Sys_Panic(SYS_WARNING, "RecoveryDone: got status %x\n", status);
+@
+
+
+6.11
+log
+@Fixed FsWaitForRecovery to abort if given a handle marked as invalid.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 6.10 88/10/19 09:51:51 brent Exp $ SPRITE (Berkeley)";
+d393 9
+a401 2
+    LOCK_MONITOR;
+    if (RemoteHandle(hdrPtr)) {
+d403 1
+a403 3
+    } else {
+	Sys_Panic(SYS_FATAL, "FsWantRecovery, wrong handle type: %s\n",
+		FsFileTypeToString(hdrPtr->fileID.type));
+a404 1
+    UNLOCK_MONITOR;
+d433 8
+a440 3
+	Sys_Panic(SYS_FATAL, "FsWaitForRecovery, wrong handle type: %s\n",
+	    FsFileTypeToString(hdrPtr->fileID.type));
+	return(FS_STALE_HANDLE);
+@
+
+
+6.10
+log
+@Added FS_PFS_CONTROL_STREAM to the set of remote handles
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsRecovery.c,v 6.9 88/10/16 10:17:02 brent Exp $ SPRITE (Berkeley)";
+d432 5
+d480 3
+a482 4
+	if (recovPtr->flags & RECOVERY_FAILED) {
+	    status = recovPtr->status;
+	    break;
+	}
+@
+
+
+6.9
+log
+@Pulled RecoveryComplete back into this file as a private procedure
+so file-type specific reopen procedures don't have to remember
+to call it.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.8 88/09/23 13:39:31 brent Exp $ SPRITE (Berkeley)";
+d325 1
+@
+
+
+6.8
+log
+@Restructured reopen phase so that notification of recovery is done
+after both I/O handles and streams is complete.  This is to ensuer
+that noone goes to the server with a valid I/O handle but an
+invalid stream (one that will be reopened soon)
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.7 88/09/22 11:48:17 brent Exp $ SPRITE (Berkeley)";
+d46 1
+d178 3
+d183 2
+d322 2
+d486 1
+a486 1
+ * FsRecoveryComplete --
+d506 2
+a507 2
+ENTRY void
+FsRecoveryComplete(recovPtr, status)
+@
+
+
+6.7
+log
+@Reverted WaitForRecovery to only ask the recov module if
+the host is up if the error is Stale Handle.  The 'dying'
+grace period foils us because recov won't admit a host is down.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.6 88/09/19 15:04:04 brent Exp $ SPRITE (Berkeley)";
+d42 5
+a46 2
+void FsRecoveryDone();
+void FsHandleReopen();
+d48 3
+d53 11
+d110 1
+a110 1
+    FsHandleReopen(serverID);
+d114 1
+a114 1
+    FsRecoveryDone(serverID);
+d122 2
+a123 1
+     * proc wakeup call will block on them.
+d139 1
+a139 1
+ * FsHandleReopen --
+d146 3
+a148 1
+ *	logs a warning message and marks the handle as invalid.
+d162 1
+a162 1
+FsHandleReopen(serverID)
+d179 1
+a181 1
+		    FsHandleUnlock(hdrPtr);
+a184 1
+		    FsHandleUnlock(hdrPtr);
+a187 5
+		    /* FALL THROUGH */
+		case FS_VERSION_MISMATCH:
+		case FS_FILE_REMOVED:
+		    FsHandleInvalidate(hdrPtr);
+		    FsHandleRemove(hdrPtr);
+d197 3
+a199 1
+     * around on the server when it re-creates our streams.
+d205 1
+a205 1
+	 if ((hdrPtr->fileID.type == FS_STREAM) &&
+d207 11
+a217 3
+	    if (!FsHandleValid(((Fs_Stream *)hdrPtr)->ioHandlePtr)) {
+		FsFileError(hdrPtr, "Invalid I/O handle", SUCCESS);
+		FsHandleInvalidate(hdrPtr);
+d219 3
+a221 3
+		status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
+		    rpc_SpriteID, (ClientData)NIL, (int *)NIL,
+		    (ClientData *)NIL);
+d223 4
+a226 3
+		    FsFileError(hdrPtr, "Reopen failed", status);
+		    FsFileError(((Fs_Stream *)hdrPtr)->ioHandlePtr,"I/O handle",
+				status);
+a231 4
+		    /*
+		     * Don't remove stream handles because the user-level
+		     * close will remove them later.
+		     */
+d238 20
+d292 70
+d366 3
+a368 1
+ *	should take place when the server comes back.
+d383 1
+a383 3
+    register FsRemoteIOHandle *handlePtr = (FsRemoteIOHandle *)hdrPtr;
+    FsRecoveryInfo *recovPtr = &handlePtr->recovery;
+
+d385 5
+a389 13
+    switch(hdrPtr->fileID.type) {
+	case FS_RMT_FILE_STREAM:
+	case FS_RMT_DEVICE_STREAM:
+	case FS_RMT_PIPE_STREAM:
+	case FS_RMT_NAMED_PIPE_STREAM:
+	case FS_RMT_PSEUDO_STREAM:
+	case FS_CONTROL_STREAM:
+	    recovPtr->flags |= FS_WANT_RECOVERY;
+	    break;
+	default:
+	    Sys_Panic(SYS_FATAL, "FsWantRecovery, wrong handle type <%d>\n",
+		hdrPtr->fileID.type);
+	    break;
+d419 4
+a422 11
+    switch(hdrPtr->fileID.type) {
+	case FS_RMT_FILE_STREAM:
+	case FS_RMT_DEVICE_STREAM:
+	case FS_RMT_PIPE_STREAM:
+	case FS_RMT_NAMED_PIPE_STREAM:
+	case FS_RMT_PSEUDO_STREAM:
+	    break;
+	default:
+	    Sys_Panic(SYS_FATAL, "FsWaitForRecovery, wrong handle type <%d>\n",
+		hdrPtr->fileID.type);
+	    return(FS_STALE_HANDLE);
+a441 36
+ * Fs_WaitForHost --
+ *
+ *	Wait until recovery actions have completed for the stream.
+ *	This will return failure codes if the recovery aborts.
+ *	If the non-blocking flag is passed in this just marks the
+ *	handle as needing recovery and returns SUCCESS.
+ *
+ * Results:
+ *	SUCCESS unless there was a recovery error.
+ *
+ * Side effects:
+ *	Block the process.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_WaitForHost(streamPtr, flags, rpcStatus)
+    Fs_Stream	*streamPtr;
+    int		flags;		/* 0 or FS_NON_BLOCKING */
+    ReturnStatus rpcStatus;	/* Status that caused us to need recovery. */
+{
+    register FsHandleHeader *hdrPtr = streamPtr->ioHandlePtr;
+    register ReturnStatus status;
+
+    FsWantRecovery(hdrPtr);
+    if (flags & FS_NON_BLOCKING) {
+	status = SUCCESS;
+    } else {
+	status = FsWaitForRecovery(hdrPtr, rpcStatus);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d461 1
+a461 1
+    while (recovPtr->flags & FS_WANT_RECOVERY) {
+d466 2
+a467 2
+	if (recovPtr->flags & FS_RECOVERY_FAILED) {
+	    status = FS_STALE_HANDLE;
+d478 1
+a478 1
+ * FsRecoveryWakeup --
+d480 7
+a486 3
+ *	Wakeup processes waiting on recovery for a handle, if appropriate.
+ *	This examines the status before doing the wakeup so it is ok
+ *	to call this routine after a re-open gets a timeout, for example.
+d492 2
+a493 3
+ *	Processes waiting on the handle are awakened and the FS_HANDLE_RECOVERY
+ *	flags is cleared from the recovery flags.  The FS_RECOVERY_FAILED
+ *	flag gets set if status is non-SUCCESS.
+d499 1
+a499 1
+FsRecoveryWakeup(recovPtr, status)
+d505 1
+d511 1
+a511 1
+	    recovPtr->flags |= FS_RECOVERY_FAILED;
+d513 1
+a513 1
+	     * FALL THROUGH to wakeup.
+d516 1
+a516 2
+	    recovPtr->flags &= ~FS_WANT_RECOVERY;
+	    Sync_Broadcast(&recovPtr->reopenComplete);
+d524 33
+d579 1
+a579 1
+    recovWanted = (recovPtr->flags & FS_WANT_RECOVERY);
+d585 27
+d666 1
+a666 1
+	(recovPtr->flags & FS_WANT_RECOVERY) == 0) {
+d789 1
+a789 1
+ * FsRecoveryDone --
+d803 1
+a803 1
+FsRecoveryDone(serverID)
+d821 1
+a821 1
+	Sys_Panic(SYS_WARNING, "FsRecoveryDone: got status %x\n", status);
+@
+
+
+6.6
+log
+@Fixed deadlock.  Have to clear recovery in progress before
+kicking all processes.  Request-Response locked process,
+caused a page-fault, the page-fault blocked on recovery,
+and the recovery process couldn't complete because of the
+locked process.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.5 88/09/15 16:59:05 brent Exp $ SPRITE (Berkeley)";
+d335 3
+a337 3
+    }
+    if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
+	FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+@
+
+
+6.5
+log
+@Fixed RECOV_IN_PROGRESS bits so there are two distinct ones.
+Also changed stream re-opens so that a re-open won't be
+attempted if the I/O handle is already invalid.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.4 88/09/14 11:22:43 brent Exp $ SPRITE (Berkeley)";
+d103 6
+a115 2
+
+    Recov_ClearClientState(serverID, SRV_RECOV_IN_PROGRESS);
+@
+
+
+6.4
+log
+@Added synchronization to FsReopen so there is only one
+in progress at a time.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.3 88/09/08 18:11:07 brent Exp $ SPRITE (Berkeley)";
+d78 2
+a79 1
+    if (Recov_SetClientState(serverID, RECOV_IN_PROGRESS) & RECOV_IN_PROGRESS) {
+d111 1
+a111 1
+    Recov_ClearClientState(serverID, RECOV_IN_PROGRESS);
+d187 21
+a207 10
+	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
+		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
+	    if (status != SUCCESS) {
+		FsFileError(hdrPtr, "Reopen failed", status);
+		FsFileError(((Fs_Stream *)hdrPtr)->ioHandlePtr, "I/O handle",
+			    status);
+		if ((status == RPC_TIMEOUT) ||
+		    (status == RPC_SERVICE_DISABLED)) {
+		    FsHandleUnlock(hdrPtr);
+		    goto reopenReturn;
+a208 5
+		/*
+		 * Don't remove stream handles because the user-level
+		 * close will remove them later.
+		 */
+		FsHandleInvalidate(hdrPtr);
+a330 3
+	if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
+	    FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+	}
+d332 3
+d560 1
+a560 1
+ *	RECOV_IN_PROGRESS bit from the client recovery state.
+d575 1
+a575 1
+    Recov_ClearClientState(spriteID, RECOV_IN_PROGRESS);
+d641 1
+a641 1
+    int flags = RECOV_IN_PROGRESS;
+d730 1
+a730 1
+    if (*flagsPtr & RECOV_IN_PROGRESS) {
+d732 1
+a732 1
+	Recov_SetClientState(clientID, RECOV_IN_PROGRESS);
+d735 1
+a735 1
+	Recov_ClearClientState(clientID, RECOV_IN_PROGRESS);
+@
+
+
+6.3
+log
+@Fixed mistake (thanks lint!)
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.2 88/09/08 17:33:36 brent Exp $ SPRITE (Berkeley)";
+d76 6
+d109 2
+@
+
+
+6.2
+log
+@General cleanup.  Added status to FsRecoveryWakeup so
+it can be used after reopen failures.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.1 88/08/31 12:06:49 brent Exp $ SPRITE (Berkeley)";
+d528 1
+@
+
+
+6.1
+log
+@Removed lint.
+@
+text
+@d4 10
+a13 1
+ *	Routines for filesytem recovery.
+d27 1
+a27 1
+static char rcsid[] = "$Header: fsRecovery.c,v 6.0 88/08/11 12:17:53 brent Stable $ SPRITE (Berkeley)";
+d64 2
+a65 3
+ *	Does recovery RPCs to the file server.  When successful, recovering
+ *	a handle unblocks processes that are blocked on it waiting for
+ *	recovery to complete.
+d110 2
+a111 1
+ *	Called when a server reboots.  This scans the handle table twice
+d113 3
+a115 4
+ *	the I/O handles, and then streams are done.  When this completes
+ *	the recovery condition in the handle is notified to unblock
+ *	waiting processes. If the recovery fails this logs a warning
+ *	message and marks the handle as invalid.
+d121 3
+a123 2
+ *	A re-open transaction with the server.  Notifies the recovery
+ *	condition in the handle, see FsHandleWait.
+a125 1
+ *
+a134 1
+    Boolean			invalid;
+a141 1
+	 invalid = FALSE;
+d148 1
+d150 1
+a160 1
+		    invalid = TRUE;
+d163 1
+a163 2
+	}
+	if (!invalid) {
+d181 5
+a185 2
+		FsFileError(hdrPtr, "Reopen failed ", status);
+		if (status == RPC_TIMEOUT) {
+a197 1
+
+a198 1
+
+d279 1
+d282 1
+a282 1
+ *	SUCCESS unless there was a recovery error.
+d310 3
+a312 4
+     * If our caller got a stale handle (the server is probably up)
+     * we want to re-establish state with the server now.  There is
+     * already a reboot call-back registered with the recovery module
+     * so if the server is down the re-open procedure gets called that way.
+d315 1
+a315 5
+	Sys_Panic(SYS_WARNING, "Stale handle <%d,%d,%d> type %d\n",
+		hdrPtr->fileID.serverID,
+		hdrPtr->fileID.major,
+		hdrPtr->fileID.minor,
+		hdrPtr->fileID.type);
+a319 4
+
+    /*
+     * Wait for the server to reboot.
+     */
+d331 2
+d345 2
+a346 3
+    int		flags;
+    ReturnStatus rpcStatus;	/* Status that caused us to
+						 * need recovery. */
+d349 1
+a349 1
+    ReturnStatus status;
+d351 1
+a352 1
+	FsWantRecovery(hdrPtr);
+d401 3
+a403 1
+ *	Wakeup processes waiting on recovery for a handle.
+d410 2
+a411 1
+ *	flags is cleared from the recovery flags.
+d417 1
+a417 1
+FsRecoveryWakeup(recovPtr)
+d419 1
+d423 14
+a436 2
+    recovPtr->flags &= ~FS_WANT_RECOVERY;
+    Sync_Broadcast(&recovPtr->reopenComplete);
+d446 3
+a448 1
+ *	Returns TRUE if recovery is pending for the handle.
+d474 3
+a476 2
+ *	All purpose scavenging routine for remote handles.  This nukes
+ *	the handle if there are no uses of it and it doesn't need recovery.
+d487 1
+a487 1
+ENTRY void
+d491 1
+a491 12
+    FsRemoteIOHandle *handlePtr = (FsRemoteIOHandle *)hdrPtr;
+    register FsRecoveryInfo *recovPtr = &handlePtr->recovery;
+
+    LOCK_MONITOR;
+    if (recovPtr->use.ref == 0 &&
+	(recovPtr->flags & FS_WANT_RECOVERY) == 0) {
+	/*
+	 * This strange unlocking sequence is because the unlock monitor
+	 * references the recovery structure inside the handle, and it
+	 * wouldn't be safe to touch that after the handle is deallocated.
+	 */
+	UNLOCK_MONITOR;
+a494 1
+	UNLOCK_MONITOR;
+d496 32
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsRecovery.c,v 1.5 88/08/04 15:05:23 mlgray Exp $ SPRITE (Berkeley)";
+d31 1
+d480 2
+a481 1
+	 * references data inside the handle.
+@
+
+
+1.5
+log
+@merging changes from fs into fs.new
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsRecovery.c,v 1.4 88/06/15 10:34:19 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@Fixed stream recovery so invalid streams are not removed.
+They get removed later when the user process closes them.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsRecovery.c,v 1.3 88/06/02 11:36:19 brent Exp $ SPRITE (Berkeley)";
+d128 1
+a128 1
+    Net_HostPrint(serverID, "- recovering handles");
+d674 1
+a674 1
+	Net_HostPrint(clientID, "started recovery");
+d677 1
+a677 1
+	Net_HostPrint(clientID, "completed recovery");
+@
+
+
+1.3
+log
+@Removed ifdef'ed out code that is old and ugly
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsRecovery.c,v 1.2 88/04/28 11:02:28 brent Exp $ SPRITE (Berkeley)";
+d163 1
+a163 1
+     * around on the server when it re-creates its stream
+a168 1
+	 invalid = FALSE;
+d179 4
+a183 2
+		FsHandleRemove(hdrPtr);
+		invalid = TRUE;
+d186 1
+a186 3
+	if (!invalid) {
+	    FsHandleUnlock(hdrPtr);
+	}
+@
+
+
+1.2
+log
+@Allowed recovery for control streams.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsRecovery.c,v 1.1 88/04/11 10:15:00 brent Exp $ SPRITE (Berkeley)";
+a559 51
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsCleanupRefs --
+ *
+ *	Do enough local closes on the given file to cleanup any extraneous
+ *	references to the file.  Must be called with the handle locked.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The handle is unlocked upon return iff inUseCount > 0 upon entry.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+void
+FsCleanupRefs(hdrPtr, clientID, inUseCount, writingCount, executingCount)
+    FsHandleHeader	*hdrPtr;
+    register int	inUseCount;
+    register int	writingCount;
+    register int	executingCount;
+{
+    int			flags;
+
+    while (inUseCount > 0) {
+	flags = 0;
+	if (writingCount > 0) {
+	    flags |= FS_WRITE;
+	    writingCount--;
+	}
+	if (executingCount > 0) {
+	    flags |= FS_EXECUTE;
+	    executingCount--;
+	}
+	/*
+	 * Do the file type close operation.  This unlocks the handle.
+	 */
+	(void) (*fsStreamOpTable[hdrPtr->fileID.type].close)
+			(hdrPtr, clientID, flags, 0, (ClientData)NIL);
+
+	inUseCount--;
+	if (inUseCount > 0) {
+	    FsHandleLock(hdrPtr);
+	}
+    }
+}
+#endif
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsRecovery.c,v 1.1 88/04/04 10:40:11 brent Exp $ SPRITE (Berkeley)";
+d254 1
+@

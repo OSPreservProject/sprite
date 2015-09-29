@@ -1,0 +1,8 @@
+F QUAD_AD0.C_V;1                    	Quad_AddUns.c,v
+F QUAD_AD1.C_V;1                    	Quad_AddUnsLong.c,v
+F QUAD_ARI.MAN;1                    	Quad_Arith.man,v
+F QUAD_COM.C_V;1                    	Quad_CompareUns.c,v
+F QUAD_COM.MAN;1                    	Quad_Compare.man,v
+F QUAD_MIS.MAN;1                    	Quad_Misc.man,v
+F QUAD_PUT.C_V;1                    	Quad_PutUns.c,v
+F QUAD_UNS.C_V;1                    	Quad_UnsToDouble.c,v

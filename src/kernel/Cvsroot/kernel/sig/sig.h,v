@@ -1,0 +1,578 @@
+head     9.7;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sun4nw:9.6 symm:9.6 spur:9.6 sprited:9.6.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.7
+date     92.01.06.15.16.18;  author kupfer;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.05.16.15.58;  author mendel;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     90.09.11.10.59.41;  author mendel;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.08.29.10.59.52;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.07.31.14.16.06;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.07.30.11.40.09;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.03.26.12.15.54;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.19.25;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.14.04.33.27;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.04.06.11.47.38;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.03.29.21.29.36;  author mgbaker;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.37.22;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.34;  author brent;  state Stable;
+branches ;
+next     5.5;
+
+5.5
+date     88.08.01.16.35.25;  author ouster;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.07.25.18.44.23;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.07.07.15.13.03;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.04.17.22.18;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.01.20.14.30.58;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.49.50;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.09.09.17.22.30;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.7
+log
+@Sig_Pending doesn't really return a simple Boolean, and some code
+knows that, so stop pretending that it does.  Add Sig_NumberToMask.
+@
+text
+@/*
+ * sig.h --
+ *
+ *     Data structures and procedure headers exported by the
+ *     the signal module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sig/sig.h,v 9.6 90/10/05 16:15:58 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _SIG
+#define _SIG
+
+#ifdef KERNEL
+#include <sigTypes.h>
+#include <rpc.h>
+#include <procTypes.h>
+#include <procMigrate.h>
+#else
+#include <kernel/sigTypes.h>
+#include <kernel/rpc.h>
+#include <kernel/procTypes.h>
+#include <kernel/procMigrate.h>
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Pending --
+ *
+ *	Determine whether there are pending signals for a process.  This
+ *	routine does not impose any synchronization.
+ *
+ * Results:
+ *	Returns a bit mask with bits enabled for pending signals.  If no 
+ *	signals are pending, returns zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#define Sig_Pending(procPtr) \
+    ((procPtr)->sigPendingMask & ~((procPtr)->sigHoldMask))
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_NumberToMask --
+ *
+ *	Convert a Sprite signal number to a bit mask (cf Sig_Pending).
+ *
+ * Results:
+ *	Returns a bit mask with a single bit enabled corresponding to the 
+ *	given signal number.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define	Sig_NumberToMask(sig) (1 << ((sig) - 1))
+
+#ifdef KERNEL
+
+extern ReturnStatus Sig_Send _ARGS_((int sigNum, int code, Proc_PID id, 
+		Boolean familyID, Address addr));
+extern ReturnStatus Sig_SendProc _ARGS_((Proc_ControlBlock *procPtr, 
+		int sigNum, int code, Address addr));
+extern ReturnStatus Sig_UserSend _ARGS_((int sigNum, Proc_PID pid, 
+		Boolean familyID));
+extern ReturnStatus Sig_SetHoldMask _ARGS_((int newMask, int *oldMaskPtr));
+extern ReturnStatus Sig_SetAction _ARGS_((int sigNum, Sig_Action *newActionPtr,
+		Sig_Action *oldActionPtr));
+extern ReturnStatus Sig_Pause _ARGS_((int sigHoldMask));
+
+extern void Sig_Init _ARGS_((void));
+extern void Sig_ProcInit _ARGS_((Proc_ControlBlock *procPtr));
+extern void Sig_Fork _ARGS_((Proc_ControlBlock *parProcPtr, 
+		Proc_ControlBlock *childProcPtr));
+extern void Sig_Exec _ARGS_((Proc_ControlBlock *procPtr));
+extern void Sig_ChangeState _ARGS_((Proc_ControlBlock *procPtr, 
+		int actions[], int sigMasks[], int pendingMask, int sigCodes[],
+		int holdMask));
+extern Boolean Sig_Handle _ARGS_((Proc_ControlBlock *procPtr, 
+		Sig_Stack *sigStackPtr, Address *pcPtr));
+extern void Sig_CheckForKill _ARGS_((Proc_ControlBlock *procPtr));
+extern void Sig_Return _ARGS_((Proc_ControlBlock *procPtr, 
+		Sig_Stack *sigStackPtr));
+
+extern ReturnStatus Sig_RpcSend _ARGS_((ClientData srvToken, int clientID,
+			int command, Rpc_Storage *storagePtr));
+
+/*
+ * Procedures to support process migration.
+ */
+
+extern ReturnStatus Sig_GetEncapSize _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus Sig_EncapState _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr, Address bufPtr));
+extern ReturnStatus Sig_DeencapState _ARGS_((Proc_ControlBlock *procPtr, 
+			Proc_EncapInfo *infoPtr, Address bufPtr));
+extern void Sig_AllowMigration _ARGS_((Proc_ControlBlock *procPtr));
+
+#endif /* KERNEL */
+
+#endif /* _SIG */
+
+@
+
+
+9.6
+log
+@Fixed include files to use <> rather than "".
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.5 90/09/11 10:59:41 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d34 2
+a35 2
+ *	Return TRUE if a signal is pending and FALSE if not.  This routine
+ *	does not impose any synchronization.
+d38 2
+a39 1
+ *	TRUE if a signal is pending and FALSE if not.
+d47 20
+a66 1
+    ((Boolean) (procPtr->sigPendingMask & ~procPtr->sigHoldMask))
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.6 90/10/05 16:15:58 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.5
+log
+@Added Sig_RpcSend and moved typedefs into segTypes.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.4 90/08/29 10:59:52 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d18 4
+a21 4
+#include "sigTypes.h"
+#include "rpc.h"
+#include "procTypes.h"
+#include "procMigrate.h"
+@
+
+
+9.4
+log
+@Added function prototypes.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.3 90/07/31 14:16:06 shirriff Exp Locker: mendel $ SPRITE (Berkeley)
+d18 4
+a21 6
+#include "user/sig.h"
+#ifdef sun4
+#include "machSig.h"
+#else
+#include "mach.h"
+#endif /* sun4 */
+d23 4
+a26 2
+#include <sig.h>
+#include <kernel/mach.h>
+a29 25
+ * The signal context that is used to restore the state after a signal.
+ */
+typedef struct {
+    int			oldHoldMask;	/* The signal hold mask that was in
+					 * existence before this signal
+					 * handler was called.  */
+    Mach_SigContext	machContext;	/* The machine dependent context
+					 * to restore the process from. */
+} Sig_Context;
+
+/*
+ * Structure that user sees on stack when a signal is taken.
+ * Sig_Context+Sig_Stack must be double word aligned for the sun4.
+ * Thus there is 4 bytes of padding here.
+ */
+typedef struct {
+    int		sigNum;		/* The number of this signal. */
+    int		sigCode;    	/* The code of this signal. */
+    Sig_Context	*contextPtr;	/* Pointer to structure used to restore the
+				 * state before the signal. */
+    int		sigAddr;	/* Address of fault. */
+    int		pad;		/* Explained above. */
+} Sig_Stack;
+
+/*
+a47 3
+/*
+ * Procedures for the signal module.
+ */
+a48 2
+#include "proc.h"
+#include "procMigrate.h"
+d74 3
+@
+
+
+9.3
+log
+@Added padding to Sig_Stack for sun4.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.2 90/07/30 11:40:09 shirriff Exp $ SPRITE (Berkeley)
+d76 3
+d80 24
+a103 15
+extern	ReturnStatus	Sig_Send();
+extern	ReturnStatus 	Sig_SendProc();
+extern	ReturnStatus	Sig_UserSend();
+extern	ReturnStatus	Sig_SetHoldMask();
+extern	ReturnStatus	Sig_SetAction();
+extern	ReturnStatus	Sig_Pause();
+
+extern	void		Sig_Init();
+extern	void		Sig_ProcInit();
+extern	void		Sig_Fork();
+extern	void		Sig_Exec();
+extern	void		Sig_ChangeState();
+extern	Boolean		Sig_Handle();
+extern	void		Sig_CheckForKill();
+extern	void		Sig_Return();
+d109 9
+a117 4
+extern ReturnStatus	Sig_GetEncapSize();
+extern ReturnStatus	Sig_EncapState();
+extern ReturnStatus	Sig_DeencapState();
+extern	void		Sig_AllowMigration();
+@
+
+
+9.2
+log
+@Added address field to Sig_Stack.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.1 90/03/26 12:15:54 mgbaker Exp $ SPRITE (Berkeley)
+d42 2
+d50 2
+a51 1
+    int		sigAddr;
+@
+
+
+9.1
+log
+@New signal routine to check for a KILL signal and kill the proc without
+dealing with any other signals (for places where the process cannot go
+back out to user mode to handle other signals).
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.0 89/09/12 15:19:25 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)
+d48 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 8.3 89/04/14 04:33:27 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d86 1
+@
+
+
+8.3
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 8.2 89/04/06 11:47:38 douglis Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.2
+log
+@definitions for new process migration routines.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 8.1 89/03/29 21:29:36 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+d97 1
+a97 1
+#endif _SIG
+@
+
+
+8.1
+log
+@For the sun4, I had to create a new header file machSig.h to include
+due to a circularity of include file definitions involving Sig_Context and
+Mach_SigContext, etc.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 8.0 88/11/11 18:37:22 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)
+d87 8
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 6.0 88/08/11 12:26:34 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d19 3
+d23 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: sig.h,v 5.5 88/08/01 16:35:25 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+5.5
+log
+@Change includes to work from user programs with new library.
+@
+text
+@d11 1
+a11 1
+ * $Header: sig.h,v 5.4 88/07/25 18:44:23 douglis Exp $ SPRITE (Berkeley)
+@
+
+
+5.4
+log
+@added Sig_AllowMigration declaration.
+@
+text
+@d11 1
+a11 1
+ * $Header: sig.h,v 5.3 88/07/07 15:13:03 nelson Exp $ SPRITE (Berkeley)
+d17 1
+d20 4
+@
+
+
+5.3
+log
+@Changed around so that is similar to UNIX and eliminates some lingering
+machine dependencies.
+@
+text
+@d11 1
+a11 1
+ * $Header: sig.h,v 5.2 88/05/04 17:22:18 nelson Exp $ SPRITE (Berkeley)
+d78 1
+d81 1
+@
+
+
+5.2
+log
+@Rearranged signal stack so that it matches the new mach module stuff.
+@
+text
+@d11 1
+a11 1
+ * $Header: sig.h,v 5.1 88/01/20 14:30:58 nelson Exp $ SPRITE (Berkeley)
+d21 11
+d35 4
+a38 11
+    int		  sigNum;	/* The number of this signal. */
+    int		  sigCode;    	/* The code of this signal. */
+    int		  oldHoldMask;	/* The signal hold mask that was in existence
+				   before this signal handler was called.  */
+    int		  trapInst;	/* The trap instruction that is executed upon
+				   return. */
+    Mach_UserState userState;	/* The user process machine state info. */
+    Mach_ExcStack excStack;	/* The exception stack that would have been
+				 * restored if this signal were not taken.
+				 * This must be last because it can vary in 
+				 * size depending on the architecture. */
+@
+
+
+5.1
+log
+@Added more headers.
+@
+text
+@d11 1
+a11 1
+ * $Header: sig.h,v 5.0 87/08/11 10:49:50 sprite Exp $ SPRITE (Berkeley)
+d18 1
+a18 1
+#include "exc.h"
+d21 1
+a21 1
+ * Structure pushed onto stack when a signal is taken.
+d30 5
+a34 4
+    Exc_TrapStack trapStack;	/* The trap stack that would have been restored
+				   if this signal were not taken. This must
+				   be last because it can vary in size
+				   depending on the architecture. */
+a35 1
+
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+ * $Header: sig.h,v 4.3 87/06/15 11:57:42 nelson Exp $ SPRITE (Berkeley)
+d69 2
+@

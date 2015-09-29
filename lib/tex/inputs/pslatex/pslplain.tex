@@ -1,0 +1,653 @@
+% Changes to LPLAIN.TEX necessary to incorporate the PostScript
+% fonts.  Modified by Mario Wolczko, March 1988 - Oct 1989
+\input lplain
+
+\typeout{PostScript LaTeX}
+\everyjob{\typeout{PostScript-based LaTeX (\PSfontversion), Version 1.0}}
+
+\makeatletter
+
+\message{Math codes,}
+% The maths codes for the various control sequences. The `"' means the
+% number following is hexadecimal. The first number is the `class' (see
+% page 154 of the TeXbook), the second is the family number (e.g., 2 =
+% \textfont2---the symbol font), and the third and fourth specify the
+% position of the character in the font.
+%
+% For example,
+%    "22D7       % the code for \cdot
+% is interpreted as follows:
+%      2:  Class 2 (binary operation)
+%      2:  Family 2 (\textfont2 is normally the Symbol font
+%      D7: Position D7 (character D7 in hex, 215 in decimal, 327 in Octal
+%  Note that the PostScript fonts have character positions greater than
+%  127 (which is as high as they go in CM fonts).
+
+% font families:
+%	0 = roman
+%	1 = italic (math and text)
+%	2 = symbol
+%	3 = math extension
+%	\ms@ = slanted Symbol
+
+\mathcode`\^^@="22D7 % \cdot
+\mathcode`\^^A="32AF % \downarrow
+\mathcode`\^^B="0\ms@61 % \alpha
+\mathcode`\^^C="0\ms@62 % \beta
+\mathcode`\^^D="22D9 % \land
+\mathcode`\^^E="02D8 % \lnot
+\mathcode`\^^F="32CE % \in
+\mathcode`\^^G="0\ms@70 % \pi
+\mathcode`\^^H="0\ms@6C % \lambda
+\mathcode`\^^I="0\ms@67 % \gamma
+\mathcode`\^^J="0\ms@64 % \delta
+\mathcode`\^^K="32AD % \uparrow
+\mathcode`\^^L="22B1 % \pm
+\mathcode`\^^M="22C5 % \oplus
+\mathcode`\^^N="02A5 % \infty
+\mathcode`\^^O="02B6 % \partial
+\mathcode`\^^P="32CC % \subset
+\mathcode`\^^Q="32C9 % \supset
+\mathcode`\^^R="22C7 % \cap
+\mathcode`\^^S="22C8 % \cup
+\mathcode`\^^T="0222 % \forall
+\mathcode`\^^U="0224 % \exists
+\mathcode`\^^V="22C4 % \otimes
+\mathcode`\^^W="32AB % \leftrightarrow
+\mathcode`\^^X="32AC % \leftarrow
+\mathcode`\^^Y="32AE % \rightarrow
+\mathcode`\^^Z="22B9 % \ne
+\if@usecmsy
+ \mathcode`\^^[="2\cmsy@05 % \diamond
+\else
+ \mathcode`\^^[="22E0 % \diamond (bit big)
+\fi
+\mathcode`\^^\="32A3 % \le
+\mathcode`\^^]="32B3 % \ge
+\mathcode`\^^^="32BA % \equiv
+\mathcode`\^^_="22DA % \lor
+
+\mathcode`\ ="8000 % \space
+\mathcode`\!="5021
+\mathcode`\'="02A2 % not active...already a superscript
+\mathcode`\(="4228
+\mathcode`\)="5229
+\mathcode`\*="222A % \ast
+\mathcode`\+="222B
+\mathcode`\,="612C
+\mathcode`\-="222D
+\mathcode`\.="012E
+\mathcode`\/="002F
+\mathcode`\:="303A
+\mathcode`\;="603B
+\mathcode`\<="323C
+\mathcode`\=="303D
+\mathcode`\>="323E
+\mathcode`\?="503F
+\mathcode`\[="425B
+\mathcode`\\="005C % \backslash
+\mathcode`\]="525D
+\mathcode`\_="8000 % \_
+\mathcode`\{="427B
+\mathcode`\|="027C
+\mathcode`\}="527D
+\mathcode`\^^?="12F2 % \smallint
+
+% this has much better spacing than the default "f"
+\mathcode`\f="02A6
+
+\message{other codes,}
+% Delimiter codes. The first (hex) number is the font family. The next 2
+% numbers specify the start character within that family. The next number
+% (4th) is the font family to go to if you need a bigger delimiter. The
+% final 2 numbers specify the character within that font. For example,
+%       "028300
+% The \( (left paranthesis) starts with font 0 (normally \rm---Times Roman)
+% and picks character "28 (`('). If a larger ( is needed then move to
+% font family 3 (CM extension) and pick character 00 (0).
+%
+% Note: The TFM files should contain information about growth of a
+% character within a font (i.e., without needing to go to another font). In
+% the example, above, if character 0 was still not big enough then the TFM
+% file would instruct character "10 to be used. If this was still not big
+% enough then "20, followed by "40. If a larger parenthesis was required
+% then character "60 would be used which is the top part of a left
+% parenthesis. 
+
+\delcode`\<="2E130A
+\delcode`\>="2F130B
+\delcode`\/="0A430E
+\delcode`\|="27C30C
+\delcode`\\="05C30F
+
+\message{accents and new chars,}
+% \chardef is used for commands in LR or paragraph mode. The character chosen
+% specified by a hex number is that of the current font.
+%   For example,
+%      \chardef\ss="FB
+% defines \ss to pick up character "FB (decimal 251) of the current font.
+% (e.g., {\it\ss} would pick up an italic character.
+
+\chardef\ss="FB
+\chardef\ae="F1
+\chardef\oe="FA
+\chardef\o="F9
+\chardef\AE="E1
+\chardef\OE="EA
+\chardef\O="E9
+\chardef\i="F5 % \chardef\j="11 % no dotless j
+% No dotless j so write out a message if \j is used.
+\def\j{\@PSsub\j{j}}
+\def\aa{\accent"CAa }
+\chardef\l="F8
+\chardef\L="E8
+
+\def\_{\char'137 }
+\def\AA{\leavevmode\setbox0\hbox{h}\dimen@\ht0\advance\dimen@-1ex%
+  \rlap{\kern.2em\raise.67\dimen@\hbox{\char'312}}A}
+
+% The following characters do not appear in PLAIN TeX
+\chardef\cent="A2
+\chardef\yen="A5
+\chardef\currency="A8
+\chardef\quotesingle="A9
+\chardef\guillemotleft="AB
+\chardef\guilsinglleft="AC
+\chardef\guilsinglright="AD
+\chardef\quotesinglbase="B8
+\chardef\quotedblbase="B9
+\chardef\guillemotright="BB
+\chardef\ellipsis="BC
+
+% take advantage of the ellipsis char
+\def\@ldots{\mathinner\mathchar"00BC }
+\def\ldots{\protect\pldots}
+\def\pldots{\relax\ifmmode\@ldots\else\mbox{$\@ldots$}\fi}
+
+\chardef\perthousand="BD
+\chardef\ordfeminine="E3
+\chardef\ordmasculine="EB
+
+% Some more TeX characters
+\def\dag{\mathhexbox0B2}
+\def\ddag{\mathhexbox0B3}
+\def\S{\mathhexbox0A7}
+\def\P{\mathhexbox0B6}
+
+\def\pb#1{\oalign{#1\crcr\hidewidth
+    \vbox to.2ex{\hbox{\char'305}\vss}\hidewidth}}
+\def\b{\protect\pb}
+
+\def\pc#1{\setbox\z@\hbox{#1}\ifdim\ht\z@=1ex\accent"CB #1%
+  \else{\ooalign{\hidewidth\char'313\hidewidth\crcr\unhbox\z@}}\fi}
+\def\c{\protect\pc}
+
+% The \og (ogonek) accent is not available in `standard' TeX
+\def\pog#1{\setbox\z@\hbox{#1}\ifdim\ht\z@=1ex\accent"CE #1%
+  \else{\ooalign{\hidewidth\char'316\hidewidth\crcr\unhbox\z@}}\fi}
+\def\og{\protect\pog}
+
+% there are two copyright symbols in PostScript, with and without serifs.
+% The \@dosfchars command in lfonts.tex switches between them
+% appropriately. 
+\def\@copyrightTR{\mathhexbox2D3}
+\def\@registeredTR{\mathhexbox2D2}
+\def\@trademarkTR{\mathhexbox2D4}
+\def\@copyrightH{\mathhexbox2E3}
+\def\@registeredH{\mathhexbox2E2}
+\def\@trademarkH{\mathhexbox2E4}
+
+\let\pcopyright\@copyrightTR
+\let\pregistered\@registeredTR
+\let\ptrademark\@trademarkTR
+
+% Definition of accents.
+\def\`#1{{\accent"C1 #1}}
+\def\'#1{{\accent"C2 #1}}
+\def\v#1{{\accent"CF #1}} \let\^^_=\v
+\def\u#1{{\accent"C6 #1}} \let\^^S=\u
+\def\=#1{{\accent"C5 #1}}
+\def\^#1{{\accent"C3 #1}} \let\^^D=\^
+\def\.#1{{\accent"C7 #1}}
+\def\H#1{{\accent"CD #1}}
+\def\~#1{{\accent"C4 #1}}
+\def\"#1{{\accent"C8 #1}}
+% accents used in tabbing environments
+\expandafter \let \csname a`\endcsname = \`
+\expandafter \let \csname a'\endcsname = \'
+\expandafter \let \csname a=\endcsname = \=
+
+\let\@acci=\'
+\let\@accii=\`
+\let\@acciii=\=
+
+\if@usecmmi
+ \def\pt#1{{\edef\next{\the\font}\the\textfont\cmmifam\accent"7F\next#1}}
+\else
+ \def\t#1{\@PSnofont\t}
+\fi
+
+\def\*{\discretionary{\thinspace\the\textfont2\char'264}{}{}}
+
+\message{math chars,}
+% Maths character definitions.  The interpretation of the code is the same
+% as for \mathcode (above).
+\mathchardef\alpha="0\ms@61
+\mathchardef\beta="0\ms@62
+\mathchardef\gamma="0\ms@67
+\mathchardef\delta="0\ms@64
+\mathchardef\epsilon="0\ms@65
+\mathchardef\zeta="0\ms@7A
+\mathchardef\eta="0\ms@68
+\mathchardef\theta="0\ms@71
+\mathchardef\iota="0\ms@69
+\mathchardef\kappa="0\ms@6B
+\mathchardef\lambda="0\ms@6C
+\mathchardef\mu="0\ms@6D
+\mathchardef\nu="0\ms@6E
+\mathchardef\xi="0\ms@78
+\mathchardef\pi="0\ms@70
+\mathchardef\rho="0\ms@72
+\mathchardef\sigma="0\ms@73
+\mathchardef\tau="0\ms@74
+\mathchardef\upsilon="0\ms@75
+\mathchardef\phi="0\ms@66
+\mathchardef\chi="0\ms@63
+\mathchardef\psi="0\ms@79
+\mathchardef\omega="0\ms@77
+\def\varepsilon{\@PSsub\varepsilon\epsilon}
+\mathchardef\vartheta="0\ms@4A
+\mathchardef\varpi="0\ms@76
+\def\varrho{\@PSsub\varrho\rho}
+\mathchardef\varsigma="0\ms@56
+\mathchardef\varphi="0\ms@6A
+\mathchardef\Gamma="0247
+\mathchardef\Delta="0244
+\mathchardef\Theta="0251
+\mathchardef\Lambda="024C
+\mathchardef\Xi="0258
+\mathchardef\Pi="0250
+\mathchardef\Sigma="0253
+\mathchardef\Upsilon="02A1
+\mathchardef\Phi="0246
+\mathchardef\Psi="0259
+\mathchardef\Omega="0257
+
+\mathchardef\aleph="02C0
+\def\hbar{{\mathchar"00C5\mkern-8muh}}
+\mathchardef\imath="01F5
+% \mathchardef\jmath="017C
+\def\jmath{\@PSsub\jmath{j}}
+\if@usecmmi
+ \mathchardef\ell="0\cmmi@60
+\else
+ \def\ell{\@PSsub\ell{l}}
+\fi
+\mathchardef\wp="02C3
+\mathchardef\Re="02C2
+\mathchardef\Im="02C1
+\mathchardef\partial="02B6
+\mathchardef\infty="02A5
+\mathchardef\@prime="02A2
+\def\prime{\@prime\@warning{\string\prime\space produces a small prime in PS-LaTeX}}
+\mathchardef\emptyset="02C6
+\mathchardef\nabla="02D1
+\def\surd{{\mathchar"12D6}}
+\if@usecmsy
+ \mathchardef\top="0\cmsy@3E
+\else
+ \def\top{\@PSnofont\top}
+\fi
+\mathchardef\bot="025E
+\mathchardef\angle="02D0
+\if@usecmsy
+ \mathchardef\triangle="0\cmsy@34
+\else
+ \def\triangle{\@PSnofont\triangle}
+\fi
+\mathchardef\forall="0222
+\mathchardef\exists="0224
+\mathchardef\neg="02D8 \let\lnot=\neg
+\if@usecmmi
+ \mathchardef\flat="0\cmmi@5B
+ \mathchardef\natural="0\cmmi@5C
+ \mathchardef\sharp="0\cmmi@5D
+\else
+ \def\flat{\@PSnofont\flat}
+ \def\natural{\@PSnofont\natural}
+ \def\sharp{\@PSnofont\sharp}
+\fi
+\mathchardef\clubsuit="02A7
+\mathchardef\diamondsuit="02E0
+\mathchardef\fulldiamondsuit="02A8 % filled in black
+\if@usecmsy
+ \mathchardef\heartsuit="0\cmsy@7E
+ \mathchardef\fullheartsuit="02A9 % filled in black
+\else
+ \mathchardef\heartsuit="02A9 % a reasonable approximation
+\fi
+\mathchardef\spadesuit="02AA
+
+\mathchardef\smallint="12F2
+
+\if@usecmmi
+ \mathchardef\triangleleft="2\cmmi@2F
+ \mathchardef\triangleright="2\cmmi@2E
+\else
+ \def\triangleleft{\@PSnofont\triangleleft}
+ \def\triangleright{\@PSnofont\triangleright}
+\fi
+\if@usecmsy
+ \mathchardef\bigtriangleup="2\cmsy@34
+ \mathchardef\bigtriangledown="2\cmsy@35
+\else
+ \def\bigtriangleup{\@PSnofont\bigtriangleup}
+ \def\bigtriangledown{\@PSnofont\bigtriangledown}
+\fi
+\mathchardef\wedge="22D9 \let\land=\wedge
+\mathchardef\vee="22DA \let\lor=\vee
+\mathchardef\cap="22C7
+\mathchardef\cup="22C8
+\mathchardef\ddagger="20B3
+\mathchardef\dagger="20B2
+\if@usecmsy
+ \mathchardef\sqcap="2\cmsy@75
+ \mathchardef\sqcup="2\cmsy@74
+ \mathchardef\uplus="2\cmsy@5D
+ \mathchardef\amalg="2\cmsy@71
+ \mathchardef\diamond="2\cmsy@05
+\else
+ \def\sqcap{\@PSnofont\sqcap}
+ \def\sqcup{\@PSnofont\sqcup}
+ \def\uplus{\@PSnofont\uplus
+ \def\amalg{\@PSnofont\amalg}
+ \mathchardef\diamond="22E0 % close enough
+\fi
+\mathchardef\bullet="22B7
+\if@usecmsy
+ \mathchardef\wr="2\cmsy@6F
+\else
+ \def\wr{\@PSnofont\wr}
+\fi
+\mathchardef\div="22B8
+\if@usecmsy
+ \mathchardef\odot="2\cmsy@0C
+ \mathchardef\oslash="2\cmsy@0B
+\else
+ \def\odot{\@PSnofont\odot}
+ \def\oslash{\@PSnofont\oslash}
+\fi
+\mathchardef\otimes="22C4
+\if@usecmsy
+ \mathchardef\ominus="2\cmsy@09
+\else
+ \def\ominus{\@PSnofont\ominus}
+\fi
+\mathchardef\oplus="22C5
+\if@usecmsy
+ \mathchardef\mp="2\cmsy@07
+ \mathchardef\circ="2\cmsy@0E
+ \mathchardef\bigcirc="2\cmsy@0D
+\else
+ \def\mp{\@PSnofont\mp}
+ \def\circ{\@PSnofont\circ}
+ \def\bigcirc{\@PSnofont\bigcirc}
+\fi
+\mathchardef\pm="22B1
+\mathchardef\setminus="205C % for set difference A\setminus B
+\mathchardef\cdot="22D7
+\mathchardef\ast="222A
+\mathchardef\times="22B4
+\if@usecmmi
+ \mathchardef\star="2\cmmi@3F
+\else
+ \def\star{\@PSnofont\star}
+\fi
+
+\mathchardef\propto="32B5
+\mathchardef\mid="327C
+\if@usecmsy
+ \mathchardef\sqsubseteq="3\cmsy@76
+ \mathchardef\sqsupseteq="3\cmsy@77
+ \mathchardef\parallel="3\cmsy@6B
+ \mathchardef\dashv="3\cmsy@61
+ \mathchardef\vdash="3\cmsy@60
+ \mathchardef\nearrow="3\cmsy@25
+ \mathchardef\searrow="3\cmsy@26
+ \mathchardef\nwarrow="3\cmsy@2D
+ \mathchardef\swarrow="3\cmsy@2E
+\else
+ \def\sqsubseteq{\@PSnofont\sqsubseteq}
+ \def\sqsupseteq{\@PSnofont\sqsupseteq}
+ \def\parallel{\@PSnofont\parallel}
+ \def\dashv{\@PSnofont\dashv}
+ \def\vdash{\@PSnofont\vdash}
+ \def\nearrow{\@PSnofont\nearrow}
+ \def\searrow{\@PSnofont\searrow}
+ \def\nwarrow{\@PSnofont\nwarrow}
+ \def\swarrow{\@PSnofont\swarrow}
+\fi
+\mathchardef\Leftrightarrow="32DB
+\mathchardef\Leftarrow="32DC
+\mathchardef\Rightarrow="32DE
+\if@usecmsy
+ \mathchardef\cmsyLeftrightarrow="3\cmsy@2C
+ \mathchardef\cmsyLeftarrow="3\cmsy@28
+ \mathchardef\cmsyRightarrow="3\cmsy@29
+\fi
+\mathchardef\ne="22B9 \let\neq=\ne
+\def\not#1{\rlap{\kern.5em\lower.25ex\hbox{\mathhexbox2A4}}#1}
+\mathchardef\leq="32A3 \let\le=\leq
+\mathchardef\geq="32B3 \let\ge=\geq
+\if@usecmsy
+ \mathchardef\succ="3\cmsy@1F
+ \mathchardef\prec="3\cmsy@1E
+\else
+ \def\succ{\@PSnofont\succ}
+ \def\prec{\@PSnofont\prec}
+\fi
+\mathchardef\approx="32BB
+\if@usecmsy
+ \mathchardef\succeq="3\cmsy@17
+ \mathchardef\preceq="3\cmsy@16
+\else
+ \def\succeq{\@PSnofont\succeq}
+ \def\preceq{\@PSnofont\preceq}
+\fi
+\mathchardef\supset="32C9
+\mathchardef\subset="32CC
+\mathchardef\supseteq="32CA
+\mathchardef\subseteq="32CD
+\mathchardef\in="32CE
+\mathchardef\notsub="32CB % this is a new one
+\mathchardef\ni="3227 \let\owns=\ni
+\if@usecmsy
+ \mathchardef\gg="3\cmsy@1D
+ \mathchardef\ll="3\cmsy@1C
+\else
+ \def\gg{\@PSnofont\gg}
+ \def\ll{\@PSnofont\ll}
+\fi
+\mathchardef\leftrightarrow="32AB
+\mathchardef\leftarrow="32AC \let\gets=\leftarrow
+\mathchardef\rightarrow="32AE \let\to=\rightarrow
+\if@usecmsy
+ \mathchardef\cmsyleftrightarrow="3\cmsy@24
+ \mathchardef\cmsyleftarrow="3\cmsy@20
+ \mathchardef\cmsyrightarrow="3\cmsy@21
+ \mathchardef\mapstochar="3\cmsy@37 \def\mapsto{\mapstochar\cmsyrightarrow}
+ \mathchardef\simeq="3\cmsy@27
+\else
+ \def\mapstochar{\@PSnofont\mapstochar}
+ \def\simeq{\@PSnofont\simeq}
+\fi
+\mathchardef\sim="327E
+\mathchardef\perp="325E
+\mathchardef\equiv="32BA
+\if@usecmsy
+ \mathchardef\asymp="3\cmsy@10
+\else
+ \def\asymp{\@PSnofont\asymp}
+\fi
+\if@usecmmi
+ \mathchardef\smile="3\cmmi@5E
+ \mathchardef\frown="3\cmmi@5F
+ \mathchardef\leftharpoonup="3\cmmi@28
+ \mathchardef\leftharpoondown="3\cmmi@29
+ \mathchardef\rightharpoonup="3\cmmi@2A
+ \mathchardef\rightharpoondown="3\cmmi@2B
+\else
+ \def\smile{\@PSnofont\smile}
+ \def\frown{\@PSnofont\frown}
+ \def\leftharpoonup{\@PSnofont\leftharpoonup}
+ \def\rightharpoonup{\@PSnofont\rightharpoonup}
+ \def\leftharpoondown{\@PSnofont\leftharpoondown}
+ \def\rightharpoondown{\@PSnofont\rightharpoondown}
+\fi
+
+\if@usecmmi
+ \mathchardef\cmminus="2\cmsy@00
+ \def\relbar{\mathrel{\smash{\cmminus}}}
+ \mathchardef\lhook="3\cmmi@2C
+ \def\hookrightarrow{\lhook\joinrel\cmsyrightarrow}
+ \mathchardef\rhook="3\cmmi@2D
+ \def\hookleftarrow{\cmsyleftarrow\joinrel\rhook}
+\else
+ \def\lhook{\@PSnofont\lhook}
+ \def\rhook{\@PSnofont\rhook}
+\fi
+
+% These are unavailable because we don't have cmr10 loaded (for the =
+% sign), and wouldn't need it otherwise.  (I've tried simulating an
+% equals sign with rules, but it looks awful, and doesn't scale--miw)
+\def\Longrightarrow{\@PSsub\Longrightarrow\Rightarrow}
+\def\Longleftarrow{\@PSsub\Longleftarrow\Leftarrow}
+
+\if@usecmsy
+ \def\longrightarrow{\protect\@lra}
+   \def\@lra{\relbar\joinrel\cmsyrightarrow}
+ \def\longleftarrow{\protect\@lla}
+    \def\@lla{\cmsyleftarrow\joinrel\relbar}
+ \def\longmapsto{\mapstochar\longrightarrow}
+ \def\longleftrightarrow{\cmsyleftarrow\joinrel\cmsyrightarrow}
+ \def\Longleftrightarrow{\cmsyLeftarrow\joinrel\cmsyRightarrow}
+\fi
+
+\def\rightarrowfill{$\m@th\cmminus\mkern-6mu%
+  \cleaders\hbox{$\mkern-2mu\cmminus\mkern-2mu$}\hfill
+  \mkern-6mu\mathord\cmsyrightarrow$}
+\def\leftarrowfill{$\m@th\mathord\cmsyleftarrow\mkern-6mu%
+  \cleaders\hbox{$\mkern-2mu\cmminus\mkern-2mu$}\hfill
+  \mkern-6mu\cmminus$}
+
+\mathchardef\cdotp="62D7 % cdot as a punctuation mark
+
+% Some additional maths definitions available in the PostScript fonts
+\mathchardef\therefore="025C
+\mathchardef\cret="02BF
+\mathchardef\seconds="02B2
+\mathchardef\degree="02B0
+
+
+% Upright Greek symbols.
+\def\ualpha{\mathhexbox261}
+\def\ubeta{\mathhexbox262}
+\def\ugamma{\mathhexbox267}
+\def\udelta{\mathhexbox264}
+\def\uepsilon{\mathhexbox265}
+\def\uzeta{\mathhexbox27A}
+\def\ueta{\mathhexbox268}
+\def\utheta{\mathhexbox271}
+\def\uiota{\mathhexbox269}
+\def\ukappa{\mathhexbox26B}
+\def\ulambda{\mathhexbox26C}
+\def\umu{\mathhexbox26D}
+\def\unu{\mathhexbox26E}
+\def\uxi{\mathhexbox278}
+\def\upi{\mathhexbox270}
+\def\urho{\mathhexbox272}
+\def\usigma{\mathhexbox273}
+\def\utau{\mathhexbox274}
+\def\uupsilon{\mathhexbox275}
+\def\uphi{\mathhexbox266}
+\def\uchi{\mathhexbox263}
+\def\upsi{\mathhexbox279}
+\def\uomega{\mathhexbox277}
+\def\uvartheta{\mathhexbox24A}
+\def\uvarpi{\mathhexbox276}
+\def\uvarsigma{\mathhexbox256}
+\def\uvarphi{\mathhexbox26A}
+
+% Maths accents
+\def\acute{\mathaccent"70C2 }
+\def\grave{\mathaccent"70C1 }
+\def\ddot{\mathaccent"70C8 }
+\def\tilde{\mathaccent"70C4 }
+\def\bar{\mathaccent"70C5 }
+\def\breve{\mathaccent"70C6 }
+\def\check{\mathaccent"70CF }
+\def\hat{\mathaccent"70C3 }
+\if@usecmmi
+ \def\vec{\mathaccent"0\cmmi@7E }
+\else
+ \def\vec{\@PSnofont\vec}
+\fi
+\def\dot{\mathaccent"70C7 }
+
+\if@usecmsy
+ \def\Vert{\delimiter"\cmsy@6B30D } \let\|=\Vert
+ \def\vert{\delimiter"\cmsy@6A30C }
+ \def\uparrow{\delimiter"3\cmsy@22378 }
+ \def\downarrow{\delimiter"3\cmsy@23379 }
+ \def\updownarrow{\delimiter"3\cmsy@6C33F }
+ \def\Uparrow{\delimiter"3\cmsy@2A37E }
+ \def\Downarrow{\delimiter"3\cmsy@2B37F }
+ \def\Updownarrow{\delimiter"3\cmsy@6D377 }
+ \def\backslash{\delimiter"\cmsy@6E30F } % for double coset G\backslash H
+ \def\rangle{\delimiter"5\cmsy@6930B }
+ \def\langle{\delimiter"4\cmsy@6830A }
+ \def\rbrace{\delimiter"5\cmsy@67309 }
+ \def\lbrace{\delimiter"4\cmsy@66308 }
+ \def\rceil{\delimiter"5\cmsy@65307 }
+ \def\lceil{\delimiter"4\cmsy@64306 }
+ \def\rfloor{\delimiter"5\cmsy@63305 }
+ \def\lfloor{\delimiter"4\cmsy@62304 }
+\else	% these are not as good, and the small ones don't match the large
+ \def\vert{\delimiter"27C30C }
+ \def\uparrow{\delimiter"32AD378 }
+ \def\downarrow{\delimiter"32AF379 }
+ \def\updownarrow{\delimiter"333F33F }
+ \def\Uparrow{\delimiter"32DD37E }
+ \def\Downarrow{\delimiter"32DF37F }
+ \def\Updownarrow{\delimiter"3377377 }
+ \def\backslash{\delimiter"05C30F } % for double coset G\backslash H
+ \def\rangle{\delimiter"52F130B }
+ \def\langle{\delimiter"42E130A }
+ \def\rbrace{\delimiter"527D309 } \let\}=\rbrace
+ \def\lbrace{\delimiter"427B308 } \let\{=\lbrace
+ \def\rceil{\delimiter"52F9307 }
+ \def\lceil{\delimiter"42E9306 }
+ \def\rfloor{\delimiter"52FB305 }
+ \def\lfloor{\delimiter"42EB304 }
+\fi
+
+\if@usecmsy
+ \def\sqrt{\radical"\cmsy@70370 }
+\else
+ \def\sqrt{\radical"370370 } % otherwise go straight to CMEX
+\fi
+
+\mathchardef\cong="3240
+\mathchardef\notin="32CF
+
+% LaTeX's \fnsymbol uses characters which are not available.
+\def\@fnsymbol#1{\ifcase#1\or *\or \dagger\or \ddagger\or 
+   \mathchar "0A7\or \mathchar "0B6\or \mathchar "0A8\or **\or \dagger\dagger
+   \or \ddagger\ddagger \else\@ctrerr\fi\relax}
+
+\makeatother
+
+\typeout{Any more modifications...?}
+
+% Absolve Leslie of all responsibility for any mistakes...
+\def\fmtname{pslplain}\def\fmtversion{2.09-3/10/89} 

@@ -1,0 +1,50 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/quad/RCS/Quad_Compare.man,v 1.1 91/03/18 12:19:43 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Quad lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Quad_CompareUns, Quad_EQ \- Comparison routines for 64-bit integers
+.SH SYNOPSIS
+.nf
+\fB#include <quad.h>\fR
+.sp
+int
+\fBQuad_CompareUns\fR(\fIuQuad1Ptr\fR, \fIuQuad2Ptr\fR)
+.sp
+Boolean
+\fBQuad_EQ\fR(\fIuQuad1\fR, \fIuQuad2\fR)
+.SH ARGUMENTS
+.AS u_quad *uQuad1Ptr
+.AP u_quad uQuadN in
+N'th unsigned quad argument.
+.AP u_quad *uQuadNPtr in
+Pointer to N'th unsigned quad argument.
+.BE
+
+.SH DESCRIPTION
+.PP
+These routines compare two 64-bit integers.
+.B Quad_CompareUns
+compares two unsigned quads, returning \-1 if the first value is less
+than the second, 0 if they are equal, and +1 if the first value is
+greater than the second.  It was designed for use with
+.BR qsort .
+.PP
+.B Quad_EQ
+compares two quads or unsigned quads, returning TRUE if they are equal
+and FALSE if they are not.
+.B Quad_EQ
+is a macro, so beware of side effects.
+
+.SH KEYWORDS
+quad, counter

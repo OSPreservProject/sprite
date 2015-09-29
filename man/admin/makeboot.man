@@ -1,0 +1,49 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.1 89/02/23 13:08:24 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS makeboot admin
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+makeboot \- Strips a.out header off of bootstrap program
+.SH SYNOPSIS
+\fBmakeboot\fR [\fIoptions\fR] \fIbootFile [targetBootFile]\fR
+.SH OPTIONS
+.IP "\fB\-h \fIhostname\fR" 15
+Creates a boot file under the internet host address of the named host.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBMakeboot\fP copies a boot program and removes the a.out header
+as it does so.  The boot program is loaded by the PROM into memory
+and execution begins at word 0, so the a.out header must be removed.
+This program also knows where the boot program ought to be installed,
+so without the \fItargetBootFile\fP argument it will do the right thing.
+Typically \fBmakeboot\fP is used to install network boot programs.
+These are loaded by the PROM using TFTP, which looks in the
+standard boot directory.
+
+.SH SEE ALSO
+installboot, which copies a disk boot program onto the disk
+header and strips the a.out header as it does so.
+
+.SH FILES
+/sprite/boot	- Directory containing per-machine TFTP boot files.
+These are typically symbolic links to machine-dependent boot programs.
+.br
+/sprite/boot.$MACHINE	- Home for the machine dependent boot programs.
+
+.SH KEYWORDS
+boot, a.out 
+

@@ -1,0 +1,10 @@
+     COMMENTS
+          If the first non-blank character in a  command  is  #,  then
+          everything  from the # up through the next newline character
+          is treated as a comment  and  ignored.   When  comments  are
+          embedded  inside  nested  commands  (e.g. fields enclosed in
+          braces) they must  have  properly-matched  braces  (this  is
+          necessary  because  when Tcl parses the top-level command it
+          doesn't yet know that the nested field will  be  used  as  a
+          command so it cannot process the nested comment character as
+          a comment).

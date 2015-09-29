@@ -1,0 +1,52 @@
+L BLOCKFRA.C;1                      	blockframe.c	dist/blockframe.c
+L BREAKPOI.C;1                      	breakpoint.c	dist/breakpoint.c
+F BREAKPOI.DBG;1                    	breakpoint.c.dbg
+F CHANGED_.;1                       	changed_files
+L COMMAND.C;1                       	command.c	dist/command.c
+L COPYING.C;1                       	copying.c	dist/copying.c
+L CORE.C;1                          	core.c	sprite/core.c
+F CORE_C.DBG;1                      	core.c.dbg
+L DBXREAD.C;1                       	dbxread.c	sprite/dbxread.c
+D DIST                              	dist
+D DS3100_M                          	ds3100.md
+L EMACS_KE.H;1                      	emacs_keymap.c.h	dist/readline/emacs_keymap.c
+L ENVIRON.C;1                       	environ.c	dist/environ.c
+L EVAL.C;1                          	eval.c	dist/eval.c
+L EXPPRINT.C;1                      	expprint.c	dist/expprint.c
+L EXPREAD_.C;1                      	expread.tab.c	dist/expread.tab.c
+L FINDVAR.C;1                       	findvar.c	dist/findvar.c
+D FOO                               	foo
+L FUNMAP.C;1                        	funmap.c	dist/readline/funmap.c
+L HISTORY.C;1                       	history.c	dist/readline/history.c
+L INFCMD.C;1                        	infcmd.c	sprite/infcmd.c
+L INFLOW.C;1                        	inflow.c	sprite/inflow.c
+L INFRUN.C;1                        	infrun.c	dist/infrun.c
+F INFRUN_C.DBG;1                    	infrun.c.dbg
+L KEYMAPS.C;1                       	keymaps.c	sprite/keymaps.c
+F LOCAL.MK;1                        	local.mk
+L MAIN.C;1                          	main.c	sprite/main.c
+F MAKEFILE.;1                       	Makefile
+L OBSTACK.C;1                       	obstack.c	dist/obstack.c
+L PRINTCMD.C;1                      	printcmd.c	dist/printcmd.c
+D RCS                               	RCS
+L READLINE.C;1                      	readline.c	dist/readline/readline.c
+L REGEX.C;1                         	regex.c	dist/regex.c
+L REMOTE.C;1                        	remote.c	dist/remote.c
+L SOURCE.C;1                        	source.c	dist/source.c
+D SPRITE                            	sprite
+L STACK.C;1                         	stack.c	dist/stack.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+L SYMMISC.C;1                       	symmisc.c	dist/symmisc.c
+D SYMM_MD                           	symm.md
+L SYMTAB.C;1                        	symtab.c	dist/symtab.c
+F TAGS0.;1                          	TAGS
+F TAGS1.;1                          	tags
+F TERMIO.H;1                        	termio.h
+L UTILS.C;1                         	utils.c	sprite/utils.c
+L VALARITH.C;1                      	valarith.c	dist/valarith.c
+L VALOPS.C;1                        	valops.c	sprite/valops.c
+L VALPRINT.C;1                      	valprint.c	dist/valprint.c
+L VALUES.C;1                        	values.c	sprite/values.c
+L VERSION.C;1                       	version.c	dist/version.c
+F XXX.;1                            	xxx

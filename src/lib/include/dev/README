@@ -1,0 +1,21 @@
+This directory contains include files that describe device-specific
+characteristics of Sprite I/O devices.  Typically, each file describes
+the Fs_IOControl operations implemented by that device, and any
+structures passed to or from the device handler via Fs_IOControls.
+Generic Fs_IOControl operations (those that are implemented for
+many or all device and file types) are described in
+/sprite/lib/include/fs.h.
+
+Corresponding to each I/O device is an index, which appears in the
+high-order 16 bits of the operation code for each Fs_IOControl for
+that device.  The current indices are listed below.  Add new ones when
+you define new kinds of devices.
+
+generic operations (fs.h)		0
+terminals (tty.h)			1
+pseudo-devices (pdev.h)			2
+magnetic tapes (tape.h)			3
+network protocols (net.h)		4
+write-once optical disks (worm.h)	5
+pseudo-file-systems (pfs.h)		6
+graphics devices (graphics.h)		7

@@ -1,0 +1,118 @@
+.TH DTERM 1 
+.SH NAME
+dterm \- ditroff output interpreter for terminals
+.SH SYNOPSIS
+.B dterm
+[
+.I options
+]
+\. . .
+[
+.I file
+]
+.SH DESCRIPTION
+.I Dterm
+interprets its
+input (standard input default)
+as output from
+.IR ditroff (I)
+and sends its output to standard out.
+.I Dterm
+is intended as a
+.B very
+rough previewer for seeing how a paper will be layed out.
+Input processed for any typesetter is mapped into a terminal's
+resolution to place characters approximately where they would
+appear on the final output device.  This is
+.I not
+meant to be readable (except with the
+.B -a
+option, see below), and some characters will be missing.
+Typical usage:
+.IP "" 15
+.nf
+ditroff -t file | dterm
+\0\0\0\0\0\0\0\0\0\0\0\0or
+ditroff -P`dev' -t file > intermediate
+dterm intermediate
+.fi
+.PP
+At the end of each page
+.I dterm
+prompts the user and waits for a newline (empty line) from the keyboard before
+continuing on to the next page.
+In this wait state,
+.I dterm
+accepts a few commands.  Enter
+.B ?
+to print the list of available commands.
+.PP
+The command line options are:
+.TP
+.B  \-c
+Don't wait between pages; for directing output to
+.I more
+or into a file.
+.TP
+.BI \-o list
+prints only the pages enumerated in
+.IR list .
+The list consists of pages and page ranges (e.g., 5-17)
+separated by commas.  
+The range
+.I n\-
+goes from
+.I n
+to the end;
+the range
+.I \-n
+goes from the beginning to and including
+page
+.IR n.
+.TP
+.BI \-h n
+Set the horizontal resolution (in characters per inch) to
+.IR n ;
+default is 10.0.
+.TP
+.BI \-v n
+Set the vertical resolution (in lines per inch) to
+.IR n ;
+default is 6.0.
+.TP
+.BI \-l n
+Set the maximum line length (in characters) to
+.IR n ;
+default is 79.
+.TP
+.B \-m
+Allow printing of margins (default action is for dterm
+to print out only enough to show what's on the page).  \-m 
+forces printing a page from the upper-left corner.
+.TP
+.B \-a
+force text to come out in a readable form (meant to look
+something like ``ditroff -a'').  This usually pushes the text
+farther right than it was meant to go.  It also does not prevent
+lines of text from a coming out on top of each other.
+.TP
+.B \-L
+Put a form feed (^L) at the end of each page.
+.TP
+.BI \-w
+Equivalent to ``-c -L -h20 -v12 -l131'' to format for extra-large
+printouts on a line-printer.
+.TP
+.BI \-f s
+Get special character file (see below) from
+.I s
+instead of the default /usr/lib/font/devter/specfile.
+.PP
+The ``specfile'' is a file of special character translations that
+map troff special character names to strings to print on a terminal.
+Each line in the file consists of two strings separated by a space.
+The first string is the special character name in troff and the second
+is what to print on the terminal.  Special characters NOT in this
+file will not print anything.
+.SH "SEE ALSO"
+ditroff(1)

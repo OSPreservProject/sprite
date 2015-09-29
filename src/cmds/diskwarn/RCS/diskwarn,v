@@ -1,0 +1,73 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     91.06.04.21.24.05;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Script to check a filesystem domain's free space.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#! /sprite/cmds/csh -f
+#
+# Send mail to selected users if a disk partition gets below a certain
+# amount of free space.
+
+# $Header: /sprite/lib/forms/RCS/proto.csh,v 1.5 91/02/09 13:24:51 ouster Exp $ SPRITE (Berkeley)
+#
+# Copyright 1991 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that this copyright
+# notice appears in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+if ($#argv < 3) then
+	echo "usage: diskwarn domain minfree user ..."
+	exit 1
+endif
+
+set domain=$1
+set minfree=$2
+shift
+shift
+
+# $argv is now the list of people to send mail to.
+
+set dfline=(`df $domain |& tail -1`)
+
+# If the first field isn't the name of the domain, it's probably an
+# error message.
+
+if ($dfline[1] != $domain) then
+	echo "Couldn't df $domain" | mail -s diskwarn $argv
+	exit 1
+endif
+
+# Since it's not an error message, the 5th field is the amount available.
+
+if ($dfline[5] < $minfree) then
+	echo "Domain $domain is down to $dfline[5] KB" | \
+	  mail -s diskwarn $argv
+endif
+
+exit 0
+@

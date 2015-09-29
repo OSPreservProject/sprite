@@ -1,0 +1,45 @@
+
+   INSTALLFLAGS = $(INSTINCFLAGS)
+   PCFOUTDIRS = decwin/75dpi decwin/100dpi MIT compX10
+    PCFCOMPILER = $(FONTSRC)/tools/bdftopcf/bdftopcf
+  MKFONTDIRPROG = $(FONTSRC)/tools/mkfontdir/mkfontdir
+
+all::
+	-@for dir in $(PCFOUTDIRS) ; do \
+	    echo "compiling directory bdf/$$dir into pcf/$$dir" ; \
+	    for file in `(cd bdf/$$dir ; ls | grep .bdf )` ; do \
+		newfile=`echo $$file | sed -e 's/bdf/pcf/g'` ; \
+		echo "compiling $$file into $$newfile" ; \
+		$(PCFCOMPILER) bdf/$$dir/$$file > pcf/$$dir/$$newfile ; \
+	    done ;\
+	    if [ -r bdf/$$dir/fonts.alias ] ; then \
+		echo "copying fonts.alias" ; \
+		rm -f pcf/$$dir/fonts.alias ; \
+		cp bdf/$$dir/fonts.alias pcf/$$dir/fonts.alias ;\
+	    else \
+		echo "bdf/$$dir has no font.alias" ; \
+	    fi ;\
+	    echo "making directory for pcf/$$dir" ; \
+	    $(MKFONTDIRPROG) pcf/$$dir ; \
+	done
+
+install::	all
+	@echo "creating $(FONTDIR)"
+	-mkdir $(FONTDIR)
+#ifdef HaveBDFFonts
+	@for dir in $(BDFOUTDIRS) ; do  \
+	    echo "installing bdf fonts into $$dir" ; \
+	    (cd bdf;tar cf - $$dir) | (cd $(FONTDIR);tar xvf -) ; \
+	done
+#endif
+	@for dir in $(PCFOUTDIRS) ; do  \
+	    echo "installing pcf fonts into $$dir" ; \
+	    (cd pcf;tar cf - $$dir) | (cd $(FONTDIR);tar xvf -) ; \
+	 done
+
+clean::
+	find pcf -type f -exec /bin/rm -f {} \;
+	rm -f all
+
+depend::
+	@echo "nothing to depend"

@@ -1,0 +1,44 @@
+% FLEQN DOCUMENT-STYLE OPTION - released 6 February 85
+%    for LaTeX version 2.09
+% Copyright (C) 1985 by Leslie Lamport
+
+% The following commands make the displayed math environments flush left,
+% with an indentation of \mathindent from the prevailing left margin.
+%
+\def\[{\relax\ifmmode\@badmath\else\begingroup\trivlist \item[]\leavevmode
+  \hbox to\linewidth\bgroup$ % $ TO MAKE 'DOLLAR' NESTING OK
+  \displaystyle
+  \hskip\mathindent\bgroup\fi}
+
+\def\]{\relax\ifmmode \egroup $\hfil % $ TO MAKE DOLLAR NESTING IN THIS FILE OK
+       \egroup \endtrivlist \endgroup\else \@badmath \fi}
+
+\def\equation{\refstepcounter{equation}\trivlist \item[]\leavevmode
+  \hbox to\linewidth\bgroup $ % $ TO MAKE DOLLAR NESTING OK
+  \displaystyle
+\hskip\mathindent}
+  
+
+\def\endequation{$\hfil % $ TO MAKE DOLLAR NESTING IN THIS FILE OK
+           \displaywidth\linewidth\@eqnnum\egroup \endtrivlist}
+
+\def\eqnarray{\stepcounter{equation}\let\@currentlabel=\theequation
+\global\@eqnswtrue
+\global\@eqcnt\z@\tabskip\mathindent\let\\=\@eqncr
+\abovedisplayskip\topsep\ifvmode\advance\abovedisplayskip\partopsep\fi
+\belowdisplayskip\abovedisplayskip
+\belowdisplayshortskip\abovedisplayskip
+\abovedisplayshortskip\abovedisplayskip
+$$\halign % $$ DOLLAR MATCHING
+to \linewidth\bgroup\@eqnsel\hskip\@centering$\displaystyle\tabskip\z@
+  {##}$&\global\@eqcnt\@ne \hskip 2\arraycolsep \hfil${##}$\hfil
+  &\global\@eqcnt\tw@ \hskip 2\arraycolsep $\displaystyle{##}$\hfil 
+   \tabskip\@centering&\llap{##}\tabskip\z@\cr}
+
+\def\endeqnarray{\@@eqncr\egroup
+      \global\advance\c@equation\m@ne$$\global\@ignoretrue % $$ MATCHING
+      }
+
+\newdimen\mathindent 
+\mathindent = \leftmargini
+  

@@ -1,0 +1,1453 @@
+head     9.7;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sun4nw:9.6 symm:9.6 spur:9.6 sprited:9.5.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.7
+date     92.06.01.14.54.46;  author kupfer;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.09.10.18.44.47;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.13.17.05.43;  author mendel;  state Exp;
+branches 9.5.1.1;
+next     9.4;
+
+9.4
+date     90.09.11.16.30.20;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.06.18.17.34;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.18.01.54;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.22.22.54.54;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.21.12;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.09.12.14.41.44;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.08.17.17.32.24;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.30.15.15.52;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.20.00.17.53;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.15.16.07.11;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.05.15.36.25;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.12.14.29;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.37.40;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.39.39;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.11.14.43.14;  author jhh;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.19.20.21.43;  author jhh;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.11.16.32.43;  author mendel;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.07.10.53.14;  author mendel;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.06.14.25.13;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.12;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.07.17.15.47.42;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.06.27.10.30.07;  author mendel;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.06.11.38.15;  author mendel;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.04.18.23.10;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.44;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.5.1.1
+date     91.10.04.23.13.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.7
+log
+@Fix includes ("" to <>).  
+@
+text
+@/* 
+ * timerQueue.c --
+ *
+ *	Routines to handle interrupts from the timer chip.
+ *
+ *      The timer call back routine is called at every callback timer
+ *      interrupt. The callback timer is used to enable various modules of
+ *      the kernel to have routines called at a particular time in the
+ *      future.  For example, to run the "clock" paging algorithm once a
+ *      second, to see if a Fs_Select call has timed-out, etc.  The timer
+ *      queue can only be used by kernel modules because it is assumed
+ *      that the routines to be called exist in the system segment.  The
+ *      routines to be called are maintained on the timer queue.  The
+ *      callback timer is active only when the timer queue is not empty.
+ *
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/timer/timerQueue.c,v 9.6 91/09/10 18:44:47 rab Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <timer.h>
+#include <timerInt.h>
+#include <sys.h>
+#include <sync.h>
+#include <sched.h>
+#include <list.h>
+#include <vm.h>
+#include <dev.h>
+#include <stdio.h>
+#include <bstring.h>
+
+
+/*
+ * Procedures internal to this file
+ */
+
+void TimerDumpElement _ARGS_((Timer_QueueElement *timerPtr));
+
+
+
+/* DATA STRUCTURES */
+
+/*
+ *  The timer queue is a linked list of routines that need to be called at
+ *  certain times. TimerQueueList points to the head structure for the queue.
+ *
+ * >>>>>>>>>>>>>>>>>>>
+ * N.B. For debugging purposes, timerQueueList is global
+ *      so it can be accessed by routines outside this module.
+ * <<<<<<<<<<<<<<<<<<<
+ */ 
+
+/* static */ List_Links	*timerQueueList;
+
+/*
+ * The timer module mutex semaphore.  
+ */
+
+Sync_Semaphore timerMutex;
+
+/*
+ *  Debugging routine and data.
+ */
+
+#ifdef DEBUG
+#define SIZE 500
+static unsigned char array[SIZE+1];
+static int count = 0;
+#endif DEBUG
+
+/*
+ * Instrumentation for counting how many times the routines get called.
+ */
+
+Timer_Statistics timer_Statistics;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_Init --
+ *
+ *	Initializes the data structures necessary to manage the timer
+ *	queue of procedures.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The timer queue structure is created and initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_Init()
+{
+    static	Boolean	initialized	= FALSE;
+
+    Sync_SemInitDynamic(&timerMutex,"Timer:timerMutex");
+
+    if (initialized) {
+	printf("Timer_Init: Timer module initialized more that once!\n");
+    }
+    initialized = TRUE;
+
+    TimerTicksInit();
+
+    bzero((Address) &timer_Statistics, sizeof(timer_Statistics));
+
+    timerQueueList = (List_Links *) Vm_BootAlloc(sizeof(List_Links));
+    List_Init(timerQueueList);
+
+    /*
+     * Initialized the time of day clock.
+     */
+    TimerClock_Init();
+    Timer_TimerInit(TIMER_CALLBACK_TIMER);
+    Timer_TimerStart(TIMER_CALLBACK_TIMER);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Timer_CallBack --
+ *
+ *      This routine is called at every call back timer interrupt. 
+ *      It calls routines on the timer queue. 
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	Routines on the timer queue may cause side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_CallBack(interval, time)
+    unsigned int interval;  /* Number of ticks since last invocation. */
+    Time   time;    	    /* Interval as time. */
+{
+	register List_Links	*readyPtr;	/* Ptr to TQE that's ready
+						 * to be called. */
+	Time			timeOfDay;	/* Best guess at tod. */
+	Timer_Ticks		currentSystemTimeTk;
+
+	/*
+	 *  The callback timer has expired. This means at least the first
+	 *  routine on the timer queue is ready to be called.  Go through
+	 *  the queue and call all routines that are scheduled to be
+	 *  called. Since the queue is ordered by time, we can quit looking 
+	 *  when we find the first routine that does not need to be called.
+	 */
+
+#ifdef GATHER_STAT
+	timer_Statistics.callback++;
+#endif
+
+	MASTER_LOCK(&timer_ClockMutex);
+	Time_Add(timer_UniversalApprox, time, &timer_UniversalApprox);
+	timeOfDay = timer_UniversalApprox;
+	MASTER_UNLOCK(&timer_ClockMutex);
+
+	Sched_GatherProcessInfo(interval);
+	Dev_GatherDiskStats();
+
+	MASTER_LOCK(&timerMutex);
+	if (!List_IsEmpty(timerQueueList)) {
+	    Timer_GetCurrentTicks(&currentSystemTimeTk);
+	    while (!List_IsEmpty(timerQueueList)) {
+		readyPtr = List_First(timerQueueList); 
+		if(Timer_TickGT(((Timer_QueueElement *)readyPtr)->time, 
+				  currentSystemTimeTk)) {
+		    break;
+		} else {
+
+		    /*
+		     *  First remove the item before calling it so the routine 
+		     *  can call Timer_ScheduleRoutine to reschedule itself on 
+		     *  the timer queue and not mess up the pointers on the 
+		     *  queue.
+		     */
+
+		    List_Remove(readyPtr);
+
+		    /*
+		     *  Now call the routine.  It is interrupt time and 
+		     *  the routine must do as little as possible.  The 
+		     *  routine is passed the time it was scheduled to 
+		     *  be called at and a client-specified argument.
+		     * 
+		     *  We release the timerMutex during the call backs to
+		     *	prevent the many deadlocks that can occur on a 
+		     *	multiprocessor.
+		     */
+
+#define  ELEMENTPTR ((Timer_QueueElement *) readyPtr)
+
+		    if (ELEMENTPTR->routine == 0) {
+			panic("Timer_ServiceInterrupt: t.q.e. routine == 0\n");
+		    } else {
+			void        (*routine) _ARGS_((Timer_Ticks timeTicks,
+						      ClientData  clientData));
+			Timer_Ticks timeTk;
+			ClientData  clientData;
+
+			ELEMENTPTR->processed = TRUE;
+			routine = ELEMENTPTR->routine;
+			timeTk = ELEMENTPTR->time;
+			clientData = ELEMENTPTR->clientData;
+			MASTER_UNLOCK(&timerMutex);
+			(routine) (timeTk, clientData);
+			MASTER_LOCK(&timerMutex);
+		    }
+		}
+	    }
+#undef  ELEMENTPTR
+
+
+	} 
+	MASTER_UNLOCK(&timerMutex);
+    
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_ScheduleRoutine --
+ *
+ *	Schedules a routine to be called at a certain time by adding 
+ *	it to the timer queue. A routine is specified using a
+ *	Timer_QueueElement structure, which is described in timer.h.
+ *
+ *	When the client routine is called at its scheduled time, it is 
+ *	passed two parameters:
+ *	 a) the time it is scheduled to be called at, and
+ *	 b) uninterpreted data.
+ *	Hence the routine should be declared as:
+ *
+ *	    void
+ *	    ExampleRoutine(time, data)
+ *		Timer_Ticks time;
+ *		ClientData data;
+ *	    {}
+ *
+ *
+ *	The time a routine should be called at can be specified in two
+ *	ways: an absolute time or an interval. For example, to have 
+ *	ExampleRoutine called in 1 hour, the timer queue element would 
+ *	be setup as:
+ *	    Timer_QueueElement	element;
+ *
+ *	    element.routine	= ExampleRoutine;
+ *	    element.clientData	= (ClientData) 0;
+ *	    element.interval	= timer_IntOneHour;
+ *	    Timer_ScheduleRoutine(&element, TRUE);
+ *
+ *	The 2nd argument (TRUE) to Timer_ScheduleRoutine means the routine
+ *	will be called at the interval + the current time.
+ *
+ *      Once ExampleRoutine is called, it can schedule itself to be
+ *      called again using Timer_ScheduleRoutine().   
+ *
+ *	    Timer_ScheduleRoutine(&element, TRUE);
+ *
+ *	The 2nd argument again means schedule the routine relative to the
+ *	current time. Since we still want ExampleRoutine to be called in
+ *	an hour, we don't have to change the interval field in the timer
+ *	queue element.
+ *      Obviously, the timer queue element has to be accessible 
+ *	to ExampleRoutine.
+ *
+ *	If we want ExampleRoutine to be called at a specific time, say
+ *	March 1, 1986, the time field in the t.q. element must be set:
+ *
+ *	    element.routine	= ExampleRoutine;
+ *	    element.clientData	= (ClientData) 0;
+ *	    element.time	= march1;
+ *	    Timer_ScheduleRoutine(&element, FALSE);
+ *
+ *	(Assume march1 has the appropriate value for the date 3/1/86.)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer queue element is added to the timer queue.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_ScheduleRoutine(newElementPtr, interval)
+    register	Timer_QueueElement *newElementPtr; /* routine to be added */
+    Boolean	interval;	/* TRUE if schedule relative to current time. */
+{
+    register List_Links	 *itemPtr;
+    Boolean inserted;		/* TRUE if added to Q in FORALL loop. */
+
+    MASTER_LOCK(&timerMutex); 
+    /*
+     *  Go through the timer queue and insert the new routine.  The queue
+     *  is ordered by the time field in the element.  The sooner the
+     *  routine needs to be called, the closer it is to the front of the
+     *  queue.  The new routine will not be added to the queue inside the
+     *  FOR loop if its scheduled time is after all elements in the queue
+     *  or the queue is empty.  It will be added after the last element in
+     *  the queue.
+     */
+
+    inserted = FALSE;  /* assume new element not inserted inside FOR loop.*/
+
+#ifdef GATHER_STAT
+    timer_Statistics.schedule++;
+#endif
+
+    /*
+     * Safety check.
+     */
+    if (newElementPtr->routine == 0) {
+	panic("Timer_ScheduleRoutine: bad address for t.q.e. routine.\n");
+    }
+
+    /* 
+     *  Reset the processed flag. It is used by the client to see if 
+     *  the routine is being called from the timer queue. This flag is
+     *  necessary because the client passes in the timer queue element
+     *  and it may need to examine the element to determine its status.
+     */
+    newElementPtr->processed = FALSE;
+
+    /*
+     * Convert the interval into an absolute time by adding the 
+     * interval to the current time.
+     */
+    if (interval) {
+	Timer_Ticks currentTime;
+	Timer_GetCurrentTicks(&currentTime);
+	Timer_AddIntervalToTicks(currentTime, newElementPtr->interval,
+            	       &(newElementPtr->time));
+    }
+
+    List_InitElement((List_Links *) newElementPtr);
+
+    LIST_FORALL(timerQueueList, itemPtr) {
+
+       if (Timer_TickLT(newElementPtr->time, 
+	   ((Timer_QueueElement *)itemPtr)->time)) {
+	    List_Insert((List_Links *) newElementPtr, LIST_BEFORE(itemPtr));
+	    inserted = TRUE;
+	    break;
+	}
+    }
+
+    if (!inserted) {
+	List_Insert((List_Links *) newElementPtr, LIST_ATREAR(timerQueueList));
+    }
+    MASTER_UNLOCK(&timerMutex); 
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DescheduleRoutine --
+ *
+ *	Deschedules a routine to be called at a certain time by removing 
+ *	it from the timer queue.
+ *
+ *	Note that Timer_DescheduleRoutine does NOT guarantee that the 
+ *	routine to be descheduled will not be called, only that the 
+ *	routine will not be on the timer queue when Timer_DescheduleRoutine 
+ *	returns.
+ *
+ *	If Timer_DescheduleRoutine is able to obtain the timer mutex before
+ *	the timer interrupts, the routine will be removed from the
+ *	timer queue before the interrupt handler has a chance to call it.
+ *	If the interrupt handler is able to obtain the timer mutex before
+ *	Timer_DescheduleRoutine, then the interrupt handler will remove and 
+ *	call the routine before Timer_DescheduleRoutine has a chance 
+ *	to remove it.
+ *
+ * Results:
+ *	TRUE if the element was removed, FALSE if it was already gone.
+ *
+ * Side effects:
+ *	The timer queue structure is updated. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Timer_DescheduleRoutine(elementPtr)
+    register Timer_QueueElement *elementPtr;	/* routine to be removed */
+{
+    register List_Links	 *itemPtr;
+
+#ifdef GATHER_STAT
+    timer_Statistics.desched++;
+#endif
+    Boolean foundIt = FALSE;
+
+    /*
+     *  Go through the timer queue and remove the routine.  
+     */
+
+    MASTER_LOCK(&timerMutex); 
+
+    LIST_FORALL(timerQueueList, itemPtr) {
+
+	if ((List_Links *) elementPtr == itemPtr) {
+	    List_Remove(itemPtr);
+	    foundIt = TRUE;
+	    break;
+	}
+    }
+
+    MASTER_UNLOCK(&timerMutex);
+    return(foundIt);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DumpQueue --
+ *
+ *	Output the timer queue on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Timer_DumpQueue(data)
+    ClientData	data;	/* Not used. */
+{
+    Timer_Ticks	ticks;
+    Time	time;
+    List_Links *itemPtr;
+
+    Timer_GetCurrentTicks(&ticks);
+    Timer_TicksToTime(ticks, &time);
+    printf("Now: %d.%06u sec\n", time.seconds, time.microseconds);
+
+    if (List_IsEmpty(timerQueueList)) {
+	printf("\nList is empty.\n");
+    } else {
+	printf("\n");
+
+	MASTER_LOCK(&timerMutex); 
+
+	LIST_FORALL(timerQueueList, itemPtr) {
+	    TimerDumpElement((Timer_QueueElement *) itemPtr);
+	}
+
+	MASTER_UNLOCK(&timerMutex); 
+
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerDumpElement --
+ *
+ *	Output the more important parts of a Timer_QueueElement on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TimerDumpElement(timerPtr)
+    Timer_QueueElement *timerPtr;
+{
+    Time  	time;
+
+    Timer_TicksToTime(timerPtr->time, &time);
+
+    printf("(*0x%x)(0x%x) @@ %d.%06u\n",
+	    (Address) timerPtr->routine, 
+	    (Address) timerPtr->clientData,
+	    time.seconds, time.microseconds);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DumpStats --
+ *
+ *	Initializes and prints the timer module statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Timer_DumpStats(arg)
+    ClientData	arg;
+{
+    static   Timer_Ticks	start;
+    static   Timer_Ticks	end;
+    Timer_Ticks	diff;
+    Time  	time;
+
+    if (arg ==  (ClientData) 's') {
+	Timer_GetCurrentTicks(&start);
+	bzero((Address) &timer_Statistics,sizeof(timer_Statistics));
+    } else {
+	Timer_GetCurrentTicks(&end);
+	Timer_SubtractTicks(end, start, &diff);
+	Timer_TicksToTime(diff, &time);
+
+	printf("\n%d.%06d cb %d prof %d spur %d; Sched %d Res %d Des %d\n",
+	    time.seconds, time.microseconds,
+	    timer_Statistics.callback,
+	    timer_Statistics.profile,
+	    timer_Statistics.spurious,
+	    timer_Statistics.schedule,
+	    timer_Statistics.resched,
+	    timer_Statistics.desched
+	);
+    }
+}
+@
+
+
+9.6
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.5 90/10/13 17:05:43 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d31 11
+a41 11
+#include "sprite.h"
+#include "timer.h"
+#include "timerInt.h"
+#include "sys.h"
+#include "sync.h"
+#include "sched.h"
+#include "list.h"
+#include "vm.h"
+#include "dev.h"
+#include "stdio.h"
+#include "bstring.h"
+@
+
+
+9.5
+log
+@Added more function prototypes.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.4 90/09/11 16:30:20 jhh Exp $ SPRITE (Berkeley)";
+a179 3
+	if (vm_Tracing) {
+	    Vm_StoreTraceTime(timeOfDay);
+	}
+@
+
+
+9.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.5 90/10/13 17:05:43 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.4
+log
+@Fixed prototyping error.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.3 90/09/06 18:17:34 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d48 1
+a48 1
+void TimerDumpElement();
+d221 2
+a222 1
+			void        (*routine)();
+@
+
+
+9.3
+log
+@First pass at function prototypes
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.2 89/10/30 18:01:54 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d457 1
+d459 2
+a460 1
+Timer_DumpQueue()
+@
+
+
+9.2
+log
+@fixed lint errors
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.1 89/10/22 22:54:54 jhh Exp $ SPRITE (Berkeley)";
+d40 3
+@
+
+
+9.1
+log
+@Fixed lint errors
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.0 89/09/12 15:21:12 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+a504 1
+#ifndef lint
+a508 1
+#endif
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.8 89/09/12 14:41:44 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+a158 1
+	Time			intervalTime;
+d505 1
+d510 1
+@
+
+
+8.8
+log
+@renamed things
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.7 89/08/17 17:32:24 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@New timer interface
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.6 89/06/30 15:15:52 douglis Exp $ SPRITE (Berkeley)";
+d158 1
+a158 1
+	Timer_Ticks		currentTime;
+d173 4
+a176 4
+	MASTER_LOCK(&timerClockMutex);
+	Time_Add(timerTimeOfDay, time, &timerTimeOfDay);
+	timeOfDay = timerTimeOfDay;
+	MASTER_UNLOCK(&timerClockMutex);
+d186 1
+a186 1
+	    Timer_GetCurrentTicks(&currentTime);
+d190 1
+a190 1
+		  		  currentTime)) {
+d220 1
+a220 1
+			Timer_Ticks time;
+d225 1
+a225 1
+			time = ELEMENTPTR->time;
+d228 1
+a228 1
+			(routine) (time, clientData);
+@
+
+
+8.6
+log
+@changed Timer_DescheduleRoutine to return whether or not it was descheduled.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.5 89/02/20 00:17:53 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+a79 9
+ * The value to update the time of day at every timer interrupt.
+ * It equals the amount of time between callback timer interrupts.
+ */
+
+static Time todUpdate = {
+    0, TIMER_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
+};
+
+/*
+d151 3
+a153 1
+Timer_CallBack()
+d159 1
+a172 1
+
+d174 1
+a174 1
+	Time_Add(timerTimeOfDay, todUpdate, &timerTimeOfDay);
+d181 1
+a181 1
+	Sched_GatherProcessInfo();
+@
+
+
+8.5
+log
+@*** empty log message ***
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.4 89/02/15 16:07:11 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d408 1
+a408 1
+ *	None.
+d416 1
+a416 1
+void
+d425 1
+d437 1
+d442 2
+a443 1
+    MASTER_UNLOCK(&timerMutex); 
+@
+
+
+8.4
+log
+@added locking statistics
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.3 89/01/05 15:36:25 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+a138 17
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_LockRegister --
+ *
+ *	Used to register locks for the timer module. Must be called late
+ *  	in the initialization, after the vm module has been initialized.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Both mutex locks are registered.
+ *
+ *----------------------------------------------------------------------
+ */
+a139 7
+void
+Timer_LockRegister()
+{
+    Sync_SemRegister(&timerMutex); 
+    Sync_SemRegister(&timerClockMutex); 
+}
+
+d235 1
+a235 1
+			(routine) (time,clientData);
+@
+
+
+8.3
+log
+@Perform timer call back without the timerMutex held to prevent deadlocks
+on multiprocessors.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.2 88/11/30 12:14:29 brent Exp Locker: mendel $ SPRITE (Berkeley)";
+d67 1
+a67 1
+Sync_Semaphore timerMutex = SYNC_SEM_INIT_STATIC("timerMutex");
+d118 2
+d138 24
+@
+
+
+8.2
+log
+@Sys_Panic => panic   Sys_Printf => print
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 8.1 88/11/22 19:37:40 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+a159 1
+	register List_Links	*itemPtr;	/* Used to examine TQE's. */
+a176 1
+	MASTER_LOCK(&timerMutex);
+d189 1
+a190 1
+
+d192 3
+a194 4
+
+	    itemPtr = List_First(timerQueueList); 
+	    while (!List_IsAtEnd((timerQueueList), itemPtr)) {
+		if(Timer_TickGT(((Timer_QueueElement *)itemPtr)->time, 
+a205 2
+		    readyPtr = itemPtr;
+		    itemPtr  = List_Next(itemPtr);
+d213 4
+d224 4
+d229 6
+a234 2
+			(ELEMENTPTR->routine) 
+				(ELEMENTPTR->time,ELEMENTPTR->clientData);
+d284 1
+a284 3
+ *      called again using Timer_RescheduleRoutine().  Timer_ScheduleRoutine 
+ *	must not be used because it can't be called by routines that 
+ *	are called from the timer queue.
+d286 1
+a286 1
+ *	    Timer_RescheduleRoutine(&element, TRUE);
+a318 40
+#ifdef GATHER_STAT
+    timer_Statistics.schedule++;
+#endif
+
+    MASTER_LOCK(&timerMutex); 
+    Timer_RescheduleRoutine(newElementPtr, interval);
+    MASTER_UNLOCK(&timerMutex); 
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_RescheduleRoutine --
+ *
+ *	Places a routine on the timer queue so it will be called 
+ *	at a specific time.
+ *
+ *	This routine assumes the timer mutex is held. Therefore
+ *	it can be used by routines that are called from the timer queue.
+ *	Timer_ScheduleRoutine calls this routine once it obtains the
+ *	timer mutex.
+ *
+ *	Most of the prefatory comments of Timer_ScheduleRoutine are 
+ *	appropriate for	this routine. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer queue is extended. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_RescheduleRoutine(newElementPtr, interval)
+    register	Timer_QueueElement *newElementPtr; /* routine to be added */
+    Boolean	interval;	/* TRUE if schedule relative to current time. */
+{
+d322 1
+d336 1
+a336 1
+    timer_Statistics.resched++;
+d343 1
+a343 1
+	panic("Timer_RescheduleRoutine: bad address for t.q.e. routine.\n");
+d380 1
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 6.5 88/11/11 14:43:14 jhh Exp $ SPRITE (Berkeley)";
+d119 1
+a119 2
+	Sys_Panic(SYS_WARNING,
+		"Timer_Init: Timer module initialized more that once!\n");
+d223 1
+a223 2
+			Sys_Panic(SYS_FATAL,
+			"Timer_ServiceInterrupt: t.q.e. routine == 0\n");
+d377 1
+a377 2
+	Sys_Panic(SYS_FATAL, 
+		"Timer_RescheduleRoutine: bad address for t.q.e. routine.\n");
+d579 1
+a579 2
+	printf(
+	"\n%d.%06d cb %d prof %d spur %d; Sched %d Res %d Des %d\n",
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 6.5 88/11/11 14:43:14 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d67 1
+a67 1
+int timerMutex = 0;
+d179 1
+a179 1
+	MASTER_LOCK(timerMutex);
+d181 1
+a181 1
+	MASTER_LOCK(timerClockMutex);
+d184 1
+a184 1
+	MASTER_UNLOCK(timerClockMutex);
+d237 1
+a237 1
+	MASTER_UNLOCK(timerMutex);
+d320 1
+a320 1
+    MASTER_LOCK(timerMutex); 
+d322 1
+a322 1
+    MASTER_UNLOCK(timerMutex); 
+d464 1
+a464 1
+    MASTER_LOCK(timerMutex); 
+d474 1
+a474 1
+    MASTER_UNLOCK(timerMutex); 
+d509 1
+a509 1
+	MASTER_LOCK(timerMutex); 
+d515 1
+a515 1
+	MASTER_UNLOCK(timerMutex); 
+@
+
+
+6.5
+log
+@multiprocessor port
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 6.4 88/10/19 20:21:43 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+6.4
+log
+@checking this in for mendel. Looks like modified the initialization 
+procedure a bit.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: timerQueue.c,v 6.3 88/10/11 16:32:43 mendel Exp $ SPRITE (Berkeley)";
+d40 7
+d475 118
+@
+
+
+6.3
+log
+@Multiprocessor port.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: timerQueue.c,v 6.2 88/10/07 10:53:14 mendel Exp $ SPRITE (Berkeley)";
+a39 1
+
+a116 1
+    Timer_TimerInit(TIMER_CALLBACK_TIMER);
+d128 1
+@
+
+
+6.2
+log
+@Moved the devTimer routines into the timer module.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: timerQueue.c,v 6.1 88/09/06 14:25:13 nelson Exp $ SPRITE (Berkeley)";
+a38 2
+#include "dbg.h"
+#include "byte.h"
+a63 16
+ * The value to update the time of day at every timer interrupt.
+ * It equals the amount of time between callback timer interrupts.
+ */
+
+static Time todUpdate = {
+    0, TIMER_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
+};
+
+/*
+ * UpdateTimeOfDay() adjusts timerTimeOfDay to the real time of day.
+ */
+
+static void UpdateTimeOfDay();
+static Timer_QueueElement      updateElement;
+
+/*
+d74 9
+d110 8
+a117 1
+    Timer_CounterInit();
+d121 1
+a121 1
+    Byte_Zero(sizeof(timer_Statistics), (Address) &timer_Statistics);
+d127 1
+a127 2
+     * Add the routine to fix the time of day to the timer queue.
+     * The routine is called every 10 seconds.
+d129 1
+a129 4
+
+    updateElement.routine = UpdateTimeOfDay;
+    updateElement.interval = 10 * timer_IntOneSecond;
+    Timer_ScheduleRoutine(&updateElement, TRUE);
+a133 16
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateTimeOfDay --
+ *
+ *	Called from the timer queue to make timerTimeOfDay close
+ *	to the real current time as calculated by Timer_GetTimeOfDay.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	timerTimeOfDay is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+a134 8
+static void
+UpdateTimeOfDay()
+{
+    Timer_GetRealTimeOfDay(&timerTimeOfDay, (int *) NIL, (int *) NIL);
+    Timer_RescheduleRoutine(&updateElement, TRUE);
+}
+
+
+d158 1
+d175 1
+d177 3
+d181 1
+a181 1
+	    Vm_StoreTraceTime(timerTimeOfDay);
+@
+
+
+6.1
+log
+@Added call to gather disk idle time stats.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: timerQueue.c,v 5.4 88/07/17 15:47:42 nelson Exp $ SPRITE (Berkeley)";
+a33 1
+#include "devTimer.h"
+d41 1
+d71 1
+a71 1
+    0, DEV_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
+d119 2
+d136 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d206 1
+@
+
+
+5.4
+log
+@Added taking of time stamps with tracing
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: timerQueue.c,v 5.3 88/06/27 10:30:07 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.3
+log
+@Updated Copyright notice.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: timerQueue.c,v 5.2 88/06/06 11:38:15 mendel Exp $ SPRITE (Berkeley)";
+d202 3
+@
+
+
+5.2
+log
+@Move interrupt sevice routines into the dev.o module. Change old interrupt
+service routine into Timer_CallBack() that only processes the timer queue.
+@
+text
+@d17 8
+a24 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d28 1
+a28 1
+static char rcsid[] = "$Header: timerQueue.c,v 5.1 88/05/04 18:23:10 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Handles new mach module structure.
+@
+text
+@d6 1
+a6 1
+ *      The timer interrupt service routine is called at every timer
+d22 1
+a22 1
+static char rcsid[] = "$Header: timerQueue.c,v 5.0 87/08/11 10:51:44 sprite Exp $ SPRITE (Berkeley)";
+a36 4
+/* For profiling */
+#include "mach.h"
+#include "prof.h"
+
+d159 1
+a159 1
+ *  Timer_ServiceInterrupt --
+d161 2
+a162 2
+ *      This routine is called at every timer interrupt. 
+ *      It calls routines on the timer queue if the callback timer expired.
+d174 1
+a174 2
+Timer_ServiceInterrupt(stack)
+    Mach_IntrStack stack;
+a175 51
+    /*
+     *  Determine if the callback and profile timers have expired.
+     *  Dev_TimerExamineStatus has the side effect of clearing the timer's
+     *  "cause interrupt" bit if it was set. 
+     *
+     *  The profile timer is checked first because routines on the callback
+     *  queue might cause a delay in collecting profiling information.
+     */
+
+    int profiled = FALSE;
+    unsigned short timerStatus =  Dev_TimerGetStatus();
+    Boolean spurious;
+
+    if (Dev_TimerExamineStatus(timerStatus, DEV_PROFILE_TIMER, &spurious)) {
+	Prof_CollectInfo(&stack);
+	profiled = TRUE;
+#	ifdef GATHER_STAT
+	timer_Statistics.profile++;
+#	endif
+    } 
+
+    if (!Dev_TimerExamineStatus(timerStatus, DEV_CALLBACK_TIMER, &spurious)) {
+
+	if (!profiled) {
+
+	    /*
+	     * An unwanted timer interrupt was received but it wasn't
+	     * spurious (this is o.k. -- see devTimerSun3.c).
+	     */
+	    if (!spurious) {
+		return;
+	    } 
+
+	    /* Spurious interrupt!!! */
+	    timer_Statistics.spurious++;
+
+	    Sys_Printf("%c", 7);	/* ring the bell */
+
+#ifdef DEBUG
+	    array[count]= timerStatus & 0xff;
+	    count++;
+	    if (count >= SIZE) {
+		DBG_CALL;	 /* Timer_ServiceInterrupt */
+		count = 0;
+	    }
+#endif DEBUG
+
+	}
+
+    } else {
+
+d244 1
+a244 1
+    } 
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: timerQueue.c,v 4.1 87/06/12 15:00:15 nelson Exp $ SPRITE (Berkeley)";
+d38 1
+a38 1
+#include "exc.h"
+d179 1
+a179 1
+    Exc_IntrStack stack;
+@

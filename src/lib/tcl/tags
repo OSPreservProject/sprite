@@ -1,0 +1,229 @@
+AppendResult	tclGlob.c	/^AppendResult(interp, dir, name, nameLength)$/
+ArrayCreate	tclHash.c	/^ArrayCreate(tablePtr, key, newPtr)$/
+ArrayFind	tclHash.c	/^ArrayFind(tablePtr, key)$/
+BogusCreate	tclHash.c	/^BogusCreate(tablePtr, key, newPtr)$/
+BogusFind	tclHash.c	/^BogusFind(tablePtr, key)$/
+CallTraces	tclVar.c	/^CallTraces(iPtr, arrayPtr, hPtr, name1, name2, fla/
+CleanupChildren	tclUnixAZ.c	/^CleanupChildren(interp, numPids, pidPtr, errorId)$/
+CmdBuf	tclAssem.c	/^} CmdBuf;$/
+CmdInfo	tclBasic.c	/^} CmdInfo;$/
+DeleteArray	tclVar.c	/^DeleteArray(iPtr, arrayName, varPtr, flags)$/
+DeleteSearches	tclVar.c	/^DeleteSearches(arrayVarPtr)$/
+DoGlob	tclGlob.c	/^DoGlob(interp, dir, rem)$/
+DoRevs	tclHistory.c	/^DoRevs(iPtr)$/
+EnvInit	tclEnv.c	/^EnvInit()$/
+EnvInterp	tclEnv.c	/^} EnvInterp;$/
+EnvTraceProc	tclEnv.c	/^EnvTraceProc(clientData, interp, name1, name2, fla/
+ExprGetValue	tclExpr.c	/^ExprGetValue(interp, infoPtr, prec, valuePtr)$/
+ExprInfo	tclExpr.c	/^} ExprInfo;$/
+ExprLex	tclExpr.c	/^ExprLex(interp, infoPtr, valuePtr)$/
+ExprMakeString	tclExpr.c	/^ExprMakeString(valuePtr)$/
+ExprParseString	tclExpr.c	/^ExprParseString(interp, string, valuePtr)$/
+ExprTopLevel	tclExpr.c	/^ExprTopLevel(interp, string, valuePtr)$/
+FAIL	regexp.c	/^#define	FAIL(m)	{ regerror(m); return(NULL); }$/
+Field	tclCmdMZ.c	/^    } Field;$/
+FindVariable	tclEnv.c	/^FindVariable(name, lengthPtr)$/
+GetEvent	tclHistory.c	/^GetEvent(iPtr, string)$/
+GetWords	tclHistory.c	/^GetWords(iPtr, command, words)$/
+GlobResult	tclGlob.c	/^} GlobResult;$/
+HashString	tclHash.c	/^HashString(string)$/
+ISMULT	regexp.c	/^#define	ISMULT(c)	((c) == '*' || (c) == '+' || (c)/
+InsertRev	tclHistory.c	/^InsertRev(iPtr, revPtr)$/
+InterpProc	tclProc.c	/^InterpProc(clientData, interp, argc, argv)$/
+MakeSpace	tclHistory.c	/^MakeSpace(hPtr, size)$/
+MemoryCmd	tclCkalloc.c	/^MemoryCmd (clientData, interp, argc, argv)$/
+NEXT	regexp.c	/^#define	NEXT(p)	(((*((p)+1)&0377)<<8) + (*((p)+2)&/
+NewVar	tclVar.c	/^NewVar(space)$/
+OP	regexp.c	/^#define	OP(p)	(*(p))$/
+OPERAND	regexp.c	/^#define	OPERAND(p)	((p) + 3)$/
+OneWordCreate	tclHash.c	/^OneWordCreate(tablePtr, key, newPtr)$/
+OneWordFind	tclHash.c	/^OneWordFind(tablePtr, key)$/
+ParseSearchId	tclVar.c	/^ParseSearchId(interp, varPtr, varName, string)$/
+ProcDeleteProc	tclProc.c	/^ProcDeleteProc(clientData)$/
+QuoteEnd	tclParse.c	/^QuoteEnd(string, term)$/
+RANDOM_INDEX	tclHash.c	/^#define RANDOM_INDEX(tablePtr, i) \\$/
+RebuildTable	tclHash.c	/^RebuildTable(tablePtr)$/
+RevCommand	tclHistory.c	/^RevCommand(iPtr, string)$/
+RevResult	tclHistory.c	/^RevResult(iPtr, string)$/
+SetupAppendBuffer	tclUtil.c	/^SetupAppendBuffer(iPtr, newSpace)$/
+SortCompareProc	tclCmdIL.c	/^SortCompareProc(first, second)$/
+StringCreate	tclHash.c	/^StringCreate(tablePtr, key, newPtr)$/
+StringFind	tclHash.c	/^StringFind(tablePtr, key)$/
+SubsAndEval	tclHistory.c	/^SubsAndEval(iPtr, cmd, old, new)$/
+TclCompileRegexp	tclUtil.c	/^TclCompileRegexp(interp, string)$/
+TclCopyAndCollapse	tclUtil.c	/^TclCopyAndCollapse(count, src, dst)$/
+TclDeleteVars	tclVar.c	/^TclDeleteVars(iPtr, tablePtr)$/
+TclExpandParseValue	tclParse.c	/^TclExpandParseValue(pvPtr, needed)$/
+TclFindElement	tclUtil.c	/^TclFindElement(interp, list, elementPtr, nextPtr, /
+TclFindProc	tclProc.c	/^TclFindProc(iPtr, procName)$/
+TclGetFrame	tclProc.c	/^TclGetFrame(interp, string, framePtrPtr)$/
+TclGetListIndex	tclUtil.c	/^TclGetListIndex(interp, string, indexPtr)$/
+TclGetOpenFile	tclUnixUtil.c	/^TclGetOpenFile(interp, string, filePtrPtr)$/
+TclIsProc	tclProc.c	/^TclIsProc(cmdPtr)$/
+TclMakeFileTable	tclUnixUtil.c	/^TclMakeFileTable(iPtr, index)$/
+TclParseBraces	tclParse.c	/^TclParseBraces(interp, string, termPtr, pvPtr)$/
+TclParseNestedCmd	tclParse.c	/^TclParseNestedCmd(interp, string, flags, termPtr, /
+TclParseQuotes	tclParse.c	/^TclParseQuotes(interp, string, termChar, flags, te/
+TclParseWords	tclParse.c	/^TclParseWords(interp, string, flags, maxWords, ter/
+TclSetupEnv	tclEnv.c	/^TclSetupEnv(interp)$/
+TclWordEnd	tclParse.c	/^TclWordEnd(start, nested)$/
+Tcl_AddErrorInfo	tclBasic.c	/^Tcl_AddErrorInfo(interp, message)$/
+Tcl_AppendCmd	tclVar.c	/^Tcl_AppendCmd(dummy, interp, argc, argv)$/
+Tcl_AppendElement	tclUtil.c	/^Tcl_AppendElement(interp, string, noSep)$/
+Tcl_AppendResult	tclUtil.c	/^Tcl_AppendResult(interp, p, va_alist)$/
+Tcl_ArrayCmd	tclVar.c	/^Tcl_ArrayCmd(dummy, interp, argc, argv)$/
+Tcl_AssembleCmd	tclAssem.c	/^Tcl_AssembleCmd(buffer, string)$/
+Tcl_Backslash	tclParse.c	/^Tcl_Backslash(src, readPtr)$/
+Tcl_BreakCmd	tclCmdAH.c	/^Tcl_BreakCmd(dummy, interp, argc, argv)$/
+Tcl_CaseCmd	tclCmdAH.c	/^Tcl_CaseCmd(dummy, interp, argc, argv)$/
+Tcl_CatchCmd	tclCmdAH.c	/^Tcl_CatchCmd(dummy, interp, argc, argv)$/
+Tcl_CdCmd	tclUnixAZ.c	/^Tcl_CdCmd(dummy, interp, argc, argv)$/
+Tcl_Ckalloc	tclCkalloc.c	/^Tcl_Ckalloc (size)$/
+Tcl_Ckfree	tclCkalloc.c	/^Tcl_Ckfree (ptr)$/
+Tcl_CloseCmd	tclUnixAZ.c	/^Tcl_CloseCmd(dummy, interp, argc, argv)$/
+Tcl_Concat	tclUtil.c	/^Tcl_Concat(argc, argv)$/
+Tcl_ConcatCmd	tclCmdAH.c	/^Tcl_ConcatCmd(dummy, interp, argc, argv)$/
+Tcl_ContinueCmd	tclCmdAH.c	/^Tcl_ContinueCmd(dummy, interp, argc, argv)$/
+Tcl_ConvertElement	tclUtil.c	/^Tcl_ConvertElement(src, dst, flags)$/
+Tcl_CreateCmdBuf	tclAssem.c	/^Tcl_CreateCmdBuf()$/
+Tcl_CreateCommand	tclBasic.c	/^Tcl_CreateCommand(interp, cmdName, proc, clientDat/
+Tcl_CreateInterp	tclBasic.c	/^Tcl_CreateInterp()$/
+Tcl_CreatePipeline	tclUnixUtil.c	/^Tcl_CreatePipeline(interp, argc, argv, pidArrayPtr/
+Tcl_CreateTrace	tclBasic.c	/^Tcl_CreateTrace(interp, level, proc, clientData)$/
+Tcl_DbCkalloc	tclCkalloc.c	/^Tcl_DbCkalloc(size, file, line)$/
+Tcl_DbCkfree	tclCkalloc.c	/^Tcl_DbCkfree(ptr, file, line)$/
+Tcl_DeleteCmdBuf	tclAssem.c	/^Tcl_DeleteCmdBuf(buffer)$/
+Tcl_DeleteCommand	tclBasic.c	/^Tcl_DeleteCommand(interp, cmdName)$/
+Tcl_DeleteHashEntry	tclHash.c	/^Tcl_DeleteHashEntry(entryPtr)$/
+Tcl_DeleteHashTable	tclHash.c	/^Tcl_DeleteHashTable(tablePtr)$/
+Tcl_DeleteInterp	tclBasic.c	/^Tcl_DeleteInterp(interp)$/
+Tcl_DeleteTrace	tclBasic.c	/^Tcl_DeleteTrace(interp, trace)$/
+Tcl_DetachPids	tclUnixUtil.c	/^Tcl_DetachPids(numPids, pidPtr)$/
+Tcl_DumpActiveMemory	tclCkalloc.c	/^Tcl_DumpActiveMemory (fileName)$/
+Tcl_EofCmd	tclUnixAZ.c	/^Tcl_EofCmd(notUsed, interp, argc, argv)$/
+Tcl_ErrnoId	tclUnixStr.c	/^Tcl_ErrnoId()$/
+Tcl_ErrorCmd	tclCmdAH.c	/^Tcl_ErrorCmd(dummy, interp, argc, argv)$/
+Tcl_Eval	tclBasic.c	/^Tcl_Eval(interp, cmd, flags, termPtr)$/
+Tcl_EvalCmd	tclCmdAH.c	/^Tcl_EvalCmd(dummy, interp, argc, argv)$/
+Tcl_EvalFile	tclUnixUtil.c	/^Tcl_EvalFile(interp, fileName)$/
+Tcl_ExecCmd	tclUnixAZ.c	/^Tcl_ExecCmd(dummy, interp, argc, argv)$/
+Tcl_ExitCmd	tclUnixAZ.c	/^Tcl_ExitCmd(dummy, interp, argc, argv)$/
+Tcl_ExprBoolean	tclExpr.c	/^Tcl_ExprBoolean(interp, string, ptr)$/
+Tcl_ExprCmd	tclCmdAH.c	/^Tcl_ExprCmd(dummy, interp, argc, argv)$/
+Tcl_ExprDouble	tclExpr.c	/^Tcl_ExprDouble(interp, string, ptr)$/
+Tcl_ExprLong	tclExpr.c	/^Tcl_ExprLong(interp, string, ptr)$/
+Tcl_ExprString	tclExpr.c	/^Tcl_ExprString(interp, string)$/
+Tcl_FileCmd	tclUnixAZ.c	/^Tcl_FileCmd(dummy, interp, argc, argv)$/
+Tcl_FirstHashEntry	tclHash.c	/^Tcl_FirstHashEntry(tablePtr, searchPtr)$/
+Tcl_FlushCmd	tclUnixAZ.c	/^Tcl_FlushCmd(notUsed, interp, argc, argv)$/
+Tcl_ForCmd	tclCmdAH.c	/^Tcl_ForCmd(dummy, interp, argc, argv)$/
+Tcl_ForeachCmd	tclCmdAH.c	/^Tcl_ForeachCmd(dummy, interp, argc, argv)$/
+Tcl_Fork	tclUnixUtil.c	/^Tcl_Fork()$/
+Tcl_FormatCmd	tclCmdAH.c	/^Tcl_FormatCmd(dummy, interp, argc, argv)$/
+Tcl_GetBoolean	tclGet.c	/^Tcl_GetBoolean(interp, string, boolPtr)$/
+Tcl_GetDouble	tclGet.c	/^Tcl_GetDouble(interp, string, doublePtr)$/
+Tcl_GetInt	tclGet.c	/^Tcl_GetInt(interp, string, intPtr)$/
+Tcl_GetVar	tclVar.c	/^Tcl_GetVar(interp, varName, flags)$/
+Tcl_GetVar2	tclVar.c	/^Tcl_GetVar2(interp, name1, name2, flags)$/
+Tcl_GetsCmd	tclUnixAZ.c	/^Tcl_GetsCmd(notUsed, interp, argc, argv)$/
+Tcl_GlobCmd	tclGlob.c	/^Tcl_GlobCmd(dummy, interp, argc, argv)$/
+Tcl_GlobalCmd	tclVar.c	/^Tcl_GlobalCmd(dummy, interp, argc, argv)$/
+Tcl_HashStats	tclHash.c	/^Tcl_HashStats(tablePtr)$/
+Tcl_HistoryCmd	tclHistory.c	/^Tcl_HistoryCmd(dummy, interp, argc, argv)$/
+Tcl_IfCmd	tclCmdIL.c	/^Tcl_IfCmd(dummy, interp, argc, argv)$/
+Tcl_IncrCmd	tclCmdIL.c	/^Tcl_IncrCmd(dummy, interp, argc, argv)$/
+Tcl_InfoCmd	tclCmdIL.c	/^Tcl_InfoCmd(dummy, interp, argc, argv)$/
+Tcl_InitHashTable	tclHash.c	/^Tcl_InitHashTable(tablePtr, keyType)$/
+Tcl_InitHistory	tclHistory.c	/^Tcl_InitHistory(interp)$/
+Tcl_InitMemory	tclCkalloc.c	/^Tcl_InitMemory(interp)$/
+Tcl_JoinCmd	tclCmdIL.c	/^Tcl_JoinCmd(dummy, interp, argc, argv)$/
+Tcl_LappendCmd	tclVar.c	/^Tcl_LappendCmd(dummy, interp, argc, argv)$/
+Tcl_LindexCmd	tclCmdIL.c	/^Tcl_LindexCmd(dummy, interp, argc, argv)$/
+Tcl_LinsertCmd	tclCmdIL.c	/^Tcl_LinsertCmd(dummy, interp, argc, argv)$/
+Tcl_ListCmd	tclCmdIL.c	/^Tcl_ListCmd(dummy, interp, argc, argv)$/
+Tcl_LlengthCmd	tclCmdIL.c	/^Tcl_LlengthCmd(dummy, interp, argc, argv)$/
+Tcl_LrangeCmd	tclCmdIL.c	/^Tcl_LrangeCmd(notUsed, interp, argc, argv)$/
+Tcl_LreplaceCmd	tclCmdIL.c	/^Tcl_LreplaceCmd(notUsed, interp, argc, argv)$/
+Tcl_LsearchCmd	tclCmdIL.c	/^Tcl_LsearchCmd(notUsed, interp, argc, argv)$/
+Tcl_LsortCmd	tclCmdIL.c	/^Tcl_LsortCmd(notUsed, interp, argc, argv)$/
+Tcl_Merge	tclUtil.c	/^Tcl_Merge(argc, argv)$/
+Tcl_NextHashEntry	tclHash.c	/^Tcl_NextHashEntry(searchPtr)$/
+Tcl_OpenCmd	tclUnixAZ.c	/^Tcl_OpenCmd(notUsed, interp, argc, argv)$/
+Tcl_ParseVar	tclParse.c	/^Tcl_ParseVar(interp, string, termPtr)$/
+Tcl_ProcCmd	tclProc.c	/^Tcl_ProcCmd(dummy, interp, argc, argv)$/
+Tcl_PutsCmd	tclUnixAZ.c	/^Tcl_PutsCmd(dummy, interp, argc, argv)$/
+Tcl_PwdCmd	tclUnixAZ.c	/^Tcl_PwdCmd(dummy, interp, argc, argv)$/
+Tcl_ReadCmd	tclUnixAZ.c	/^Tcl_ReadCmd(dummy, interp, argc, argv)$/
+Tcl_RecordAndEval	tclHistory.c	/^Tcl_RecordAndEval(interp, cmd, flags)$/
+Tcl_RegexpCmd	tclCmdMZ.c	/^Tcl_RegexpCmd(dummy, interp, argc, argv)$/
+Tcl_RegsubCmd	tclCmdMZ.c	/^Tcl_RegsubCmd(dummy, interp, argc, argv)$/
+Tcl_RenameCmd	tclCmdMZ.c	/^Tcl_RenameCmd(dummy, interp, argc, argv)$/
+Tcl_ResetResult	tclUtil.c	/^Tcl_ResetResult(interp)$/
+Tcl_ReturnCmd	tclCmdMZ.c	/^Tcl_ReturnCmd(dummy, interp, argc, argv)$/
+Tcl_ScanCmd	tclCmdMZ.c	/^Tcl_ScanCmd(dummy, interp, argc, argv)$/
+Tcl_ScanElement	tclUtil.c	/^Tcl_ScanElement(string, flagPtr)$/
+Tcl_SeekCmd	tclUnixAZ.c	/^Tcl_SeekCmd(notUsed, interp, argc, argv)$/
+Tcl_SetCmd	tclVar.c	/^Tcl_SetCmd(dummy, interp, argc, argv)$/
+Tcl_SetErrorCode	tclUtil.c	/^Tcl_SetErrorCode(interp, p, va_alist)$/
+Tcl_SetResult	tclUtil.c	/^Tcl_SetResult(interp, string, freeProc)$/
+Tcl_SetVar	tclVar.c	/^Tcl_SetVar(interp, varName, newValue, flags)$/
+Tcl_SetVar2	tclVar.c	/^Tcl_SetVar2(interp, name1, name2, newValue, flags)/
+Tcl_SignalId	tclUnixStr.c	/^Tcl_SignalId(sig)$/
+Tcl_SignalMsg	tclUnixStr.c	/^Tcl_SignalMsg(sig)$/
+Tcl_SourceCmd	tclUnixAZ.c	/^Tcl_SourceCmd(dummy, interp, argc, argv)$/
+Tcl_SplitCmd	tclCmdMZ.c	/^Tcl_SplitCmd(dummy, interp, argc, argv)$/
+Tcl_SplitList	tclUtil.c	/^Tcl_SplitList(interp, list, argcPtr, argvPtr)$/
+Tcl_StringCmd	tclCmdMZ.c	/^Tcl_StringCmd(dummy, interp, argc, argv)$/
+Tcl_StringMatch	tclUtil.c	/^Tcl_StringMatch(string, pattern)$/
+Tcl_TellCmd	tclUnixAZ.c	/^Tcl_TellCmd(notUsed, interp, argc, argv)$/
+Tcl_TildeSubst	tclGlob.c	/^Tcl_TildeSubst(interp, name)$/
+Tcl_TimeCmd	tclUnixAZ.c	/^Tcl_TimeCmd(dummy, interp, argc, argv)$/
+Tcl_TraceCmd	tclCmdMZ.c	/^Tcl_TraceCmd(dummy, interp, argc, argv)$/
+Tcl_TraceVar	tclVar.c	/^Tcl_TraceVar(interp, varName, flags, proc, clientD/
+Tcl_TraceVar2	tclVar.c	/^Tcl_TraceVar2(interp, name1, name2, flags, proc, c/
+Tcl_UnixError	tclUnixUtil.c	/^Tcl_UnixError(interp)$/
+Tcl_UnsetCmd	tclVar.c	/^Tcl_UnsetCmd(dummy, interp, argc, argv)$/
+Tcl_UnsetVar	tclVar.c	/^Tcl_UnsetVar(interp, varName, flags)$/
+Tcl_UnsetVar2	tclVar.c	/^Tcl_UnsetVar2(interp, name1, name2, flags)$/
+Tcl_UntraceVar	tclVar.c	/^Tcl_UntraceVar(interp, varName, flags, proc, clien/
+Tcl_UntraceVar2	tclVar.c	/^Tcl_UntraceVar2(interp, name1, name2, flags, proc,/
+Tcl_UplevelCmd	tclProc.c	/^Tcl_UplevelCmd(dummy, interp, argc, argv)$/
+Tcl_UpvarCmd	tclVar.c	/^Tcl_UpvarCmd(dummy, interp, argc, argv)$/
+Tcl_ValidateAllMemory	tclCkalloc.c	/^Tcl_ValidateAllMemory (file, line)$/
+Tcl_VarEval	tclBasic.c	/^Tcl_VarEval(interp, p, va_alist)$/
+Tcl_VarTraceInfo	tclVar.c	/^Tcl_VarTraceInfo(interp, varName, flags, proc, pre/
+Tcl_VarTraceInfo2	tclVar.c	/^Tcl_VarTraceInfo2(interp, name1, name2, flags, pro/
+Tcl_WaitPids	tclUnixUtil.c	/^Tcl_WaitPids(numPids, pidPtr, statusPtr)$/
+Tcl_WhileCmd	tclCmdMZ.c	/^Tcl_WhileCmd(dummy, interp, argc, argv)$/
+TraceVarInfo	tclCmdMZ.c	/^} TraceVarInfo;$/
+TraceVarProc	tclCmdMZ.c	/^TraceVarProc(clientData, interp, name1, name2, fla/
+UCHARAT	regexp.c	/^#define	UCHARAT(p)	((int)*(unsigned char *)(p))$/
+ValidateMemory	tclCkalloc.c	/^ValidateMemory (memHeaderP, file, line, nukeGuards/
+Value	tclExpr.c	/^} Value;$/
+VarErrMsg	tclVar.c	/^VarErrMsg(interp, name1, name2, operation, reason)/
+VarNameEnd	tclParse.c	/^VarNameEnd(string)$/
+WaitInfo	tclUnixUtil.c	/^} WaitInfo;$/
+dump_memory_info	tclCkalloc.c	/^dump_memory_info(outFile) $/
+mem_header	tclCkalloc.c	/^struct mem_header {$/
+panic	panic.c	/^panic(format, arg1, arg2, arg3, arg4, arg5, arg6, /
+reg	regexp.c	/^reg(paren, flagp)$/
+regatom	regexp.c	/^regatom(flagp)$/
+regbranch	regexp.c	/^regbranch(flagp)$/
+regc	regexp.c	/^regc(b)$/
+regcomp	regexp.c	/^regcomp(exp)$/
+regdump	regexp.c	/^regdump(r)$/
+regerror	tclUtil.c	/^regerror(string)$/
+regexec	regexp.c	/^regexec(prog, string)$/
+reginsert	regexp.c	/^reginsert(op, opnd)$/
+regmatch	regexp.c	/^regmatch(prog)$/
+regnext	regexp.c	/^regnext(p)$/
+regnode	regexp.c	/^regnode(op)$/
+regoptail	regexp.c	/^regoptail(p, val)$/
+regpiece	regexp.c	/^regpiece(flagp)$/
+regprop	regexp.c	/^regprop(op)$/
+regrepeat	regexp.c	/^regrepeat(p)$/
+regtail	regexp.c	/^regtail(p, val)$/
+regtry	regexp.c	/^regtry(prog, string)$/
+setenv	tclEnv.c	/^setenv(name, value)$/
+strcspn	regexp.c	/^strcspn(s1, s2)$/
+unsetenv	tclEnv.c	/^unsetenv(name)$/

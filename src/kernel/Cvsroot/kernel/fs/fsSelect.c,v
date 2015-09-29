@@ -1,0 +1,2451 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.13 sun3:9.13 sprited:9.6.1 sun4nw:9.13 symm:9.13 spur:9.13 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     91.10.18.12.13.03;  author shirriff;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.10.11.13.39.39;  author shirriff;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.10.10.22.32.30;  author shirriff;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.10.08.13.50.47;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.09.24.21.24.11;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.09.10.18.22.44;  author rab;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.08.14.18.09.53;  author mottsmth;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.08.08.11.51.59;  author shirriff;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     91.07.26.16.58.51;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.12.13.17.24.57;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.12.13.17.17.44;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.12.07.23.43.24;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.08.11.18.32;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.03.09;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.21.15.22.43;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.03.03.12.41.38;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.28.08.50.34;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.24.10.43.36;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.23.11;  author douglis;  state Stable;
+branches 8.0.1.1;
+next     7.0;
+
+7.0
+date     88.11.11.15.33.46;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.18.08;  author brent;  state Stable;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.05.17.35.01;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.05.03.15.21.38;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.28.08.55.14;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.41.21;  author brent;  state Exp;
+branches ;
+next     ;
+
+8.0.1.1
+date     89.03.24.16.48.43;  author brent;  state Exp;
+branches ;
+next     8.0.1.2;
+
+8.0.1.2
+date     89.03.29.15.58.11;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.11.15.13.30.31;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@The select main loop.
+@
+
+
+9.13
+log
+@Fixed a bug in Fs_Select.  Changed the code so that the compatibility
+select would still do the right thing.
+@
+text
+@/* 
+ * fsSelect.c --
+ *
+ *	Routines to implement the Fs_Select system call.
+ *
+ *	Features:
+ *	1) There is a limit on the number of streams that can be selected.
+ *	   (This routine silently limits it to 1024.)
+ *	2) If the 3 bit masks are NULL, and the timeout value is not 0, 
+ *	   then Sync_WaitTime is called to wait and FS_TIMEOUT is returned
+ *	   with numReady = 0.
+ *	3) The file-type select routine must handle an empty inFlags value
+ *	   by setting outFlags to 0.
+ *	4) If all bits are cleared in the bit masks, SUCCESS is returned
+ *	   with numReady = 0.
+
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.12 91/10/11 13:39:39 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+#endif not lint
+
+#define MACH_UNIX_COMPAT
+
+#include <sprite.h>
+#include <stdio.h>
+#include <errno.h>
+#include <assert.h>
+#include <mach.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsUnixStubs.h>
+#include <procUnixStubs.h>
+#include <fsio.h>
+#include <sync.h>
+#include <list.h>
+#include <proc.h>
+#include <sig.h>
+#include <dbg.h>
+#include <timer.h>
+#include <rpc.h>
+#include <vm.h>
+
+static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
+        "ENXIO", "E2BIG", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM",
+        "EACCES", "EFAULT", "ENOTBLK", "EBUSY", "EEXIST", "EXDEV", "ENODEV",
+        "ENOTDIR", "EISDIR", "EINVAL", "ENFILE", "EMFILE", "ENOTTY",
+        "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK", "EPIPE",
+        "EDOM", "ERANGE", "EWOULDBLOCK", "EINPROGRESS", "EALREADY", "ENOTSOCK",
+        "EDESTADDRREQ", "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT",
+        "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "EOPNOTSUPP", "EPFNOSUPPORT",
+        "EAFNOSUPPORT", "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN",
+        "ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS",
+        "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETIMEDOUT", "ECONNREFUSED",
+        "ELOOP", "ENAMETOOLONG", "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY",
+        "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
+
+#undef Mach_SetErrno
+#define Mach_SetErrno(err) if (debugFsStubs) { \
+        printf("Error %d (%s) at %d in %s\n", err,\
+        err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
+        __LINE__, __FILE__); } Proc_GetActualProc()->unixErrno = (err)
+
+/*
+ * Internal limit on the number of streams that can be checked.
+ * This needs to be moved to an external header file!!
+ */
+#define MAX_NUM_STREAMS		1024
+
+/*
+ * Number of bits within a row of the bitmask. Assumes a row
+ * is a 32-bit integer.
+ */
+#define BITS_PER_ROW	32
+
+/*
+ * Maximum number of rows of bitmasks.
+ */
+#define MAX_NUM_ROWS	(MAX_NUM_STREAMS / BITS_PER_ROW)
+
+
+/*
+ * Structure passed to the timeout proc to allow the process to be woken up.
+ */
+typedef struct {
+    Proc_ControlBlock	*procPtr;
+    int			timeOut;
+} WakeupInfo;
+
+/*
+ * Routine called in FsSelect if the call timed-out.
+ */
+static void TimeoutProc _ARGS_((Timer_Ticks ticks, ClientData clientData));
+
+static ReturnStatus readInMasks _ARGS_ ((int wordsInMask, int *userReadMaskPtr,
+    int *readMaskPtr, int *userWriteMaskPtr, int *writeMaskPtr,
+    int *userExceptMaskPtr, int *exceptMaskPtr));
+
+static ReturnStatus writeOutMasks _ARGS_ ((int wordsInMask,
+    int *userReadMaskPtr, int *readMaskPtr, int *userWriteMaskPtr, 
+    int *writeMaskPtr, int *userExceptMaskPtr, int *exceptMaskPtr));
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SelectStub --
+ *
+ *      This is the stub for the Fs_Select system call. The bitmasks
+ *	are examined to see if the corresponding stream is readble, writable,
+ *	and/or has an exception condition pending. The user may give a
+ *	timeout period to limit the amount of time to wait.
+ *	This stub checks descriptors 0 to numStreams.
+ *	There is a bug here, that we check one descriptor too many, compared
+ *	to the Unix select.  However, we read in the number of bytes for
+ *	0 to numStreams-1.  This can't be fixed without breaking user
+ *	programs, so we're leaving it the way it is.
+ *
+ * Results:
+ *	SUCCESS			- the operation was successful.
+ *	FS_TIMEOUT		- if a timeout period was specified, and no
+ *			  	  streams were ready within the time-out period.
+ *	SYS_ARG_NOACCESS	- an invalid address for an argument was
+ *				  given.
+ *	SYS_INVALID_ARG		- an invalid stream ID was given in one
+ *				  of the bitmaps.
+ *	GEN_ABORTED_BY_SIGNAL	- a signal came in.
+ *
+ * Side effects:
+ *	The process may be put to sleep.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr, 
+	userExceptMaskPtr, numReadyPtr)
+    int		numStreams;	/* The length in bits of the read and write 
+				 * masks. */
+    Time	*userTimeoutPtr;/* Timer value indicating timeout period or
+				 * USER_NIL if no timeout. (in/out) */
+    int		*userReadMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for readability. (in/out) */
+    int		*userWriteMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for writability. (in/out) */
+    int		*userExceptMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for exception conditions. (in/out) */
+    int		*numReadyPtr;	/* On return indicates the number of streams
+				 * ready for I/O. (out) */
+
+{
+    Time		timeout;	/* Copy of *userTimeoutPtr. */
+    Time                *timeoutPtr;
+    int                 numReady = 0;
+    int                 doTimeout;
+    ReturnStatus        status, writeStatus;
+    int			inReadMasks[MAX_NUM_ROWS];
+    int			inWriteMasks[MAX_NUM_ROWS];
+    int			inExceptMasks[MAX_NUM_ROWS];
+    int			outReadMasks[MAX_NUM_ROWS];
+    int			outWriteMasks[MAX_NUM_ROWS];
+    int			outExceptMasks[MAX_NUM_ROWS];
+    int                 *inReadMaskPtr;
+    int                 *outReadMaskPtr;
+    int                 *inWriteMaskPtr;
+    int                 *outWriteMaskPtr;
+    int                 *inExceptMaskPtr;
+    int                 *outExceptMaskPtr;
+    int			wordsInMask;
+
+
+    /*
+     * Make sure the number of streams is in the proper range.
+     */
+    if (numStreams < 0) {
+	return(SYS_INVALID_ARG);
+    } else if (numStreams > MAX_NUM_STREAMS) {
+	numStreams = MAX_NUM_STREAMS;
+    }
+
+    if ((userReadMaskPtr == (int *) USER_NIL) &&
+        (userWriteMaskPtr == (int *) USER_NIL) &&
+        (userExceptMaskPtr == (int *) USER_NIL)) {
+	numStreams = -1;
+    }
+
+    if (userTimeoutPtr == (Time *) USER_NIL) {
+	timeoutPtr = (Time *) NIL;
+    } else {
+	if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
+				(Address) &timeout) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+	timeoutPtr = &timeout;
+    }
+    if (userReadMaskPtr == USER_NIL) {
+	inReadMaskPtr = (int *) NIL;
+	outReadMaskPtr = (int *) NIL;
+    } else {
+	inReadMaskPtr = inReadMasks;
+	outReadMaskPtr = outReadMasks;
+    }
+    if (userWriteMaskPtr == USER_NIL) {
+	inWriteMaskPtr = (int *) NIL;
+	outWriteMaskPtr = (int *) NIL;
+    } else {
+	inWriteMaskPtr = inWriteMasks;
+	outWriteMaskPtr = outWriteMasks;
+    }
+    if (userExceptMaskPtr == USER_NIL) {
+	inExceptMaskPtr = (int *) NIL;
+	outExceptMaskPtr = (int *) NIL;
+    } else {
+	inExceptMaskPtr = inExceptMasks;
+	outExceptMaskPtr = outExceptMasks;
+    }
+    wordsInMask = (numStreams+(BITS_PER_ROW-1))/BITS_PER_ROW;
+    status = readInMasks(wordsInMask, userReadMaskPtr, inReadMaskPtr,
+	userWriteMaskPtr, inWriteMaskPtr, userExceptMaskPtr, inExceptMaskPtr);
+    if (status != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    status = Fs_Select(numStreams, wordsInMask, timeoutPtr, inReadMaskPtr,
+	outReadMaskPtr,
+	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
+	&numReady, &doTimeout);
+    if (status == SUCCESS || status == FS_TIMEOUT) {
+	writeStatus = writeOutMasks(wordsInMask, userReadMaskPtr,
+		outReadMaskPtr, userWriteMaskPtr, outWriteMaskPtr,
+	       userExceptMaskPtr, outExceptMaskPtr);
+	if (status == SUCCESS && doTimeout && writeStatus==SUCCESS) {
+	    writeStatus = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+	                        (Address) userTimeoutPtr);
+	}
+	if (writeStatus != SUCCESS) {
+	    status = SYS_ARG_NOACCESS;
+	}
+    }
+    if (Vm_CopyOut(sizeof(*numReadyPtr), (Address) &numReady, 
+                   (Address) numReadyPtr) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewSelectStub --
+ *
+ *      The stub for the "select" Unix system call in Unix compatibility.
+ *	This stub checks descriptors 0 to numStreams-1.
+ *
+ * Results:
+ *      Returns -1 on failure.
+ *
+ * Side effects:
+ *      Side effects associated with the system call.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
+              userExceptMaskPtr, userTimeoutPtr)
+    int		numStreams;	/* The length in bits of the read and write 
+				 * masks. */
+    int		*userReadMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for readability. (in/out) */
+    int		*userWriteMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for writability. (in/out) */
+    int		*userExceptMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for exception conditions. (in/out) */
+    Time	*userTimeoutPtr;/* Timer value indicating timeout period or
+				 * USER_NIL if no timeout. (in/out) */
+
+{
+    extern int          debugFsStubs;
+    int                 doTimeout;
+    ReturnStatus        status, writeStatus;
+    int			numReady=0;
+    Time		timeout;	/* Copy of *userTimeoutPtr. */
+    Time                *timeoutPtr;
+    int			inReadMasks[MAX_NUM_ROWS];
+    int			inWriteMasks[MAX_NUM_ROWS];
+    int			inExceptMasks[MAX_NUM_ROWS];
+    int			outReadMasks[MAX_NUM_ROWS];
+    int			outWriteMasks[MAX_NUM_ROWS];
+    int			outExceptMasks[MAX_NUM_ROWS];
+    int                 *inReadMaskPtr;
+    int                 *outReadMaskPtr;
+    int                 *inWriteMaskPtr;
+    int                 *outWriteMaskPtr;
+    int                 *inExceptMaskPtr;
+    int                 *outExceptMaskPtr;
+    int			wordsInMask;
+
+    if (debugFsStubs) {
+	printf("Fs_NewSelectStub(%d, %x, %x, %x, %x)\n", numStreams,
+		userReadMaskPtr, userWriteMaskPtr, userExceptMaskPtr,
+		userTimeoutPtr);
+    }
+
+    /*
+     * Unfortunately we have to duplicate a whole bunch of code from
+     * Fs_SelectStub, since it has a bug we can't change.
+     */
+
+    /*
+     * Make sure the number of streams is in the proper range.
+     */
+    if (numStreams < 0) {
+	Mach_SetErrno(EINVAL);
+	return -1;
+    } else if (numStreams > MAX_NUM_STREAMS) {
+	numStreams = MAX_NUM_STREAMS;
+    }
+
+    if ((userReadMaskPtr == (int *) USER_NIL) &&
+        (userWriteMaskPtr == (int *) USER_NIL) &&
+        (userExceptMaskPtr == (int *) USER_NIL)) {
+	numStreams = -1;
+    }
+
+    if (userTimeoutPtr == (Time *) USER_NIL) {
+	timeoutPtr = (Time *) NIL;
+    } else {
+	if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
+				(Address) &timeout) != SUCCESS) {
+	    Mach_SetErrno(EFAULT);
+	    return -1;
+	}
+	timeoutPtr = &timeout;
+    }
+    if (userReadMaskPtr == USER_NIL) {
+	inReadMaskPtr = (int *) NIL;
+	outReadMaskPtr = (int *) NIL;
+    } else {
+	inReadMaskPtr = inReadMasks;
+	outReadMaskPtr = outReadMasks;
+    }
+    if (userWriteMaskPtr == USER_NIL) {
+	inWriteMaskPtr = (int *) NIL;
+	outWriteMaskPtr = (int *) NIL;
+    } else {
+	inWriteMaskPtr = inWriteMasks;
+	outWriteMaskPtr = outWriteMasks;
+    }
+    if (userExceptMaskPtr == USER_NIL) {
+	inExceptMaskPtr = (int *) NIL;
+	outExceptMaskPtr = (int *) NIL;
+    } else {
+	inExceptMaskPtr = inExceptMasks;
+	outExceptMaskPtr = outExceptMasks;
+    }
+
+    wordsInMask = (numStreams+(BITS_PER_ROW-1))/BITS_PER_ROW;
+    status = readInMasks(wordsInMask, userReadMaskPtr, inReadMaskPtr,
+	userWriteMaskPtr, inWriteMaskPtr, userExceptMaskPtr, inExceptMaskPtr);
+    if (status != SUCCESS) {
+	Mach_SetErrno(EFAULT);
+	return -1;
+    }
+    status = Fs_Select(numStreams-1, wordsInMask, timeoutPtr, inReadMaskPtr,
+	outReadMaskPtr,
+	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
+	&numReady, &doTimeout);
+    if (status == SUCCESS || status == FS_TIMEOUT) {
+	writeStatus = writeOutMasks(wordsInMask, userReadMaskPtr,
+		outReadMaskPtr, userWriteMaskPtr, outWriteMaskPtr,
+		userExceptMaskPtr, outExceptMaskPtr);
+	if (status == SUCCESS && doTimeout && writeStatus==SUCCESS) {
+	    writeStatus = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+	                        (Address) userTimeoutPtr);
+	}
+	if (writeStatus != SUCCESS) {
+	    status = SYS_ARG_NOACCESS;
+	}
+    }
+    if (status == SUCCESS) {
+	return numReady;
+    } else if (status == GEN_ABORTED_BY_SIGNAL) {
+	Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_MIG_RESTART;
+	Mach_SetErrno(EINTR);
+	return -1;
+    } else if (status == FS_TIMEOUT) {
+	return 0;
+    } else {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Select --
+ *
+ *      The internal select system call.
+ *	This stub checks descriptors 0 to numStreams.
+ *	If numStreams is -1, it will wait for timeout, but not check anything.
+ *
+ * Results:
+ *      Returns ReturnStatus.
+ *
+ * Side effects:
+ *      Side effects associated with the system call.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fs_Select(numStreams, wordsInMask, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+    inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
+    numReadyPtr, doTimeoutPtr)
+    int		numStreams;	/* The length in bits of the read and write 
+				 * masks. */
+    int		wordsInMask;	/* Number of words in the masks. */
+    Time	*timeoutPtr;    /* Timer value indicating timeout period or
+				 * NIL if no timeout. (in/out) */
+    int		*inReadMaskPtr;
+    int		*outReadMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for readability. (in/out) */
+    int		*inWriteMaskPtr;
+    int		*outWriteMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for writability. (in/out) */
+    int		*inExceptMaskPtr;
+    int		*outExceptMaskPtr;
+				/* A bitmask indicating stream ID's to check
+				 * for exception conditions. (in/out) */
+    int		*numReadyPtr;	/* On return indicates the number of streams
+				 * ready for I/O. (out) */
+    int         *doTimeoutPtr;				 
+
+{
+    Proc_ControlBlock	*procPtr;	/* This proc's control block */
+    Timer_QueueElement	wakeupElement;	/* Element for timeout. */
+    WakeupInfo		wakeupInfo;	/* Passed to timeout routine. */
+    Sync_RemoteWaiter	waiter;
+    int			row;		/* Index of row of inReadMasks,
+					 * inWriteMasks, inExceptMasks. */
+    register int	mask;		/* Selects bit within a row of
+					 * inReadMasks, inWriteMasks,
+					 * inExceptMasks. */
+    register int	inReadMask = 0;	/* Contents of a row of inReadMasks. */
+    register int	inWriteMask = 0;/* Contents of a row of inWriteMasks. */
+    int			inExceptMask = 0;/* Content of a row of inExceptMasks.*/
+    register int	bit;		/* Loop counter */
+    int			bitMax;		/* Loop terminating condition */
+    Boolean		poll;		/* If TRUE, don't wait if the first
+					 * check of streams finds that none
+					 * are ready now. */
+    int			s;		/* Temp copy of numStreams */
+    ReturnStatus	status = SUCCESS;
+
+    /*
+     * If all the masks are NIL, then there aren't any streams to select.
+     * Set the numStreams to -1 so we can see if we can return once the
+     * timeout argument is examined.
+     */
+    if ((inReadMaskPtr == (int *) NIL) &&
+        (inWriteMaskPtr == (int *) NIL) &&
+        (inExceptMaskPtr == (int *) NIL)) {
+	numStreams = -1;
+    }
+
+    /*
+     * See if a timeout period was given. If so, set up a timer
+     * queue element to call TimeoutProc to wakeup the process.
+     * If the timeout is 0 or negative, just poll the streams to
+     * see if any are ready.
+     */
+
+    if (timeoutPtr == (Time *) NIL) {
+	poll = FALSE;
+	*doTimeoutPtr = FALSE;
+    } else {
+	if ((timeoutPtr->seconds < 0) || 
+	    ((timeoutPtr->seconds == 0) && (timeoutPtr->microseconds == 0))) {
+
+	    /*
+	     * A zero or negative time was given. Assume the user wants to
+	     * poll the streams.
+	     */
+	    *doTimeoutPtr = FALSE;
+	    poll = TRUE;
+
+	} else if (numStreams == -1) {
+
+	    /*
+	     * Special case: nothing to select, but a valid timeout period
+	     * was specified. Just wait for the timeout to expire.
+	     */
+	    if (Sync_WaitTime(*timeoutPtr)) {
+		return GEN_ABORTED_BY_SIGNAL;
+	    } else {
+		return FS_TIMEOUT;
+	    }
+	} else {
+	    Timer_Ticks ticks;
+	    Timer_Ticks currentTicks;
+	    wakeupElement.routine = TimeoutProc;
+
+	    /*
+	     * Convert the user's timeout value from a relative Time to a 
+	     * an absolute time in the internal Timer_Ticks units.
+	     *
+	     * The value wakeupElement.time is used at the end of this
+	     * routine to return the amount of time remaining in the timeout.
+	     */
+	    Timer_TimeToTicks(*timeoutPtr, &ticks);
+	    Timer_GetCurrentTicks(&currentTicks);
+	    Timer_AddTicks(currentTicks, ticks, &(wakeupElement.time));
+	    poll = FALSE;
+	    *doTimeoutPtr = TRUE;
+	}
+    }
+
+    /*
+     * Nothing to select and no timeout specified so just return.
+     */
+    if (numStreams == -1) {
+	return status;
+    }
+
+    procPtr = Proc_GetCurrentProc();
+
+    /*
+     * If a timeout period was specified, set up a callback from the Timer 
+     * queue.
+     */
+    wakeupInfo.timeOut = FALSE;
+    if (*doTimeoutPtr) {
+	wakeupElement.clientData = (ClientData) &wakeupInfo;
+	wakeupInfo.procPtr = procPtr;
+	Timer_ScheduleRoutine(&wakeupElement, FALSE);
+    }
+
+    waiter.hostID = rpc_SpriteID;
+
+    while (TRUE) {
+
+	/*
+	 * Get the token to use for select waiting.  We must get the token
+	 * before checking the timeout flag because there is a race 
+	 * condition between the timeout wakeup and us getting the
+	 * wait token.  If we checked timeOut before getting the token, it 
+	 * is possible that a time out could come between checking the 
+	 * flag and getting the wait token and we could miss the time out.
+	 */
+	Sync_GetWaitToken(&waiter.pid, &waiter.waitToken);
+	if (wakeupInfo.timeOut) {
+	    status = FS_TIMEOUT;
+	    break;
+	}
+
+	/*
+	 * The read, write and except bit masks can be considered as
+	 * arrays of bits, possibly more than 32 bits long. Each mask is
+	 * represented as an array of ints such that row 0 corresponds to
+	 * streams 0 through 31, row 1 corresponds to streams 32 though
+	 * 63, etc. Within a row, the low-order bit corresponds to the
+	 * smallest stream number.
+	 */
+	s = numStreams + 1;
+	for (row = 0; row < wordsInMask; row++) {
+	    int	outReadMask = 0;
+	    int	outWriteMask = 0;
+	    int	outExceptMask = 0;
+
+	    if (inReadMaskPtr != (int *) NIL) {
+		inReadMask = inReadMaskPtr[row];
+	    }
+	    if (inWriteMaskPtr != (int *) NIL) {
+		inWriteMask = inWriteMaskPtr[row];
+	    }
+	    if (inExceptMaskPtr != (int *) NIL) {
+		inExceptMask = inExceptMaskPtr[row];
+	    }
+	    if (inReadMask != 0 || inWriteMask != 0 || inExceptMask != 0) {
+		/*
+		 * At least one stream in this row was selected. Go through
+		 * the masks to find the stream number and see if it's ready.
+		 */
+		bitMax = (s > BITS_PER_ROW) ? BITS_PER_ROW : s;
+		for (mask = 1, bit = 0; bit < bitMax; mask <<= 1, bit++) {
+		    /*
+		     * Set up single bit masks that will be or'ed into
+		     * the final result masks.
+		     */
+		    int readBit = inReadMask & mask;
+		    int writeBit = inWriteMask & mask;
+		    int exceptBit = inExceptMask & mask;
+
+		    if (readBit | writeBit | exceptBit) {
+			Fs_Stream	*streamPtr;
+
+			if (Fs_GetStreamPtr(procPtr, row * BITS_PER_ROW + bit, 
+						    &streamPtr) != SUCCESS) {
+			    /*
+			     *  A stream was selected that probably 
+			     *  wasn't opened.
+			     */
+			    status = SYS_INVALID_ARG;
+			    goto deschedule;
+			} else {
+			    if (!(streamPtr->flags & FS_READ)) {
+				readBit = 0;
+			    }
+			    if (!(streamPtr->flags & FS_WRITE)) {
+				writeBit = 0;
+			    }
+			    /*
+			     * Call the I/O handle's select routine and
+			     * combine what's left in the single bit masks
+			     * into the final result masks.
+			     */
+
+			    assert(((int) streamPtr & 3) == 0);
+			    assert(((int) streamPtr->ioHandlePtr & 3) == 0);
+
+			    status = 
+	    (*fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].select)
+				(streamPtr->ioHandlePtr, &waiter,
+				 &readBit, &writeBit, &exceptBit);
+			    if (status != SUCCESS) {
+				goto deschedule;
+			    }
+			    if (readBit | writeBit | exceptBit) {
+				outReadMask |= readBit & mask;
+				outWriteMask |= writeBit & mask;
+				outExceptMask |= exceptBit & mask;
+				++*numReadyPtr;
+			    }
+			}
+		    }
+		}
+		s -= BITS_PER_ROW;
+	    }
+	    if (outReadMaskPtr != (int *) NIL) {
+		outReadMaskPtr[row]   = outReadMask;
+	    }
+	    if (outWriteMaskPtr != (int *) NIL) {
+		outWriteMaskPtr[row]  = outWriteMask;
+	    }
+	    if (outExceptMaskPtr != (int *) NIL) {
+		outExceptMaskPtr[row] = outExceptMask;
+	    }
+	}
+
+	/*
+	 * If at least 1 stream is ready or we're just polling, then quit.
+	 * Otherwise, wait until we're notified that some stream became
+	 * ready. When we wake up, start the loop again to find out which 
+	 * stream(s) became ready.
+	 */
+
+	if (*numReadyPtr > 0 || poll) {
+	    break;
+	} else {
+	    if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
+		status = GEN_ABORTED_BY_SIGNAL;
+		break;
+	    }
+	}
+    }
+
+    /*
+     * The wakeupInfo.timedOut flag is set by the routine called from 
+     * the timer queue. If the flag is not set, then remove the routine 
+     * from the queue.
+     */
+deschedule:
+    if (!wakeupInfo.timeOut && *doTimeoutPtr) {
+	Timer_DescheduleRoutine(&wakeupElement);
+    }
+
+    /*
+     * Only copy out the masks if something is ready,
+     * or upon a timeout.  (Emacs, in particular, stupidly looks
+     * at the read masks after a timeout.).
+     */
+    if (status == SUCCESS || status == FS_TIMEOUT) {
+	if (status != SUCCESS) {
+	    for (row=0 ; row<wordsInMask ; row++) {
+		if (outReadMaskPtr != (int *) NIL) {
+		    outReadMaskPtr[row] = 0;
+		}
+		if (outWriteMaskPtr != (int *) NIL) {
+		    outWriteMaskPtr[row] = 0;
+		}
+		if (outExceptMaskPtr != (int *) NIL) {
+		    outExceptMaskPtr[row] = 0;
+		}
+	    }
+	}
+	if (status == SUCCESS && *doTimeoutPtr) {
+	    /*
+	     * A timeout period was given but some stream became ready
+	     * before the period expired.  Return the amount of time that
+	     * is remaining in the timeout value.
+	     */
+
+	    Timer_Ticks temp;
+
+	    Timer_GetCurrentTicks(&temp);
+	    Timer_SubtractTicks(wakeupElement.time, temp, &temp);
+	    Timer_TicksToTime(temp, timeoutPtr);
+	}
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimeoutProc --
+ *
+ *	This routine is called from the Timer queue if a select
+ *	call does not complete by a certain time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timeOut field is set to TRUE. Other processes may be woken up.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+static void
+TimeoutProc(ticks, clientData)
+    Timer_Ticks	ticks;
+    ClientData	clientData;
+{
+    WakeupInfo	*wakeupInfoPtr = (WakeupInfo *) clientData;
+    wakeupInfoPtr->timeOut = TRUE;
+    Sync_ProcWakeup(wakeupInfoPtr->procPtr->processID,
+                    wakeupInfoPtr->procPtr->waitToken);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * readInMasks --
+ *
+ *	This routine reads in the select masks from user space.
+ *	It reads bits 0 to numStreams-1.
+ *
+ * Results:
+ *	Status.
+ *
+ * Side effects:
+ *	Masks are read in.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+readInMasks(wordsInMask, userReadMaskPtr, readMaskPtr,
+    userWriteMaskPtr, writeMaskPtr, userExceptMaskPtr, exceptMaskPtr)
+    int         wordsInMask;
+    int		*userReadMaskPtr;
+    int		*readMaskPtr;
+    int		*userWriteMaskPtr;
+    int		*writeMaskPtr;
+    int		*userExceptMaskPtr;
+    int		*exceptMaskPtr;
+{
+    int bytesInMask;
+    int status;
+
+    if (wordsInMask <= 0) {
+	return SUCCESS;
+    }
+    bytesInMask = wordsInMask*sizeof(int);
+
+    /*
+     * Copy in the masks from user's address space.
+     */
+    if (userReadMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyIn(bytesInMask, (Address) userReadMaskPtr, 
+			   (Address) readMaskPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    if (userWriteMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyIn(bytesInMask, (Address) userWriteMaskPtr, 
+				(Address) writeMaskPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    if (userExceptMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyIn(bytesInMask, (Address) userExceptMaskPtr, 
+				(Address) exceptMaskPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    return SUCCESS;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * writeOutMasks --
+ *
+ *	This routine writes out the select masks to user space.
+ *	It writes bits 0 to numStreams-1.
+ *
+ * Results:
+ *	Status.
+ *
+ * Side effects:
+ *	Masks are written out.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+writeOutMasks(wordsInMask, userReadMaskPtr, readMaskPtr,
+    userWriteMaskPtr, writeMaskPtr, userExceptMaskPtr, exceptMaskPtr)
+    int         wordsInMask;
+    int		*userReadMaskPtr;
+    int		*readMaskPtr;
+    int		*userWriteMaskPtr;
+    int		*writeMaskPtr;
+    int		*userExceptMaskPtr;
+    int		*exceptMaskPtr;
+{
+    int bytesInMask;
+    int status;
+
+    if (wordsInMask <= 0) {
+	return SUCCESS;
+    }
+    bytesInMask = wordsInMask*sizeof(int);
+    if (userReadMaskPtr != (int *)USER_NIL) {
+	status = Vm_CopyOut(bytesInMask, (Address) readMaskPtr,
+	                      (Address) userReadMaskPtr);
+	if (status != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    if (userWriteMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyOut(bytesInMask, (Address) writeMaskPtr,
+	                      (Address) userWriteMaskPtr);
+	if (status != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    if (userExceptMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyOut(bytesInMask, (Address) exceptMaskPtr,
+	                      (Address) userExceptMaskPtr);
+	if (status != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    return SUCCESS;
+}
+
+@
+
+
+9.12
+log
+@Maybe now I've finally got the select mess straightened out.
+The previous version read one too many words for select(32,...), causing
+Emacs to choke.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.11 91/10/10 22:32:30 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d99 1
+a99 1
+static ReturnStatus readInMasks _ARGS_ ((int numStreams, int *userReadMaskPtr,
+d103 1
+a103 1
+static ReturnStatus writeOutMasks _ARGS_ ((int numStreams,
+d175 1
+a176 5
+    if ((userReadMaskPtr == (int *) USER_NIL) &&
+        (userWriteMaskPtr == (int *) USER_NIL) &&
+        (userExceptMaskPtr == (int *) USER_NIL)) {
+	numStreams = 0;
+    }
+d187 6
+d223 2
+a224 1
+    status = readInMasks(numStreams, userReadMaskPtr, inReadMaskPtr,
+d229 2
+a230 1
+    status = Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+d234 1
+a234 1
+	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+a289 2
+    Address		usp;
+    int			*userNumReadyPtr;
+d305 1
+d366 2
+a367 1
+    status = readInMasks(numStreams, userReadMaskPtr, inReadMaskPtr,
+d373 2
+a374 1
+    status = Fs_Select(numStreams-1, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+d378 1
+a378 1
+	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+d410 1
+d423 1
+a423 1
+Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+d428 1
+a459 2
+    int			intsInMask;	/* # of integers in inReadMasks,
+					 * inWriteMasks and inExceptMasks. */
+d470 1
+a470 1
+     * Set the numStreams to zero so we can see if we can return once the
+a537 1
+    intsInMask = (numStreams + (BITS_PER_ROW)) / BITS_PER_ROW;
+d578 1
+a578 1
+	for (row = 0; row < intsInMask; row++) {
+d697 1
+a697 1
+	    for (row=0 ; row<intsInMask ; row++) {
+d773 1
+a773 1
+readInMasks(numStreams, userReadMaskPtr, readMaskPtr,
+d775 1
+a775 1
+    int         numStreams;
+d786 1
+a786 1
+    if (numStreams == 0) {
+d789 1
+a789 1
+    bytesInMask = ((numStreams+(BITS_PER_ROW -1))/BITS_PER_ROW)*sizeof(int);
+d835 1
+a835 1
+writeOutMasks(numStreams, userReadMaskPtr, readMaskPtr,
+d837 1
+a837 1
+    int         numStreams;
+d848 1
+a848 1
+    if (numStreams == 0) {
+d851 1
+a851 1
+    bytesInMask = ((numStreams+(BITS_PER_ROW -1))/BITS_PER_ROW)*sizeof(int);
+@
+
+
+9.11
+log
+@Fixed behavior if number of bits to select is the max.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.10 91/10/08 13:50:47 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d116 5
+a120 3
+ *	This stub checks descriptors 0 to numStreams.  Note that this
+ *	is different behavior from the Unix select, which checks 0 to
+ *	numStreams-1.
+d187 2
+a188 2
+    } else if (numStreams >= MAX_NUM_STREAMS) {
+	numStreams = MAX_NUM_STREAMS-1;
+d221 1
+a221 1
+    status = readInMasks(numStreams+1, userReadMaskPtr, inReadMaskPtr,
+d226 1
+a226 1
+    status = Fs_Select(numStreams+1, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+d230 1
+a230 1
+	writeStatus = writeOutMasks(numStreams+1, userReadMaskPtr,
+d284 2
+a285 1
+    ReturnStatus	status;
+d288 15
+a302 1
+    int			numReady;
+d310 19
+a328 4
+    if (numStreams==0) {
+	userReadMaskPtr = USER_NIL;
+	userWriteMaskPtr = USER_NIL;
+	userExceptMaskPtr = USER_NIL;
+d331 30
+a360 8
+    usp = (Address)Mach_UserStack();
+    userNumReadyPtr = (int *)(usp-sizeof(int));
+
+    status = Fs_SelectStub(numStreams-1, userTimeoutPtr, userReadMaskPtr,
+	    userWriteMaskPtr, userExceptMaskPtr, userNumReadyPtr);
+
+    if (status==SUCCESS) {
+	status = Vm_CopyIn(sizeof(int),userNumReadyPtr,&numReady);
+d363 21
+d404 1
+a404 1
+ *	This stub checks descriptors 0 to numStreams-1.
+d471 1
+a471 1
+	numStreams = 0;
+d495 1
+a495 1
+	} else if (numStreams == 0) {
+d529 1
+a529 1
+    if (numStreams == 0) {
+d533 1
+a533 1
+    intsInMask = (numStreams + BITS_PER_ROW-1) / BITS_PER_ROW;
+d573 1
+a573 1
+	s = numStreams;
+@
+
+
+9.10
+log
+@Changed select back to the old format of Fs_Select(n) checks bits 0 to n.
+Maybe everything will be right now.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.9 91/09/24 21:24:11 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d185 2
+a186 2
+    } else if (numStreams > MAX_NUM_STREAMS) {
+	numStreams = MAX_NUM_STREAMS;
+@
+
+
+9.9
+log
+@Changed select calls to handle a previous off-by-1 fix to the select
+system call.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.8 91/09/10 18:22:44 rab Exp Locker: shirriff $ SPRITE (Berkeley)";
+d116 3
+d219 1
+a219 1
+    status = readInMasks(numStreams, userReadMaskPtr, inReadMaskPtr,
+d224 1
+a224 1
+    status = Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+d228 1
+a228 1
+	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+d252 1
+a280 17
+    Time		timeout;	/* Copy of *userTimeoutPtr. */
+    Time                *timeoutPtr;
+    int                 numReady = 0;
+    int                 doTimeout;
+    ReturnStatus        status, writeStatus;
+    int			inReadMasks[MAX_NUM_ROWS];
+    int			inWriteMasks[MAX_NUM_ROWS];
+    int			inExceptMasks[MAX_NUM_ROWS];
+    int			outReadMasks[MAX_NUM_ROWS];
+    int			outWriteMasks[MAX_NUM_ROWS];
+    int			outExceptMasks[MAX_NUM_ROWS];
+    int                 *inReadMaskPtr;
+    int                 *outReadMaskPtr;
+    int                 *inWriteMaskPtr;
+    int                 *outWriteMaskPtr;
+    int                 *inExceptMaskPtr;
+    int                 *outExceptMaskPtr;
+d282 4
+d293 4
+a296 13
+    if ((userReadMaskPtr == (int *) USER_NIL) &&
+        (userWriteMaskPtr == (int *) USER_NIL) &&
+        (userExceptMaskPtr == (int *) USER_NIL)) {
+	numStreams = 0;
+    }
+
+    /*
+     * Make sure the number of streams is in the proper range.
+     */
+    if (numStreams < 0) {
+	Mach_SetErrno(EINVAL);
+    } else if (numStreams > MAX_NUM_STREAMS) {
+	numStreams = MAX_NUM_STREAMS;
+d299 8
+a306 30
+    if (userTimeoutPtr == (Time *) USER_NIL) {
+	timeoutPtr = (Time *) NIL;
+    } else {
+	if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
+				(Address) &timeout) != SUCCESS) {
+	    Mach_SetErrno(EFAULT);
+	    return -1;
+	}
+	timeoutPtr = &timeout;
+    }
+    if (userReadMaskPtr == USER_NIL) {
+	inReadMaskPtr = (int *) NIL;
+	outReadMaskPtr = (int *) NIL;
+    } else {
+	inReadMaskPtr = inReadMasks;
+	outReadMaskPtr = outReadMasks;
+    }
+    if (userWriteMaskPtr == USER_NIL) {
+	inWriteMaskPtr = (int *) NIL;
+	outWriteMaskPtr = (int *) NIL;
+    } else {
+	inWriteMaskPtr = inWriteMasks;
+	outWriteMaskPtr = outWriteMasks;
+    }
+    if (userExceptMaskPtr == USER_NIL) {
+	inExceptMaskPtr = (int *) NIL;
+	outExceptMaskPtr = (int *) NIL;
+    } else {
+	inExceptMaskPtr = inExceptMasks;
+	outExceptMaskPtr = outExceptMasks;
+a308 21
+    status = readInMasks(numStreams, userReadMaskPtr, inReadMaskPtr,
+	userWriteMaskPtr, inWriteMaskPtr, userExceptMaskPtr, inExceptMaskPtr);
+    if (status != SUCCESS) {
+	Mach_SetErrno(EFAULT);
+	return -1;
+    }
+    status = Fs_Select(numStreams+1, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
+	&numReady, &doTimeout);
+    if (status == SUCCESS || status == FS_TIMEOUT) {
+	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+		outReadMaskPtr, userWriteMaskPtr, outWriteMaskPtr,
+	        userExceptMaskPtr, outExceptMaskPtr);
+	if (status == SUCCESS && doTimeout && writeStatus==SUCCESS) {
+	    writeStatus = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+	                        (Address) userTimeoutPtr);
+	}
+	if (writeStatus != SUCCESS) {
+	    status = SYS_ARG_NOACCESS;
+	}
+    }
+d318 1
+a318 1
+	Mach_SetErrno(EACCES);
+d329 1
+d458 1
+a458 1
+    intsInMask = (numStreams + (BITS_PER_ROW -1)) / BITS_PER_ROW;
+d677 16
+d738 16
+@
+
+
+9.8
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.7 91/08/14 18:09:53 mottsmth Exp Locker: rab $ SPRITE (Berkeley)";
+d248 1
+a248 1
+ *      The stub for the "select" Unix system call.
+d355 1
+a355 1
+    status = Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+d384 16
+@
+
+
+9.7
+log
+@Select was checking one too many descriptors.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.6 91/08/08 11:51:59 shirriff Exp $ SPRITE (Berkeley)";
+d63 1
+a63 1
+#define Mach_SetErrno(err) if (debugFsStubs) \
+d66 1
+a66 1
+        __LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
+@
+
+
+9.6
+log
+@Made a bunch of fixes to unix compatibility.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.5 91/07/26 16:58:51 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d542 1
+a542 1
+	s = numStreams + 1;
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fs/fsSelect.c,v 9.6 91/08/08 11:51:59 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.5
+log
+@Large install for unix compatibility.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.ken/RCS/fsSelect.c,v 1.1 91/05/30 17:17:07 shirriff Exp $ SPRITE (Berkeley)";
+d37 1
+d48 19
+a66 3
+#ifndef Mach_SetErrno
+#define Mach_SetErrno(err)
+#endif
+d243 16
+d297 3
+a299 1
+	printf("Fs_NewSelectStub\n");
+d322 1
+a322 1
+	    Mach_SetErrno(EACCES);
+d352 1
+a352 1
+	Mach_SetErrno(EACCES);
+a369 5
+    /*
+     * Note: I'm not convinced this is correct.  The code here before
+     * was wrong, but I don't know if I got this right.  I think this
+     * does the right thing for a timeout, but I'm not sure. -Ken
+     */
+d372 4
+@
+
+
+9.4
+log
+@Made a minor fix to my previous fix. (Uninitialized variable)
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.3 90/12/13 17:17:44 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d36 1
+a88 5
+
+extern ReturnStatus Fs_Select _ARGS_ ((int numStreams, Time *timeoutPtr,
+    int *inReadMaskPtr, int *outReadMaskPtr, int *inWriteMaskPtr,
+    int *outWriteMaskPtr, int *inExceptMaskPtr, int *outExceptMaskPtr,
+    int *numReadyPtr, int *doTimeoutPtr));
+@
+
+
+9.3
+log
+@Fixed a problem with Fs_Select returning SUCCESS instead of TIMEOUT.
+The problem was that the return status was getting clobbered by the
+status of a Vm_CopyOut.  This problem was introduced by the Unix
+compatibility changes.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.2 90/12/07 23:43:24 rab Exp Locker: shirriff $ SPRITE (Berkeley)";
+d335 3
+d344 7
+a350 6
+    if (writeStatus == SUCCESS) {
+	if (status == SUCCESS) {
+	    return numReady;
+	} else if (status == FS_TIMEOUT) {
+	    return 0;
+	}
+a351 2
+    Mach_SetErrno(EACCES);
+    return -1;
+@
+
+
+9.2
+log
+@Unix compatibility.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.1 90/10/08 11:18:32 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d144 1
+a144 1
+    ReturnStatus        status;
+d212 5
+a216 5
+	status = writeOutMasks(numStreams, userReadMaskPtr, outReadMaskPtr,
+	                       userWriteMaskPtr, outWriteMaskPtr,
+			       userExceptMaskPtr, outExceptMaskPtr);
+	if (status == SUCCESS && doTimeout) {
+	    status = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+a217 4
+	    if (status != SUCCESS) {
+		Mach_SetErrno(EACCES);
+		return -1;
+	    }
+d219 3
+d252 1
+a252 1
+    ReturnStatus        status;
+d328 5
+a332 5
+	status = writeOutMasks(numStreams, userReadMaskPtr, outReadMaskPtr,
+	                       userWriteMaskPtr, outWriteMaskPtr,
+			       userExceptMaskPtr, outExceptMaskPtr);
+	if (status == SUCCESS && doTimeout) {
+	    status = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+a333 4
+	    if (status != SUCCESS) {
+		Mach_SetErrno(EACCES);
+		return -1;
+	    }
+d336 11
+a346 3
+    if (status != SUCCESS) {
+	Mach_SetErrno(EACCES);
+	return -1;
+d348 2
+a349 1
+    return numReady;
+@
+
+
+9.1
+log
+@Fixed include files to use <> rather than "".  Added function prototypes 
+and fixed lint.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 9.0 89/09/12 15:03:09 douglis Stable $ SPRITE (Berkeley)";
+d26 1
+d29 4
+d46 3
+d81 13
+a93 1
+
+a118 1
+
+d138 235
+a372 1
+				   
+a376 1
+    Time		timeout;	/* Copy of *userTimeoutPtr. */
+d385 1
+a385 1
+    int			inExceptMask = 0;/* Contents of a row of inExceptMasks.*/
+a387 2
+    int			bytesInMask;	/* # of bytes in inReadMasks,
+					 * outWriteMasks and outExceptMasks. */
+a389 8
+    int			inReadMasks[MAX_NUM_ROWS];
+    int			inWriteMasks[MAX_NUM_ROWS];
+    int			inExceptMasks[MAX_NUM_ROWS];
+    int			outReadMasks[MAX_NUM_ROWS];
+    int			outWriteMasks[MAX_NUM_ROWS];
+    int			outExceptMasks[MAX_NUM_ROWS];
+
+    Boolean		doTimeout;	/* TRUE if valid timeout given. */
+a392 4
+    int			numReady = 0;	/* Number of ready streams. If a stream
+					 * is readable and/or writable and/or
+					 * has a exception pending, it is
+					 * only counted once. */
+a395 10
+
+    /*
+     * Make sure the number of streams is in the proper range.
+     */
+    if (numStreams < 0) {
+	return(SYS_INVALID_ARG);
+    } else if (numStreams > MAX_NUM_STREAMS) {
+	numStreams = MAX_NUM_STREAMS;
+    }
+
+d397 1
+a397 1
+     * If all the masks are USER_NIL, then there aren't any streams to select.
+d401 3
+a403 3
+    if ((userReadMaskPtr == (int *) USER_NIL) &&
+        (userWriteMaskPtr == (int *) USER_NIL) &&
+        (userExceptMaskPtr == (int *) USER_NIL)) {
+d414 1
+a414 1
+    if (userTimeoutPtr == (Time *) USER_NIL) {
+d416 1
+a416 1
+	doTimeout = FALSE;
+d418 2
+a419 5
+
+	if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
+				(Address) &timeout) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+a420 3
+	if ((timeout.seconds < 0) || 
+	    ((timeout.seconds == 0) && (timeout.microseconds == 0))) {
+
+d425 1
+a425 1
+	    doTimeout = FALSE;
+d434 2
+a435 2
+	    if (Sync_WaitTime(timeout)) {
+		status = GEN_ABORTED_BY_SIGNAL;
+d437 1
+a437 1
+		status = FS_TIMEOUT;
+a438 2
+	    goto allDone;
+
+d451 1
+a451 1
+	    Timer_TimeToTicks(timeout, &ticks);
+d455 1
+a455 1
+	    doTimeout = TRUE;
+d463 1
+a463 1
+	goto allDone;
+a465 1
+
+a466 35
+    bytesInMask = intsInMask * sizeof(inReadMask);
+
+    /*
+     * Copy in the masks from user's address space.
+     */
+    if (userReadMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyIn(bytesInMask, (Address) userReadMaskPtr, 
+			   (Address) inReadMasks);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    } else {
+	inReadMask = 0;
+    }
+
+    if (userWriteMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyIn(bytesInMask, (Address) userWriteMaskPtr, 
+				(Address) inWriteMasks);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    } else {
+	inWriteMask = 0;
+    }
+
+    if (userExceptMaskPtr != (int *) USER_NIL) {
+	status = Vm_CopyIn(bytesInMask, (Address) userExceptMaskPtr, 
+				(Address) inExceptMasks);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    } else {
+	inExceptMask = 0;
+    }
+
+d474 1
+a474 1
+    if (doTimeout) {
+d512 2
+a513 2
+	    if (userReadMaskPtr != (int *) USER_NIL) {
+		inReadMask = inReadMasks[row];
+d515 2
+a516 2
+	    if (userWriteMaskPtr != (int *) USER_NIL) {
+		inWriteMask = inWriteMasks[row];
+d518 2
+a519 2
+	    if (userExceptMaskPtr != (int *) USER_NIL) {
+		inExceptMask = inExceptMasks[row];
+d559 4
+d564 1
+a564 1
+		(*fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].select)
+d574 1
+a574 1
+				numReady++;
+d581 9
+a589 3
+	    outReadMasks[row]   = outReadMask;
+	    outWriteMasks[row]  = outWriteMask;
+	    outExceptMasks[row] = outExceptMask;
+d599 1
+a599 1
+	if (numReady > 0 || poll) {
+d615 1
+a615 1
+    if (!wakeupInfo.timeOut && doTimeout) {
+d618 1
+a618 1
+    
+a624 2
+	int vmStatus;
+
+d627 9
+a635 27
+		outReadMasks[row] = 0;
+		outWriteMasks[row] = 0;
+		outExceptMasks[row] = 0;
+	    }
+	}
+
+	if (userReadMaskPtr != (int *)USER_NIL) {
+	    vmStatus = Vm_CopyOut(bytesInMask, (Address) outReadMasks,
+					(Address) userReadMaskPtr);
+	    if (vmStatus != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+	}
+
+	if (userWriteMaskPtr != (int *) USER_NIL) {
+	    vmStatus = Vm_CopyOut(bytesInMask, (Address) outWriteMasks,
+					(Address) userWriteMaskPtr);
+	    if (vmStatus != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+	}
+
+	if (userExceptMaskPtr != (int *) USER_NIL) {
+	    vmStatus = Vm_CopyOut(bytesInMask, (Address) outExceptMasks,
+					(Address) userExceptMaskPtr);
+	    if (vmStatus != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+d638 1
+a638 2
+
+	if (status == SUCCESS && doTimeout) {
+d649 1
+a649 7
+	    Timer_TicksToTime(temp, &timeout);
+
+	    status = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+					(Address) userTimeoutPtr);
+	    if (status != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+a651 8
+
+allDone:
+
+    if (Vm_CopyOut(sizeof(*numReadyPtr), (Address) &numReady, 
+	    (Address) numReadyPtr) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+    }
+
+d684 89
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 8.4 89/08/21 15:22:43 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d27 13
+a39 12
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsio.h"
+#include "sync.h"
+#include "list.h"
+#include "proc.h"
+#include "sig.h"
+#include "dbg.h"
+#include "timer.h"
+#include "rpc.h"
+a58 4
+/*
+ * Routine called in FsSelect if the call timed-out.
+ */
+static void TimeoutProc();
+d68 4
+d131 3
+a133 3
+    register int	inReadMask;	/* Contents of a row of inReadMasks. */
+    register int	inWriteMask;	/* Contents of a row of inWriteMasks. */
+    int			inExceptMask;	/* Contents of a row of inExceptMasks.*/
+d516 1
+a516 1
+TimeoutProc(ticks, wakeupInfoPtr)
+d518 1
+a518 1
+    WakeupInfo	*wakeupInfoPtr;
+d520 1
+@
+
+
+8.4
+log
+@Break up fs to sperate modules.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 8.0.1.2 89/03/29 15:58:11 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Removed old ifdef'd code from the previous version.
+Fixed a bug where a timeout element would be left
+in the queue.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 8.2 89/02/28 08:50:34 brent Exp $ SPRITE (Berkeley)";
+d29 3
+a31 2
+#include "fsInt.h"
+#include "fsOpTable.h"
+a70 6
+/*
+ * If this variable is TRUE then we try a fast polling of all streams
+ * in a first pass.  If no streams are ready a second pass is made
+ * and the process is put only wait lists.  (This may not be a win.)
+ */
+int fs_SelectPoll = FALSE;
+d105 2
+a106 7
+    Time	*userTimeoutPtr;/* Timer value indicating timeout period.
+				 * If this is USER_NIL then we wait with
+				 * no timeout period.  If the timeout period
+				 * is <= 0 seconds then we poll the streams
+				 * and return immediately.  If we wait then
+				 * the amount of the timeout remaining is
+				 * returned. (in/out) */
+a123 1
+    Boolean		copiedTimeout = FALSE;
+a124 1
+    Sync_RemoteWaiter	*waitPtr;	/* NIL while polling */
+a154 1
+    register Fs_Stream **streamList;	/* Process's array of streamPtr's */
+d178 58
+a235 4
+    procPtr = Proc_GetCurrentProc();
+    streamList = procPtr->fsPtr->streamList;
+    if (numStreams > procPtr->fsPtr->numStreams) {
+	numStreams = procPtr->fsPtr->numStreams;
+d237 6
+a242 5
+    if (numStreams > MAX_NUM_ROWS * BITS_PER_ROW) {
+	printf("Fs_Select: Too many streams (%d > %d) pid %x\n",
+	    numStreams, MAX_NUM_ROWS * BITS_PER_ROW,
+	    procPtr->processID);
+	numStreams = MAX_NUM_ROWS * BITS_PER_ROW;
+d244 2
+d282 11
+a292 5
+    poll = fs_SelectPoll;
+    if (userTimeoutPtr == (Time *) USER_NIL) {
+	doTimeout = FALSE;
+    } else {
+	doTimeout = TRUE;
+d294 1
+a295 1
+    waitPtr = (Sync_RemoteWaiter *)NIL;
+d297 14
+a310 9
+    while (status == SUCCESS) {
+	if (!poll) {
+	    /*
+	     * Prepare to wait.  This call tells the Sync Module to honor
+	     * any wakeups we get between here and our call to Sync_ProcWait
+	     * so we will not miss any wakeups.
+	     */
+	    waitPtr = &waiter;
+	    Sync_GetWaitToken(&waiter.pid, &waiter.waitToken);
+d336 1
+a336 1
+	    if ((inReadMask | inWriteMask | inExceptMask) != 0) {
+d352 1
+a352 1
+			register Fs_Stream	*streamPtr;
+d354 2
+a355 2
+			streamPtr = streamList[row * BITS_PER_ROW + bit];
+			if (streamPtr == (Fs_Stream *)NIL) {
+d375 2
+a376 2
+		(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].select)
+				(streamPtr->ioHandlePtr, waitPtr,
+d404 1
+a404 1
+	if (numReady > 0) {
+a405 8
+	} else if (poll) {
+	    /*
+	     * We missed on the fast polling iteration and have to
+	     * go through again with the full waiting setup.  Now
+	     * each individual select routine will put us into their
+	     * wait lists and we'll get a wait token.
+	     */
+	    poll = FALSE;
+a406 46
+	    Timer_Ticks ticks;
+	    Timer_Ticks currentTicks;
+	    /*
+	     * We have polled all the streams (again) and our processID
+	     * is on wait lists associated with each selected object.
+	     * Now we wait, setting up a timeout if the user wants it.
+	     */
+	    if (doTimeout) {
+		if (!copiedTimeout) {
+		    if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
+					    (Address) &timeout) != SUCCESS) {
+			return(SYS_ARG_NOACCESS);
+		    }
+		    copiedTimeout = TRUE;
+		}
+		if ((timeout.seconds < 0) || 
+		    ((timeout.seconds == 0) && (timeout.microseconds == 0))) {
+		    /*
+		     * User is polling the streams.  Break from while loop.
+		     */
+		    doTimeout = FALSE;
+		    break;
+		}
+		/*
+		 * Convert the user's timeout value from a relative Time to a 
+		 * an absolute time in the internal Timer_Ticks units.
+		 *
+		 * The value wakeupElement.time is used later
+		 * to return the amount of time remaining in the timeout.
+		 */
+		Timer_TimeToTicks(timeout, &ticks);
+		Timer_GetCurrentTicks(&currentTicks);
+		Timer_AddTicks(currentTicks, ticks, &(wakeupElement.time));
+    
+		wakeupInfo.procPtr = procPtr;
+		wakeupInfo.timeOut = FALSE;
+		wakeupElement.routine = TimeoutProc;
+		wakeupElement.clientData = (ClientData) &wakeupInfo;
+		Timer_ScheduleRoutine(&wakeupElement, FALSE);
+	    }
+
+	    /*
+	     * Wait for a stream.  Remember that Sync_ProcWait guards against
+	     * wakeups that have come in since the last call to
+	     * Sync_GetWaitToken.
+	     */
+d409 1
+a409 2
+	    } else if (wakeupInfo.timeOut) {
+		status = FS_TIMEOUT;
+a410 8
+	    if (doTimeout && !wakeupInfo.timeOut) {
+		Timer_DescheduleRoutine(&wakeupElement);
+	    }
+	    /*
+	     * If we got kicked by a stream notification then go back to
+	     * fast polling mode to find out what's ready.
+	     */
+	    poll = fs_SelectPoll;
+a413 2
+deschedule:
+#ifdef notdef
+d415 3
+a417 2
+     * If we get an error we'll break out of the loop and may have to
+     * deschedule a pending timeout.
+d419 2
+a420 1
+    if (doTimeout && !wakeupInfo.timeOut) {
+d423 1
+a423 1
+#endif
+d425 3
+a427 1
+     * Only copy out the masks if there aren't any errors.
+d429 10
+a438 1
+    if (status == SUCCESS) {
+d441 1
+a441 1
+	    status = Vm_CopyOut(bytesInMask, (Address) outReadMasks,
+d443 1
+a443 1
+	    if (status != SUCCESS) {
+d449 1
+a449 1
+	    status = Vm_CopyOut(bytesInMask, (Address) outWriteMasks,
+d451 1
+a451 1
+	    if (status != SUCCESS) {
+d457 1
+a457 1
+	    status = Vm_CopyOut(bytesInMask, (Address) outExceptMasks,
+d459 1
+a459 1
+	    if (status != SUCCESS) {
+d464 1
+a464 1
+	if (doTimeout) {
+d484 3
+a486 4
+    /*
+     * We arrive here if status is SUCCESS or FS_TIMEOUT. 
+     * Attempt to get a good value of numReady out to the user process.
+     */
+@
+
+
+8.2
+log
+@Restructuring to eliminate needless calls to Timer_Schedule Routine.
+Also support for a 'polling' mode where device drivers are not
+given in process information so they can avoid setting up wait lists.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 8.1 89/02/24 10:43:36 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d70 6
+a190 66
+#ifdef notdef
+    /*
+     * See if a timeout period was given. If so, set up a timer
+     * queue element to call TimeoutProc to wakeup the process.
+     * If the timeout is 0 or negative, just poll the streams to
+     * see if any are ready.
+     */
+    if (userTimeoutPtr != (Time *) USER_NIL) {
+	if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
+				(Address) &timeout) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+
+	if ((timeout.seconds < 0) || 
+	    ((timeout.seconds == 0) && (timeout.microseconds == 0))) {
+
+	    /*
+	     * A zero or negative time was given. Assume the user wants to
+	     * poll the streams.
+	     */
+	    doTimeout = FALSE;
+	    poll = TRUE;
+
+	} else if (numStreams == 0) {
+
+	    /*
+	     * Special case: nothing to select, but a valid timeout period
+	     * was specified. Just wait for the timeout to expire.
+	     */
+	    if (Sync_WaitTime(timeout)) {
+		status = GEN_ABORTED_BY_SIGNAL;
+	    } else {
+		status = FS_TIMEOUT;
+	    }
+	    goto allDone;
+
+	} else {
+	    Timer_Ticks ticks;
+	    Timer_Ticks currentTicks;
+	    wakeupElement.routine = TimeoutProc;
+
+	    /*
+	     * Convert the user's timeout value from a relative Time to a 
+	     * an absolute time in the internal Timer_Ticks units.
+	     *
+	     * The value wakeupElement.time is used at the end of this
+	     * routine to return the amount of time remaining in the timeout.
+	     */
+	    Timer_TimeToTicks(timeout, &ticks);
+	    Timer_GetCurrentTicks(&currentTicks);
+	    Timer_AddTicks(currentTicks, ticks, &(wakeupElement.time));
+	    poll = FALSE;
+	    doTimeout = TRUE;
+	}
+    }
+#endif notdef
+
+#ifdef notdef
+    /*
+     * Nothing to select and no timeout specified so just return.
+     */
+    if (numStreams == 0) {
+	goto allDone;
+    }
+#endif notdef
+
+d238 1
+a238 15
+
+#ifdef notdef
+    /*
+     * If a timeout period was specified, set up a callback from the Timer 
+     * queue.
+     */
+    wakeupInfo.timeOut = FALSE;
+    if (doTimeout) {
+	wakeupElement.clientData = (ClientData) &wakeupInfo;
+	wakeupInfo.procPtr = procPtr;
+	Timer_ScheduleRoutine(&wakeupElement, FALSE);
+    }
+#endif notdef
+
+    poll = FALSE;
+a243 1
+    wakeupInfo.timeOut = FALSE;
+a247 9
+
+	/*
+	 * Get the token to use for select waiting.  We must get the token
+	 * before checking the timeout flag because there is a race 
+	 * condition between the timeout wakeup and us getting the
+	 * wait token.  If we checked timeOut before getting the token, it 
+	 * is possible that a time out could come between checking the 
+	 * flag and getting the wait token and we could miss the time out.
+	 */
+d249 5
+a256 6
+#ifdef notdef
+	if (wakeupInfo.timeOut) {
+	    status = FS_TIMEOUT;
+	    break;
+	}
+#endif notdef
+d394 2
+a397 1
+		wakeupInfo.procPtr = procPtr;
+a413 1
+#ifdef notdef
+d418 1
+a418 2
+	    poll = TRUE;
+#endif notdef
+d422 2
+d425 2
+a426 3
+     * The wakeupInfo.timedOut flag is set by the routine called from 
+     * the timer queue. If the flag is not set, then remove the routine 
+     * from the queue.
+d428 1
+a428 3
+deschedule:
+#ifdef notdef
+    if (!wakeupInfo.timeOut && doTimeout) {
+d431 1
+a431 1
+#endif notdef
+a480 3
+#ifdef notdef
+allDone:
+#endif notdef
+@
+
+
+8.1
+log
+@Optimized select loop for the case when something is ready.
+
+Also changed it so a USER_NIL timeout period means wait forever.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 8.0 88/11/11 18:23:11 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d312 1
+a312 6
+    /*
+     * We'll poll all the streams the first time through to optimize
+     * for the case where something is ready.  If the polling fails
+     * we'll iterate again going through all the work associated with waiting.
+     */
+    poll = TRUE;
+d498 1
+d504 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 7.0 88/11/11 15:33:46 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d104 7
+a110 2
+    Time	*userTimeoutPtr;/* Timer value indicating timeout period or
+				 * USER_NIL if no timeout. (in/out) */
+d128 1
+d130 1
+d161 1
+d185 1
+d192 1
+a192 6
+
+    if (userTimeoutPtr == (Time *) USER_NIL) {
+	poll = FALSE;
+	doTimeout = FALSE;
+    } else {
+
+d240 1
+d242 1
+d249 1
+d251 11
+a261 1
+
+a297 1
+    procPtr = Proc_GetCurrentProc();
+d299 1
+d310 1
+d312 12
+d325 1
+d327 1
+a327 1
+    while (TRUE) {
+d337 5
+a341 1
+	Sync_GetWaitToken(&waiter.pid, &waiter.waitToken);
+d346 1
+d371 1
+a371 1
+	    if (inReadMask != 0 || inWriteMask != 0 || inExceptMask != 0) {
+d387 1
+a387 1
+			Fs_Stream	*streamPtr;
+d389 2
+a390 2
+			if (FsGetStreamPtr(procPtr, row * BITS_PER_ROW + bit, 
+						    &streamPtr) != SUCCESS) {
+d411 1
+a411 1
+				(streamPtr->ioHandlePtr, &waiter,
+d439 1
+a439 1
+	if (numReady > 0 || poll) {
+d441 8
+d450 45
+d497 2
+a498 1
+		break;
+d500 8
+d517 1
+d521 1
+a521 1
+    
+d571 1
+a571 1
+
+d573 1
+a573 1
+
+@
+
+
+8.0.1.1
+log
+@New branch from stable 8.0 that clears the returned
+masks upon a timeout.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 8.0 88/11/11 18:23:11 douglis Stable $ SPRITE (Berkeley)";
+d426 1
+a426 3
+    if (status == SUCCESS || status == FS_TIMEOUT ||
+	status == GEN_ABORTED_BY_SIGNAL) {
+	int vmStatus;
+a427 8
+	if (status != SUCCESS) {
+	    for (row=0 ; row<intsInMask ; row++) {
+		outReadMasks[row] = 0;
+		outWriteMasks[row] = 0;
+		outExceptMasks[row] = 0;
+	    }
+	}
+
+d429 1
+a429 1
+	    vmStatus = Vm_CopyOut(bytesInMask, (Address) outReadMasks,
+d431 1
+a431 1
+	    if (vmStatus != SUCCESS) {
+d437 1
+a437 1
+	    vmStatus = Vm_CopyOut(bytesInMask, (Address) outWriteMasks,
+d439 1
+a439 1
+	    if (vmStatus != SUCCESS) {
+d445 1
+a445 1
+	    vmStatus = Vm_CopyOut(bytesInMask, (Address) outExceptMasks,
+d447 1
+a447 1
+	    if (vmStatus != SUCCESS) {
+d452 1
+a452 1
+	if (status == SUCCESS && doTimeout) {
+@
+
+
+8.0.1.2
+log
+@Fixed select so it only copies out bits masks upon SUCCESS or FS_TIMEOUT.
+Previously it also copied it out on GEN_ABORTED_BY_SIGNAL, and then
+the library routine immediately retried with a zero-valued mask.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 8.0.1.1 89/03/24 16:48:43 brent Exp $ SPRITE (Berkeley)";
+d424 1
+a424 3
+     * Only copy out the masks if something is ready,
+     * or upon a timeout.  (Emacs, in particular, stupidly looks
+     * at the read masks after a timeout.).
+d426 2
+a427 1
+    if (status == SUCCESS || status == FS_TIMEOUT) {
+d485 4
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSelect.c,v 6.0 88/08/11 12:18:08 brent Stable Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsSelect.c,v 1.4 88/05/05 17:35:01 brent Exp $ SPRITE (Berkeley)";
+a35 1
+#include "mem.h"
+@
+
+
+1.4
+log
+@Nuked Sys_GetProcessorNumber
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsSelect.c,v 1.3 88/05/03 15:21:38 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.3
+log
+@Fixed so that numStreams == 3 is ok if max file descriptor bit
+is 2 ^ 3 (8).
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsSelect.c,v 1.2 88/04/28 08:55:14 brent Exp $ SPRITE (Berkeley)";
+d282 1
+a282 1
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+@
+
+
+1.2
+log
+@Minor tuning.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsSelect.c,v 1.1 88/04/04 10:41:21 brent Exp $ SPRITE (Berkeley)";
+d321 1
+a321 1
+	s = numStreams;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsSelect.c,v 5.3 87/11/30 09:17:23 brent Exp $ SPRITE (Berkeley)";
+d125 1
+a125 1
+    int	row;			/* Index of row of inReadMasks,
+d137 2
+d154 1
+d321 1
+a336 2
+		int	i;
+
+d341 9
+a349 7
+		for (mask = 1, i = 0; i < BITS_PER_ROW; mask <<= 1, i++) {
+		    int tmpReadBit;
+		    int tmpWriteBit;
+		    int tmpExceptBit;
+		    register int readBit = inReadMask & mask;
+		    register int writeBit = inWriteMask & mask;
+		    register int exceptBit = inExceptMask & mask;
+d351 1
+a351 1
+		    if (readBit || writeBit || exceptBit) {
+d354 1
+a354 1
+			if (FsGetStreamPtr(procPtr, row * BITS_PER_ROW + i, 
+a362 4
+			    /*
+			     * Check to make sure that the requested test is
+			     * possible on the stream.
+			     */
+d369 5
+a373 3
+			    tmpReadBit = readBit;
+			    tmpWriteBit = writeBit;
+			    tmpExceptBit = exceptBit;
+d377 1
+a377 1
+				 &tmpReadBit, &tmpWriteBit, &tmpExceptBit);
+d381 4
+a384 7
+			    readBit = tmpReadBit & mask;
+			    writeBit = tmpWriteBit & mask;
+			    exceptBit = tmpExceptBit & mask;
+			    if (readBit || writeBit || exceptBit) {
+				outReadMask |= readBit;
+				outWriteMask |= writeBit;
+				outExceptMask |= exceptBit;
+d390 1
+@

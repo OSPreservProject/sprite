@@ -1,0 +1,43 @@
+\fB' $Header: /sprite/src/lib/c/sync/RCS/Sync_Wait.man,v 1.1 88/12/30 16:08:17 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Sync_Wait lib\fB 
+.BS
+.SH NAME
+Sync_Wait \- wait on a monitor condition variable
+.SH SYNOPSIS
+\fB#include <sync.h>\fR
+.sp .5
+\fBSync_Wait\fR(\fIconditionPtr, wakeIfSignal\fP)
+.SH ARGUMENTS
+.AS Sync_Condition *conditionPtr
+.AP Sync_Condition *conditionPtr in
+Address of a condition variable 
+to distinguish waiting process for later notification.
+.AP Boolean wakeIfSignal in
+This parameter is currently ignored.
+.BE
+.SH DESCRIPTION
+.PP
+\fBSync_Wait\fR allows a process using a monitor to wait for a particular condition.
+This routine can only be called while a monitor lock is aquired because 
+it is only safe to check global state while in the monitor.  
+This call releases the monitor lock and makes the process sleep on the
+condition. Other processes waiting on the monitor lock will become runnable.
+The process remains asleep until some other process invokes
+\fBSync_Broadcast\fR with the same condition variable.
+.PP
+Because broadcast semantics are used, it is possible for spurious wakeups to
+occur if multiple processes are awaiting the same condition.  Additionally,
+all processes waiting on \fI*conditionPtr\fP will be
+awakened simultaneously and may execute in any order.  For these
+reasons, when a process resumes execution it may find that the condition
+it was awaiting is no longer valid.  In this case,
+it should call \fBSync_Wait\fR again.
+.PP
+When the
+process awakens due to event notification through \fBSync_Broadcast\fR,
+\fBSUCCESS\fR is returned.
+.SH SEE ALSO
+Sync, Sync_Broadcast, Sig_Send
+.SH KEYWORDS
+synchronization, wait, block, signal, process, event

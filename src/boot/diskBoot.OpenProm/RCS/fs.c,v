@@ -1,0 +1,863 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     91.01.06.00.18.12;  author dlong;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.11.27.11.17.26;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.07.17.15.42.24;  author mendel;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.16.08.29.57;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.01.06.08.14.31;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.05.19.12.14.02;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.05.11.11.16.35;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.05.08.17.44.41;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.07.24.11.32.59;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.21.09.35.02;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.18.11.58.21;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.09.32.17;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Boot time filesystem utilities
+@
+
+
+1.12
+log
+@changed FS_FD_MAGIC to FSDM_FD_MAGIC
+@
+text
+@/* fs.c -
+ *
+ *	General filesystem support.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifdef notdef
+static char rcsid[] = "$Header: /sprite/src/boot/sunprom.dlong.new/RCS/fs.c,v 1.11 90/11/27 11:17:26 jhh Exp Locker: dlong $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "fsBoot.h"
+#include "machMon.h"
+#include "ofs.h"
+
+/*
+ * For non-block aligned reads.
+ */
+char	readBuffer[FS_BLOCK_SIZE];
+
+/*
+ * For lookup
+ */
+static char	component[FS_MAX_NAME_LENGTH];
+
+/*
+ * Forward declarations.
+ */
+void FsGetFileDesc();
+void FsInitFileHandle();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Open --
+ *
+ *	Open a file.  This does a simple lookup (based on the kernel's
+ *	FsLocalLookup) and creates a handle for the file.
+ *
+ * Results:
+ *	SUCCESS or a return code from various sub-operations.
+ *
+ * Side effects:
+ *	Calls malloc
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ReturnStatus
+Open(fileName, useFlags, permissions, handlePtrPtr)
+    char *fileName;
+    int useFlags;
+    int permissions;
+    Fsio_FileIOHandle 	**handlePtrPtr;
+{
+    register ReturnStatus status;
+    Fsio_FileIOHandle *curHandlePtr;
+    register char *curCharPtr;
+    register char *componentPtr;
+    register int index;
+
+    curCharPtr = fileName;
+    while(*curCharPtr == '/') {
+	curCharPtr++;
+    }
+    curHandlePtr = fsRootHandlePtr;
+
+    while (*curCharPtr != '\0') {
+	if (curHandlePtr->descPtr->fileType != FS_DIRECTORY) {
+	    return(FS_NOT_DIRECTORY);
+	}
+        /*
+         * Get the next component.
+         */
+        index = 0;
+	componentPtr = component;
+        while (*curCharPtr != '/' && *curCharPtr != '\0') {
+            *componentPtr++ = *curCharPtr++;
+        }
+        *componentPtr = '\0';
+#ifndef NO_PRINTF
+	Mach_MonPrintf(" %s ", component);
+#endif
+        /*
+         * Skip intermediate and trailing slashes so that *curCharPtr
+         * is Null when 'component' has the last component of the name.
+         */
+        while (*curCharPtr == '/') {
+            curCharPtr++;
+        }
+
+	status = FsFindComponent(fsDomainPtr, curHandlePtr, component,
+					      &curHandlePtr);
+
+	if (status != SUCCESS) {
+#ifndef NO_PRINTF
+	    Mach_MonPrintf("<%x>\n", status);
+#endif
+	    return(status);
+	}
+    }
+    *handlePtrPtr = curHandlePtr;
+    return status;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Read --
+ *
+ *	Read from a file given its handle.
+ *
+ * Results:
+ *	A return status from the read.
+ *
+ * Side effects:
+ *	buffer is loaded with the data read in.
+ *	*readCountPtr is updated to reflect the number of bytes read.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ReturnStatus
+Read(handlePtr, offset, numBytes, buffer, readCountPtr)
+    register Fsio_FileIOHandle 	*handlePtr;
+    int			offset;
+    int			numBytes;
+    register Address	buffer;
+    int			*readCountPtr;
+{
+    int				firstBlock;
+    int				lastBlock;
+    int				lastByte;
+    BlockIndexInfo		indexInfo;
+    register	int		readSize;
+    register	int		blockAddr;
+    register	int		blockOffset;
+    register	int		bufferIndex;
+    register 	ReturnStatus	status;
+    register	int		size;
+
+    firstBlock = offset / FS_BLOCK_SIZE; 
+    lastByte = offset + numBytes - 1;
+    if (lastByte > handlePtr->descPtr->lastByte) {
+	lastByte = handlePtr->descPtr->lastByte;
+    }
+    lastBlock = lastByte / FS_BLOCK_SIZE;
+
+    (void)FsGetFirstIndex(handlePtr, firstBlock, &indexInfo);
+
+    bufferIndex = 0;
+    blockOffset = offset & FS_BLOCK_OFFSET_MASK;
+#ifdef SCSI0_BOOT 
+    Mach_MonPrintf(" read %d at %d into %x\n", numBytes, offset, buffer);
+#endif 
+
+    while (indexInfo.blockNum <= lastBlock) {
+	if (indexInfo.blockNum < lastBlock) {
+	    size = FS_BLOCK_SIZE - blockOffset;
+	    readSize = FS_BLOCK_SIZE;
+	} else {
+	    size = (lastByte & FS_BLOCK_OFFSET_MASK) + 1 - blockOffset;
+	    readSize = size;
+	}
+	blockAddr = *indexInfo.blockAddrPtr + 
+	((Ofs_DomainHeader *) fsDomainPtr->clientData)->dataOffset *
+	    FS_FRAGMENTS_PER_BLOCK;
+	if (blockOffset != 0 || size != FS_BLOCK_SIZE) { 
+	    status = FsDeviceBlockIO(FS_READ, &fsDevice, blockAddr,
+			   (readSize - 1) / FS_FRAGMENT_SIZE + 1, readBuffer);
+	    if (status != SUCCESS) {
+		goto readError;
+	    }
+	    bcopy(&(readBuffer[blockOffset]), &(buffer[bufferIndex]), size);
+	} else {
+	    status = FsDeviceBlockIO(FS_READ, &fsDevice, blockAddr,
+			FS_FRAGMENTS_PER_BLOCK, &(buffer[bufferIndex]));
+	    if (status != SUCCESS) {
+		goto readError;
+	    }
+	}
+	bufferIndex += size;
+	blockOffset = 0;
+	FsGetNextIndex(handlePtr, &indexInfo);
+    }
+
+readError:
+
+    *readCountPtr = bufferIndex;
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsFindComponent --
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsFindComponent(domainPtr, curHandlePtr, component, newHandlePtrPtr)
+    Fsdm_Domain *domainPtr;
+    Fsio_FileIOHandle *curHandlePtr;
+    char *component;
+    Fsio_FileIOHandle **newHandlePtrPtr;
+{
+    register ReturnStatus status;
+    register int dirOffset;		/* Offset within the directory */
+    register int blockOffset;		/* Offset within a directory block */
+    register Fslcl_DirEntry *dirEntryPtr;	/* Reference to directory entry */
+    int length;				/* Length variable for read call */
+    register Fsio_FileIOHandle *handlePtr;
+
+    dirOffset = 0;
+    do {
+	length = FSLCL_DIR_BLOCK_SIZE;
+	status = Read(curHandlePtr, dirOffset, length, readBuffer, &length);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	if (length == 0) {
+	    return(FS_FILE_NOT_FOUND);
+	}
+	dirEntryPtr = (Fslcl_DirEntry *)readBuffer;
+	blockOffset = 0;
+	while (blockOffset < FSLCL_DIR_BLOCK_SIZE) {
+	    dirEntryPtr = (Fslcl_DirEntry *)((int)readBuffer + blockOffset);
+	    if (dirEntryPtr->fileNumber != 0) {
+		/*
+		 * A valid directory record.
+		 */
+#ifndef NO_PRINTF
+		Mach_MonPrintf("Found %s\n", dirEntryPtr->fileName);
+#endif NO_PRINTF
+		if (strcmp(component, dirEntryPtr->fileName) == 0) {
+		    handlePtr = (Fsio_FileIOHandle *)malloc(sizeof(Fsio_FileIOHandle));
+		    FsInitFileHandle(domainPtr, dirEntryPtr->fileNumber,
+				    handlePtr);
+		    *newHandlePtrPtr = handlePtr;
+		    return(SUCCESS);
+		}
+	    }
+	    blockOffset += dirEntryPtr->recordLength;
+	}
+	dirOffset += FSLCL_DIR_BLOCK_SIZE;
+    } while(TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsInitFileHandle --
+ *
+ *	Initialize a file handle.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Fills in the file handle that our caller has already allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsInitFileHandle(domainPtr, fileNumber, handlePtr)
+    Fsdm_Domain *domainPtr;
+    int fileNumber;
+    register Fsio_FileIOHandle *handlePtr;
+{
+    register Fsdm_FileDescriptor *descPtr;
+
+    bzero((Address)handlePtr, sizeof(Fsio_FileIOHandle));
+    handlePtr->hdr.fileID.minor = fileNumber;
+    descPtr = (Fsdm_FileDescriptor *)malloc(sizeof(Fsdm_FileDescriptor));
+    FsGetFileDesc(domainPtr, fileNumber, descPtr);
+    handlePtr->descPtr = descPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsGetFileDesc --
+ *
+ *	Read in a file descriptor from the disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Fills in the file descriptor that our caller has already allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsGetFileDesc(domainPtr, fileNumber, descPtr)
+    Fsdm_Domain *domainPtr;
+    register int fileNumber;
+    register Fsdm_FileDescriptor *descPtr;
+{
+    register Ofs_DomainHeader *headerPtr;
+    register int 	    blockNum;
+    register int 	    offset;
+
+    headerPtr = ((Ofs_DomainHeader *) domainPtr->clientData);
+    blockNum = headerPtr->fileDescOffset + fileNumber / FSDM_FILE_DESC_PER_BLOCK;
+    offset = (fileNumber & (FSDM_FILE_DESC_PER_BLOCK - 1)) *
+		FSDM_MAX_FILE_DESC_SIZE;
+
+    (void)FsDeviceBlockIO(FS_READ, &fsDevice, 
+		       blockNum * FS_FRAGMENTS_PER_BLOCK,
+		       FS_FRAGMENTS_PER_BLOCK, readBuffer);
+    bcopy( readBuffer + offset, (char *) descPtr, sizeof(Fsdm_FileDescriptor));
+#ifndef NO_PRINTF
+    if (descPtr->magic != FSDM_FD_MAGIC) {
+	Mach_MonPrintf("desc %d bad <%x>\n", fileNumber, descPtr->magic);
+    }
+#endif
+}
+@
+
+
+1.11
+log
+@got it to compile, moved location for sun3 kernel
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/boot/sunprom/RCS/fs.c,v 1.10 90/07/17 15:42:24 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+d322 1
+a322 1
+    if (descPtr->magic != FS_FD_MAGIC) {
+@
+
+
+1.10
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/boot/scsiDiskBoot/RCS/fs.c,v 1.9 89/06/16 08:29:57 brent Exp $ SPRITE (Berkeley)";
+d16 1
+d37 1
+a37 1
+ * Fs_Open --
+d52 1
+a52 1
+Fs_Open(fileName, useFlags, permissions, handlePtrPtr)
+d111 1
+a111 1
+ * Fs_Read --
+d125 1
+a125 1
+Fs_Read(handlePtr, offset, numBytes, buffer, readCountPtr)
+d167 2
+a168 1
+		    fsDomainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK;
+d225 1
+a225 1
+	status = Fs_Read(curHandlePtr, dirOffset, length, readBuffer, &length);
+d308 1
+a308 1
+    register Fsdm_DomainHeader *headerPtr;
+d312 1
+a312 1
+    headerPtr = domainPtr->headerPtr;
+d320 1
+a320 1
+    bcopy( readBuffer + offset, descPtr, sizeof(Fsdm_FileDescriptor));
+@
+
+
+1.9
+log
+@Updated to the new device interface
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/boot/scsiDiskBoot/RCS/fs.c,v 1.8 89/01/06 08:14:31 brent Exp $ SPRITE (Berkeley)";
+a31 1
+#undef NO_PRINTF
+d55 1
+a55 1
+    FsLocalFileIOHandle 	**handlePtrPtr;
+d58 1
+a58 1
+    FsLocalFileIOHandle *curHandlePtr;
+d104 1
+d125 1
+a125 1
+    register FsLocalFileIOHandle 	*handlePtr;
+d153 1
+a153 1
+#ifdef notdef 
+d155 1
+a155 1
+#endif notdef 
+d208 2
+a209 2
+    FsDomain *domainPtr;
+    FsLocalFileIOHandle *curHandlePtr;
+d211 1
+a211 1
+    FsLocalFileIOHandle **newHandlePtrPtr;
+d216 1
+a216 1
+    register FsDirEntry *dirEntryPtr;	/* Reference to directory entry */
+d218 1
+a218 1
+    register FsLocalFileIOHandle *handlePtr;
+d222 1
+a222 1
+	length = FS_DIR_BLOCK_SIZE;
+d230 1
+a230 1
+	dirEntryPtr = (FsDirEntry *)readBuffer;
+d232 2
+a233 2
+	while (blockOffset < FS_DIR_BLOCK_SIZE) {
+	    dirEntryPtr = (FsDirEntry *)((int)readBuffer + blockOffset);
+d238 1
+d240 1
+d242 1
+a242 1
+		    handlePtr = (FsLocalFileIOHandle *)malloc(sizeof(FsLocalFileIOHandle));
+d251 1
+a251 1
+	dirOffset += FS_DIR_BLOCK_SIZE;
+d272 1
+a272 1
+    FsDomain *domainPtr;
+d274 1
+a274 1
+    register FsLocalFileIOHandle *handlePtr;
+d276 1
+a276 1
+    register FsFileDescriptor *descPtr;
+d278 1
+a278 1
+    bzero((Address)handlePtr, sizeof(FsLocalFileIOHandle));
+d280 1
+a280 1
+    descPtr = (FsFileDescriptor *)malloc(sizeof(FsFileDescriptor));
+d302 1
+a302 1
+    FsDomain *domainPtr;
+d304 1
+a304 1
+    register FsFileDescriptor *descPtr;
+d306 1
+a306 1
+    register FsDomainHeader *headerPtr;
+d311 3
+a313 3
+    blockNum = headerPtr->fileDescOffset + fileNumber / FS_FILE_DESC_PER_BLOCK;
+    offset = (fileNumber & (FS_FILE_DESC_PER_BLOCK - 1)) *
+		FS_MAX_FILE_DESC_SIZE;
+d318 1
+a318 1
+    bcopy( readBuffer + offset, descPtr, sizeof(FsFileDescriptor));
+@
+
+
+1.8
+log
+@New include files and constants due to source reorganization
+@
+text
+@d9 2
+a10 2
+#ifndef lint
+static char rcsid[] = "$Header: fs.c,v 1.7 87/05/19 12:14:02 brent Exp $ SPRITE (Berkeley)";
+d14 2
+a15 4
+#include "fs.h"
+#include "fsDisk.h"
+#include "fsIndex.h"
+#include "fsOpTable.h"
+a17 7
+ * Things set up by Fs_AttachDisk
+ */
+extern	Fs_Device	fsDevice;
+extern	FsDomain	*fsDomainPtr;
+extern	FsHandle	*fsRootHandlePtr;
+
+/*
+d32 1
+a32 1
+
+d46 1
+a46 1
+ *	Calls Mem_Alloc
+d56 1
+a56 1
+    FsHandle 	**handlePtrPtr;
+d59 1
+a59 1
+    FsHandle *curHandlePtr;
+d71 1
+a71 1
+	if (curHandlePtr->fileType != FS_DIRECTORY) {
+d84 1
+a84 1
+	Sys_Printf(" %s ", component);
+d99 1
+a99 1
+	    Sys_Printf("<%x>\n", status);
+d125 1
+a125 1
+    register FsHandle 	*handlePtr;
+d144 2
+a145 2
+    if (lastByte > handlePtr->lastByte) {
+	lastByte = handlePtr->lastByte;
+d154 1
+a154 1
+    Sys_Printf(" read %d at %d into %x\n", numBytes, offset, buffer);
+d168 1
+a168 1
+	    status = FsBlockIO(FS_READ, &handlePtr->device, blockAddr,
+d173 1
+a173 1
+	    Byte_Copy(size, &(readBuffer[blockOffset]), &(buffer[bufferIndex]));
+d175 1
+a175 1
+	    status = FsBlockIO(FS_READ, &handlePtr->device, blockAddr,
+d209 1
+a209 1
+    FsHandle *curHandlePtr;
+d211 1
+a211 1
+    FsHandle **newHandlePtrPtr;
+d218 1
+a218 1
+    register FsHandle *handlePtr;
+d238 3
+a240 2
+		if (String_Compare(component, dirEntryPtr->fileName) == 0) {
+		    handlePtr = (FsHandle *)Mem_Alloc(sizeof(FsHandle));
+d272 1
+a272 1
+    register FsHandle *handlePtr;
+d276 3
+a278 3
+    Byte_Zero(sizeof(FsHandle), (Address)handlePtr);
+    handlePtr->fileNumber = fileNumber;
+    descPtr = (FsFileDescriptor *)Mem_Alloc(sizeof(FsFileDescriptor));
+a280 3
+    handlePtr->device = fsDevice;
+    handlePtr->fileType = descPtr->fileType;
+    handlePtr->lastByte = descPtr->lastByte;
+d313 1
+a313 1
+    (void)FsBlockIO(FS_READ, &headerPtr->device, 
+d316 1
+a316 1
+    Byte_Copy(sizeof(FsFileDescriptor), readBuffer + offset, descPtr);
+d319 1
+a319 1
+	Sys_Printf("desc %d bad <%x>\n", fileNumber, descPtr->magic);
+@
+
+
+1.7
+log
+@More trimming to save space.  The Index operations always return
+SUCCESS so there's no need to check their return code.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: fs.c,v 1.6 87/05/11 11:16:35 brent Exp $ SPRITE (Berkeley)";
+a14 1
+#include "fsInt.h"
+a15 1
+#include "fsLocalDomain.h"
+d80 1
+a80 1
+	if (curHandlePtr->rec.fileType != FS_DIRECTORY) {
+d153 2
+a154 2
+    if (lastByte > handlePtr->rec.lastByte) {
+	lastByte = handlePtr->rec.lastByte;
+d177 1
+a177 1
+	    status = FsBlockIO(FS_READ, &handlePtr->rec.device, blockAddr,
+d184 1
+a184 1
+	    status = FsBlockIO(FS_READ, &handlePtr->rec.device, blockAddr,
+d285 1
+a285 1
+    handlePtr->rec.fileID.fileNumber = fileNumber;
+d288 4
+a291 4
+    handlePtr->nameToken = (ClientData)descPtr;
+    handlePtr->rec.device = fsDevice;
+    handlePtr->rec.fileType = descPtr->fileType;
+    handlePtr->rec.lastByte = descPtr->lastByte;
+@
+
+
+1.6
+log
+@Trimmed down version that works.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: fs.c,v 1.5 87/05/08 17:44:41 brent Exp $ SPRITE (Berkeley)";
+d160 1
+a160 4
+    status = FsGetFirstIndex(handlePtr, firstBlock, &indexInfo);
+    if (status != SUCCESS) {
+	return(status);
+    }
+d314 1
+a314 1
+    int fileNumber;
+@
+
+
+1.5
+log
+@Updated to reflect new fs data structures (handle changed)
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: fs.c,v 1.4 86/07/24 11:32:59 brent Exp $ SPRITE (Berkeley)";
+d72 1
+d89 1
+d91 1
+a91 3
+            component[index] = *curCharPtr;
+            index++;
+            curCharPtr++;
+d93 4
+a96 1
+        component[index] = '\0';
+d109 3
+d333 1
+d337 1
+@
+
+
+1.4
+log
+@Completed Fs_Read (there were a number of bugs.)
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: fs.c,v 1.3 86/07/21 09:35:02 brent Exp $ SPRITE (Berkeley)";
+d81 1
+a81 1
+	if (curHandlePtr->fileType != FS_DIRECTORY) {
+a127 1
+
+d149 2
+a150 2
+    if (lastByte > handlePtr->lastByte) {
+	lastByte = handlePtr->lastByte;
+d176 1
+a176 1
+	    status = FsBlockIO(FS_READ, &handlePtr->device, blockAddr,
+d183 1
+a183 1
+	    status = FsBlockIO(FS_READ, &handlePtr->device, blockAddr,
+d284 1
+a284 1
+    handlePtr->fileID.fileNumber = fileNumber;
+d287 4
+a290 4
+    handlePtr->domainToken = (ClientData)descPtr;
+    handlePtr->device = fsDevice;
+    handlePtr->fileType = descPtr->fileType;
+    handlePtr->lastByte = descPtr->lastByte;
+@
+
+
+1.3
+log
+@Added stuf for Fs_Open
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: fs.c,v 1.2 86/07/18 11:58:21 nelson Exp $ SPRITE (Berkeley)";
+d150 3
+d162 3
+d171 1
+a171 1
+	    size = lastByte & FS_BLOCK_OFFSET_MASK + 1;
+d182 1
+a182 1
+	    Byte_Copy(size, &(readBuffer[blockOffset]), buffer);
+d226 1
+a226 1
+    int length;			/* Length variable for read call */
+d257 1
+d287 1
+a287 1
+    FsGetFileDesc(fsDomainPtr, fileNumber, descPtr);
+d291 1
+d328 3
+@
+
+
+1.2
+log
+@Trimmed.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: fs.c,v 1.1 86/07/18 09:32:17 brent Exp $ SPRITE (Berkeley)";
+d17 1
+d19 1
+d21 10
+a30 1
+extern	FsDomainHeader	*fsDomainPtr;
+d33 11
+d48 67
+d169 1
+a169 1
+		    fsDomainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK;
+d171 1
+a171 1
+	    status = FsBlockIO(handlePtr, blockAddr,
+d178 2
+a179 2
+	    status = FsBlockIO(handlePtr, blockAddr, FS_FRAGMENTS_PER_BLOCK,
+				 &(buffer[bufferIndex]));
+d194 126
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: vmSunBoot.c,v 1.9 86/05/01 23:20:11 nelson Exp $ SPRITE (Berkeley)";
+d19 1
+d42 5
+a46 5
+    register	FsHandle	*handlePtr;
+    int		offset;
+    int		numBytes;
+    Address	buffer;
+    int		*readCountPtr;
+d48 10
+a57 9
+    int			firstBlock;
+    int			lastBlock;
+    int			lastByte;
+    ReturnStatus	status;
+    BlockIndexInfo	indexInfo;
+    int			bufferIndex;
+    int			blockOffset;
+    int			size;
+    int			readSize;
+d79 2
+d82 1
+a82 1
+	    status = FsFileBlockIO(handlePtr, indexInfo.blockAddr,
+d89 1
+a89 2
+	    status = FsFileBlockIO(handlePtr, indexInfo.blockAddr,
+				 FS_FRAGMENTS_PER_BLOCK,
+@

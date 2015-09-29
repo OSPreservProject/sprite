@@ -1,0 +1,136 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.10.28.08.58.01;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.16.17.49;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.09.30.20.49.32;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Added trap door to allow processes to be put into the debugger.
+@
+text
+@/* 
+ * execve.c --
+ *
+ *	Procedure to emulate the UNIX execve kernel call under Sprite.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: execve.c,v 1.1 88/06/19 16:17:49 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "proc.h"
+
+#include "compatInt.h"
+
+/*
+ * The variable below is a secret trap door that can be set
+ * to non-zero to force the next exec to put the process into
+ * the debugger before it executes its first instruction.
+ */
+
+int _execDebug = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * execve --
+ *
+ *	Procedure to map from Unix execve system call to Sprite Proc_ExecEnv.
+ *
+ * Results:
+ *	execve() should never return.  If it does, however, UNIX_ERROR is
+ *	returned.
+ *
+ * Side effects:
+ *	Any open streams are closed, then the process invoking execve() is
+ *	terminated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+execve(name, argv, envp)
+    char *name;			/* name of file to exec */
+    char *argv[];		/* array of arguments */
+    char *envp[];		/* array of environment pointers */
+{
+    ReturnStatus status;	/* result returned by Sprite system calls  */
+
+    status = Proc_ExecEnv(name, argv, envp, _execDebug);
+
+    /*
+     * We should never reach this point, regardless of status value.
+     */
+
+    errno = Compat_MapCode(status);
+    return(UNIX_ERROR);
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/execve.c,v 1.2 88/10/28 08:58:01 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: exec.c,v 1.1 88/06/19 14:31:15 ouster Exp $ SPRITE (Berkeley)";
+d25 8
+d60 1
+a60 4
+    /*
+     * Call Proc_Exec with debugMe set to FALSE.
+     */
+    status = Proc_ExecEnv(name, argv, envp, FALSE);
+a64 4
+     /*
+      * For now return all low numbered error codes directly through because
+      * fs doesn't map the unix error codes to Sprite error codes.
+      */
+@

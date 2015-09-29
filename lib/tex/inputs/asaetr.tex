@@ -1,0 +1,224 @@
+% asaetr.tex v0.9 01 Jan 91
+% James Darrell McCauley (jdm5548@diamond.tamu.edu)
+% This is part of a four file set:
+%  asaetr.sty - LaTeX style for TRANSACTIONS OF THE ASAE (American Society for
+%               Agricultural Engineers)
+%  asaetr.bst - BiBTeX style for TRANSACTIONS OF THE ASAE
+%  asaetr.tex - example usage of and documentation for above
+%  asaetr.bib - part of the above example
+%
+\documentstyle{asaetr}
+\tracingstats=1
+\title{Utilizing \LaTeX\ and  B\kern-.05em{\large I}\kern-.025em{\large B}\kern-.08em\TeX\ for ASAE Papers}
+
+\author{J.~D.~McCauley \associate } 
+       % \and
+       % E.~A.~Hiler, \fellow
+       % \and
+       % D.~C.~Bullock \student 
+       % the format is: name \membership_grade, where membership_grade
+       % is one of ( \member, \associate, \student, \affiliate, \fellow) 
+\begin{document}
+\bibliographystyle{asaetr}
+\nocite{*}
+
+\maketitle
+
+\begin{abstract}
+This document describes by example the use of {\tt asaetr.sty},
+a \LaTeX\ style that somewhat conforms to the style used in
+the {\em Transactions of the ASAE}\/.  \cite{asaeins} An accompanying \BiBTeX\
+style file is also used to format the bibliography in a style
+similar to that used by ASAE.
+\keywords{\LaTeX,\ \BiBTeX,\ typesetting, ASAE Transactions.}
+\end{abstract}
+
+\levelone{Introduction}
+\drop{T}he American Society of Agricultural Engineers editorial staff
+encourages authors to submit electronic manuscripts in the following
+formats: MacWrite, MS--Word, MS--Works (preferably Version 2.0),
+WordPerfect (Version 5.0 or later), and WriteNow (ASAE, 1990). 
+It's a pity they don't use \TeX\ or \LaTeX.  If they only knew
+how good it could look \ldots
+
+Well, the editorial staff
+likes to do their own thing, but there's no reason why agricultural
+engineers cannot try to conform to the style used by the {\em Transactions}
+when writing Summer and Winter Meeting papers.
+This file and the accompanying style files are my attempt to 
+make the task of formatting papers easier for agricultural engineers.
+
+\leveltwo{Objective}
+
+My objective of this work was to develop \LaTeX\ and \BiBTeX\
+style files for ASAE members.
+
+\levelthree{Finer Objectives}
+Well, that sounds pretty good, but I also wanted to
+\begin{enumerate}
+\item Make it easier on myself (`cause I'm a programmer, and programmers
+are lazy),
+\item Encourage my boss to switch to \TeX\, and
+\item Show you the use of a  \verb# \levelthree # heading and the 
+\verb# enumerate # environment.
+\end{enumerate}
+
+\levelone{Getting Started}
+
+If you're unfamilar with \LaTeX, I would suggest picking up a copy
+of the manual (Lamport, 1986).  \cite[note]{ll:86} If you're already familiar,
+read on.
+
+\renewcommand{\footnoterule}{} % no line
+\begin{table}[hbp]
+\footnotesize
+\caption{Comparison of Publishing Tools}
+\begin{center}
+%\begin{minipage}{\columnwidth}
+\renewcommand{\footnoterule}{} % no line
+\begin{center}
+\renewcommand{\thefootnote}{\fnsym{footnote}}
+
+\begin{tabular}{crr} \thickhline  
+Tool & \multicolumn{1}{c}{Learning Curve %\footnote{1.0 being easiest} 
+}& \multicolumn{1}{c}{Support             %\footnote{10.0 being the best}
+}\\ \thinhline 
+FrameMaker & 5.0 & 6.0 \\  
+Troff & 10.0 & 1.0 \\
+\TeX                                     %\footnote{\TeX\ is the winner!}\/ 
+& 7.0 & 10.0  \\ \thickhline
+\end{tabular}
+\linethickness{0pt}
+\end{center}
+%\end{minipage}
+\end{center}
+\end{table}
+
+\leveltwo{The Preamble}
+The preamble is where tell \LaTeX\ that you are going to use {\tt asaetr.sty}.
+It's also where you list the authors and ASAE membership grades. Here's
+an example:
+\small \begin{verbatim}
+
+\documentstyle{asaetr}
+\title{Boring Title}
+\author{U.\ B.\ Boring, \fellow \and 
+       I.\ M.\ Young, \student \and
+       R.\ U.\ Happy, \nonmember    }
+\begin{document}
+\maketitle
+
+\end{verbatim} \normalsize
+I have used up to four authors and still got it fit on one line.
+Five authors may fit, depending on the lengths of the names. If
+they don't all fit, two rows of authors will be formed. Membership
+grades can be any of 
+\small \begin{verbatim}
+
+ \member, \associate, \student, 
+ \affiliate, or \fellow. 
+
+\end{verbatim} \normalsize
+You can also use \verb#\nonmember#, but it has the same effect
+as leaving the membership grade off. The \verb#\maketitle# command
+simply tells \LaTeX\ to use this author and title information to
+compose the title of the paper.
+
+\leveltwo{The Abstract}
+
+After the preamble comes the abstract. Here's an example:
+\begin{verbatim}
+
+\begin{abstract}
+This is going to be short. See, I told you.
+\keywords{brevity, terseness, words.}
+\end{abstract}
+
+\end{verbatim}
+This should be straightforward enough.
+
+\leveltwo{The Body}
+
+The commands that you should be most familiar with to typeset the
+body of your paper are the sectioning commands. They are
+\begin{description}
+\item[{\tt \\levelone:}] Same  level as the Introduction and Abstract.
+\item[{\tt \\leveltwo:}] Secondary headings, such as ``Objectives'' above.
+\item[{\tt \\levelthree:}] Third level headings for finer details.
+\item[{\tt \\levelfour:}] Try to avoid fourth level headings.
+\end{description}
+The usage of these commands can be best described by an example:
+\begin{verbatim}
+
+ \leveltwo{The Body}
+
+\end{verbatim}
+This is the sectioning command for
+the section you are now reading.  
+
+Fourth level headings should be avoided because in the current
+version of \verb# asaetr.sty# version 0.9, there is a font problem. 
+Instead of using a slanted, small caps font, only a small caps 
+font is used.  This will be worked out in later versions.
+
+\leveltwo{Figures and Tables}
+
+If you have a \PS\ printer available, it's highly recommended
+that you use the \verb# \psfig# macros written by Trevor Darrell
+to include high quality figures. Another useful utility for including
+figures is {\tt fig} (or {\tt xfig} if you use X Windows).  Figure 1
+was created in about 30 seconds using {\tt xfig}. You can get {\tt fig}
+from {\tt cayuga.cs.rochester.edu} by anonymous ftp. Remember that
+in {\em Transactions of the ASAE}, captions for figures go {\em below}
+the figures.
+
+\begin{figure}[htb]
+  \setlength{\unitlength}{0.1mm} %{0.00625in}%{0.0125in}%
+  \begin{center}
+    \begin{picture}(181,181)(0,0)
+      \thinlines \multiput(80,80)(-20,-20){4}{\framebox(80,80){}}
+      \thicklines \put(0,0){\framebox(180,180){}} 
+      \put(60,60){\line( 1, 1){ 60}}
+    \end{picture}
+  \end{center}
+  \caption{Primitive figure.} 
+\end{figure}
+
+If plan to include tables, and if you want to have
+footnotes within these tables, use the \verb#minipage# environment.
+Contact your local \LaTeX\ guru or your {\em local guide} for
+more information or see the source for this paper (comments within the
+example table).
+You'll notice in {\em Transactions of the ASAE} or in {\em Applied
+Engineering in Agriculture} they use thicker lines for the top and
+bottom rules in tables. Instead of having to change line thickness
+yourself (as you do in using document style ``article'' and others),
+you can use two macros that come with this style: \verb#\thickhline#
+and \verb#\thinhline#.  See the example table in this document (Table 1).
+Don't forget to put the caption {\em above} the table instead of below
+it.
+
+\leveltwo{The References}
+
+This is where \BiBTeX\ comes into play.  The style file {\tt asaetr.bst}
+is currently being developed. It comes close, but you may have
+to edit some entries by hand. See Appendix B in (Lamport, 1986).
+
+\levelone{Conclusion}
+
+This file should serve as an excellent example of the use
+of the style files.  If you still can't figure things out, hunt
+up your local guru and ask him/her to explain \LaTeX\ and \BiBTeX\
+style files.
+
+%\bibliography{jdm5548,asaetr}
+\bibliography{asaetr}
+\end{document}
+
+
+
+
+
+
+
+

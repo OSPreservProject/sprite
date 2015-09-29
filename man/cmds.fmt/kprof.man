@@ -1,0 +1,68 @@
+
+
+
+PROF                      User Commands                      PROF
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     kprof - Control kernel profiling
+
+SSYYNNOOPPSSIISS
+     kkpprrooff [ssttaarrtt] [eenndd]
+     kkpprrooff dduummpp _f_i_l_e_n_a_m_e
+
+OOPPTTIIOONNSS
+     ssttaarrtt         Begin kernel profiling.
+
+     eenndd           End profiling.
+
+     dduummpp _f_i_l_e_n_a_m_e Write out the profiling data to the  specified
+                   file.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Kprof is used to start and stop kernel profiling and to dump
+     out  the  profile data to a file.  The kernel must have been
+     generated with profiling hooks (the --pp option  to  the  com-
+     piler).  The output data file can be processed using ggpprrooff.
+
+KKEEYYWWOORRDDSS
+     profile, trace
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 15, 1989                   1
+
+
+

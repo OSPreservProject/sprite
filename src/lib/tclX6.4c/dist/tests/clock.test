@@ -1,0 +1,69 @@
+#
+# clock.test
+#
+# Tests for the getclock, fmtclock and convertclock commands.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: clock.test,v 2.1 1992/11/07 20:36:55 markd Exp $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+# Try  getclock, hard to test the result.
+
+test clock-1.1 {getclock tests} {
+    list [catch {set clockval [getclock];expr $clockval+1} msg]
+} {0}
+test clock-1.2 {getclock tests} {
+    list [catch {getclock 1990} msg] $msg
+} {1 {wrong # args: getclock}}
+
+# Test fmtclock
+
+test clock-2.1 {fmtclock tests} {
+    set clockval 657687766
+    fmtclock $clockval {%a %b %d %I:%M:%S %p %Y} GMT
+} {Sun Nov 04 03:02:46 AM 1990}
+
+test clock-2.2 {fmtclock tests} {
+    list [catch {fmtclock} msg] $msg
+} {1 {wrong # args: fmtclock clockval [format] [GMT|{}]}}
+
+
+# Test convertclock
+
+test clock-3.1 {convertclock tests} {
+    list [catch convertclock msg] $msg
+} {1 {wrong # args: convertclock dateString [GMT|{}] [baseclock]}}
+
+test clock-3.2 {convertclock tests} {
+    fmtclock [convertclock "14 Feb 92" GMT] {%D %r} GMT
+} {02/14/92 12:00:00 AM}
+
+test clock-3.3 {convertclock tests} {
+    fmtclock [convertclock "Feb 14, 1992 12:20 PM" GMT] {%D %r} GMT
+} {02/14/92 12:20:00 PM}
+
+test clock-3.5 {convertclock tests} {
+    fmtclock [convertclock "Feb 14, 1992 12:20 PM" {GMT} 319363200] {%D %r} GMT
+} {02/14/92 12:20:00 PM}
+
+test clock-3.6 {convertclock tests} {
+    set clock [convertclock "Oct 23,1992 15:00"]
+    fmtclock $clock {%b %d,%Y %H.%M}
+} {Oct 23,1992 15.00}
+
+test clock-3.7 {convertclock tests} {
+    set clock [convertclock "Oct 23,1992 15:00 GMT"]
+    fmtclock $clock {%b %d,%Y %H.%M GMT} GMT
+} {Oct 23,1992 15.00 GMT}
+

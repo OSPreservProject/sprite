@@ -1,0 +1,176 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     89.05.18.17.09.12;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.04.06.10.12.17;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.02.23.16.11.21;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.02.18.20.38.35;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * bsearch.c --
+ *
+ *	Source code for the bsearch library routine.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/bsearch.c,v 1.3 89/04/06 10:12:17 rab Exp Locker: rab $";
+#endif /* not lint */
+
+
+#include <stdlib.h>
+
+#include <stdio.h>
+#include <sys/types.h>
+
+#ifndef __STDC__
+#define const   /**/
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * bsearch --
+ *
+ *	Bsearch searches base[0] to base[n - 1] for an item that
+ *      matches *key.  The function cmp must return negative if its first
+ *      argument (the search key) is less that its second (a table entry),
+ *      zero if equal, and positive if greater.  Items in the array must
+ *      be in ascending order.  
+ *
+ * Results:
+ *	Returns a pointer to a matching item, or NULL if none exits.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+bsearch(key, base, n, size, cmp)
+    const char *key;
+    const char *base;
+    size_t n;
+    size_t size;
+#ifdef __STDC__
+    int (*cmp)(const void *, const void *);
+#else
+    int (*cmp)();
+#endif
+{
+    const char *middle;
+    int c;
+
+
+    for (middle = base; n != 0;) {
+	middle += (n/2) * size;
+	if ((c = (*cmp)(key, middle)) > 0) {
+	    n = (n/2) - ((n&1) == 0);
+	    base = (middle += size);
+	} else if (c < 0) {
+	    n /= 2;
+	    middle = base;
+	} else {
+	    return (char *) middle;
+	}
+    }
+    return NULL;
+}
+
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/bsearch.c,v 1.2 89/02/23 16:11:21 rab Exp Locker: rab $";
+d53 2
+a54 2
+    const _Void *key;
+    const _Void *base;
+d76 1
+a76 1
+	    return (_Void *) middle;
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/bsearch.c,v 1.1 89/02/18 20:38:35 rab Exp Locker: rab $";
+d26 1
+a26 4
+#ifdef __STDC__
+#define _Void void
+#else
+#define _Void char
+d51 1
+a51 1
+_Void *
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header$";
+d69 2
+a70 4
+    middle = base;
+    for (;;) {
+	if (n == 0)
+	    return NULL;
+d82 1
+@

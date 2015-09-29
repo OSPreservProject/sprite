@@ -1,0 +1,12 @@
+D CVS_ADM                           	CVS.adm
+D DS3100_M                          	ds3100.md
+D DS5000_M                          	ds5000.md
+F FSDM.H;1                          	fsdm.h
+F FSDMDISK.C;1                      	fsdmDisk.c
+F FSDMFILE.C;1                      	fsdmFileDesc.c
+F FSDMINT.H;1                       	fsdmInt.h
+F LOCAL.MK;1                        	local.mk
+D SCVS                              	SCVS
+D SUN3_MD                           	sun3.md
+D SUN4C_MD                          	sun4c.md
+D SUN4_MD                           	sun4.md

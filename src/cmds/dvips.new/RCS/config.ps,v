@@ -1,0 +1,42 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    tve:1.1; strict;
+comment  @@;
+
+
+1.1
+date     91.01.14.12.50.44;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@*
+*   With a virtual machine, we can claim 1M of memory.
+*
+m 1000000
+*
+*   And send output by default to a PostScript file.
+*
+o !lpr
+*
+*   Default resolution.
+*
+D 400
+*
+*   Last resort sizes.
+*
+R 100 120 144 300 360 400 432 480
+@

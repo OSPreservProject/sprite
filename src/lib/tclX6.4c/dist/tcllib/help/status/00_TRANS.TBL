@@ -1,0 +1,12 @@
+F CD.;1                             	cd
+F DIRS.;1                           	dirs
+F HISTORY.;1                        	history
+F ID.;1                             	id
+F INFO.;1                           	info
+F INFOX.;1                          	infox
+F POPD.;1                           	popd
+F PUSHD.;1                          	pushd
+F PWD.;1                            	pwd
+F SHOWPRO0.;1                       	showproc
+F SHOWPRO1.;1                       	showprocs
+F UMASK.;1                          	umask

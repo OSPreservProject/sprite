@@ -1,0 +1,614 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.13.20.20;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.11.28;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.21.15.30.07;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.15.18.43.41;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.30.15.42.43;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.24.21;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.48.18;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.14.12.18.53;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.18.56;  author brent;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.15.16.31.01;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.01.16.49.15;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.44.30;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions of tracing macros
+@
+
+
+9.1
+log
+@Changed include to use <> rather than "".
+@
+text
+@/*
+ * fsutilTrace.h --
+ *
+ *	Definitions for the filesystem trace record.  This includes the
+ *	trace record types, and externs for the trace record itself.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * feg is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef _FSTRACE
+#define _FSTRACE
+
+#include <trace.h>
+
+#define FSUTIL_TRACE_0		0
+#define FSUTIL_TRACE_OPEN_START	1
+#define FSUTIL_TRACE_LOOKUP_START	2
+#define FSUTIL_TRACE_LOOKUP_DONE	3
+#define FSUTIL_TRACE_DEL_LAST_WR	4
+#define FSUTIL_TRACE_OPEN_DONE	5
+#define FSUTIL_TRACE_BLOCK_WAIT	6
+#define FSUTIL_TRACE_BLOCK_HIT	7
+#define FSUTIL_TRACE_DELETE		8
+#define FSUTIL_TRACE_NO_BLOCK	9
+#define FSUTIL_TRACE_OPEN_DONE_2	10
+#define FSUTIL_TRACE_OPEN_DONE_3	11
+#define FSUTIL_TRACE_INSTALL_NEW	12
+#define FSUTIL_TRACE_INSTALL_HIT	13
+#define FSUTIL_TRACE_RELEASE_FREE	14
+#define FSUTIL_TRACE_RELEASE_LEAVE	15
+#define FSUTIL_TRACE_REMOVE_FREE	16
+#define FSUTIL_TRACE_REMOVE_LEAVE	17
+#define FSUTIL_TRACE_SRV_WRITE_1	18
+#define FSUTIL_TRACE_SRV_WRITE_2	19
+#define FSUTIL_TRACE_SRV_GET_ATTR_1	20
+#define FSUTIL_TRACE_SRV_GET_ATTR_2	21
+#define FSUTIL_TRACE_OPEN		22
+#define FSUTIL_TRACE_READ		23
+#define FSUTIL_TRACE_WRITE		24
+#define FSUTIL_TRACE_CLOSE		25
+#define	FSUTIL_TRACE_RA_SCHED	26
+#define	FSUTIL_TRACE_RA_BEGIN	27
+#define	FSUTIL_TRACE_RA_END		28
+#define FSUTIL_TRACE_DEL_BLOCK	29
+#define FSUTIL_TRACE_BLOCK_WRITE	30
+#define FSUTIL_TRACE_GET_NEXT_FREE	31
+#define FSUTIL_TRACE_LRU_FREE	32
+#define FSUTIL_TRACE_LRU_DONE_FREE	33
+#define FSUTIL_TRACE_34
+#define FSUTIL_TRACE_35
+
+extern Trace_Header *fsutil_TraceHdrPtr;
+extern int fsutil_TraceLength;
+extern Boolean fsutil_Tracing;
+extern int fsutil_MaxTraceDataSize;
+extern int fscache_RATracing;
+
+/*
+ * The following types and macros are used to take filesystem trace data.
+ * Each struct has to be smaller than a Fsutil_TraceRecord - see the call to
+ * Trace_Init in fsInit.c - as the trace module pre-allocates storage.
+ */
+typedef enum { FST_NIL, FST_IO, FST_NAME,
+		FST_HANDLE, FST_RA, FST_BLOCK } Fsutil_TraceRecType ;
+
+typedef struct Fsutil_TraceIORec {
+    Fs_FileID	fileID;
+    int		offset;
+    int		numBytes;
+} Fsutil_TraceIORec;
+
+typedef struct Fsutil_TraceHdrRec {
+    Fs_FileID	fileID;
+    int		refCount;
+    int		numBlocks;
+} Fsutil_TraceHdrRec;
+
+typedef struct Fsutil_TraceBlockRec {
+    Fs_FileID	fileID;
+    int		blockNum;
+    int		flags;
+} Fsutil_TraceBlockRec;
+
+typedef struct Fsutil_TraceRecord {
+    union {
+	Fs_FileID	fileID;
+	Fsutil_TraceHdrRec	hdrRec;
+	Fsutil_TraceIORec	ioRec;
+	Fsutil_TraceBlockRec	blockRec;
+	char		name[40];
+    } un;
+} Fsutil_TraceRecord;
+
+extern int fsutil_TracedFile;
+
+#ifndef CLEAN
+
+#define FSUTIL_TRACE(event) \
+    if (fsutil_Tracing) {						\
+	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)NIL);	\
+    }
+
+#define FSUTIL_TRACE_IO(event, zfileID, zoffset, znumBytes) \
+    if (fsutil_Tracing &&						\
+	(fsutil_TracedFile < 0 || fsutil_TracedFile == zfileID.minor)) {	\
+	Fsutil_TraceIORec ioRec;					\
+	ioRec.fileID = zfileID;					\
+	ioRec.offset = zoffset;					\
+	ioRec.numBytes = znumBytes;				\
+	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)&ioRec);	\
+    }
+
+#ifdef notdef
+#define FSUTIL_TRACE_NAME(event, pathName) \
+    if (fsutil_Tracing) {							\
+	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)pathName);	\
+    }
+#endif notdef
+#define FSUTIL_TRACE_NAME(event, pathName)
+
+#define FSUTIL_TRACE_HANDLE(event, hdrPtr) \
+    if (fsutil_Tracing &&							\
+	(fsutil_TracedFile < 0 || fsutil_TracedFile == hdrPtr->fileID.minor)) {	\
+	Fsutil_TraceHdrRec hdrRec;						\
+	hdrRec.fileID = hdrPtr->fileID;					\
+	hdrRec.refCount = hdrPtr->refCount;				\
+	if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM) {		\
+	    hdrRec.numBlocks = ((Fsio_FileIOHandle *)hdrPtr)->cacheInfo.blocksInCache; \
+	} else {							\
+	    hdrRec.numBlocks = -1;					\
+	}								\
+	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)&hdrRec);\
+    }
+
+#define FSUTIL_TRACE_BLOCK(event, blockPtr) \
+    if (fsutil_Tracing &&							\
+	(fsutil_TracedFile < 0 ||						\
+	 fsutil_TracedFile == (blockPtr)->cacheInfoPtr->hdrPtr->fileID.minor)) { \
+	Fsutil_TraceBlockRec blockRec;					\
+	blockRec.fileID = (blockPtr)->cacheInfoPtr->hdrPtr->fileID;	\
+	blockRec.blockNum = (blockPtr)->blockNum;			\
+	blockRec.flags	= (blockPtr)->flags;				\
+	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)&blockRec);\
+    }
+
+#define	FSUTIL_TRACE_READ_AHEAD(event, blockNum) \
+    if (fsutil_Tracing || fscache_RATracing) { \
+	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)blockNum); \
+    }
+
+#else
+/*
+ * Compiling with -DCLEAN will zap the if statement and procedure
+ * call defined by the above macros
+ */
+
+#define FSUTIL_TRACE(event)
+#define FSUTIL_TRACE_IO(event, zfileID, zoffset, znumBytes)
+#define FSUTIL_TRACE_NAME(event, pathName)
+#define FSUTIL_TRACE_HANDLE(event, handlePtr)
+#define	FSUTIL_TRACE_READ_AHEAD(event, blockNum)
+#define FSUTIL_TRACE_BLOCK(event, blockPtr)
+
+#endif not CLEAN
+
+#endif _FSTRACE
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+#include "trace.h"
+@
+
+
+8.3
+log
+@
+
+
+Break up fs into many modules.    
+@
+text
+@@
+
+
+8.2
+log
+@Commented #endif labels.
+@
+text
+@d2 1
+a2 1
+ * fsTrace.h --
+d7 8
+a14 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+a15 2
+ *
+ * $Header: /sprite/src/kernel/fs/RCS/fsTrace.h,v 8.1 89/01/30 15:42:43 brent Exp Locker: rab $ SPRITE (Berkeley)
+d23 42
+a64 42
+#define FS_TRACE_0		0
+#define FS_TRACE_OPEN_START	1
+#define FS_TRACE_LOOKUP_START	2
+#define FS_TRACE_LOOKUP_DONE	3
+#define FS_TRACE_DEL_LAST_WR	4
+#define FS_TRACE_OPEN_DONE	5
+#define FS_TRACE_BLOCK_WAIT	6
+#define FS_TRACE_BLOCK_HIT	7
+#define FS_TRACE_DELETE		8
+#define FS_TRACE_NO_BLOCK	9
+#define FS_TRACE_OPEN_DONE_2	10
+#define FS_TRACE_OPEN_DONE_3	11
+#define FS_TRACE_INSTALL_NEW	12
+#define FS_TRACE_INSTALL_HIT	13
+#define FS_TRACE_RELEASE_FREE	14
+#define FS_TRACE_RELEASE_LEAVE	15
+#define FS_TRACE_REMOVE_FREE	16
+#define FS_TRACE_REMOVE_LEAVE	17
+#define FS_TRACE_SRV_WRITE_1	18
+#define FS_TRACE_SRV_WRITE_2	19
+#define FS_TRACE_SRV_GET_ATTR_1	20
+#define FS_TRACE_SRV_GET_ATTR_2	21
+#define FS_TRACE_OPEN		22
+#define FS_TRACE_READ		23
+#define FS_TRACE_WRITE		24
+#define FS_TRACE_CLOSE		25
+#define	FS_TRACE_RA_SCHED	26
+#define	FS_TRACE_RA_BEGIN	27
+#define	FS_TRACE_RA_END		28
+#define FS_TRACE_DEL_BLOCK	29
+#define FS_TRACE_BLOCK_WRITE	30
+#define FS_TRACE_GET_NEXT_FREE	31
+#define FS_TRACE_LRU_FREE	32
+#define FS_TRACE_LRU_DONE_FREE	33
+#define FS_TRACE_34
+#define FS_TRACE_35
+
+extern Trace_Header *fsTraceHdrPtr;
+extern int fsTraceLength;
+extern Boolean fsTracing;
+extern int fsMaxTraceDataSize;
+extern int fsRATracing;
+d68 1
+a68 1
+ * Each struct has to be smaller than a FsTraceRecord - see the call to
+d72 1
+a72 1
+		FST_HANDLE, FST_RA, FST_BLOCK } FsTraceRecType ;
+d74 1
+a74 1
+typedef struct FsTraceIORec {
+d78 1
+a78 1
+} FsTraceIORec;
+d80 1
+a80 1
+typedef struct FsTraceHdrRec {
+d84 1
+a84 1
+} FsTraceHdrRec;
+d86 1
+a86 1
+typedef struct FsTraceBlockRec {
+d90 1
+a90 1
+} FsTraceBlockRec;
+d92 1
+a92 1
+typedef struct FsTraceRecord {
+d95 3
+a97 3
+	FsTraceHdrRec	hdrRec;
+	FsTraceIORec	ioRec;
+	FsTraceBlockRec	blockRec;
+d100 1
+a100 1
+} FsTraceRecord;
+d102 1
+a102 1
+extern int fsTracedFile;
+d106 3
+a108 3
+#define FS_TRACE(event) \
+    if (fsTracing) {						\
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)NIL);	\
+d111 4
+a114 4
+#define FS_TRACE_IO(event, zfileID, zoffset, znumBytes) \
+    if (fsTracing &&						\
+	(fsTracedFile < 0 || fsTracedFile == zfileID.minor)) {	\
+	FsTraceIORec ioRec;					\
+d118 1
+a118 1
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&ioRec);	\
+d122 3
+a124 3
+#define FS_TRACE_NAME(event, pathName) \
+    if (fsTracing) {							\
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)pathName);	\
+d126 2
+a127 2
+#endif /* notdef */
+#define FS_TRACE_NAME(event, pathName)
+d129 4
+a132 4
+#define FS_TRACE_HANDLE(event, hdrPtr) \
+    if (fsTracing &&							\
+	(fsTracedFile < 0 || fsTracedFile == hdrPtr->fileID.minor)) {	\
+	FsTraceHdrRec hdrRec;						\
+d135 2
+a136 2
+	if (hdrPtr->fileID.type == FS_LCL_FILE_STREAM) {		\
+	    hdrRec.numBlocks = ((FsLocalFileIOHandle *)hdrPtr)->cacheInfo.blocksInCache; \
+d140 1
+a140 1
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&hdrRec);\
+d143 5
+a147 5
+#define FS_TRACE_BLOCK(event, blockPtr) \
+    if (fsTracing &&							\
+	(fsTracedFile < 0 ||						\
+	 fsTracedFile == (blockPtr)->cacheInfoPtr->hdrPtr->fileID.minor)) { \
+	FsTraceBlockRec blockRec;					\
+d151 1
+a151 1
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&blockRec);\
+d154 3
+a156 3
+#define	FS_TRACE_READ_AHEAD(event, blockNum) \
+    if (fsTracing || fsRATracing) { \
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)blockNum); \
+d165 6
+a170 6
+#define FS_TRACE(event)
+#define FS_TRACE_IO(event, zfileID, zoffset, znumBytes)
+#define FS_TRACE_NAME(event, pathName)
+#define FS_TRACE_HANDLE(event, handlePtr)
+#define	FS_TRACE_READ_AHEAD(event, blockNum)
+#define FS_TRACE_BLOCK(event, blockPtr)
+d172 1
+a172 1
+#endif /* not CLEAN */
+d174 1
+a174 1
+#endif /* _FSTRACE */
+@
+
+
+8.1
+log
+@Added more handle tracing constants
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsTrace.h,v 7.0 88/11/07 14:48:18 brent Exp $ SPRITE (Berkeley)
+d122 1
+a122 1
+#endif notdef
+d168 1
+a168 1
+#endif not CLEAN
+d170 1
+a170 1
+#endif _FSTRACE
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsTrace.h,v 7.0 88/11/07 14:48:18 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d50 3
+a52 3
+#define FS_TRACE_31
+#define FS_TRACE_32
+#define FS_TRACE_33
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsTrace.h,v 6.1 88/10/14 12:18:53 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@FsFileID FsUserID change
+@
+text
+@d11 1
+a11 1
+ * $Header: fsTrace.h,v 6.0 88/08/11 12:18:56 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: fsTrace.h,v 1.3 88/06/15 16:31:01 brent Exp $ SPRITE (Berkeley)
+d71 1
+a71 1
+    FsFileID	fileID;
+d77 1
+a77 1
+    FsFileID	fileID;
+d83 1
+a83 1
+    FsFileID	fileID;
+d90 1
+a90 1
+	FsFileID	fileID;
+@
+
+
+1.3
+log
+@Added extra tracing types and also a fsTracedFile variable so
+the trace can focus on a particular file.
+@
+text
+@d11 1
+a11 1
+ * $Header: fsTrace.h,v 1.2 88/06/01 16:49:15 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Fixed up tracing stuff
+@
+text
+@d11 1
+a11 1
+ * $Header: fsTrace.h,v 1.1 88/04/04 10:44:30 brent Exp $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define FS_TRACE_4		4
+d41 4
+a44 4
+#define FS_TRACE_OPEN	22
+#define FS_TRACE_READ	23
+#define FS_TRACE_WRITE	24
+#define FS_TRACE_CLOSE	25
+d48 7
+d98 2
+d108 2
+a109 1
+    if (fsTracing) {						\
+d126 2
+a127 1
+    if (fsTracing) {							\
+d140 3
+a142 1
+    if (fsTracing) {							\
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+ * $Header: fsTrace.h,v 1.1 88/04/04 10:44:04 brent Exp $ SPRITE (Berkeley)
+d19 18
+a36 18
+#define FS_TRACE_0	0
+#define FS_TRACE_1	1
+#define FS_TRACE_2	2
+#define FS_TRACE_3	3
+#define FS_TRACE_4	4
+#define FS_TRACE_5	5
+#define FS_TRACE_6	6
+#define FS_TRACE_7	7
+#define FS_TRACE_8	8
+#define FS_TRACE_9	9
+#define FS_TRACE_10	10
+#define FS_TRACE_11	11
+#define FS_TRACE_SRV_OPEN_1	12
+#define FS_TRACE_SRV_OPEN_2	13
+#define FS_TRACE_SRV_CLOSE_1	14
+#define FS_TRACE_SRV_CLOSE_2	15
+#define FS_TRACE_SRV_READ_1	16
+#define FS_TRACE_SRV_READ_2	17
+d60 2
+a61 1
+typedef enum { FST_NIL, FST_IO, FST_NAME, FST_HANDLE, FST_RA } FsTraceRecType ;
+d69 12
+d84 1
+d86 1
+d107 1
+d112 2
+d115 1
+a115 1
+#define FS_TRACE_HANDLE(event, handlePtr) \
+d117 9
+a125 1
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&handlePtr->rec.fileID);\
+d127 10
+d152 2
+a153 1
+#define	fS_TRACE_READ_AHEAD(event, blockNum)
+@

@@ -1,0 +1,264 @@
+
+
+
+Tcl_SplitList         C Library Procedures          Tcl_SplitList
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_SplitList,          Tcl_Merge,          Tcl_ScanElement,
+     Tcl_ConvertElement - manipulate Tcl lists
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int
+     TTccll__SSpplliittLLiisstt(_i_n_t_e_r_p, _l_i_s_t, _a_r_g_c_P_t_r, _a_r_g_v_P_t_r)
+
+     char *
+     TTccll__MMeerrggee(_a_r_g_c, _a_r_g_v)
+
+     int                                                           |
+     TTccll__SSccaannEElleemmeenntt(_s_r_c, _f_l_a_g_s_P_t_r)                                |
+
+     int                                                           |
+     TTccll__CCoonnvveerrttEElleemmeenntt(_s_r_c, _d_s_t, _f_l_a_g_s)                           |
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p      (out)     Interpreter to  use  for
+                                         error reporting.
+
+     char         *_l_i_s_t        (in)      Pointer to a string with
+                                         proper list structure.
+
+     int          *_a_r_g_c_P_t_r     (out)     Filled in with number of
+                                         elements in _l_i_s_t.
+
+     char         ***_a_r_g_v_P_t_r   (out)     *_a_r_g_v_P_t_r will be  filled
+                                         in  with  the address of
+                                         an array of pointers  to
+                                         the strings that are the
+                                         extracted  elements   of
+                                         _l_i_s_t.    There  will  be
+                                         *_a_r_g_c_P_t_r  valid  entries
+                                         in  the  array, followed
+                                         by a NULL entry.
+
+     int          _a_r_g_c         (in)      Number  of  elements  in
+                                         _a_r_g_v.
+
+     char         **_a_r_g_v       (in)      Array  of   strings   to
+                                         merge  together  into  a
+                                         single    list.     Each
+                                         string   will  become  a
+                                         separate element of  the
+                                         list.
+
+     char         *_s_r_c         (in)      String that is to become  |
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_SplitList         C Library Procedures          Tcl_SplitList
+
+
+
+                                         an element of a list.     |
+
+     int          *_f_l_a_g_s_P_t_r    (in)                                     ||
+                                         Pointer  to word to fill  |
+                                         in   with    information  |
+                                         about _s_r_c.  The value of  |
+                                         *_f_l_a_g_s_P_t_r must be passed  |
+                                         to TTccll__CCoonnvveerrttEElleemmeenntt.    |
+
+     char         *_d_s_t         (in)                                     ||
+                                         Place  to copy converted  |
+                                         list element.  Must con-  |
+                                         tain  enough  characters  |
+                                         to    hold     converted  |
+                                         string.                   |
+
+     int          _f_l_a_g_s        (in)                                     ||
+                                         Information  about  _s_r_c.  |
+                                         Must be  value  returned  |
+                                         by   previous   call  to  |
+                                         TTccll__SSccaannEElleemmeenntt,  possi-  |
+                                         bly      OR-ed      with  |
+                                         TTCCLL__DDOONNTT__UUSSEE__BBRRAACCEESS.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures may be used to disassemble  and  reassemble
+     Tcl  lists.  TTccll__SSpplliittLLiisstt breaks a list up into its consti-
+     tuent elements, returning an array of pointers to  the  ele-
+     ments using _a_r_g_c_P_t_r and _a_r_g_v_P_t_r.  While extracting the argu-
+     ments, TTccll__SSpplliittLLiisstt obeys the  usual  rules  for  backslash
+     substitutions  and braces.  The area of memory pointed to by
+     *_a_r_g_v_P_t_r is dynamically allocated;  in addition to the array
+     of  pointers, it also holds copies of all the list elements.
+     It is the caller's responsibility to free  up  all  of  this
+     storage by calling
+
+          ffrreeee((char *) *_a_r_g_v_P_t_r)
+     when the list elements are no longer needed.
+
+     TTccll__SSpplliittLLiisstt normally returns TTCCLL__OOKK, which means the  list
+     was  successfully  parsed.   If  there was a syntax error in
+     _l_i_s_t, then TTCCLL__EERRRROORR is  returned  and  _i_n_t_e_r_p->_r_e_s_u_l_t  will
+     point  to  an  error  message  describing  the  problem.  If
+     TTCCLL__EERRRROORR is  returned  then  no  memory  is  allocated  and
+     *_a_r_g_v_P_t_r is not modified.
+
+     TTccll__MMeerrggee is the inverse of TTccll__SSpplliittLLiisstt:  it takes a  col-
+     lection  of  strings  given by _a_r_g_c and _a_r_g_v and generates a
+     result string that has proper list  structure.   This  means
+     that commands like iinnddeexx may be used to extract the original
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tcl_SplitList         C Library Procedures          Tcl_SplitList
+
+
+
+     elements again.  In addition, if the result of TTccll__MMeerrggee  is
+     passed  to TTccll__EEvvaall, it will be parsed into _a_r_g_c words whose
+     values will be the  same  as  the  _a_r_g_v  strings  passed  to
+     TTccll__MMeerrggee.   TTccll__MMeerrggee  will  modify  the list elements with
+     braces and/or backslashes in order  to  produce  proper  Tcl
+     list  structure.  The result string is dynamically allocated
+     using mmaalllloocc(());  the  caller  must  eventually  release  the
+     space using ffrreeee(()).
+
+     If the result of TTccll__MMeerrggee is passed to  TTccll__SSpplliittLLiisstt,  the
+     elements  returned  by  TTccll__SSpplliittLLiisstt  will  be identical to
+     those passed into TTccll__MMeerrggee.  However, the converse  is  not
+     true:   if  TTccll__SSpplliittLLiisstt  is passed a given string, and the
+     resulting _a_r_g_c and _a_r_g_v are passed to TTccll__MMeerrggee, the result-
+     ing string may not be the same as the original string passed
+     to  TTccll__SSpplliittLLiisstt.   This  is  because  TTccll__MMeerrggee  may   use
+     backslashes and braces differently than the original string.
+
+     TTccll__SSccaannEElleemmeenntt and TTccll__CCoonnvveerrttEElleemmeenntt  are  the  procedures  |
+     that  do all of the real work of TTccll__MMeerrggee.  TTccll__SSccaannEElleemmeenntt  |
+     scans its _s_r_c argument and determines how to use backslashes  |
+     and braces when converting it to a list element.  It returns  |
+     an overestimate of the  number  of  characters  required  to  |
+     represent  _s_r_c  as a list element, and it stores information  |
+     in *_f_l_a_g_s_P_t_r that is needed by TTccll__CCoonnvveerrttEElleemmeenntt.            |
+
+     TTccll__CCoonnvveerrttEElleemmeenntt   is    a    companion    procedure    to  |
+     TTccll__SSccaannEElleemmeenntt.   It  does  the actual work of converting a  |
+     string to a list element.  Its _f_l_a_g_s argument  must  be  the  |
+     same    as    the   value   returned   by   TTccll__SSccaannEElleemmeenntt.  |
+     TTccll__CCoonnvveerrttEElleemmeenntt writes a proper list  element  to  memory  |
+     starting  at *_d_s_t and returns a count of the total number of  |
+     characters written, which will be no more  than  the  result  |
+     returned  by TTccll__SSccaannEElleemmeenntt.  TTccll__CCoonnvveerrttEElleemmeenntt writes out  |
+     only the actual list element without any leading or trailing  |
+     spaces:  it  is  up  to the caller to include spaces between  |
+     adjacent list elements.                                       |
+
+     TTccll__CCoonnvveerrttEElleemmeenntt uses one of two different  approaches  to  |
+     handle the special characters in _s_r_c.  Wherever possible, it  |
+     handles special characters by surrounding  the  string  with  |
+     braces.   This  produces  clean-looking output, but can't be  |
+     used in some situations, such as when _s_r_c contains unmatched  |
+     braces.   In  these  situations,  TTccll__CCoonnvveerrttEElleemmeenntt handles  |
+     special characters by  generating  backslash  sequences  for  |
+     them.   The  caller may insist on the second approach by OR-  |
+     ing  the  flag  value  returned  by   TTccll__SSccaannEElleemmeenntt   with  |
+     TTCCLL__DDOONNTT__UUSSEE__BBRRAACCEESS.   Although  this will produce an uglier  |
+     result, it is useful in some  special  situations,  such  as  |
+     when  TTccll__CCoonnvveerrttEElleemmeenntt is being used to generate a portion  |
+     of an argument for a Tcl command.  In this case, surrounding  |
+     _s_r_c  with  curly  braces  would  cause the command not to be  |
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+Tcl_SplitList         C Library Procedures          Tcl_SplitList
+
+
+
+     parsed correctly.
+
+
+KKEEYYWWOORRDDSS
+     backslash, convert, element, list, merge, split, strings
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

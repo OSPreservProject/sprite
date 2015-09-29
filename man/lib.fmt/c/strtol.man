@@ -1,0 +1,134 @@
+
+
+
+strtol                    User Commands                    strtol
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     strtol, strtoul - Convert character string to integer
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     lloonngg iinntt
+     ssttrrttooll((_s_t_r_i_n_g, _e_n_d_P_t_r, _b_a_s_e)
+
+     uunnssiiggnneedd lloonngg iinntt
+     ssttrrttoouull((_s_t_r_i_n_g, _e_n_d_P_t_r, _b_a_s_e)
+
+AARRGGUUMMEENNTTSS
+     char     *_s_t_r_i_n_g  (in)      String     containing      ASCII
+                                 representation of integer.
+
+     char     **_e_n_d_P_t_r (out)     If not NNUULLLL,  gives  address  of
+                                 pointer  to fill in with address
+                                 of  first  character  in  _s_t_r_i_n_g
+                                 following integer.
+
+     int      _b_a_s_e     (in)      Base to use for conversion;  see
+                                 below  for explanation.  Must be
+                                 between 0 and 36, inclusive.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrttooll and ssttrrttoouull procedures convert a character string
+     to  its  corresponding integer representation and return the
+     integer value.  Both procedures expect _s_t_r_i_n_g to point to  a
+     sequence  of  digits,  optionally  preceded by any amount of
+     white space (as defined by the iissssppaaccee  procedure).   SSttrrttooll
+     also  permits  the  digits  to  be preceded immediately by a
+     minus sign, in which case the result is a negative integer.
+
+     If _b_a_s_e is between 2 and 36, inclusive, then the permissible
+     ``digits''  of  the string consist of the first _b_a_s_e charac-
+     ters in the set 00 through 99 and aa through zz  (or  AA  through
+     ZZ).  The integer result will be calculated using _b_a_s_e as the
+     radix for conversion.  If the value of _b_a_s_e is 16, then  the
+     characters  00xx  or  00XX may precede the digits, following the
+     sign if it is present.
+
+     If _b_a_s_e is 0, then the radix for conversion is chosen  based
+     on  the initial digits of the number.  If the initial digits
+     are 00xx or 00XX, then base 16  will  be  used  for  conversion;
+     otherwise  if  the first digit is 00 then base 8 will be used
+     for conversion; otherwise base 10 will be used.
+
+     SSttrrttooll and ssttrrttoouull convert as many  characters  as  possible
+
+
+
+Sprite v.1.0        Printed:  April 15, 1989                    1
+
+
+
+
+
+
+strtol                    User Commands                    strtol
+
+
+
+     from  _s_t_r_i_n_g, and return in *_e_n_d_P_t_r the address of the first
+     character not forming a valid portion of the number.  If  no
+     conversion  could be performed (_s_t_r_i_n_g was empty, or did not
+     point to a number in the expected form), then _s_t_r_i_n_g will be
+     stored in *_e_n_d_P_t_r and zero is returned.
+
+
+KKEEYYWWOORRDDSS
+     base, convert, integer, radix, string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 15, 1989                    2
+
+
+
