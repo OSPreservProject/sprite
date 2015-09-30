@@ -37,7 +37,7 @@ docs	|           directory for documentation
 ds5000.bt	|      boot image for Sprite on a  DECstation 5000/200
 sun4.bt	|        boot image for Sprite on a SparcStation 2
 lib	|            directory for library files other than source files
-filename.lst    A list of all the files on the disc
+filename.lst |   A list of all the files on the disc
 ls_lR	|          output from ls -lR, a recursive list of the files on the disc
 man	|            directory for manual pages
 papers	|         directory for research papers about Sprite
