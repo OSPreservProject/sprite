@@ -29,11 +29,8 @@ The correct invocation to boot the DECstation image in gexemul is:
 
 This repository contains the following files and directories:
 
-<<<<<<< HEAD
 file    | directory
 ----    | ---------
-=======
->>>>>>> fee8cbbe0803ab2d8d855b0e2d0b1ca0f1c74fd1
 admin	|          directory for administrative programs, scripts and information
 boot.txt	|       file with information about booting the Sprite kernel images
 docs	|           directory for documentation
