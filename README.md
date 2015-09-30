@@ -1,3 +1,5 @@
+# The Sprite Operating System
+
 This respository includes the source code, executables, documentation
 and research papers for the Sprite network operating system.  Sprite
 is a distributed systems research project led by Prof. John Ousterhout
@@ -19,7 +21,11 @@ series (but not the sun4m, necessary for qemu support) and the DECstation
 (supported by gxemul). Initial attempts to get Sprite running in emulation
 should probably revolve around booting the ds5000.bt image in gxemul.
 
-===========================================================================
+The correct invocation to boot the DECstation image in gexemul is:
+
+> gxemul -X -e 3max -M128 -d ds5000.bt -j vmsprite -o ''
+
+---
 
 This repository contains the following files and directories:
 
