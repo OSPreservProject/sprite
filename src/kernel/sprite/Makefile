@@ -3,7 +3,8 @@
 #
 # No mkmf
 #
-LD = /sprite/cmds.${MACHINE}/ld
+# this will need to be hosted in linux. Bad ld, no donut.
+#LD = /sprite/cmds.${MACHINE}/ld
 
 # don't use TM, because that is set explicitly by the environment in some cases
 # and then we can't override it.  But set it by default to the current machine
@@ -32,6 +33,13 @@ RTM = sun4c
 MTFLAGS = -msun4
 #endif
 
+#ifmake x86
+RTM = x86
+MTFLAGS = 
+#endif
+
+
+
 #if !empty(TM)
 RTM ?= $(TM)
 #else
@@ -39,8 +47,8 @@ RTM ?= $(MACHINE)
 #endif
 
 MODULE = sprite
-SPRITEDIR =	/sprite/src/kernel
-USERH=		/sprite/lib/include
+SPRITEDIR =	 ../../kernel
+USERH=		../../lib/include
 H =		${SPRITEDIR}/Include
 INSTALLED =	{SPRITEDIR}/Installed/${MODULE}
 LIB =		${SPRITEDIR}/${RTM}.md
@@ -52,7 +60,7 @@ PROFILE =
 CFLAGS =	${MTFLAGS} -g -DKERNEL ${PROFILE} ${IFLAGS}
 LINTFLAGS =	-I. -I${H}
 LINTLIBS =	${LINT}/*.ln
-DISTDIR     ?= /dist/sprite/src/kernel/sprite
+DISTDIR     ?= ../../src/kernel/sprite
 
 KERNELNAME	?= new
 
@@ -328,6 +336,26 @@ ds5000: ${OBJS} .PRECIOUS .NOEXPORT
 	update -f $@ /lustA/${KERNELNAME}
 	strip /lustA/${KERNELNAME}
 	-Save $@
+
+x86: ${OBJS} .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
+	-Save $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@cc -c ${CFLAGS} version.c
+	${LD} -N -o x86 -e start -T 80030000 ${OBJS} version.o
+	@ls -l $@
+	@size $@
+	update -f x86 boot/x86.md/${KERNELNAME}
+	strip boot/x86.md/${KERNELNAME}
+	rcp $@ ginger:/home/ginger/sprite/kernels/$@.`Version $@`
+	rm -f $@.nm
+	nm -n $@ > $@.nm
+	update -f $@ /lustA/${KERNELNAME}
+	strip /lustA/${KERNELNAME}
+	-Save $@
+
 
 # profile2: ${PROFOBJS} Makefile .PRECIOUS
 #	sed 's/MACHINE/$@/g' version.h.template > version.h
