@@ -1027,7 +1027,7 @@ text
 @d11 1
 a11 1
 static char rcsid[] = "$Header: sigMigrate.c,v 5.3 88/08/02 15:28:35 douglis Exp $ SPRITE (Berkeley)";
-a113 55
+a112 55
 
 /*
  *----------------------------------------------------------------------
