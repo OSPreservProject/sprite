@@ -1,0 +1,52 @@
+
+dbg.h,293
+#define	DBG_CVT_MACH_TRAP(219,5545
+typedef Dbg_WriteMem Dbg_CallFunc;117,3247
+} Dbg_DumpBounds;145,3856
+} Dbg_Msg;162,4120
+} Dbg_Opcode;81,2472
+} Dbg_ReadMem;122,3337
+} Dbg_Reboot;127,3415
+} Dbg_SyslogCmd;132,3496
+} Dbg_WriteMem;115,3230
+} Dbg_WriteReg;109,3137
+} StopInfo;282,7229
+
+dbgIP.c,131
+Dbg_FormatPacket(207,6361
+Dbg_PacketHdrSize(264,8176
+Dbg_ValidatePacket(56,1345
+ProtNumToName(324,9557
+TestInputProc(292,8632
+
+dbgInt.h,0
+
+dbgMain.c,261
+DbgCheckNmis(172,4718
+Dbg_InRange(203,5390
+Dbg_Init(341,8503
+Dbg_InputPacket(370,9097
+Dbg_Main(606,14613
+GetRequestBytes(506,12297
+PutReplyBytes(531,12775
+ReadRequest(447,11070
+SendReply(560,13375
+TranslateException(311,7939
+TranslateOpcode(281,7362
+
+vmInt.h,354
+} VmCOWInfo;453,18194
+} VmCore;426,17443
+} VmDeleteStatus;349,14450
+#define	VmGetAddrPTEPtr(482,18805
+#define	VmGetAddrPTEPtr(485,18939
+#define	VmGetPTEPtr(472,18447
+#define	VmGetPTEPtr(475,18553
+#define	VmIncPTEPtr(495,19326
+} VmProcLink;322,13574
+} VmSpace;333,13937
+#define max(507,19719
+#define min(506,19684
+#define segOffset(500,19440
+
+vmMachInt.h,0
