@@ -1,6 +1,0 @@
-L DEP.C;1                           	dep.c	../sprite/symmetry-dep.c
-F DEP_C.DBG;1                       	dep.c.dbg
-F MD.MK;1                           	md.mk
-L PARAM.H;1                         	param.h	../sprite/m-symmetry.h
-L PINSN.C;1                         	pinsn.c	../sprite/symmetry-pinsn.c
-L PROCDEBU.C;1                      	procDebugRegs.c	../sprite/i386_procDebugRegs.c

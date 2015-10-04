@@ -1,9 +1,0 @@
-D CVS_ADM                           	CVS.adm
-D SCVS                              	SCVS
-F SUNMEMOR.;1                       	sunMemoryMap
-F VMMACH.H;1                        	vmMach.h
-F VMMACHIN.H;1                      	vmMachInt.h
-F VMMACHST.H;1                      	vmMachStat.h
-F VMSUN.C;1                         	vmSun.c
-F VMSUNASM.S;1                      	vmSunAsm.s
-F VMSUNCON.H;1                      	vmSunConst.h

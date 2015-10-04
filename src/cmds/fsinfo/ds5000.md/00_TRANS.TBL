@@ -1,4 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-L DISKHEAD.C;1                      	diskHeader.c	/users/voelker/disk/diskHeader.c
-L DISKIO.C;1                        	diskIO.c	/users/voelker/disk/diskIO.c
-F MD.MK;1                           	md.mk

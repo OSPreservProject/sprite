@@ -1,7 +1,0 @@
-F DF.C;1                            	df.c
-F DF.MAN;1                          	df.man
-D DS3100_M                          	ds3100.md
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

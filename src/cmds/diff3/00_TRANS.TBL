@@ -1,7 +1,0 @@
-L DIFF3.C;1                         	diff3.c	../diff/dist/diff3.c
-D DS3100_M                          	ds3100.md
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

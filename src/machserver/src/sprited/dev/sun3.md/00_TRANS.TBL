@@ -1,5 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F DEVFSOPT.C;1                      	devFsOpTable.c
-F LINT.;1                           	lint
-F MD.MK;1                           	md.mk
-D RCS                               	RCS

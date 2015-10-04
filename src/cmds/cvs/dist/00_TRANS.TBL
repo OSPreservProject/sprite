@@ -1,8 +1,0 @@
-F CHANGELO.;1                       	ChangeLog
-F COPYING.;1                        	COPYING
-D DOC                               	doc
-D EXAMPLES                          	examples
-F MAKEFILE.;1                       	Makefile
-D MAN                               	man
-F README.;1                         	README
-D SRC                               	src

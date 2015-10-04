@@ -1,9 +1,0 @@
-F BENCH.OUT;1                       	bench.out
-F DEPENDEN.MK;1                     	dependencies.mk
-D DS3100_M                          	ds3100.md
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md
-F WRITE.C;1                         	write.c
-F WRITE_C.OLD;1                     	write.c.old

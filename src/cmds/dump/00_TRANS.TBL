@@ -1,8 +1,0 @@
-D DS3100_M                          	ds3100.md
-F DUMP.MAN;1                        	dump.man
-F LOCAL.MK;1                        	local.mk
-F MAIN.C;1                          	main.c
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

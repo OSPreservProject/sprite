@@ -1,7 +1,0 @@
-L CMDOPT.T;1                        	cmdopt.t	../../dist/t/comp/cmdopt.t
-L CPP.T;1                           	cpp.t	../../dist/t/comp/cpp.t
-L DECL.T;1                          	decl.t	../../dist/t/comp/decl.t
-L MULTILIN.T;1                      	multiline.t	../../dist/t/comp/multiline.t
-L PACKAGE.T;1                       	package.t	../../dist/t/comp/package.t
-L SCRIPT.T;1                        	script.t	../../dist/t/comp/script.t
-L TERM.T;1                          	term.t	../../dist/t/comp/term.t

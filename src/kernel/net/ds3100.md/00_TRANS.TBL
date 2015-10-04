@@ -1,7 +1,0 @@
-D CVS_ADM                           	CVS.adm
-F NETCONFI.C;1                      	netConfig.c
-F NETLE.C;1                         	netLE.c
-F NETLEINT.H;1                      	netLEInt.h
-F NETLEREC.C;1                      	netLERecv.c
-F NETLEXMI.C;1                      	netLEXmit.c
-D SCVS                              	SCVS

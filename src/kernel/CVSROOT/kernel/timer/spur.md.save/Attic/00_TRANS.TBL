@@ -1,6 +1,0 @@
-F TIMERMAC.H_V;1                    	timerMach.h,v
-F TIMERSPU.C_V;1                    	timerSpur.c,v
-F TIMERSPU.H_V;1                    	timerSpurInt.h,v
-F TIMERSPU.S_V;1                    	timerSpurT0.s,v
-F TIMERTIC.C_V;1                    	timerTick.c,v
-F TIMERTIC.H_V;1                    	timerTick.h,v

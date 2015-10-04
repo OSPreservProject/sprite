@@ -1,7 +1,0 @@
-F ALLOCA.C;1                        	alloca.c
-F DEPENDEN.MK;1                     	dependencies.mk
-F GMON.H;1                          	gmon.h
-F MD.MK;1                           	md.mk
-F MON.C;1                           	mon.c
-F OLDLLIB.;1                        	oldllib
-F SETJMP.S;1                        	setjmp.s

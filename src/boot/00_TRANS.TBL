@@ -1,8 +1,0 @@
-D DECPROM                           	decprom
-D DISKBOOT                          	diskBoot.OpenProm
-F MAKEFILE.;1                       	Makefile
-D NETBOOT0                          	netBoot
-D NETBOOT1                          	netBoot.OpenProm
-D NETBOOT2                          	netBoot.new
-D SCSIDISK                          	scsiDiskBoot
-D SUNPROM                           	sunprom

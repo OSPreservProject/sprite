@@ -1,8 +1,0 @@
-D DS3100_M                          	ds3100.md
-D DS5000_M                          	ds5000.md
-F LOCAL.MK;1                        	local.mk
-F MAIN.H;1                          	main.h
-F MAKEFILE.;1                       	Makefile
-D SUN3_MD                           	sun3.md
-D SUN4C_MD                          	sun4c.md
-D SUN4_MD                           	sun4.md

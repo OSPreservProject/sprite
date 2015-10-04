@@ -1,9 +1,0 @@
-D CVS_ADM                           	CVS.adm
-F DBG.H;1                           	dbg.h
-F DBGASM.H;1                        	dbgAsm.h
-F DBGINT.H;1                        	dbgInt.h
-F DBGIP.C;1                         	dbgIP.c
-F DBGMAIN.C;1                       	dbgMain.c
-F DBGTRAP.S;1                       	dbgTrap.s
-D SCVS                              	SCVS
-F TAGS.;1                           	TAGS

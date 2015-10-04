@@ -1,7 +1,0 @@
-F MAKEFILE.;1                       	Makefile
-F MKTTY.C;1                         	mktty.c
-F MKTTY.MAN;1                       	mktty.man
-L PDEV.C;1                          	pdev.c	/sprite/src/lib/c/etc/pdev.c
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

@@ -1,9 +1,0 @@
-F NET.H_V;1                         	net.h,v
-F NETARP.C_V;1                      	netArp.c,v
-F NETCODE.C_V;1                     	netCode.c,v
-F NETETHER.C_V;1                    	netEther.c,v
-F NETINT.H_V;1                      	netInt.h,v
-F NETMACH.C_V;1                     	netMach.c,v
-F NETROUTE.C_V;1                    	netRoute.c,v
-F NETROUTE.H_V;1                    	netRoute.h,v
-F NETTYPES.H_V;1                    	netTypes.h,v

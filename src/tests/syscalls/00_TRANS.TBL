@@ -1,8 +1,0 @@
-D EXIT                              	exit
-D FLOCK                             	flock
-D FORK                              	fork
-D LINK                              	link
-F MAKEFILE.;1                       	Makefile
-D OPEN                              	open
-D RCS                               	RCS
-D READ                              	read

@@ -1,9 +1,0 @@
-D CVS_ADM                           	CVS.adm
-D SCVS                              	SCVS
-F VM3MAX.C;1                        	vm3max.c
-F VM3MAXAS.S;1                      	vm3maxAsm.s
-F VM3MAXCO.H;1                      	vm3maxConst.h
-F VMMACH.H;1                        	vmMach.h
-F VMMACHIN.H;1                      	vmMachInt.h
-F VMMACHST.H;1                      	vmMachStat.h
-F VMMAP.G;1                         	vmMap.g

@@ -1,7 +1,0 @@
-L ELSIF.T;1                         	elsif.t	../../dist/t/cmd/elsif.t
-L FOR.T;1                           	for.t	../../dist/t/cmd/for.t
-L MOD.T;1                           	mod.t	../../dist/t/cmd/mod.t
-L SUBVAL.T;1                        	subval.t	../../dist/t/cmd/subval.t
-L SUBVAL_T.ORI;1                    	subval.t.orig	../../dist/t/cmd/subval.t.orig
-L SWITCH.T;1                        	switch.t	../../dist/t/cmd/switch.t
-L WHILE.T;1                         	while.t	../../dist/t/cmd/while.t

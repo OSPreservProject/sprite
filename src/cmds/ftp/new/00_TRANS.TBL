@@ -1,7 +1,0 @@
-F CMDS.C;1                          	cmds.c
-F CMDTAB.C;1                        	cmdtab.c
-F DOMACRO.C;1                       	domacro.c
-F FTP.C;1                           	ftp.c
-F GLOB.C;1                          	glob.c
-F MAIN.C;1                          	main.c
-F RUSERPAS.C;1                      	ruserpass.c

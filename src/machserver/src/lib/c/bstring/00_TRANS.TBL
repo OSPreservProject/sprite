@@ -1,9 +1,0 @@
-L BCMP.C;1                          	bcmp.c	../../c.orig/bstring/bcmp.c
-L BCOPY.C;1                         	bcopy.c	../../c.orig/bstring/bcopy.c
-L BZERO.C;1                         	bzero.c	../../c.orig/bstring/bzero.c
-D DS3100_M                          	ds3100.md
-L FFS.C;1                           	ffs.c	../../c.orig/bstring/ffs.c
-L LOCAL.MK;1                        	local.mk	../etc/local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md

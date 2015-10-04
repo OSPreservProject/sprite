@@ -1,6 +1,0 @@
-F BENCH.OUT;1                       	bench.out
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN2_MD                           	sun2.md
-D SUN3_MD                           	sun3.md
-F WRBLOCKS.C;1                      	wrblocks.c

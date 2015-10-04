@@ -1,8 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F GETIDPRO.C;1                      	getidprom.c
-F IDPROM.C;1                        	idprom.c
-F IDPROM.H;1                        	idprom.h
-F MAP.S;1                           	map.s
-F MD.MK;1                           	md.mk
-D RCS                               	RCS
-F START.S;1                         	start.s

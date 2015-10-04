@@ -1,9 +1,0 @@
-D CVS_ADM                           	CVS.adm
-L MCOUNT.S;1                        	mcount.s	../sun4.md/mcount.s
-L MCOUNT_S.SAV;1                    	mcount.s.save	../sun4.md/mcount.s
-L PROFINT.H;1                       	profInt.h	../sun4.md/profInt.h
-L PROFSTAC.S;1                      	profStack.s	../sun4.md/profStack.s
-L PROFSUBR.C;1                      	profSubr.c	../sun4.md/profSubr.c
-D SCVS                              	SCVS
-L _MCOUNT.C;1                       	_mcount.c	../sun4.md/_mcount.c
-L _MCOUNT_.SAV;1                    	_mcount.c.save	../sun4.md/_mcount.c

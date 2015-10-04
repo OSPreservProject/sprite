@@ -1,6 +1,0 @@
-F LOCAL.MK_;1                       	local.mk,v
-F SYNC.H_V;1                        	sync.h,v
-F SYNCLOCK.C_V;1                    	syncLock.c,v
-F SYNCSLEE.C_O;1                    	syncSleep.c,OLD
-F SYNCSLEE.C_V;1                    	syncSleep.c,v
-F SYNCTYPE.H_V;1                    	syncTypes.h,v

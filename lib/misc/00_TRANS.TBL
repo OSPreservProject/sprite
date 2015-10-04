@@ -1,7 +1,0 @@
-L DISTFILE.CMD;1                    	distfile.cmds	/sprite/src/lib/makemake/distfile.cmds
-L DISTFILE.COM;1                    	distfile.command	/sprite/src/lib/makemake/distfile.command
-F DISTFILE.KER;1                    	distfile.kernel
-L DISTFILE.MIS;1                    	distfile.misc	/sprite/src/lib/makemake/distfile.misc
-D RCS                               	RCS
-F README.;1                         	README
-F VERSION.C;1                       	version.c

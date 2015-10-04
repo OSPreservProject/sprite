@@ -1,8 +1,0 @@
-F MAKEIND0.Z;1                      	makeindex.info.Z
-F MAKEIND1.Z;1                      	makeindex.vms.Z
-F MAKEINDE.AUX;1                    	makeindex.aux
-F MAKEINDE.DVI;1                    	makeindex.dvi
-L MAKEINDE.L;1                      	makeindex.l	../../makeindex.man
-F MAKEINDE.LOG;1                    	makeindex.log
-F MAKEINDE.PS;1                     	makeindex.ps
-F MAKEINDE.TEX;1                    	makeindex.tex

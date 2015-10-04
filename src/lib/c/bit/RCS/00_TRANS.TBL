@@ -1,8 +1,0 @@
-F BITINT.H_V;1                      	bitInt.h,v
-F BIT_ANYS.C_V;1                    	Bit_AnySet.c,v
-F BIT_EXPA.C_V;1                    	Bit_Expand.c,v
-F BIT_FIN0.C_V;1                    	Bit_FindFirstClear.c,v
-F BIT_FIN1.C_V;1                    	Bit_FindFirstSet.c,v
-F BIT_INTE.C_V;1                    	Bit_Intersect.c,v
-F BIT_MAN_.;1                       	Bit.man,v
-F BIT_UNIO.C_V;1                    	Bit_Union.c,v

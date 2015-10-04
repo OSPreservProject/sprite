@@ -1,7 +1,0 @@
-F LD.C;1                            	ld.c
-F LD.NEW;1                          	ld.new
-F LD_C.ORI;1                        	ld.c.orig
-F LD_C.REJ;1                        	ld.c.rej
-F LD_CURRE.;1                       	ld.current
-F LD_DIFF3.;1                       	ld.diff3
-D RCS                               	RCS

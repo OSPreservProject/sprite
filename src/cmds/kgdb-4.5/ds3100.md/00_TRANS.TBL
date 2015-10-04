@@ -1,9 +1,0 @@
-D BFD                               	bfd
-D GDB                               	gdb
-D GLOB                              	glob
-D INCLUDE                           	include
-D LIBIBERT                          	libiberty
-F MAKEFILE.;1                       	Makefile
-L MKMF.LOC;1                        	mkmf.local	/sprite/lib/mkmf/mkmf.top
-D MMALLOC                           	mmalloc
-D READLINE                          	readline

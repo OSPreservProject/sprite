@@ -1,9 +1,0 @@
-D DS3100_M                          	ds3100.md
-F IMAKE.C;1                         	imake.c
-F IMAKE.MAN;1                       	imake.man
-F IMAKEMDE.H;1                      	imakemdep.h
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md
-F XOSDEFS.H;1                       	Xosdefs.h

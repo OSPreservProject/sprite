@@ -1,7 +1,0 @@
-F FSPDEV.H_V;1                      	fspdev.h,v
-F FSPDEVCO.C_V;1                    	fspdevControl.c,v
-F FSPDEVIN.H_V;1                    	fspdevInt.h,v
-F FSPDEVOP.C_V;1                    	fspdevOps.c,v
-F FSPDEVPF.C_V;1                    	fspdevPfs.c,v
-F FSPDEVSE.C_V;1                    	fspdevSetup.c,v
-F FSPDEVSR.C_V;1                    	fspdevSrv.c,v

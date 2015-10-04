@@ -1,4 +1,0 @@
-L CONFIG.H;1                        	config.h	/sprite/src/cmds/cc1.mips/config.h
-F DEPENDEN.MK;1                     	dependencies.mk
-F MD.MK;1                           	md.mk
-L TM.H;1                            	tm.h	/sprite/src/cmds/cc1.mips/tm.h

@@ -1,6 +1,0 @@
-D DS3100_M                          	ds3100.md
-L GDB_NEW.MAN;1                     	gdb.new.man	../gdb-4.5/gdb.new.man
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN4_MD                           	sun4.md

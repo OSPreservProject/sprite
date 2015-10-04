@@ -1,6 +1,0 @@
-F DISK.H_V;1                        	disk.h,v
-F DISK.MAN;1                        	Disk.man,v
-F DISKFRAG.C_V;1                    	diskFragIO.c,v
-F DISKHEAD.C_V;1                    	diskHeader.c,v
-F DISKIO.C_V;1                      	diskIO.c,v
-F DISKPRIN.C_V;1                    	diskPrint.c,v

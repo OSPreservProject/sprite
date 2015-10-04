@@ -1,9 +1,0 @@
-L DFA.C;1                           	dfa.c	../grep/dfa.c
-L DFA.H;1                           	dfa.h	../grep/dfa.h
-D DS3100_M                          	ds3100.md
-L GREP.C;1                          	grep.c	../grep/grep.c
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-L REGEX.C;1                         	regex.c	../grep/regex.c
-L REGEX.H;1                         	regex.h	../grep/regex.h

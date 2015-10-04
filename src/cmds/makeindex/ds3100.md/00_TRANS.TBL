@@ -1,9 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F GENIND.O;1                        	genind.o
-F MAKEINDE.;1                       	makeindex
-F MD.MK;1                           	md.mk
-F MKIND.O;1                         	mkind.o
-F QSORT.O;1                         	qsort.o
-F SCANID.O;1                        	scanid.o
-F SCANST.O;1                        	scanst.o
-F SORTID.O;1                        	sortid.o

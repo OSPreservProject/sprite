@@ -1,9 +1,0 @@
-F A2P.H;1                           	a2p.h
-F CONFIG_H.SH;1                     	config_h.SH
-F DOIO.C;1                          	doio.c
-F PERL.C;1                          	perl.c
-F PERL.H;1                          	perl.h
-F PERLDB.PL;1                       	perldb.pl
-D RCS                               	RCS
-F STAT.PL;1                         	stat.pl
-F STAT.T;1                          	stat.t

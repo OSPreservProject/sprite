@@ -1,7 +1,0 @@
-F LOADAVG.MAN;1                     	loadavg.man,v
-F LOADAVG0.C_V;1                    	loadAvg.c,v
-F LOADAVG0.H_V;1                    	loadAvg.h,v
-F LOADAVG1.C_V;1                    	loadavg.c,v
-F LOADAVG1.H_V;1                    	loadavg.h,v
-F LOCAL.MK_;1                       	local.mk,v
-F SERVER.C_V;1                      	server.c,v

@@ -1,8 +1,0 @@
-D CONFIG                            	config
-F CONFIGUR.;1                       	configure
-F CONFIGUR.IN;1                     	configure.in
-F GETOPT.C;1                        	getopt.c
-F GETOPT1.C;1                       	getopt1.c
-F MAKEFILE.IN;1                     	Makefile.in
-F OBSTACK.C;1                       	obstack.c
-F README.;1                         	README

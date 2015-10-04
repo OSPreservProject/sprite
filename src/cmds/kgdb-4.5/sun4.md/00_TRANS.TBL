@@ -1,7 +1,0 @@
-D BFD                               	bfd
-D GDB                               	gdb
-D GLOB                              	glob
-D INCLUDE                           	include
-D LIBIBERT                          	libiberty
-D MMALLOC                           	mmalloc
-D READLINE                          	readline

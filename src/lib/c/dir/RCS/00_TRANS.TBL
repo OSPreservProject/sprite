@@ -1,6 +1,0 @@
-F CLOSEDIR.C_V;1                    	closedir.c,v
-F OPENDIR.C_V;1                     	opendir.c,v
-F READDIR.C_V;1                     	readdir.c,v
-F SCANDIR.C_V;1                     	scandir.c,v
-F SEEKDIR.C_V;1                     	seekdir.c,v
-F TELLDIR.C_V;1                     	telldir.c,v

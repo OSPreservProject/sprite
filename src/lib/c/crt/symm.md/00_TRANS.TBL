@@ -1,8 +1,0 @@
-F CRT0.C;1                          	crt0.c
-F DEFS.H;1                          	DEFS.h
-F DEPENDEN.MK;1                     	dependencies.mk
-F LLIB_LCR.LN;1                     	llib-lcrt.ln
-F MD.MK;1                           	md.mk
-D RCS                               	RCS
-F SETJMP.H;1                        	Setjmp.h
-F VALUES.H;1                        	values.h

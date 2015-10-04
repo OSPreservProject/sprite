@@ -1,8 +1,0 @@
-D ATTIC                             	Attic
-D SCVS                              	SCVS
-F VMMACH.H_V;1                      	vmMach.h,v
-F VMMACHIN.H_V;1                    	vmMachInt.h,v
-F VMMACHST.H_V;1                    	vmMachStat.h,v
-F VMPMAX.C_V;1                      	vmPmax.c,v
-F VMPMAXAS.S_V;1                    	vmPmaxAsm.s,v
-F VMPMAXCO.H_V;1                    	vmPmaxConst.h,v

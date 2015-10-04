@@ -1,7 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F DEVDECPR.C;1                      	devDecProm.c
-F DEVFSOPT.C;1                      	devFsOpTable.c
-F MAIN.C;1                          	main.c
-F MD.MK;1                           	md.mk
-D RCS                               	RCS
-F START.S;1                         	start.s

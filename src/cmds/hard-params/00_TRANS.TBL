@@ -1,9 +1,0 @@
-D DS3100_M                          	ds3100.md
-L HARD_PAR.C;1                      	hard-params.c	../cc/dist/hard-params.c
-F HARD_PAR.MAN;1                    	hard-params.man
-F HP.AWK;1                          	hp.awk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-F README.;1                         	README
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

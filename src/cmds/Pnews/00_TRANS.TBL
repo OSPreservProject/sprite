@@ -1,6 +1,0 @@
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-L PNEWS.;1                          	Pnews	../rn/sprite/Pnews
-L PNEWS.HEA;1                       	Pnews.header	../rn/dist/rrn/Pnews.header
-L PNEWS.MAN;1                       	Pnews.man	../rn/dist/rrn/Pnews.1
-D RCS                               	RCS

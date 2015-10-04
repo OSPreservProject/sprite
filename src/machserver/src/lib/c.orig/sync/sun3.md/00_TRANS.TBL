@@ -1,4 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F MD.MK;1                           	md.mk
-F SYNC_GET.S;1                      	Sync_GetLock.s
-F SYNC_UNL.S;1                      	Sync_Unlock.s

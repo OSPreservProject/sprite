@@ -1,5 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F LINT.;1                           	lint
-F MD.MK;1                           	md.mk
-D RCS                               	RCS
-F RPCDELAY.C;1                      	rpcDelays.c

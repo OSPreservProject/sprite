@@ -1,4 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F GETOPT.;1                         	getopt
-F GETOPT.O;1                        	getopt.o
-F MD.MK;1                           	md.mk

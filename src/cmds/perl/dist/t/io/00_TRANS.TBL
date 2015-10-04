@@ -1,7 +1,0 @@
-F ARGV.T;1                          	argv.t
-F DUP.T;1                           	dup.t
-F FS.T;1                            	fs.t
-F INPLACE.T;1                       	inplace.t
-F PIPE.T;1                          	pipe.t
-F PRINT.T;1                         	print.t
-F TELL.T;1                          	tell.t

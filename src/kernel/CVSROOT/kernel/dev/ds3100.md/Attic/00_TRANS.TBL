@@ -1,9 +1,0 @@
-F DEVEXABY.C_V;1                    	devExabyteTape.c,v
-F DEVGRAPH.H_V;1                    	devGraphics.h,v
-F DEVKBDMA.C_V;1                    	devKbdMap.c,v
-F DEVKBDQU.C_V;1                    	devKbdQueueMach.c,v
-F DEVKEYBO.H_V;1                    	devKeyboardInt.h,v
-F DEVSERIA.C_V;1                    	devSerialPmax.c,v
-F DEVUART.H_V;1                     	devUart.h,v
-F EXABYTET.H_V;1                    	exabyteTape.h,v
-F KBDMAPMA.H_V;1                    	kbdMapMach.h,v

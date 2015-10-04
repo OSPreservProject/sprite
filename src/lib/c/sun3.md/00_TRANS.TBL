@@ -1,7 +1,0 @@
-F LIBC.A;1                          	libc.a
-F LIBC_A.OLD;1                      	libc.a.old
-F LIBC_G.A;1                        	libc_g.a
-F LIBC_G_A.OLD;1                    	libc_g.a.old
-F LIBC_P.A;1                        	libc_p.a
-F LIBC_P_A.OLD;1                    	libc_p.a.old
-F LLIB_LC.LN;1                      	llib-lc.ln

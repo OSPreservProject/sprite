@@ -1,9 +1,0 @@
-F CONFIG.PS_;1                      	config.ps,v
-F DOWNLOAD.C_V;1                    	download.c,v
-F DVIPS.C_V;1                       	dvips.c,v
-F OUTPUT.C_V;1                      	output.c,v
-F PATHS.H_V;1                       	paths.h,v
-F RESIDENT.C_V;1                    	resident.c,v
-F SPECIAL.LPR;1                     	special.lpro,v
-F TEXPS.LPR;1                       	texps.lpro,v
-F TEX_LPRO.;1                       	tex.lpro,v

@@ -1,6 +1,0 @@
-L MAKEFILE.;1                       	Makefile	../../dist/ucbsrc/Makefile
-F MAKEFILE.SPR;1                    	Makefile.sprite
-L TCLBASIC.CDI;1                    	tclBasic.cdiff	../../dist/ucbsrc/tclBasic.cdiff
-L TCLBASIC.SED;1                    	tclBasic.sed	../../dist/ucbsrc/tclBasic.sed
-L TCLEXPR.CDI;1                     	tclExpr.cdiff	../../dist/ucbsrc/tclExpr.cdiff
-L TCLEXPR.SED;1                     	tclExpr.sed	../../dist/ucbsrc/tclExpr.sed

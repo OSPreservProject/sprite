@@ -1,8 +1,0 @@
-D SCVS                              	SCVS
-F VM3MAX.C_V;1                      	vm3max.c,v
-F VM3MAXAS.S_V;1                    	vm3maxAsm.s,v
-F VM3MAXCO.H_V;1                    	vm3maxConst.h,v
-F VMMACH.H_V;1                      	vmMach.h,v
-F VMMACHIN.H_V;1                    	vmMachInt.h,v
-F VMMACHST.H_V;1                    	vmMachStat.h,v
-F VMMAP.G_V;1                       	vmMap.g,v

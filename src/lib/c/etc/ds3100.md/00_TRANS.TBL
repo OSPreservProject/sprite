@@ -1,6 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F MD.MK;1                           	md.mk
-F NLIST.GO;1                        	nlist.go
-F NLIST.O;1                         	nlist.o
-F OLDLLIB.;1                        	oldllib
-D RCS                               	RCS

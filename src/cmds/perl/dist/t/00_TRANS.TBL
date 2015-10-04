@@ -1,8 +1,0 @@
-D BASE                              	base
-D CMD                               	cmd
-D COMP                              	comp
-D IO                                	io
-D LIB                               	lib
-D OP                                	op
-F README.;1                         	README
-F TEST.;1                           	TEST

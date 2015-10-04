@@ -1,7 +1,0 @@
-D DS3100_M                          	ds3100.md
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-F NETROUTE.C;1                      	netroute.c
-D RCS                               	RCS
-F README.;1                         	README
-F TAGS.;1                           	TAGS

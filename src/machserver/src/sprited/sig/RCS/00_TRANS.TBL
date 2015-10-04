@@ -1,5 +1,0 @@
-F SIG.H_V;1                         	sig.h,v
-F SIGINT.H_V;1                      	sigInt.h,v
-F SIGNALS.C_V;1                     	signals.c,v
-F SIGSTUBS.C_V;1                    	sigStubs.c,v
-F SIGTYPES.H_V;1                    	sigTypes.h,v

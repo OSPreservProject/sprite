@@ -1,9 +1,0 @@
-L COMMON.C;1                        	common.c	/sprite/src/admin/adduser/common.c
-L COMMON.H;1                        	common.h	/sprite/src/admin/adduser/common.h
-D DS3100_M                          	ds3100.md
-F MAKEFILE.;1                       	Makefile
-F NEWACCT.C;1                       	newacct.c
-F NEWACCT.MAN;1                     	newacct.man
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

@@ -1,5 +1,0 @@
-D CVS_ADM                           	CVS.adm
-F MIGVERSI.H;1                      	migVersion.h
-L PROCMACH.C;1                      	procMach.c	../sun4.md/procMach.c
-L PROCMACH.H;1                      	procMach.h	../sun4.md/procMach.h
-D SCVS                              	SCVS

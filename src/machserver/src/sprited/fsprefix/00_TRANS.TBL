@@ -1,8 +1,0 @@
-D DS3100_M                          	ds3100.md
-F FSPREFI0.H;1                      	fsprefix.h
-F FSPREFI1.H;1                      	fsprefixInt.h
-F FSPREFIX.C;1                      	fsprefixOps.c
-L LOCAL.MK;1                        	local.mk	../main/local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md

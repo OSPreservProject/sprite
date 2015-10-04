@@ -1,8 +1,0 @@
-F DBG.H;1                           	dbg.h
-F DBGINT.H;1                        	dbgInt.h
-F DBGIP.C;1                         	dbgIP.c
-F DBGMAIN.C;1                       	dbgMain.c
-F DEPENDEN.MK;1                     	dependencies.mk
-F MD.MK;1                           	md.mk
-F VMINT.H;1                         	vmInt.h
-F VMMACHIN.H;1                      	vmMachInt.h

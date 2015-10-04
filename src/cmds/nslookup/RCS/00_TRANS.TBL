@@ -1,8 +1,0 @@
-F COMMANDS.L_V;1                    	commands.l,v
-F DEBUG.C_V;1                       	debug.c,v
-F GETINFO.C_V;1                     	getinfo.c,v
-F LIST.C_V;1                        	list.c,v
-F MAIN.C_V;1                        	main.c,v
-F SEND.C_V;1                        	send.c,v
-F SKIP.C_V;1                        	skip.c,v
-F SUBR.C_V;1                        	subr.c,v

@@ -1,7 +1,0 @@
-D DS3100_M                          	ds3100.md
-L DSMACH.MD;1                       	dsmach.md	ds3100.md
-L LINT.DSM;1                        	lint.dsmach	lint.ds3100
-D LINT_DS3                          	lint.ds3100
-D LINT_SUN                          	lint.sun3
-F SPRITEHO.;1                       	spritehosts
-D SUN3_MD                           	sun3.md

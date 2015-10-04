@@ -1,9 +1,0 @@
-F AUDIO.;1                          	audio
-D DS3100_M                          	ds3100.md
-F FSMAKEDE.C;1                      	fsmakedev.c
-F FSMAKEDE.MAN;1                    	fsmakedev.man
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md
-D SYMM_MD                           	symm.md

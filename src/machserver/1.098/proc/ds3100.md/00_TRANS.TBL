@@ -1,5 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F MD.MK;1                           	md.mk
-F MIGVERSI.H;1                      	migVersion.h
-F PROCMACH.C;1                      	procMach.c
-F PROCMACH.H;1                      	procMach.h

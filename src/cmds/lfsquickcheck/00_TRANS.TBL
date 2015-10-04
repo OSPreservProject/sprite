@@ -1,8 +1,0 @@
-D DS3100_M                          	ds3100.md
-F FSCHECK.H;1                       	fscheck.h
-F LFSQUICK.C;1                      	lfsquickcheck.c
-F LFSQUICK.MAN;1                    	lfsquickcheck.man
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN4_MD                           	sun4.md

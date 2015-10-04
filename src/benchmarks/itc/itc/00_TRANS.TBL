@@ -1,7 +1,0 @@
-D FSCRIPT                           	fscript
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-F README.;1                         	README
-F REMOTE.1;1                        	remote.1
-F TLBSTAT0.;1                       	tlbstats1
-F TLBSTAT1.;1                       	tlbstats2

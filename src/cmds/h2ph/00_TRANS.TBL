@@ -1,6 +1,0 @@
-L CONFIG.SH;1                       	config.sh	../perl/config.sh
-F H2PH.;1                           	h2ph
-F H2PH.MAN;1                        	h2ph.man
-L H2PH.SH;1                         	h2ph.SH	../perl/dist/h2ph.SH
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS

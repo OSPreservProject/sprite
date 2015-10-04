@@ -1,8 +1,0 @@
-F ALIASES.;1                        	aliases
-F ALIASES_.BAK;1                    	aliases.addeluser.BAK
-D HOME                              	home
-L KOHL.;1                           	kohl	/user1/kohl
-F MASTER_A.BAK;1                    	master.addeluser.BAK
-F PASSWD.;1                         	passwd
-F PASSWD_A.BAK;1                    	passwd.addeluser.BAK
-D RCS                               	RCS

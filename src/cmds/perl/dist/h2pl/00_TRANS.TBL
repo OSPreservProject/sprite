@@ -1,9 +1,0 @@
-F CBREAK.PL;1                       	cbreak.pl
-F CBREAK2.PL;1                      	cbreak2.pl
-D EG                                	eg
-F GETIOCTL.;1                       	getioctlsizes
-F MKSIZES.;1                        	mksizes
-F MKVARS.;1                         	mkvars
-F README.;1                         	README
-F TCBREAK.;1                        	tcbreak
-F TCBREAK2.;1                       	tcbreak2

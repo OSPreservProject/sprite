@@ -1,7 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F LINT.;1                           	lint
-F MD.MK;1                           	md.mk
-D RCS                               	RCS
-F SIGMACH.C;1                       	sigMach.c
-F SIGMACH.H;1                       	sigMach.h
-F SIGTYPES.H;1                      	sigTypesMach.h

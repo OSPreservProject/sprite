@@ -1,7 +1,0 @@
-D DS3100_M                          	ds3100.md
-F IOSTATS.C;1                       	iostats.c
-F IOSTATS.MAN;1                     	iostats.man
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

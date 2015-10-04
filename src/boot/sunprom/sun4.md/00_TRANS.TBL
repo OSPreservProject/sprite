@@ -1,9 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F DEVFSOPT.C;1                      	devFsOpTable.c
-L MACHMON.H;1                       	machMon.h	../sun3.md/machMon.h
-F MD.MK;1                           	md.mk
-D RCS                               	RCS
-F START.S;1                         	start.s
-F SUNPROM.;1                        	sunprom
-L VM.C;1                            	vm.c	../sun3.md/vm.c
-F VMSUNASM.S;1                      	vmSunAsm.s

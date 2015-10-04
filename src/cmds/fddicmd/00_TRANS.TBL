@@ -1,9 +1,0 @@
-L DS3100.MD;1                       	ds3100.md	ds5000.md
-D DS5000_M                          	ds5000.md
-F FDDICMD.C;1                       	fddicmd.c
-F FDDICMD.MAN;1                     	fddicmd.man
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

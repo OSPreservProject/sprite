@@ -1,7 +1,0 @@
-D DS3100_M                          	ds3100.md
-F MAKEFILE.;1                       	Makefile
-F OPEN.C;1                          	open.c
-D RCS                               	RCS
-D SUN2_MD                           	sun2.md
-D SUN3_MD                           	sun3.md
-D TESTDIR                           	testDir

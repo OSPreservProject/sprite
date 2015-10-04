@@ -1,7 +1,0 @@
-F FTP.H;1                           	ftp.h
-F INET.H;1                          	inet.h
-F MAKEFILE.;1                       	Makefile
-F NAMESER.H;1                       	nameser.h
-D RCS                               	RCS
-F TELNET.H;1                        	telnet.h
-F TFTP.H;1                          	tftp.h

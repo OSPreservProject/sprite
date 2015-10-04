@@ -1,7 +1,0 @@
-F DPY.H_V;1                         	dpy.h,v
-F GLOBRAM.H_V;1                     	globram.h,v
-F IDPROM.C_V;1                      	idprom.c,v
-F MAP.S_V;1                         	map.s,v
-F MONALLOC.C_V;1                    	monalloc.c,v
-F STANDALL.C_V;1                    	standalloc.c,v
-F START.S_V;1                       	start.s,v

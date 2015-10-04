@@ -1,6 +1,0 @@
-D DS3100_M                          	ds3100.md
-F LOADAVG.C;1                       	loadavg.c
-F LOADAVG.H;1                       	loadavg.h
-F LOCAL.MK;1                        	local.mk
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS

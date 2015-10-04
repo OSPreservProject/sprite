@@ -1,5 +1,0 @@
-F MD_MK.SED;1                       	md.mk.sed,v
-F PROFINT.H_V;1                     	profInt.h,v
-F PROFSTAC.S_V;1                    	profStack.s,v
-F PROFSUBR.C_V;1                    	profSubr.c,v
-F _MCOUNT.C_V;1                     	_mcount.c,v

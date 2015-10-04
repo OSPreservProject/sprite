@@ -1,8 +1,0 @@
-D DS3100_M                          	ds3100.md
-F INITSPRI.C;1                      	initsprite.c
-F INITSPRI.MAN;1                    	initsprite.man
-F LOCAL_MK.OLD;1                    	local.mk.old
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

@@ -1,6 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F EMUASM.S;1                        	emuAsm.s
-F LINT.;1                           	lint
-F MD.MK;1                           	md.mk
-D RCS                               	RCS
-F SPRITEEM.H;1                      	spriteEmuMach.h

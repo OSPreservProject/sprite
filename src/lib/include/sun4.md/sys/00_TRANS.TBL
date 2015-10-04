@@ -1,5 +1,0 @@
-F EXEC.H;1                          	exec.h
-F MACHSIGN.H;1                      	machSignal.h
-F MAKEFILE.;1                       	Makefile
-L PTRACE.H;1                        	ptrace.h	../../sun3.md/sys/ptrace.h
-D RCS                               	RCS

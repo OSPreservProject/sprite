@@ -1,6 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F FSMACH.C;1                        	fsMach.c
-F FSMACH.H;1                        	fsMach.h
-F LINT.;1                           	lint
-F MD.MK;1                           	md.mk
-D RCS                               	RCS

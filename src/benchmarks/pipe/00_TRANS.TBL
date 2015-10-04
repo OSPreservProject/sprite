@@ -1,8 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-D DS3100_M                          	ds3100.md
-F MAKEFILE.;1                       	Makefile
-F PIPE.C;1                          	pipe.c
-L PRINTSTA.C;1                      	printStats.c	/sprite/src/cmds/bench/printStats.c
-D RCS                               	RCS
-D SUN4_MD                           	sun4.md
-F VERSION.H;1                       	version.h

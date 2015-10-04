@@ -1,8 +1,0 @@
-F SCANNER.;1                        	scanner
-F SCAN_DF.;1                        	scan_df
-F SCAN_LAS.;1                       	scan_last
-F SCAN_MES.;1                       	scan_messages
-F SCAN_PAS.;1                       	scan_passwd
-F SCAN_PS.;1                        	scan_ps
-F SCAN_SUD.;1                       	scan_sudo
-F SCAN_SUI.;1                       	scan_suid

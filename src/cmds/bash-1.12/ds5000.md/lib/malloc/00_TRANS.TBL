@@ -1,7 +1,0 @@
-L ALLOCA.C;1                        	alloca.c	../../../dist/lib/malloc/alloca.c
-L GETPAGES.H;1                      	getpagesize.h	../../../dist/lib/malloc/getpagesize.h
-L I386_ALL.S;1                      	i386-alloca.s	../../../dist/lib/malloc/i386-alloca.s
-L MALLOC.C;1                        	malloc.c	../../../dist/lib/malloc/malloc.c
-L X386_ALL.S;1                      	x386-alloca.s	../../../dist/lib/malloc/x386-alloca.s
-L XMALLOC.C;1                       	xmalloc.c	../../../dist/lib/malloc/xmalloc.c
-F XMALLOC.O;1                       	xmalloc.o

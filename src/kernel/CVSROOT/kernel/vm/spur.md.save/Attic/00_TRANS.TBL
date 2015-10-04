@@ -1,8 +1,0 @@
-F MD_MK.SED;1                       	md.mk.sed,v
-F VMMACH.H_V;1                      	vmMach.h,v
-F VMMACHIN.H_V;1                    	vmMachInt.h,v
-F VMMACHST.H_V;1                    	vmMachStat.h,v
-F VMMACHTR.H_V;1                    	vmMachTrace.h,v
-F VMSPUR.C_V;1                      	vmSpur.c,v
-F VMSPURAS.S_V;1                    	vmSpurAsm.s,v
-F VMSPURCO.H_V;1                    	vmSpurConst.h,v

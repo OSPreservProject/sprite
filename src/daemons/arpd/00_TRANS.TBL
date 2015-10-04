@@ -1,8 +1,0 @@
-F ARPD.C;1                          	arpd.c
-F ARPD.MAN;1                        	arpd.man
-D DS3100_M                          	ds3100.md
-F MAKEFILE.;1                       	Makefile
-D RCS                               	RCS
-F SPRITEHO.;1                       	spritehosts
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

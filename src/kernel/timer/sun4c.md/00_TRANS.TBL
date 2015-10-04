@@ -1,7 +1,0 @@
-D CVS_ADM                           	CVS.adm
-D SCVS                              	SCVS
-F TIMERMAC.H;1                      	timerMach.h
-F TIMERMK4.H;1                      	timerMK48T12Int.h
-F TIMERSUN.C;1                      	timerSun4c.c
-F TIMERTIC.C;1                      	timerTick.c
-F TIMERTIC.H;1                      	timerTick.h

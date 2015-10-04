@@ -1,8 +1,0 @@
-F AF.H;1                            	af.h
-F IF.H;1                            	if.h
-F IF_ARP.H;1                        	if_arp.h
-F MAKEFILE.;1                       	Makefile
-F NETISR.H;1                        	netisr.h
-F RAW_CB.H;1                        	raw_cb.h
-D RCS                               	RCS
-F ROUTE.H;1                         	route.h

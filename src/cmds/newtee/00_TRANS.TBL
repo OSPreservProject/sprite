@@ -1,7 +1,0 @@
-D DS3100_M                          	ds3100.md
-F MAKEFILE.;1                       	Makefile
-F NEWTEE.C;1                        	newtee.c
-F NEWTEE.MAN;1                      	newtee.man
-D RCS                               	RCS
-D SUN3_MD                           	sun3.md
-D SUN4_MD                           	sun4.md

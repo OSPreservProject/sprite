@@ -1,8 +1,0 @@
-F DEPENDEN.MK;1                     	dependencies.mk
-F LINT.;1                           	lint
-F MD.MK;1                           	md.mk
-F MIGVERSI.H;1                      	migVersion.h
-F PROCMAC0.H;1                      	procMach.h
-L PROCMAC1.H;1                      	procMachInt.h	../sun3.md/procMachInt.h
-F PROCMACH.C;1                      	procMach.c
-D RCS                               	RCS

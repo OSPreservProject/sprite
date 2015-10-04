@@ -1,6 +1,0 @@
-D FONTBITS                          	fontbits
-F IMAKEFIL.;1                       	Imakefile
-D INCLUDE                           	include
-D LIB                               	lib
-F MAKEFILE.;1                       	Makefile
-D TOOLS                             	tools
